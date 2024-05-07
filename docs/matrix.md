@@ -85,22 +85,22 @@ Feature matrix for the different SDK versions.
 
 ## FAQ
 
-<Details>
+<details>
 
-<Summary>Why isn't _language_ not supported as an SDK?</Summary>
+<summary>Why isn't _language_ not supported as an SDK?</summary>
 
 To ensure we can provide the best support for the SDKs, we have decided to focus on a limited scope of languages which
 meet our criteria such as performance and environment.
 
 Python and C# was supported in the first version of the platform, but as we assessed our ability to maintain the SDKs, we decided to focus on the most popular and performant languages. We are open to community contributions to support these languages.
 
-</Details>
+</details>
 
-<Details>
+<details>
 
-<Summary>Where can I get updates on the state of services and SDKs?</Summary>
+<summary>Where can I get updates on the state of services and SDKs?</summary>
 
 The best place to get updates on the state of the services and SDKs is the
 [OpenTDF GitHub Discussions](https://github.com/orgs/opentdf/discussions).
 
-</Details>
+</details>
