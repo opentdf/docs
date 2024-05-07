@@ -1,0 +1,42 @@
+name: opentdf/otdfctl update
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'opentdf/otdfctl to update from'
+        required: true
+        default: 'main'
+  repository_dispatch:
+    types: [otdfctl-update]
+    # client_payload.tag is required
+
+jobs:
+  update: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update docs/otdfctl
+        env:
+          TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag }}
+        run: |
+          # Remove the current docs/otdfctl directory
+          rm -rf docs/otdfctl
+          # Add docs from remote
+          git remote add otdfctl https://github.com/opentdf/otdfctl.git
+          git fetch otdfctl
+          git read-tree --prefix "docs/otdfctl" -u "otdfctl/$TAG:docs/man"
+          # Rename _index.md to index.md
+          find docs/otdfctl -name "_index.md" -exec bash -c 'mv "$1" "${1/_index.md/index.md}"' _ {} \;
+          # Add a generated file
+          echo "This directory is generated any manual changes will be lost.\n
+            date: $(date)
+            source: https://github.com/opentdf/otdfctl/tree/$TAG
+            event: ${{github.event}}
+            actor: ${{github.triggering_actor}}\n" > docs/otdfctl/GENERATED.txt
+          # Commit changes
+          git add docs/otdfctl
+          git commit -m "chore(otdfctl): Update docs/otdfctl to $TAG"
+          git push
+
+        
