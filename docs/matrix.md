@@ -60,7 +60,6 @@ Feature matrix for the different SDK versions.
 | - NanoTDF[^111]            | Stable   | Planned  | Planned  | Unstable   |
 | - ABAC[^112]               | Stable   | Unstable | Planned  | Unstable   |
 | - Dissem[^113]             | Stable   | Unstable | Planned  | Unstable   |
-| **Authorization**          | Stable   | Unstable | Planned  | Unstable   |
 |                            |          |          |          |            |
 | **Service APIs**[^105]     | Stable   | Stable   | Planned  | Planned    |
 | - Authorization [^120]     |          |          |          |            |
