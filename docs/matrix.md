@@ -96,7 +96,9 @@ Python and C# was supported in the first version of the platform, but as we asse
 
 </Details>
 
-<Details><Summary>Where can I get updates on the state of services and SDKs?</Summary>
+<Details>
+
+<Summary>Where can I get updates on the state of services and SDKs?</Summary>
 
 The best place to get updates on the state of the services and SDKs is the
 [OpenTDF GitHub Discussions](https://github.com/orgs/opentdf/discussions).
