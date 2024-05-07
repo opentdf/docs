@@ -85,7 +85,9 @@ Feature matrix for the different SDK versions.
 
 ## FAQ
 
-<Details><Summary>Why isn't _language_ not supported as an SDK?</Summary>
+<Details>
+
+<Summary>Why isn't _language_ not supported as an SDK?</Summary>
 
 To ensure we can provide the best support for the SDKs, we have decided to focus on a limited scope of languages which
 meet our criteria such as performance and environment.
