@@ -18,3 +18,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+node_modules
+
+# Ignore Remote Content
+/docs/spec/nanotdf/manifest.md
+/docs/spec/ztdf/KeyAccessObject.md
+/docs/spec/ztdf/manifest.md
+/docs/spec/ztdf/PolicyObject.md
