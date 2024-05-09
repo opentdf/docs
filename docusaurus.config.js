@@ -272,8 +272,8 @@ ${updatedContent}`
           }
 
           // Strip the 'docs/' prefix from the path if it exists
-          if (newFilename.startsWith('docs/')) {
-            newFilename = newFilename.substring(5); // Remove the first 5 characters 'docs/'
+          if (newFilename.startsWith('docs/man/')) {
+            newFilename = newFilename.substring(9); // Remove the first 5 characters 'docs/'
           }
           // If it's not a README.md or no changes are needed, return the content as is
           return { content: content, filename: newFilename };
