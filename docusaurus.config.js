@@ -258,7 +258,7 @@ ${updatedContent}`
         documents: listRemote.listDocuments(
           otdfctl,
           [
-            'docs/**/*.md'
+            'docs/man/**/*.md'
           ],
           []
         ),
