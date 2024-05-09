@@ -6,6 +6,10 @@
 
 import { themes as prismThemes } from 'prism-react-renderer';
 
+import listRemote from './docusaurus-lib-list-remote';
+
+const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main')
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'OpenTDF',
@@ -241,6 +245,38 @@ ${updatedContent}`
           }
           // If it's not a README.md or no changes are needed, return the content as is
           return { content: content };
+        },
+      },
+    ],
+    [
+      "docusaurus-plugin-remote-content",
+      {
+        name: "otdfctl",
+        id: "otdfctl",
+        outDir: "docs/cli",
+        sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
+        documents: listRemote.listDocuments(
+          otdfctl,
+          [
+            'docs/man/**/*.md'
+          ],
+          []
+        ),
+        modifyContent: (filename, content) => {
+          // This will hold the new filename after processing.
+          let newFilename = filename;
+
+          // Check if the file is named '_index.md' and change it to 'index.md'
+          if (newFilename.endsWith('/_index.md')) {
+            newFilename = newFilename.replace('/_index.md', '/index.md');
+          }
+
+          // Strip the 'docs/' prefix from the path if it exists
+          if (newFilename.startsWith('docs/man/')) {
+            newFilename = newFilename.substring(9); // Remove the first 5 characters 'docs/'
+          }
+          // If it's not a README.md or no changes are needed, return the content as is
+          return { content: content, filename: newFilename };
         },
       },
     ],
