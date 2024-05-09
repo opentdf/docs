@@ -14,18 +14,31 @@ on:
 jobs:
   update: 
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - name: Update docs/otdfctl
-        env:
-          TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag }}
         run: |
+          COMMIT_MSG="chore(otdfctl): Update docs/otdfctl to $TAG"
+          BUMP_MSG="Updated to"
+          COMMIT_HASH=""
+          BRANCH="otdfctl-update-$TAG"
+          PR_EXISTS=(gh pr list --state open --base main --head $BRANCH | grep -c $BRANCH)
+          # Check if PR exists for branch
+          if [ $PR_EXISTS -eq 1 ]; then
+            git checkout $BRANCH
+          else
+            git checkout -b $BRANCH
+          fi
           # Remove the current docs/otdfctl directory
           rm -rf docs/otdfctl
           # Add docs from remote
           git remote add otdfctl https://github.com/opentdf/otdfctl.git
           git fetch otdfctl
           git read-tree --prefix "docs/otdfctl" -u "otdfctl/$TAG:docs/man"
+          COMMIT_HASH=(git ls-remote --heads otdfctl "refs/heads/$TAG" |awk '{ print $1}')
           # Rename _index.md to index.md
           find docs/otdfctl -name "_index.md" -exec bash -c 'mv "$1" "${1/_index.md/index.md}"' _ {} \;
           # Add a generated file
@@ -36,7 +49,14 @@ jobs:
             actor: ${{github.triggering_actor}}\n" > docs/otdfctl/GENERATED.txt
           # Commit changes
           git add docs/otdfctl
-          git commit -m "chore(otdfctl): Update docs/otdfctl to $TAG"
-          git push
+          # 
+          if [ $PR_EXISTS -eq 1 ]; then
+            git commit -m "$BUMP_MSG $COMMIT_HASH"
+            git push
+          else
+            git commit -m $COMMIT_MSG -m "Based on $COMMIT_HASH"
+            git push --set-upstream origin $BRANCH
+            gh pr create --title "chore(otdfctl): Update docs/otdfctl to $TAG" --body "This PR updates the docs/otdfctl to $TAG" --base main --head $BRANCH
+          fi
 
         
