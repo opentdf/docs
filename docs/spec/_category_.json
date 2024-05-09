@@ -1,8 +1,8 @@
 {
-  "label": "Spec",
-  "position": 5,
+  "label": "Specification",
+  "position": 10,
   "link": {
     "type": "generated-index",
-    "description": "5 minutes to learn the most important Docusaurus concepts."
+    "description": "nanotdf and ztdf specification"
   }
 }

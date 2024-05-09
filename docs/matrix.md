@@ -1,3 +1,6 @@
+---
+sidebar_position: 50
+---
 # Feature Matrix
 
 The following table shows the features of the different versions of the library.

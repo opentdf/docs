@@ -1,0 +1,8 @@
+{
+  "label": "Policy",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "overview of policy resources"
+  }
+}
