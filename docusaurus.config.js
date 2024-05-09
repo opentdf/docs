@@ -187,11 +187,11 @@ ${updatedContent}`, filename: "manifest.md"
         name: "ztdf", // used by CLI, must be path safe
         sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: "docs/spec/ztdf/", // the base directory to output to.
-        documents: ["manifest-json.md", "KeyAccessObject.md", "PolicyObject.md"], // the file names to download
+        documents: ["manifest-json.md", "KeyAccessObject.md", "PolicyObject.md", "AttributeObject.md"], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content.replaceAll('../../diagrams/', '../../../static/img/');
-          updatedContent = updatedContent.replaceAll('# manifest.json', '# Manifest');
           if (filename === "manifest-json.md") {
+            updatedContent = updatedContent.replaceAll('# manifest.json', '# Manifest');
             return {
               content: `---
 id: manifest
@@ -199,7 +199,7 @@ sidebar_position: 1
 title: Manifest
 ---
 
-${updatedContent}`, filename: "manifest.md"
+${updatedContent}`
             };
           }
           if (filename === "KeyAccessObject.md") {
@@ -216,11 +216,24 @@ ${updatedContent}`
             };
           }
           if (filename === "PolicyObject.md") {
+            updatedContent = updatedContent.replaceAll('ClaimsObject.md', 'https://opentdf.io').replaceAll('EntitlementsObject.md', 'https://opentdf.io');
             return {
               content: `---
 id: policy
 sidebar_position: 2
 title: Policy Object
+---
+
+${updatedContent}`
+            };
+          }
+          if (filename === "AttributeObject.md") {
+            updatedContent = updatedContent.replaceAll('ClaimsObject.md', 'https://opentdf.io').replaceAll('EntitlementObject.md', 'https://opentdf.io');
+            return {
+              content: `---
+id: attributes
+sidebar_position: 4
+title: Attribute Object
 ---
 
 ${updatedContent}`
