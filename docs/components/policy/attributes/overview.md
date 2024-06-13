@@ -201,3 +201,20 @@ Attribute Definition 'second' on 'order' --> https://demo.com/attr/order/value/s
 Attribute Definition 'third' on 'order' --> https://demo.com/attr/order/value/third
 
 ```
+
+## Life Cycle and Unsafe Actions
+
+As Attribute components (Namespaces, Definitions, Values) within an Fully Qualified attribute are bound to TDF's, considerations must be made
+for updates and deletions of attribute components.
+
+For example, if an Attribute is created as `https://demo.com/attr/order/value/third` and TDFs are created with that value as an attribute,
+the TDF will continue to contain that attribute even if the namespace, definition, or value are updated. This means an update or a deletion
+to the Namespace, Definition name, or Value are all unsafe because they can break access to existing TDFs containing that attribute.
+
+To counter this, Attribute Namespaces, Definitions, and Values are all "Deactivated" instead of Deleted as a safe behavior. This will ensure
+they persist in the Policy database and prevent a scenario where attributes with different definitions or mappings are recreated in place
+of the originals to grant access differently than intended. Deactivations are also cascading so that a deactivation of a Namespace puts
+not only the Namespace to inactive state but also the Definitions, and deactivating a Definition deactivates its Values.
+
+Unsafe actions will be enabled through a separate Policy service, but at this time the workaround if an administrator needs to unsafely update
+or fully delete an Attribute Namespace, Definition Name, or Value is to manually update the database.
