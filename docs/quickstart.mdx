@@ -1,0 +1,794 @@
+---
+sidebar_position: 3
+---
+
+# Quick Start
+
+This guide will walk you through setting up a new platform locally and walk you through some of the basic concepts within the OpenTDF platform.
+
+## Pre-requisites
+
+- A copy of the `otdfctl` CLI.
+  - [Download the latest release](https://github.com/opentdf/otdfctl/releases)
+  
+- A tool to run the compose file.
+  - [Podman](https://podman.io/)
+  - [Docker Compose](https://docs.docker.com/compose/)
+
+## Getting the Platform Running
+
+The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [keycloak](https://www.keycloak.org/), and a [postgres](https://www.postgresql.org/) database.
+
+:::warning
+Not for production use.
+:::
+
+<details>
+<summary>Docker Compose</summary>
+```yaml
+name: opentdf
+volumes:
+  configs:
+  keys:
+  caddy_data:
+configs:
+  caddy_config:
+    content: |
+      {
+        log {
+            level INFO
+            output stdout
+        }
+      }
+      https://keycloak.opentdf.local:9443 {
+        tls internal
+        reverse_proxy keycloak:8888
+      }
+      https://platform.opentdf.local:8443 {
+        tls internal
+        reverse_proxy {
+            to h2c://platform:8080
+            transport http {
+                versions h2c 2 1.1  # Enable gRPC proxying
+            }
+        }
+
+      }
+services:
+  caddy:
+    #image: cgr.dev/chainguard/caddy:latest-dev #@sha256:20e31e59503a775f28e7eb0d724384055236a35c52ff4e5aca6caac8390d61dc
+    image: caddy:alpine
+    command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
+    configs:
+      - source: caddy_config
+        target: /etc/caddy/Caddyfile
+    ports:
+      - '9443:9443'
+      - '8443:8443'
+    volumes:
+      - caddy_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --server-response --tries=1 http://127.0.0.1:2019/metrics 2>&1 | awk '/^  HTTP/{print $2}' | grep -q '200'"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+  check-certs:
+    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    volumes:
+      - type: volume
+        source: caddy_data
+        target: /etc/ssl/certs
+        volume:
+          subpath: caddy/certificates/local/keycloak.opentdf.local/
+    command:
+      - |
+        echo "Checking certificates"
+        ls -alh /etc/ssl/certs
+        cat /etc/ssl/certs/keycloak.opentdf.local.crt
+    depends_on:
+      caddy:
+        condition: service_healthy
+      ensure-permissions:
+        condition: service_completed_successfully
+  ensure-permissions:
+    image: alpine
+    command:
+    - 'sh'
+    - '-c'
+    - |
+      chmod -R 665 /configs
+      ls -alh /configs
+      chmod -R 665 /keys
+      ls -alh /keys
+      chmod -R 665 /data
+      ls -alh /data
+    volumes:
+      - configs:/configs
+      - keys:/keys
+      - caddy_data:/data
+
+  #================================================================
+
+# Start Keycloak
+
+  #----------------------------------------------------------------
+  keycloak:
+    image: cgr.dev/chainguard/keycloak:latest@sha256:7e06ca655329cb8256ee2d226e32d48377a1d0e436de4fb10bdd428ed4848afa # 25.0.1
+    restart: unless-stopped
+    command: ['start-dev']
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: changeme
+      KC_HOSTNAME: '<https://keycloak.opentdf.local:9443>'
+      KC_HOSTNAME_ADMIN: '<https://keycloak.opentdf.local:9443>'
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_PORT: 8888
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: changeme
+      KC_FEATURES: 'preview,token-exchange'
+      KC_HEALTH_ENABLED: 'true'
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/ready']
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+        restart: true
+  keycloak-db:
+    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: postgres
+      POSTGRES_DB: keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 2m
+  download-keycloak-config:
+    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    volumes:
+      - configs:/configs
+    command: ['-o', '/configs/keycloak-config.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/cmd/keycloak_data.yaml']
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  #================================================================
+
+# Provisioning Keycloak with expected realm, clients, and users
+
+  #----------------------------------------------------------------
+  keycloak-provisioning:
+    image: registry.opentdf.io/platform:nightly
+    volumes:
+      - configs:/configs
+    command:
+      [
+        'provision',
+        'keycloak-from-config',
+        '-e',
+        'http://keycloak:8888',
+        '-f',
+        '/configs/keycloak-config.yaml',
+      ]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+        restart: true
+      download-keycloak-config:
+        condition: service_completed_successfully
+        restart: true
+  #================================================================
+
+# Start the OpenTDF service
+
+  #----------------------------------------------------------------
+  download-platform-config:
+    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    volumes:
+      - configs:/configs
+    command: ['-o', '/configs/.opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  modify-platform-config:
+    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    volumes:
+      - configs:/configs
+    command:
+      - |
+        echo "Modifying /configs/.opentdf.yaml"
+        echo "$(</configs/.opentdf.yaml )"
+        sed -i 's|kas-private.pem|/keys/kas-private.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-cert.pem|/keys/kas-cert.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-ec-private.pem|/keys/kas-ec-private.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-ec-cert.pem|/keys/kas-ec-cert.pem|g' /configs/.opentdf.yaml
+        sed -i 's|# db:|db: |g' /configs/.opentdf.yaml
+        sed -i 's|#   host: localhost|  host: |g' /configs/.opentdf.yaml
+        sed -i 's|issuer: http://localhost:8888/auth/realms/opentdf|issuer: http://keycloak:8888/realms/opentdf|g' /configs/.opentdf.yaml
+        sed -i 's|tokenendpoint: http://localhost:8888/auth/realms/opentdf/protocol/openid-connect/token|tokenendpoint: http://keycloak:8888/realms/opentdf/protocol/openid-connect/token|g' /configs/.opentdf.yaml
+        sed -i 's|url: http://localhost:8888/auth|url: http://keycloak:8888|g' /configs/.opentdf.yaml
+        echo "$(</configs/.opentdf.yaml )"
+    depends_on:
+      download-platform-config:
+        condition: service_completed_successfully
+  generate-kas-rsa-keys:
+    image: alpine/openssl
+    volumes:
+      - keys:/keys
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Generating RSA keys"
+        openssl req -x509 -nodes -newkey RSA:2048 -subj "/CN=kas" -keyout /keys/kas-private.pem -out /keys/kas-cert.pem -days 365
+        chmod 444 /keys/kas-private.pem
+        chmod 444 /keys/kas-cert.pem
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  generate-kas-ec-keys:
+    image: alpine/openssl
+    volumes:
+      - keys:/keys
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Generating EC keys"
+        openssl ecparam -name secp256r1 -out /keys/secp256r1.pem && \
+        openssl req -x509 -nodes -newkey ec:/keys/secp256r1.pem -subj "/CN=kas" -keyout /keys/kas-ec-private.pem -out /keys/kas-ec-cert.pem -days 365
+        chmod 444 /keys/kas-ec-private.pem
+        chmod 444 /keys/kas-ec-cert.pem
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  platform:
+    image: registry.opentdf.io/platform:nightly
+    volumes:
+      - configs:/configs
+      - keys:/keys
+      - type: volume
+        source: caddy_data
+        target: /etc/ssl/certs
+        volume:
+          subpath: caddy/certificates/local/keycloak.opentdf.local
+    extra_hosts:
+      - "keycloak.opentdf.local:host-gateway"
+    command: ['start','--config-file','/configs/.opentdf.yaml','--config-key','opentdf']
+    restart: always
+    environment:
+      OPENTDF_DB_HOST: platform-db
+      OPENTDF_DB_USER: postgres
+      OPENTDF_DB_PASSWORD: changeme2
+    depends_on:
+      keycloak:
+        condition: service_healthy
+        restart: true
+      keycloak-provisioning:
+        condition: service_completed_successfully
+      platform-db:
+        condition: service_healthy
+        restart: true
+      download-platform-config:
+        condition: service_completed_successfully
+      generate-kas-rsa-keys:
+        condition: service_completed_successfully
+      generate-kas-ec-keys:
+        condition: service_completed_successfully
+      modify-platform-config:
+        condition: service_completed_successfully
+      caddy:
+        condition: service_healthy
+      check-certs:
+        condition: service_completed_successfully
+  platform-db:
+    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: opentdf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+```
+
+</details>
+
+## Update /etc/hosts
+
+In order for the services to communicate correctly you will need to update your `/etc/hosts` file.
+
+```shell
+echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
+```
+
+## Export Environment Variables
+
+For the remainder of this guide you will want to export the following environment variables.
+
+```shell
+export PLATFORM_HOST=https://platform.opentdf.local:8443
+```
+
+## Trust Self Signed Certificates
+
+During the bootstrapping process `caddy` will generate self signed certificiates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command.
+
+Example of extracting the certificate from the container.
+
+```shell
+mkdir -p ./opentdf-certs
+```
+
+```shell
+docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
+```
+
+```shell
+docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
+```
+
+## Login to the Platform
+
+During the provisioning of the platform, a few test clients were created in **keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
+
+```shell
+otdfctl --host $PLATFORM_HOST auth client-credentials --client-id opentdf --client-secret secret
+```
+
+## Create A Namespace
+
+In this first step you are going to create a new `namespace`. A namespace is a way to organize your `attributes` within the platform.
+
+You will see an empty list of namespaces when you first start the platform.
+
+```shell
+otdfctl --host $PLATFORM_HOST --tls-no-verify  policy attributes namespaces list
+```
+
+```shell
+SUCCESS   Found namespaces list
+┌─────────────────────────┬───────────────────────────┬─────────────────────────────┬────────────────────────────┬────────────────────────────────┬────────────────────────────────┐
+│Id                       │Name                       │Active                       │Labels                      │Created At                      │Updated At                      │
+├─────────────────────────┼───────────────────────────┼─────────────────────────────┼────────────────────────────┼────────────────────────────────┼────────────────────────────────┤
+└─────────────────────────┴───────────────────────────┴─────────────────────────────┴────────────────────────────┴────────────────────────────────┴────────────────────────────────┘
+NOTE   Use 'namespaces get --id=<id> --json' to see all properties
+```
+
+### Create a new namespace
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy attributes namespaces create --name opentdf.io
+```
+
+```shell
+SUCCESS   Created namespaces: 7650f02a-be00-4faa-a1d1-37cded5e23dc
+┌────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                    │Value                                                                                                │
+├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Name                                                                        │opentdf.io                                                                                           │
+│Id                                                                          │7650f02a-be00-4faa-a1d1-37cded5e23dc                                                                 │
+│Created At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
+│Updated At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
+└────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to see all properties
+```
+
+### List the namespaces
+
+With that namespace created we should be able to see it in the list of namespaces as well as get the details of the namespace.
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy attributes namespaces list
+```
+  
+```shell
+SUCCESS   Found namespaces list
+┌──────────────────────────────────────────────┬────────────────────┬────────────────┬────────────────┬──────────────────────────────────────┬─────────────────────────────────────┐
+│Id                                            │Name                │Active          │Labels          │Created At                            │Updated At                           │
+├──────────────────────────────────────────────┼────────────────────┼────────────────┼────────────────┼──────────────────────────────────────┼─────────────────────────────────────┤
+│7650f02a-be00-4faa-a1d1-37cded5e23dc          │opentdf.io          │true            │[]              │Mon Jun 24 11:02:00 UTC 2024          │Mon Jun 24 11:02:00 UTC 2024         │
+└──────────────────────────────────────────────┴────────────────────┴────────────────┴────────────────┴──────────────────────────────────────┴─────────────────────────────────────┘
+NOTE   Use 'namespaces get --id=<id> --json' to see all properties
+```
+
+Let's export the namespace id for later use.
+
+```shell
+export NAMESPACE_ID=<id>
+```
+
+### Get the details of the namespace
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy attributes namespaces get --id=$NAMESPACE_ID
+```
+
+```shell
+SUCCESS   Found namespaces: 7650f02a-be00-4faa-a1d1-37cded5e23dc
+┌────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                    │Value                                                                                                │
+├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                          │7650f02a-be00-4faa-a1d1-37cded5e23dc                                                                 │
+│Name                                                                        │opentdf.io                                                                                           │
+│Created At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
+│Updated At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
+└────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to see all properties
+```
+
+## Create an Attribute
+
+Now that we have a namespace we can create a new attribute. An attribute is a way to define a classification for your data.
+
+It consists of two main parts:
+
+1. A `definition` which describes how an entities entitlements and resource attributes are compared.
+    1. **ANY_OF**: The entity must have at least one of the values in the list. This is your typical `OR` operation.
+    2. **ALL_OF**: The entity must have all of the values in the list. This is your typical `AND` operation.
+    3. **HIERARCHY**: This is an ordered list of values. The entity must have an equal or greater value in the list.
+
+2. A list of `values`
+
+:::warning
+
+Attribute name and values are case insensitive. This means `ROLE` is equal to `role`.
+
+:::
+
+:::tip
+
+You can also create values at the same time when creating the definition. This is useful when you know the values you want to use. (e.g. --value admin --value developer --value guest)
+
+:::
+
+### Create attribute definition
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
+```
+
+```shell
+SUCCESS   Created attributes: bd02d7ab-564d-4b6c-95c4-3d4a8a259000
+┌────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                        │Value                                                                                            │
+├────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Name                                                                            │role                                                                                             │
+│Rule                                                                            │ANY_OF                                                                                           │
+│Values                                                                          │[]                                                                                               │
+│Namespace                                                                       │opentdf.io                                                                                       │
+│Created At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
+│Updated At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
+└────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to see all properties
+```
+
+Let's export the attribute id for later use.
+
+```shell
+export ATTRIBUTE_ID=<id>
+```
+
+### Create attribute values
+
+```shell
+# Create admin value
+otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value admin
+```
+
+```shell
+SUCCESS   Created values: 0fe7e8d0-a3ff-485f-ac24-a54d85904712
+┌──────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                  │Value                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                        │0fe7e8d0-a3ff-485f-ac24-a54d85904712                                                                   │
+│FQN                                                                       │https://opentdf.io/attr/role/value/admin                                                               │
+│Value                                                                     │admin                                                                                                  │
+│Created At                                                                │Mon Jun 24 11:11:15 UTC 2024                                                                           │
+│Updated At                                                                │Mon Jun 24 11:11:15 UTC 2024                                                                           │
+└──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'values get --id=0fe7e8d0-a3ff-485f-ac24-a54d85904712 --json' to see all properties
+```
+
+Export the admin value id for later use.
+
+```shell
+export ADMIN_VALUE_ID=<id>
+```
+
+```shell
+# Create developer value
+otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value developer
+```
+
+```shell
+SUCCESS   Created values: dbfcbe15-7392-4e35-9e1d-3d06918472be
+┌────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                │Value                                                                                                    │
+├────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                      │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                     │
+│FQN                                                                     │https://opentdf.io/attr/role/value/developer                                                             │
+│Value                                                                   │developer                                                                                                │
+│Created At                                                              │Mon Jun 24 11:12:45 UTC 2024                                                                             │
+│Updated At                                                              │Mon Jun 24 11:12:45 UTC 2024                                                                             │
+└────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'values get --id=dbfcbe15-7392-4e35-9e1d-3d06918472be --json' to see all properties
+```
+
+Export the developer value id for later use.
+
+```shell
+export DEVELOPER_VALUE_ID=<id>
+```
+
+```shell
+# Create guest value
+otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value guest
+```
+
+```shell
+SUCCESS   Created values: 654f0877-2c0b-4a62-a9c3-87ed42bf77ac
+┌──────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                  │Value                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                        │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                   │
+│FQN                                                                       │https://opentdf.io/attr/role/value/guest                                                               │
+│Value                                                                     │guest                                                                                                  │
+│Created At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
+│Updated At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
+└──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'values get --id=654f0877-2c0b-4a62-a9c3-87ed42bf77ac --json' to see all properties
+```
+
+Export the guest value id for later use.
+
+```shell
+export GUEST_VALUE_ID=<id>
+```
+
+### Get the attribute details
+
+Now that we have listed values for the attribute, we can get the details of the attribute. You should see the added values in the list now.
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy attributes get --id=$ATTRIBUTE_ID
+```
+
+```shell
+SUCCESS   Found attributes: bd02d7ab-564d-4b6c-95c4-3d4a8a259000
+┌────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                    │Value                                                                                                │
+├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                          │bd02d7ab-564d-4b6c-95c4-3d4a8a259000                                                                 │
+│Name                                                                        │role                                                                                                 │
+│Rule                                                                        │ANY_OF                                                                                               │
+│Values                                                                      │[admin, developer, guest]                                                                            │
+│Namespace                                                                   │opentdf.io                                                                                           │
+│Created At                                                                  │Mon Jun 24 11:09:39 UTC 2024                                                                         │
+│Updated At                                                                  │Mon Jun 24 11:14:22 UTC 2024                                                                         │
+└────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to see all properties
+```
+
+## Create a Subject Mapping
+
+A `subject mapping` is a way to define how a user or entity is mapped to an attribute in the **OpenTDF Platform**.
+
+An attribute that is mapped to an entity is considered an `entitlement`. An `entitlement` is a way to define what tdf resources an entity can access.
+
+With `subject mappings` there is a sub-resource  called `subject condition sets`. These are a set of conditions that must be met for the `subject mapping` to be applied.
+
+### Create a Subject Condition Set
+
+Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set. You can use this file to create a new condition set.
+
+```shell
+ otdfctl --host $PLATFORM_HOST  policy subject-condition-sets create -j <path to file>/subject_condition_set.json
+```
+
+```shell
+SUCCESS   Created subject-condition-sets: 74bf521f-5a79-48fe-acb8-b4b63ee7950b
+┌──────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property      │Value                                                                                                                                                              │
+├──────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id            │74bf521f-5a79-48fe-acb8-b4b63ee7950b                                                                                                                               │
+│SubjectSets   │[{"condition_groups":[{"conditions":[{"subject_external_selector_value":".clientId","operator":1,"subject_external_values":["opentdf"]}],"boolean_operator":1}]}]  │
+│Created At    │Mon Jun 24 11:33:28 UTC 2024                                                                                                                                       │
+│Updated At    │Mon Jun 24 11:33:28 UTC 2024                                                                                                                                       │
+└──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'subject-condition-sets get --id=74bf521f-5a79-48fe-acb8-b4b63ee7950b --json' to see all properties
+```
+
+Let's export the subject condition set id for later use.
+
+```shell
+export SUBJECT_CONDITION_SET_ID=<id>
+```
+
+### Create a Subject Mapping
+
+With the condition set created we can now create a new subject mapping that is tied to the subject condition set.
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+```
+
+```shell
+SUCCESS   Created subject-mappings: 751054f8-14da-44c0-9341-5dab36b8256d
+┌─────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                 │Value                                                                                                                                                   │
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                       │751054f8-14da-44c0-9341-5dab36b8256d                                                                                                                    │
+│Subject AttrVal: Id      │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                                                                    │
+│Actions                  │[{"Value":{"Standard":1}}]                                                                                                                              │
+│Subject Condition Set: I…│74bf521f-5a79-48fe-acb8-b4b63ee7950b                                                                                                                    │
+│Subject Condition Set    │[{"condition_groups":[{"conditions":[{"subject_external_selector_value":".clientId","operator":1,"subject_external_values":["opentdf"]}],"boolean_opera…│
+│Attribute Value Id       │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                                                                    │
+│Created At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
+│Updated At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
+└─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'subject-mappings get --id=751054f8-14da-44c0-9341-5dab36b8256d --json' to see all properties
+```
+
+Let's export the subject mapping id for later use.
+
+```shell
+export SUBJECT_MAPPING_ID=<id>
+```
+
+## Encrypt Some Data With TDF
+
+Now that we have a few basic resources in place we can show you how to control access to data using the **OpenTDF Platform**.
+
+### Encrypt Data Without Attributes
+
+Within the `otdfctl` CLI there is basic functionality to interact with `zTDF` and `nanoTDF`.
+
+#### Example zTDF encryption
+
+```shell
+echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3
+```
+
+#### Example nanoTDF encryption
+
+```shell
+echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano
+```
+
+### Decrypt Data Without Attributes
+
+Because we didn't add any attributes to the data we encrypted, we should be able to decrypt the data without any issues.
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+```
+
+```shell
+# Output
+my first encrypted tdf
+```
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+```
+
+```shell
+# Output
+my first encrypted tdf
+```
+
+### Encrypt Data With Attributes
+
+In this example we will encrypt the data with the attribute `https://opentdf.io/attr/role/value/guest`. First cleanup any existing tdf files from before.
+
+```shell
+rm example.tdf example.nano.tdf
+```
+
+#### Example zTDF encryption with attributes
+
+```shell
+echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
+```
+
+#### Example nanoTDF encryption with attributes
+
+```shell
+echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
+```
+
+### Decrypt Data With Attributes
+
+In this first example we will try to decrypt the data but it will fail because we shouldn't be assigned the entitlement of `https://opentdf.io/attr/role/value/guest` at this point.
+
+#### Example zTDF failed decryption
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+```
+
+```shell
+# Output
+ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap splitKey.rewrap failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
+            rpc error: code = PermissionDenied desc = forbidden
+```
+
+#### Example nanoTDF failed decryption
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+```
+
+```shell
+ERROR    Failed to decrypt file: readSeeker.Seek failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
+            rpc error: code = PermissionDenied desc = forbidden
+```
+
+What we have to do now is assign the entitlement of `https://opentdf.io/attr/role/value/guest` to the entity by creating a new subject mapping for the condition set we created earlier.
+
+#### Create a new subject mapping
+
+```shell
+otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+```
+
+```shell
+SUCCESS   Created subject-mappings: f6bf9fc7-e23b-4276-9dfc-7a61f359edfd
+┌─────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                 │Value                                                                                                                                                   │
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                       │f6bf9fc7-e23b-4276-9dfc-7a61f359edfd                                                                                                                    │
+│Subject AttrVal: Id      │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
+│Actions                  │[{"Value":{"Standard":1}}]                                                                                                                              │
+│Subject Condition Set: I…│74bf521f-5a79-48fe-acb8-b4b63ee7950b                                                                                                                    │
+│Subject Condition Set    │[{"condition_groups":[{"conditions":[{"subject_external_selector_value":".clientId","operator":1,"subject_external_values":["opentdf"]}],"boolean_opera…│
+│Attribute Value Id       │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
+│Created At               │Mon Jun 24 13:28:22 UTC 2024                                                                                                                            │
+│Updated At               │Mon Jun 24 13:28:22 UTC 2024                                                                                                                            │
+└─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'subject-mappings get --id=f6bf9fc7-e23b-4276-9dfc-7a61f359edfd --json' to see all properties
+```
+
+Now that we have the subject mapping in place we should be able to decrypt the data.
+
+#### Example zTDF sucessful decryption
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+```
+
+```shell
+# Output
+my first encrypted tdf
+```
+
+#### Example nanoTDF sucessful decryption
+
+```shell
+otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+```
+
+```shell
+# Output
+my first encrypted tdf
+```
+
+## Takeways and Next Steps
+
+In this document you have learned how to create a namespace, attribute, subject mapping, and encrypt/decrypt data with the **OpenTDF Platform**.
+
+- [Components In-Depth](/docs/category/components)

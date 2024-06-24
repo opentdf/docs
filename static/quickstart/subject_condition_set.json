@@ -1,0 +1,18 @@
+[
+  {
+    "condition_groups": [
+      {
+        "conditions": [
+          {
+            "subject_external_selector_value": ".clientId",
+            "operator": 1,
+            "subject_external_values": [
+              "opentdf"
+            ]
+          }
+        ],
+        "boolean_operator": 1
+      }
+    ]
+  }
+]
