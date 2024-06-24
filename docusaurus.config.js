@@ -17,7 +17,7 @@ const config = {
   favicon: 'img/OpenTDF-Logo.png',
 
   // Set the production url of your site here
-  url: 'https://special-bassoon-22149qr.pages.github.io',
+  url: 'https://docs.opentdf.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
