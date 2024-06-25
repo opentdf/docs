@@ -1,11 +1,11 @@
 # Overview
-The authorization service is responsible for making access decisions based on attribute based access control(ABAC) policy as well as evaluating subject mappings to determine which attributes have been assigned to specific entities. The service provides two endpoints, GetEntitlements and GetDecisions. 
+The authorization service is responsible for making access decisions based on attribute based access control(ABAC) policy as well as evaluating subject mappings to determine which attributes have been assigned to specific entities. The service provides two endpoints: **GetEntitlements** and **GetDecisions**. 
 
 ## GetEntitlements
 The GetEntitlements endpoint takes a list of entities and returns the attributes each entity is entitled. This entitlements is based off of the evaluation of the subject mappings described under the [policy documentation](../policy/subject_mappings/overview.md), and the entity representations returned from the [entity resolution service](entity_resolution/overview.md).
 
 ### Entites
-An entity is any being or structure interacting interacting with the platform. A person-entity (PE) represents an actual user/person while a non-person entity (NPE) can represent a system or program interacting with the platform on behalf of a user or via an automated process.
+An entity is any being or structure interacting with the platform. A person-entity (PE) represents an actual user/person while a non-person entity (NPE) can represent a system or program interacting with the platform on behalf of a user or via an automated process.
 The authorization service accepts a variety of methods to identify an entity all listed in the defined proto below.
 ```
 message Entity {
@@ -68,9 +68,12 @@ Below is an example response to the above request:
   ]
 }
 ```
-The entities is the response can be mapped back to the original input using the entity ID. The "attribute_value_fqns" field includes a list of attribute FQNs that that particular entity has been entitled to. If no scope is provided, this field will include ALL the attributes a particular entity has been entitled to.
+The entities in the response can be mapped back to the original input using the entity ID. The "attribute_value_fqns" field includes a list of attribute FQNs that that particular entity has been entitled to. If no scope is provided, this field will include ALL the attributes a particular entity has been entitled to.
 
 ## GetDecisions
+
+> **WARNING**: Actions are currently experimental
+
 The GetDecisions endpoint takes a set of entity chains, sets of resource attributes, and a set of actions and returns a PERMIT or DENY decision for each combination of entity chain and resource attribute set for the given actions.
 This endpoint is called from KAS to determine if a particular set of entities should have access to a piece of data during its rewrap operation.
 
