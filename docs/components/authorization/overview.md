@@ -68,7 +68,7 @@ Below is an example response to the above request:
   ]
 }
 ```
-The entities in the response can be mapped back to the original input using the entity ID. The "attribute_value_fqns" field includes a list of attribute FQNs that that particular entity has been entitled to. If no scope is provided, this field will include ALL the attributes a particular entity has been entitled to.
+The entities in the response can be mapped back to the original input using the entity ID. The "attribute_value_fqns" field includes a list of attribute FQNs that that particular entity has been entitled to. If no scope is provided, this field will include **ALL** the attributes a particular entity has been entitled to.
 
 ## GetDecisions
 

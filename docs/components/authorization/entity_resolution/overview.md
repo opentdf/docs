@@ -58,7 +58,7 @@ Below is an example response to the above request:
 Each token resolved to a chain with multiple entities including a client and user.
 
 ## ResolveEntities
-This endpoint takes a list of entities and resolves them with the IDP to entity representations. As this service is implemented by the platform consumer, it is up to the implementer to build the entity representations. For example, in the Keycloak entity resolution service implementation we return the json client/user representations that the servcice retrieves from Keycloak.
+This endpoint takes a list of entities and resolves them with the IDP to entity representations. As this service is implemented by the platform consumer, it is up to the implementer to build the entity representations. For example, in the Keycloak entity resolution service implementation we return the json client/user representations that the service retrieves from Keycloak.
 These entity representations will be used in the subject mapping evaluation to determine whether to map certain entitlements to each entity. The evaluation will check to see if specified selector fields in the entity representation match expected values and will assign entitlements if so. See the [policy docs](../../policy/subject_mappings/overview.md#subject-mapping-for-contributors) for more information on subject mappings and subject external value selectors.
 
 ### Request and Response
