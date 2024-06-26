@@ -1,0 +1,94 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>Get Decision</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/authorization"
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get Entitlements
+
+	decision := &authorization.GetDecisionsRequest{
+		DecisionRequests: []*authorization.DecisionRequest{
+			{
+				Actions: []*policy.Action{
+					{
+						Value: &policy.Action_Standard{
+							Standard: policy.Action_STANDARD_ACTION_DECRYPT,
+						},
+					},
+				},
+				EntityChains: []*authorization.EntityChain{
+					{
+						Id: "entity-chain-1",
+						Entities: []*authorization.Entity{
+							{
+								Id: "entity-1",
+								EntityType: &authorization.Entity_ClientId{
+									ClientId: "opentdf",
+								},
+							},
+						},
+					},
+				},
+				ResourceAttributes: []*authorization.ResourceAttribute{
+					{
+						ResourceAttributesId: "resource-attribute-1",
+						AttributeValueFqns:   []string{"https://opentdf.io/attr/role/value/developer"},
+					},
+				},
+			},
+		},
+	}
+
+	decisions, err := client.Authorization.GetDecisions(context.Background(), decision)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("Decisions: %v", decisions.GetDecisionResponses())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+</details>

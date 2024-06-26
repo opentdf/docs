@@ -5,8 +5,9 @@ sidebar_position: 50
 
 The following table shows the features of the different versions of the library.
 
-> [!NOTE]
-> Questions regarding specific features should be raised in the [GitHub Discussions](https://github.com/orgs/opentdf/discussions).
+:::note
+Questions regarding specific features should be raised in the [GitHub Discussions](https://github.com/orgs/opentdf/discussions).
+:::
 
 The following tables utilize the following terms:
 
@@ -62,7 +63,7 @@ Feature matrix for the different SDK versions.
 | - ZTDF[^110]               | Stable   | Unstable | Planned  | Unstable   |
 | - NanoTDF[^111]            | Stable   | Planned  | Planned  | Unstable   |
 | - ABAC[^112]               | Stable   | Unstable | Planned  | Unstable   |
-| - Dissem[^113]             | Stable   | Unstable | Planned  | Unstable   |
+| - Dissem[^113]             | Unstable | Unstable | Planned  | Unstable   |
 |                            |          |          |          |            |
 | **Service APIs**[^105]     | Stable   | Stable   | Planned  | Planned    |
 | - Authorization [^120]     |          |          |          |            |

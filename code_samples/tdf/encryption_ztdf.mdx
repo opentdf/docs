@@ -1,0 +1,89 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>Encrypting / Decrypting zTDF</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"log"
+	"os"
+	"strings"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Encrypt ztdf
+
+	str := strings.NewReader("Sensitive data!")
+	buf := &bytes.Buffer{}
+	out := bufio.NewWriter(buf)
+
+	manifest, err := client.CreateTDF(out, str,
+		//sdk.WithDataAttributes("https://opentdf.io/attr/role/value/developer"),
+		sdk.WithKasInformation(
+			sdk.KASInfo{
+				URL: "http://localhost:9002",
+			},
+		),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//Flush data to buffer
+	out.Flush()
+
+	log.Printf("TDF Manifest: %v", manifest)
+
+	// Decrypt ztdf
+	tdfReader, err := client.LoadTDF(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write decrypted data to stdout
+	_, err = tdfReader.WriteTo(os.Stdout)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+</details>

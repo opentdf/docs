@@ -1,0 +1,81 @@
+---
+sidebar_position: 1
+---
+
+# Overview
+
+The OpenTDF Project currently provides 3 native sdk's. Go, Java and Javascript. In these sections you will find example code of how to get started with each. 
+
+## Supported Features
+
+|                            | Go       | Java     | C++      | Javascript |
+| :------------------------- | -------- | -------- | -------- | ---------- |
+| **Lifecycle**              | Beta     | Alpha    | Alpha    | Alpha      |
+| **Support**[^101]          | Official | Official | Official | Official   |
+|                            |          |          |          |            |
+| **Encrypt/Decrypt**[^103]  | Stable   | Unstable | Planned  | Unstable   |
+| - ZTDF[^110]               | Stable   | Unstable | Planned  | Unstable   |
+| - NanoTDF[^111]            | Stable   | Planned  | Planned  | Unstable   |
+| - ABAC[^112]               | Stable   | Unstable | Planned  | Unstable   |
+| - Dissem[^113]             | Unstable | Unstable | Planned  | Unstable   |
+|                            |          |          |          |            |
+| **Service APIs**[^105]     | Stable   | Stable   | Planned  | Planned    |
+| - Authorization [^120]     |          |          |          |            |
+| - Key Access Server [^121] |          |          |          |            |
+| - Policy: Attributes[^130] |          |          |          |            |
+
+[^101]: Support is the level of support for the SDK (Official, Community).
+[^103]: Encrypt is the ability to encrypt data.
+[^105]: Service APIs are APIs that are provided by the library to interact with the service.
+
+<!-- SDK Footnotes -->
+
+[^110]: Support for the [Zero Trust Data Format](https://github.com/opentdf/spec/tree/main/schema/tdf) utilizing JSON manifests.
+[^111]: Support for the [Nano Trusted Data Format](https://github.com/opentdf/spec/tree/main/schema/nanotdf).
+[^112]: ABAC is Attribute Based Access Control.
+[^113]: Dissem is Dissemination List (i.e. email lists).
+
+<!-- Service Footnotes -->
+
+[^120]: Authorization APIs for managing authorization policies.
+[^121]: Key Access Server (KAS) APIs for accessing key management.
+[^130]: APIs for managing policy attributes [proto](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto).
+
+## Repositories
+
+- [Go](https://pkg.go.dev/github.com/opentdf/platform/sdk)
+- [Java](https://github.com/opentdf/java-sdk)
+- [Javascript](https://github.com/opentdf/client-web)
+
+## Install
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```bash
+go get github.com/opentdf/platform/sdk@latest
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```xml
+<dependency>
+  <groupId>io.opentdf.platform</groupId>
+  <artifactId>sdk-pom</artifactId>
+  <version>0.2.0-SNAPSHOT</version>
+</dependency>
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```bash
+npm i @opentdf/client
+```
+
+</TabItem>
+</Tabs>
