@@ -32,7 +32,6 @@ https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996
 
 ### ZTDF
 
-The rewrap process can be a little confusing at first, but it is actually quite simple.
 
 1. The calling client extracts two pieces of information from the `TDF`:
    1. [Key Access Object](/spec/ztdf/kao) - This object contains the wrapped key and the policy binding.
