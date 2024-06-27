@@ -16,7 +16,7 @@ https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996
 https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996f/service/kas/kas.proto#L34-L43
 ```
 
-- `Rewrap` - Rewrap takes the wrapped key in the `TDF` Key Access Object and rewraps it with the client's public key, if and only if the following conditions are true:
+- `Rewrap` - Rewrap takes a key wrapped using a key retrieved from the `PublicKey` endpoint and returns the value wrapped with a client key. It returns if and only if the following conditions are true:
   - The policy binding validates to true
   - The authorization service confirms the entity is allowed access to that `TDF`.
 
