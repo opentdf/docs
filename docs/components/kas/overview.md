@@ -33,7 +33,7 @@ https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996
 ### ZTDF
 
 
-1. The calling client extracts two pieces of information from the `TDF`:
+1. The client extracts two pieces of information from the `TDF`:
    1. [Key Access Object](/spec/ztdf/kao) - This object contains the wrapped key and the policy binding.
    2. The [Policy](/spec/ztdf/policy) from the manifest.
 
