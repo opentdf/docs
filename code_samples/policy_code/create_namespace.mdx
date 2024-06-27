@@ -1,0 +1,61 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>Creating a Namespace</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "https://opentdf.io"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create Namesapce
+	namespace := &namespaces.CreateNamespaceRequest{
+		Name: "opentdf.io",
+	}
+
+	_, err = client.Namespaces.CreateNamespace(context.Background(), namespace)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+</details>
