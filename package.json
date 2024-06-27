@@ -20,6 +20,7 @@
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
     "docusaurus-plugin-remote-content": "^4.0.0",
+    "docusaurus-theme-github-codeblock": "^2.0.2",
     "minimatch": "^9.0.4",
     "octokit": "^4.0.2",
     "prism-react-renderer": "^2.3.0",
