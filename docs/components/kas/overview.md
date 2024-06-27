@@ -37,7 +37,7 @@ https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996
    1. [Key Access Object](/spec/ztdf/kao) - This object contains the wrapped key and the policy binding.
    2. The [Policy](/spec/ztdf/policy) from the manifest.
 
-2. The client needs to generate an RSA key pair so that the public key can be sent to KAS for rewrapping the symmetric key.
+2. The client generates an ephemeral asymmetric key pair; this is used to wrap the KAO content, such as an AES encryption key that can be used to access a TDF payload, from KAS.
 3. The client builds an object called a `RequestBody`
 
     ```json
