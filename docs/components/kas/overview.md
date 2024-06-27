@@ -44,7 +44,7 @@ https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996
       {
         "keyAccess": "<The Key Access Object>",
         "policy": "<The Policy from the Manifest>",
-        "clientPublicKey": "<The public key of the client>"
+        "clientPublicKey": "<The public key created in step 2>"
       }
     ```
 
