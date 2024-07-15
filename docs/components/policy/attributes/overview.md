@@ -112,31 +112,47 @@ If Bob is found to be entitled (via Subject Mappings) in any of the following sc
 3. Bob is entitled to `https://demo.com/attr/color/value/red` AND `https://demo.com/attr/color/value/yellow`
 4. Bob is entitled to _every single value in the rainbow_ under the `color` attribute
 
-As long as a single Attribute Value of the `anyOf` color attribute in the TDF is found in Bob's Entitlements, he can expect to decrypt.
+As long as a single Attribute Value of the `anyOf` color attribute present in the TDF is found in Bob's Entitlements, he can expect to decrypt.
 
 ### Rule: allOf
 
-If an Attribute is defined with logical rule `allOf`, an Entity must be mapped to `all` of the associated Values of the Attribute to be Entitled to TDF'd Resource Data with even a single one of the Values.
+If an Attribute is defined with logical rule `allOf`, an Entity must be mapped to `all` of the associated Values of the Attribute on a piece
+of data to be Entitled to TDF'd Resource Data with even a single one of the Values on the data.
 
 Example Scenario:
 
-Bob defines an `anyOf` attribute with name `superpowers` on namespace `demo.com`, which results in an [FQN](#fully-qualified-names) for that definition `https://demo.com/attr/superpowers`.
+Bob defines an `allOf` attribute with name `superpowers` on namespace `demo.com`, which results in an [FQN](#fully-qualified-names) for that definition `https://demo.com/attr/superpowers`.
 
 Under that `allOf` attribute `superpower`, he adds a value for some of the (oversimplified) capabilities of Superman: `super_strength`, `flight`, `heat_vision`.
 
-In a given PEP (Policy Enforcement Point), two pieces of resource data are encrypted within TDFs. The first is tagged with attribute value `flight` and the second with attribute value `super_strength`.
+In a given PEP (Policy Enforcement Point), two pieces of resource data are encrypted within TDFs. The first is tagged with attribute value `flight` and the second with attribute values `super_strength` and `heat_vision`.
 
-At some future time, an Entity Clark Kent attempts to decrypt the TDFs. The platform KAS and Authorization Server find attribute value
-`https://demo.com/attr/superpowers/value/flight` on the first TDF and `https://demo.com/attr/superpowers/value/super_strength` within the second TDF. Each are under rule `allOf` associated with Bob's `superpowers` attribute.
+At some future time, an Entity Clark Kent attempts to decrypt the TDFs. The platform KAS and Authorization Server find attribute values below
+on the TDFs.
+
+TDF1:
+
+- `https://demo.com/attr/superpowers/value/flight`
+
+TDF2:
+
+- `https://demo.com/attr/superpowers/value/super_strength`
+- `https://demo.com/attr/superpowers/value/heat_vision`
+
+Each are under rule `allOf` associated with Bob's `superpowers` attribute.
 
 These are the following entitlement scenarios:
 
-1. Clark Kent is entitled to `https://demo.com/attr/superpowers/value/flight` alone --> no access to either TDF
-2. Clark Kent is entitled to `https://demo.com/attr/superpowers/value/flight` and `https://demo.com/attr/superpowers/value/super_strength` alone--> no access to either TDF
-3. Clark Kent is entitled to all three `https://demo.com/attr/superpowers/value/flight`, `https://demo.com/attr/superpowers/value/super_strength`, and `https://demo.com/attr/superpowers/value/heat_vision` --> access to _both_ TDFs
+1. Clark Kent is entitled to `https://demo.com/attr/superpowers/value/flight` alone --> only access to the first TDF
+2. Clark Kent is entitled to `https://demo.com/attr/superpowers/value/flight` and `https://demo.com/attr/superpowers/value/super_strength`
+   alone--> access to TDF1, but no access to the TDF2
+3. Clark Kent is entitled to all three `https://demo.com/attr/superpowers/value/flight`, `https://demo.com/attr/superpowers/value/super_strength`
+   and `https://demo.com/attr/superpowers/value/heat_vision` --> access to _both_ TDFs (and any other combination of values on the data since he's
+   entitled to all three values on the attribute)
 
-In an `allOf` scenario, TDF'd data with a single one of the Attribute Values requires an Entity to be entitled to _all_ of the Values on the Definition to be able to decrypt.
-As long as a single Attribute Value of the `anyOf` color attribute in the TDF is found in Alice's Entitlements, she can expect to decrypt.
+In an `allOf` scenario, TDF'd data with any of the Attribute Values requires an Entity to be entitled to every allOf Value present on the TDF
+to be able to access. It's distinct from `anyOf` because entitlement to any of the Values under the anyOf Attribute on a piece of TDFd data will
+give access, but `allOf` requires entitlement to every one on the data.
 
 ### Rule: hierarchy
 
