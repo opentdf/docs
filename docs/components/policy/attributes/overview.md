@@ -232,5 +232,34 @@ they persist in the Policy database and prevent a scenario where attributes with
 of the originals to grant access differently than intended. Deactivations are also cascading so that a deactivation of a Namespace puts
 not only the Namespace to inactive state but also the Definitions, and deactivating a Definition deactivates its Values.
 
-Unsafe actions will be enabled through a separate Policy service, but at this time the workaround if an administrator needs to unsafely update
-or fully delete an Attribute Namespace, Definition Name, or Value is to manually update the database.
+Unsafe actions on Policy Attributes vary depending on the policy object and are considered dangerous
+because they may retroactively affect access to existing and new TDFs alike.
+
+These mutations to policy are considered dangerous and enabled through the `unsafe` policy service RPCs/routes:
+
+- Namespaces
+  - Updating namespace name (i.e. `demo.com` -> `example.org` )
+  - Reactivation
+    - Does not cascade to reactivate attributes and their values underneath
+  - Deletion
+    - Permanently removes namespace from platform, cascading to attributes and values underneath
+    - Requires extra parameter `fqn` that is intended to be deleted for safety
+- Attribute Definitions
+  - Updating attribute definition name (i.e. `/attr/classify` -> `/attr/rank` )
+  - Updating the order of attribute values
+    - Completely changes access decisioning if the definition rule is `hierarchy`
+  - Changing the rule on a definition (i.e. `hierarchy` -> `anyOf` )
+  - Reactivation
+    - Does not cascade to reactivate any values underneath
+    - Does not bubble up to reactivate the namespace above
+  - Deletion
+    - Permanently removes the definition from the platform, cascading to any values underneath
+    - Does not bubble up to deletion of the parent namespace above
+    - Requires extra parameter `fqn` that is intended to be deleted for safety
+- Attribute Values
+  - Updating value (i.e. `/value/myVal` -> `/value/yourVal` )
+  - Reactivation
+    - Does not bubble up to reactivate the definition or namespace above
+  - Deletion
+    - Permanently removes the value from the platform
+    - Does not bubble up to deletion of the parent attribute definition or namespace above
