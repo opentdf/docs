@@ -27,3 +27,4 @@ node_modules
 /docs/spec/ztdf/PolicyObject.md
 /docs/spec/ztdf/AttributeObject.md
 /docs/cli/
+/docs/configuration.md

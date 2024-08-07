@@ -262,6 +262,30 @@ ${updatedContent}`,
         },
       },
     ],
+    [
+      'docusaurus-plugin-remote-content',
+      {
+        // options here
+        name: 'platform-configuration', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'docs/', // the base directory to output to.
+        documents: ['configuration.md'], // the file names to download
+        requestConfig: { responseType: 'arraybuffer' },
+        modifyContent: (filename, content) => {
+            let updatedContent = content;
+            return {
+              content: `---
+id: configuration
+sidebar_position: 20
+title: Configuration
+---
+
+${updatedContent}`,
+              filename: 'configuration.md',
+            };
+        },
+      },
+    ],
   ],
 };
 
