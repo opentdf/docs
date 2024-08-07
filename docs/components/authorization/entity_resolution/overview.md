@@ -3,7 +3,7 @@ The entity resolution service is an IDP specific service that interacts with the
 As the service may differ from IDP to IDP, the platform consumer is required to implement their own entity resolution service for the IDP they choose to use. The service must follow the provided [protos](https://github.com/opentdf/platform/blob/main/service/entityresolution/entity_resolution.proto).
 
 ## CreateEntityChainFromJwt
-This endpoint takes JWTs (usually representing IDP access tokens) and converts them into [entity chains](../overview.md#entity-chains). As stated in the authorization docs, more than one entity can be involved in a particular request. We must parse these entities from the token and form an entity chain to ensure all entities have the required entitlements. This endpoint is primarily used by KAS to form an entity chain from the access token it recieves on a rewrap request.
+This endpoint takes JWTs (usually representing IDP access tokens) and converts them into [entity chains](../overview.md#entity-chains). As stated in the authorization docs, more than one entity can be involved in a particular request. We must parse these entities from the token, categorize the entities as either subject or environment, and form an entity chain to ensure the relevant entities have the required entitlements. This endpoint is primarily used by KAS to form an entity chain from the access token it recieves on a rewrap request.
 
 ### Request and Response
 Below is an example request to CreateEntityChainFromJwt containing a list of tokens and IDs for each token:
@@ -31,11 +31,13 @@ Below is an example response to the above request:
       "entities": [
         {
           "id": "jwtentity-0",
-          "client_id": "client1"
+          "client_id": "client1",
+          "category": "CATEGORY_ENVIRONMENT"
         },
         {
           "id": "jwtentity-1",
-          "user_name": "alice"
+          "user_name": "alice",
+          "category": "CATEGORY_SUBJECT"
         }
       ]
     },
@@ -44,18 +46,20 @@ Below is an example response to the above request:
       "entities": [
         {
           "id": "jwtentity-0",
-          "client_id": "client2"
+          "client_id": "client2",
+          "category": "CATEGORY_ENVIRONMENT"
         },
         {
           "id": "jwtentity-1",
-          "user_name": "bob"
+          "user_name": "bob",
+          "category": "CATEGORY_SUBJECT"
         }
       ]
     },
   ]
 }
 ```
-Each token resolved to a chain with multiple entities including a client and user.
+Each token resolved to a chain with multiple entities including a client and user. 
 
 ## ResolveEntities
 This endpoint takes a list of entities and resolves them with the IDP to entity representations. As this service is implemented by the platform consumer, it is up to the implementer to build the entity representations. For example, in the Keycloak entity resolution service implementation we return the json client/user representations that the service retrieves from Keycloak.
@@ -68,11 +72,13 @@ Below is an example request to ResolveEntities including a list of entities to r
   "entities": [
     {
       "id": "e1",
-      "userName": "alice"
+      "userName": "alice",
+      "category": "CATEGORY_SUBJECT"
     },
     {
       "id": "e2",
-      "clientId": "client1"
+      "clientId": "client1",
+      "category": "CATEGORY_ENVIRONMENT"
     }
   ]
 }

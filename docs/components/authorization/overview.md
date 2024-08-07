@@ -13,6 +13,7 @@ The GetEntitlements endpoint takes a list of entities and returns the attributes
 
 An entity is any being or structure interacting with the platform. A person-entity (PE) represents an actual user/person while a non-person entity (NPE) can represent a system or program interacting with the platform on behalf of a user or via an automated process.
 The authorization service accepts a variety of methods to identify an entity all listed in the defined proto below.
+Entities are also categorized as  either subject entities or environment entities. A subject entity represents a subject (PE or NPE) and is included in data attribute policy access decisions. An environment entity is excluded from data attribute policy access decisions.
 
 ```
 message Entity {
@@ -27,6 +28,12 @@ message Entity {
     EntityCustom custom = 7;
     string client_id = 8;
   }
+  enum Category {
+    CATEGORY_UNSPECIFIED = 0;
+    CATEGORY_SUBJECT = 1;
+    CATEGORY_ENVIRONMENT = 2;
+  }
+  Category category = 9;
 }
 ```
 
@@ -41,11 +48,13 @@ Below is an example GetEntitlements request:
   "entities": [
     {
       "id": "e1",
-      "emailAddress": "alice@example.com"
+      "emailAddress": "alice@example.com",
+      "category": "CATEGORY_SUBJECT"
     },
     {
       "id": "e2",
-      "userName": "bob"
+      "userName": "bob",
+      "category": "CATEGORY_SUBJECT"
     }
   ],
   "scope": {
@@ -117,11 +126,13 @@ Below is an example GetDecisions request:
           "entities": [
             {
               "id": "e1",
-              "emailAddress": "bob@example.com"
+              "emailAddress": "bob@example.com",
+              "category": "CATEGORY_SUBJECT"
             },
             {
               "id": "e2",
-              "userName": "alice"
+              "userName": "alice",
+              "category": "CATEGORY_SUBJECT"
             }
           ],
           "id": "ec1"
@@ -130,7 +141,8 @@ Below is an example GetDecisions request:
           "entities": [
             {
               "id": "e1",
-              "clientId": "client1"
+              "clientId": "client1",
+              "category": "CATEGORY_ENVIRONMENT"
             }
           ],
           "id": "ec2"
@@ -156,7 +168,7 @@ Below is an example GetDecisions request:
 }
 ```
 
-In this example, there are two entity chains, one comprised of users bob and alice, and the other comprised of client1. This request seeks to evaluate whether these entity chains have permission to DECRYPT two resources with the provided attribute sets.
+In this example, there are two entity chains, one comprised of users bob and alice both categorized as subject entities, and the other comprised of client1 which is categorized as an environment entity. This request seeks to evaluate whether these entity chains have permission to DECRYPT two resources with the provided attribute sets.
 
 Below is an example GetDecisions response:
 
@@ -196,12 +208,12 @@ Below is an example GetDecisions response:
       "action": {
         "standard": "STANDARD_ACTION_DECRYPT"
       },
-      "decision": "DECISION_DENY",
+      "decision": "DECISION_PERMIT",
       "obligations": []
     }
   ]
 }
 ```
 
-In the response there are four entries, one for each combination of entity chain and resource attribute set, indicating whether that entity chain has permission access to data with that attribute set based on the attribute rules defined [here](../policy/attributes/overview.md#definitions). For example, we can see that client1 does not have access to the attribute set
-"ra-set-2" while both alice and bob do have access to that set.
+In the response there are four entries, one for each combination of entity chain and resource attribute set, indicating whether that entity chain has permission access to data with that attribute set based on the attribute rules defined [here](../policy/attributes/overview.md#definitions). For example, we can see that bob and alice do not have access to the attribute set
+"ra-set-1". Because environment entities are not included in the data attribute access decsiion, and because client1 is the only entity in the chain, the chain will always be given DECISION_PERMIT.
