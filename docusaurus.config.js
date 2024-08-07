@@ -178,15 +178,14 @@ ${updatedContent}`,
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/', // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: 'docs/spec/ztdf/', // the base directory to output to.
         documents: [
-          'manifest-json.md',
+          'Manifest.md',
           'KeyAccessObject.md',
           'PolicyObject.md',
           'AttributeObject.md',
         ], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content.replaceAll('../../diagrams/', '../../../static/img/');
-          if (filename === 'manifest-json.md') {
-            updatedContent = updatedContent.replaceAll('# manifest.json', '# Manifest');
+          if (filename === 'Manifest.md') {
             return {
               content: `---
 id: manifest
@@ -211,9 +210,6 @@ ${updatedContent}`,
             };
           }
           if (filename === 'PolicyObject.md') {
-            updatedContent = updatedContent
-              .replaceAll('ClaimsObject.md', 'https://opentdf.io')
-              .replaceAll('EntitlementsObject.md', 'https://opentdf.io');
             return {
               content: `---
 id: policy
@@ -225,9 +221,6 @@ ${updatedContent}`,
             };
           }
           if (filename === 'AttributeObject.md') {
-            updatedContent = updatedContent
-              .replaceAll('ClaimsObject.md', 'https://opentdf.io')
-              .replaceAll('EntitlementObject.md', 'https://opentdf.io');
             return {
               content: `---
 id: attributes
