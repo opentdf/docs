@@ -1,0 +1,63 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>List Subject Mappings</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// List Subject Mapping
+
+	subjectmappings, err := client.SubjectMapping.ListSubjectMappings(context.Background(), &subjectmapping.ListSubjectMappingsRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, sm := range subjectmappings.GetSubjectMappings() {
+		log.Printf("Subject Mapping: %s", sm.GetId())
+	}
+}
+
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+</details>

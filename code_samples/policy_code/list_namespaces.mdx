@@ -1,0 +1,60 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>List Namespaces</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// List All Namespaces
+	namespaces, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, namespace := range namespaces.GetNamespaces() {
+		log.Printf("Namespace: %s\n", namespace.GetName())
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+</details>

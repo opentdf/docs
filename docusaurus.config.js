@@ -8,7 +8,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 import listRemote from './docusaurus-lib-list-remote';
 
-const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main')
+const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -17,7 +17,7 @@ const config = {
   favicon: 'img/OpenTDF-Logo.png',
 
   // Set the production url of your site here
-  url: 'https://special-bassoon-22149qr.pages.github.io',
+  url: 'https://docs.opentdf.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -29,6 +29,10 @@ const config = {
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid', 'docusaurus-theme-github-codeblock'],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -44,19 +48,14 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          routeBasePath: '/',
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/opentdf/docs/tree/main/docs/',
         },
-        blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/opentdf/docs/tree/main/blog/',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -76,18 +75,6 @@ const config = {
           src: 'img/OpenTDF-Logo.png',
         },
         items: [
-          // {
-          //   to: '/about',
-          //   label: 'About',
-          //   position: 'left',
-          // },
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Docs',
-          },
-          // { to: '/blog', label: 'Blog', position: 'left' },
           {
             href: 'https://github.com/opentdf/docs',
             label: 'GitHub',
@@ -99,21 +86,21 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Overview',
-                to: '/docs/overview',
-              },
-            ],
-          },
-          {
             title: 'Community',
             items: [
               {
                 label: 'GitHub Discussions',
                 href: 'https://github.com/orgs/opentdf/discussions',
               },
+              {
+                label: 'X',
+                href: 'https://twitter.com/openTDF',
+              },
+            ],
+          },
+          {
+            title: 'More',
+            items: [
               // {
               //   label: 'Slack',
               //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
@@ -128,23 +115,34 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} OpenTDF sponsored by <a href="https://virtru.com">Virtru</a>. Built with Docusaurus.`,
       },
       prism: {
-        theme: prismThemes.github,
+        theme: prismThemes.vsLight,
         darkTheme: prismThemes.dracula,
+        additionalLanguages: ['bash', 'protobuf', "json"],
+      },
+      // github codeblock theme configuration
+      codeblock: {
+        showGithubLink: true,
+        githubLinkLabel: 'View on GitHub',
+        showRunmeLink: false,
+        runmeLinkLabel: 'Checkout via Runme'
       },
     }),
   plugins: [
     [
-      "docusaurus-plugin-remote-content",
+      'docusaurus-plugin-remote-content',
       {
         // options here
-        name: "nanotdf", // used by CLI, must be path safe
-        sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "docs/spec/nanotdf", // the base directory to output to.
-        documents: ["README.md"], // the file names to download
+        name: 'nanotdf', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'docs/spec/nanotdf', // the base directory to output to.
+        documents: ['README.md'], // the file names to download
         modifyContent: (filename, content) => {
-          if (filename === "README.md") {
+          if (filename === 'README.md') {
             let updatedContent = content.replaceAll('../../diagrams/', '../../../static/img/');
-            updatedContent = updatedContent.replaceAll('# nanotdf - a compact binary TDF format', '# nanoTDF - a compact binary TDF format');
+            updatedContent = updatedContent.replaceAll(
+              '# nanotdf - a compact binary TDF format',
+              '# nanoTDF - a compact binary TDF format',
+            );
             return {
               content: `---
 id: manifest
@@ -152,7 +150,8 @@ sidebar_position: 1
 title: Schema
 ---
 
-${updatedContent}`, filename: "manifest.md"
+${updatedContent}`,
+              filename: 'manifest.md',
             };
           }
           // If it's not a README.md or no changes are needed, return the content as is
@@ -161,28 +160,32 @@ ${updatedContent}`, filename: "manifest.md"
       },
     ],
     [
-      "docusaurus-plugin-remote-content",
+      'docusaurus-plugin-remote-content',
       {
         // options here
-        name: "images-content", // used by CLI, must be path safe
-        sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/diagrams/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "static/img/", // the base directory to output to.
-        documents: ["ecc_and_binding.svg", "nanotdf.svg", "symmetric_and_payload.svg"], // the file names to download
-        requestConfig: { responseType: "arraybuffer" }
+        name: 'images-content', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/diagrams/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'static/img/', // the base directory to output to.
+        documents: ['ecc_and_binding.svg', 'nanotdf.svg', 'symmetric_and_payload.svg'], // the file names to download
+        requestConfig: { responseType: 'arraybuffer' },
       },
     ],
     [
-      "docusaurus-plugin-remote-content",
+      'docusaurus-plugin-remote-content',
       {
         // options here
-        name: "ztdf", // used by CLI, must be path safe
-        sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "docs/spec/ztdf/", // the base directory to output to.
-        documents: ["manifest-json.md", "KeyAccessObject.md", "PolicyObject.md", "AttributeObject.md"], // the file names to download
+        name: 'ztdf', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'docs/spec/ztdf/', // the base directory to output to.
+        documents: [
+          'Manifest.md',
+          'KeyAccessObject.md',
+          'PolicyObject.md',
+          'AttributeObject.md',
+        ], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content.replaceAll('../../diagrams/', '../../../static/img/');
-          if (filename === "manifest-json.md") {
-            updatedContent = updatedContent.replaceAll('# manifest.json', '# Manifest');
+          if (filename === 'Manifest.md') {
             return {
               content: `---
 id: manifest
@@ -190,10 +193,10 @@ sidebar_position: 1
 title: Manifest
 ---
 
-${updatedContent}`
+${updatedContent}`,
             };
           }
-          if (filename === "KeyAccessObject.md") {
+          if (filename === 'KeyAccessObject.md') {
             let updatedContent = content.replaceAll('<code>', '```').replaceAll('</code>', '```');
             updatedContent = updatedContent.replace(/<p>/gi, '');
             return {
@@ -203,11 +206,10 @@ sidebar_position: 3
 title: Key Access Object
 ---
 
-${updatedContent}`
+${updatedContent}`,
             };
           }
-          if (filename === "PolicyObject.md") {
-            updatedContent = updatedContent.replaceAll('ClaimsObject.md', 'https://opentdf.io').replaceAll('EntitlementsObject.md', 'https://opentdf.io');
+          if (filename === 'PolicyObject.md') {
             return {
               content: `---
 id: policy
@@ -215,11 +217,10 @@ sidebar_position: 2
 title: Policy Object
 ---
 
-${updatedContent}`
+${updatedContent}`,
             };
           }
-          if (filename === "AttributeObject.md") {
-            updatedContent = updatedContent.replaceAll('ClaimsObject.md', 'https://opentdf.io').replaceAll('EntitlementObject.md', 'https://opentdf.io');
+          if (filename === 'AttributeObject.md') {
             return {
               content: `---
 id: attributes
@@ -227,7 +228,7 @@ sidebar_position: 4
 title: Attribute Object
 ---
 
-${updatedContent}`
+${updatedContent}`,
             };
           }
           // If it's not a README.md or no changes are needed, return the content as is
@@ -236,19 +237,13 @@ ${updatedContent}`
       },
     ],
     [
-      "docusaurus-plugin-remote-content",
+      'docusaurus-plugin-remote-content',
       {
-        name: "otdfctl",
-        id: "otdfctl",
-        outDir: "docs/cli",
+        name: 'otdfctl',
+        id: 'otdfctl',
+        outDir: 'docs/cli',
         sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
-        documents: listRemote.listDocuments(
-          otdfctl,
-          [
-            'docs/man/**/*.md'
-          ],
-          []
-        ),
+        documents: listRemote.listDocuments(otdfctl, ['docs/man/**/*.md'], []),
         modifyContent: (filename, content) => {
           // This will hold the new filename after processing.
           let newFilename = filename;
@@ -267,7 +262,30 @@ ${updatedContent}`
         },
       },
     ],
-  ]
+    [
+      'docusaurus-plugin-remote-content',
+      {
+        // options here
+        name: 'platform-configuration', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'docs/', // the base directory to output to.
+        documents: ['configuration.md'], // the file names to download
+        modifyContent: (filename, content) => {
+            let updatedContent = content;
+            return {
+              content: `---
+id: configuration
+sidebar_position: 20
+title: Configuration
+---
+
+${updatedContent}`,
+              filename: 'configuration.md',
+            };
+        },
+      },
+    ],
+  ],
 };
 
 export default config;

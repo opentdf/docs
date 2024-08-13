@@ -1,0 +1,270 @@
+name: opentdf
+volumes:
+  configs:
+  keys:
+  caddy_data:
+configs:
+  caddy_config:
+    content: |
+      {
+        log {
+            level INFO
+            output stdout
+        }
+      }
+      https://keycloak.opentdf.local:9443 {
+        tls internal
+        reverse_proxy keycloak:8888
+      }
+      https://platform.opentdf.local:8443 {
+        tls internal
+        reverse_proxy {
+            to h2c://platform:8080
+            transport http {
+                versions h2c 2 1.1  # Enable gRPC proxying
+            }
+        }
+
+      }
+services:
+  caddy:
+    #image: cgr.dev/chainguard/caddy:latest-dev #@sha256:20e31e59503a775f28e7eb0d724384055236a35c52ff4e5aca6caac8390d61dc
+    image: caddy:alpine
+    command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
+    configs:
+      - source: caddy_config
+        target: /etc/caddy/Caddyfile
+    ports:
+      - '9443:9443'
+      - '8443:8443'
+    volumes:
+      - caddy_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --server-response --tries=1 http://127.0.0.1:2019/metrics 2>&1 | awk '/^  HTTP/{print $2}' | grep -q '200'"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+  check-certs:
+    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    volumes:
+      - type: volume
+        source: caddy_data
+        target: /etc/ssl/certs
+        volume:
+          subpath: caddy/certificates/local/keycloak.opentdf.local/
+    command:
+      - |
+        echo "Checking certificates"
+        ls -alh /etc/ssl/certs
+        cat /etc/ssl/certs/keycloak.opentdf.local.crt
+    depends_on:
+      caddy:
+        condition: service_healthy
+      ensure-permissions:
+        condition: service_completed_successfully
+  ensure-permissions:
+    image: alpine
+    command:
+    - 'sh'
+    - '-c'
+    - | 
+      chmod -R 665 /configs 
+      ls -alh /configs
+      chmod -R 665 /keys
+      ls -alh /keys
+      chmod -R 665 /data
+      ls -alh /data
+    volumes:
+      - configs:/configs
+      - keys:/keys
+      - caddy_data:/data
+      
+  #================================================================
+  # Start Keycloak
+  #----------------------------------------------------------------
+  keycloak:
+    image: cgr.dev/chainguard/keycloak:latest@sha256:7e06ca655329cb8256ee2d226e32d48377a1d0e436de4fb10bdd428ed4848afa # 25.0.1
+    restart: unless-stopped
+    command: ['start-dev']
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: changeme
+      KC_HOSTNAME: 'https://keycloak.opentdf.local:9443'
+      KC_HOSTNAME_ADMIN: 'https://keycloak.opentdf.local:9443'
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_PORT: 8888
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: changeme
+      KC_FEATURES: 'preview,token-exchange'
+      KC_HEALTH_ENABLED: 'true'
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/ready']
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+        restart: true
+  keycloak-db:
+    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: postgres
+      POSTGRES_DB: keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 2m
+  download-keycloak-config:
+    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    volumes:
+      - configs:/configs
+    command: ['-o', '/configs/keycloak-config.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/cmd/keycloak_data.yaml']
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  #================================================================
+  # Provisioning Keycloak with expected realm, clients, and users 
+  #----------------------------------------------------------------
+  keycloak-provisioning:
+    image: registry.opentdf.io/platform:nightly
+    volumes:
+      - configs:/configs
+    command:
+      [
+        'provision',
+        'keycloak-from-config',
+        '-e',
+        'http://keycloak:8888',
+        '-f',
+        '/configs/keycloak-config.yaml',
+      ]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+        restart: true
+      download-keycloak-config:
+        condition: service_completed_successfully
+        restart: true
+  #================================================================
+  # Start the OpenTDF service
+  #----------------------------------------------------------------
+  download-platform-config:
+    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    volumes:
+      - configs:/configs
+    command: ['-o', '/configs/.opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  modify-platform-config:
+    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    volumes:
+      - configs:/configs
+    command:
+      - |
+        echo "Modifying /configs/.opentdf.yaml"
+        echo "$(</configs/.opentdf.yaml )"
+        sed -i 's|kas-private.pem|/keys/kas-private.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-cert.pem|/keys/kas-cert.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-ec-private.pem|/keys/kas-ec-private.pem|g' /configs/.opentdf.yaml
+        sed -i 's|kas-ec-cert.pem|/keys/kas-ec-cert.pem|g' /configs/.opentdf.yaml
+        sed -i 's|# db:|db: |g' /configs/.opentdf.yaml
+        sed -i 's|#   host: localhost|  host: |g' /configs/.opentdf.yaml
+        sed -i 's|issuer: http://localhost:8888/auth/realms/opentdf|issuer: http://keycloak:8888/realms/opentdf|g' /configs/.opentdf.yaml
+        sed -i 's|tokenendpoint: http://localhost:8888/auth/realms/opentdf/protocol/openid-connect/token|tokenendpoint: http://keycloak:8888/realms/opentdf/protocol/openid-connect/token|g' /configs/.opentdf.yaml
+        sed -i 's|url: http://localhost:8888/auth|url: http://keycloak:8888|g' /configs/.opentdf.yaml
+        echo "$(</configs/.opentdf.yaml )"
+    depends_on:
+      download-platform-config:
+        condition: service_completed_successfully
+  generate-kas-rsa-keys:
+    image: alpine/openssl
+    volumes: 
+      - keys:/keys
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        echo "Generating RSA keys"
+        openssl req -x509 -nodes -newkey RSA:2048 -subj "/CN=kas" -keyout /keys/kas-private.pem -out /keys/kas-cert.pem -days 365
+        chmod 444 /keys/kas-private.pem
+        chmod 444 /keys/kas-cert.pem
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  generate-kas-ec-keys:
+    image: alpine/openssl
+    volumes: 
+      - keys:/keys
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        echo "Generating EC keys"
+        openssl ecparam -name secp256r1 -out /keys/secp256r1.pem && \
+        openssl req -x509 -nodes -newkey ec:/keys/secp256r1.pem -subj "/CN=kas" -keyout /keys/kas-ec-private.pem -out /keys/kas-ec-cert.pem -days 365
+        chmod 444 /keys/kas-ec-private.pem
+        chmod 444 /keys/kas-ec-cert.pem
+    depends_on:
+      ensure-permissions:
+        condition: service_completed_successfully
+  platform: 
+    image: registry.opentdf.io/platform:nightly
+    volumes:
+      - configs:/configs
+      - keys:/keys
+      - type: volume
+        source: caddy_data
+        target: /etc/ssl/certs
+        volume:
+          subpath: caddy/certificates/local/keycloak.opentdf.local
+    extra_hosts:
+      - "keycloak.opentdf.local:host-gateway"
+    command: ['start','--config-file','/configs/.opentdf.yaml','--config-key','opentdf']
+    restart: always
+    environment:
+      OPENTDF_DB_HOST: platform-db
+      OPENTDF_DB_USER: postgres
+      OPENTDF_DB_PASSWORD: changeme2
+    depends_on:
+      keycloak:
+        condition: service_healthy
+        restart: true
+      keycloak-provisioning:
+        condition: service_completed_successfully
+      platform-db:
+        condition: service_healthy
+        restart: true
+      download-platform-config:
+        condition: service_completed_successfully
+      generate-kas-rsa-keys:
+        condition: service_completed_successfully
+      generate-kas-ec-keys:
+        condition: service_completed_successfully
+      modify-platform-config:
+        condition: service_completed_successfully
+      caddy:
+        condition: service_healthy
+      check-certs:
+        condition: service_completed_successfully
+  platform-db:
+    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: opentdf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
