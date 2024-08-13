@@ -1,10 +1,146 @@
 ---
 sidebar_position: 4
+title: Protecting files
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
+### Protecting files
 
+The following are examples demonstrating how one would encrypt, and decrypt a ZTDF.
 
-# Creating TDF's
+<Tabs>
+<TabItem value="go" label="Go">
 
-<EncryptionTDF />
+```go
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"log"
+	"os"
+	"strings"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Encrypt ztdf
+
+	str := strings.NewReader("Sensitive data!")
+	buf := &bytes.Buffer{}
+	out := bufio.NewWriter(buf)
+
+	manifest, err := client.CreateTDF(out, str,
+		//sdk.WithDataAttributes("https://opentdf.io/attr/role/value/developer"),
+		sdk.WithKasInformation(
+			sdk.KASInfo{
+				URL: "http://localhost:9002",
+			},
+		),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//Flush data to buffer
+	out.Flush()
+
+	log.Printf("TDF Manifest: %v", manifest)
+
+	// Decrypt ztdf
+	tdfReader, err := client.LoadTDF(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write decrypted data to stdout
+	_, err = tdfReader.WriteTo(os.Stdout)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+
+### TDF validation
+
+Some applications may need to check whether a file is a valid TDF before interacting with it.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"log"
+	"os"
+	"strings"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+    data, err := os.ReadFile("filename.txt")
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    reader := bytes.NewReader(data)
+
+    isValid := sdk.IsValidTdf(reader)
+
+    log.Info(isValid)
+
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>

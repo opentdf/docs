@@ -4,8 +4,12 @@ sidebar_position: 1
 
 # Overview
 
-The OpenTDF Project currently provides 3 native sdk's. Go, Java and Javascript. In these sections you will find example code of how to get started with each. 
+The OpenTDF Project currently provides 3 native sdk's that make it easy to implement data centric security into your applications.
 
+# Supported languages
+- [Go](https://pkg.go.dev/github.com/opentdf/platform/sdk)
+- [Java](https://github.com/opentdf/java-sdk)
+- [Javascript](https://github.com/opentdf/client-web)
 ## Supported Features
 
 |                            | Go       | Java     | C++      | Javascript |
@@ -40,42 +44,3 @@ The OpenTDF Project currently provides 3 native sdk's. Go, Java and Javascript. 
 [^120]: Authorization APIs for managing authorization policies.
 [^121]: Key Access Server (KAS) APIs for accessing key management.
 [^130]: APIs for managing policy attributes [proto](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto).
-
-## Repositories
-
-- [Go](https://pkg.go.dev/github.com/opentdf/platform/sdk)
-- [Java](https://github.com/opentdf/java-sdk)
-- [Javascript](https://github.com/opentdf/client-web)
-
-## Install
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```bash
-go get github.com/opentdf/platform/sdk@latest
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```xml
-<dependency>
-  <groupId>io.opentdf.platform</groupId>
-  <artifactId>sdk-pom</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
-
-</TabItem>
-<TabItem value="js" label="Javascript">
-
-```bash
-npm i @opentdf/client
-```
-
-</TabItem>
-</Tabs>
