@@ -1,0 +1,128 @@
+---
+sidebar_position: 1
+title: Namespaces
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CreateNamespace from '../../../code_samples/policy_code/create_namespace.mdx'
+import ListNamespaces from '../../../code_samples/policy_code/list_namespaces.mdx'
+
+### What is a namespace?
+A namespace is a logical grouping of attributes that helps prevent attribute naming conflicts across contexts, or domains.
+
+[Click here](../../architecture/components/policy/attributes/overview#namespaces) to learn more about namespaces.
+
+### Create a Namespace
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "https://opentdf.io"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create Namesapce
+	namespace := &namespaces.CreateNamespaceRequest{
+		Name: "opentdf.io",
+	}
+
+	_, err = client.Namespaces.CreateNamespace(context.Background(), namespace)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+// TODO: FILL THIS IN
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+// TODO: FILL THIS IN
+```
+
+</TabItem>
+</Tabs>
+
+### Get Namespaces
+<Tabs>
+<TabItem value="go" label="Go">
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// List All Namespaces
+	namespaces, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, namespace := range namespaces.GetNamespaces() {
+		log.Printf("Namespace: %s\n", namespace.GetName())
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+// TODO: FILL THIS IN
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+// TODO: FILL THIS IN
+```
+
+</TabItem>
+</Tabs>
+

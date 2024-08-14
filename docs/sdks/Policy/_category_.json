@@ -1,0 +1,8 @@
+{
+    "label": "Policy Management",
+    "position": 3,
+    "link": {
+      "type": "generated-index",
+      "description": "OpenTDF Platform SDKs"
+    }
+  }

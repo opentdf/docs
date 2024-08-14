@@ -1,0 +1,136 @@
+---
+sidebar_position: 2
+title: Attributes
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+### What is an Attribute?
+Attributes are the logical structure used to make access decisions
+
+[Click here](../../architecture/components/policy/attributes/overview) to learn more about attributes.
+
+### Create an Attribute
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a new attribute
+	namespaceID := "f9ac9403-a12f-4ed3-b3c9-a46910361b4d"
+
+	attrRequest := &attributes.CreateAttributeRequest{
+		NamespaceId: namespaceID,
+		Name:        "role",
+		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+		Values:      []string{"admin", "developer", "guest"},
+	}
+
+	_, err = client.Attributes.CreateAttribute(context.Background(), attrRequest)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
+
+### List Attributes
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+
+	platformEndpoint := "http://localhost:9002"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// List attributes
+
+	attrs, err := client.Attributes.ListAttributes(context.Background(), &attributes.ListAttributesRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, attr := range attrs.GetAttributes() {
+		log.Printf("Attribute: %s, ID: %s, ", attr.GetName(), attr.GetId())
+		for _, value := range attr.Values {
+			log.Printf("Value: %s, ID: %s", value.GetValue(), value.GetId())
+		}
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="js" label="Javascript">
+
+```javascript
+```
+
+</TabItem>
+</Tabs>
