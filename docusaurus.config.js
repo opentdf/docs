@@ -178,15 +178,14 @@ ${updatedContent}`,
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/', // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: 'docs/spec/ztdf/', // the base directory to output to.
         documents: [
-          'manifest-json.md',
+          'Manifest.md',
           'KeyAccessObject.md',
           'PolicyObject.md',
           'AttributeObject.md',
         ], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content.replaceAll('../../diagrams/', '../../../static/img/');
-          if (filename === 'manifest-json.md') {
-            updatedContent = updatedContent.replaceAll('# manifest.json', '# Manifest');
+          if (filename === 'Manifest.md') {
             return {
               content: `---
 id: manifest
@@ -211,9 +210,6 @@ ${updatedContent}`,
             };
           }
           if (filename === 'PolicyObject.md') {
-            updatedContent = updatedContent
-              .replaceAll('ClaimsObject.md', 'https://opentdf.io')
-              .replaceAll('EntitlementsObject.md', 'https://opentdf.io');
             return {
               content: `---
 id: policy
@@ -225,9 +221,6 @@ ${updatedContent}`,
             };
           }
           if (filename === 'AttributeObject.md') {
-            updatedContent = updatedContent
-              .replaceAll('ClaimsObject.md', 'https://opentdf.io')
-              .replaceAll('EntitlementObject.md', 'https://opentdf.io');
             return {
               content: `---
 id: attributes
@@ -266,6 +259,29 @@ ${updatedContent}`,
           }
           // If it's not a README.md or no changes are needed, return the content as is
           return { content: content, filename: newFilename };
+        },
+      },
+    ],
+    [
+      'docusaurus-plugin-remote-content',
+      {
+        // options here
+        name: 'platform-configuration', // used by CLI, must be path safe
+        sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
+        outDir: 'docs/', // the base directory to output to.
+        documents: ['configuration.md'], // the file names to download
+        modifyContent: (filename, content) => {
+            let updatedContent = content;
+            return {
+              content: `---
+id: configuration
+sidebar_position: 20
+title: Configuration
+---
+
+${updatedContent}`,
+              filename: 'configuration.md',
+            };
         },
       },
     ],

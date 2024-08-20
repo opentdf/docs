@@ -23,7 +23,8 @@ node_modules
 # Ignore Remote Content
 /docs/spec/nanotdf/manifest.md
 /docs/spec/ztdf/KeyAccessObject.md
-/docs/spec/ztdf/manifest-json.md
+/docs/spec/ztdf/Manifest.md
 /docs/spec/ztdf/PolicyObject.md
 /docs/spec/ztdf/AttributeObject.md
 /docs/cli/
+/docs/configuration.md
