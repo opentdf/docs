@@ -13,7 +13,7 @@ const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'OpenTDF',
-  tagline: 'Dinosaurs are cool',
+  tagline: 'Protect the Data, Build the Future.',
   favicon: 'img/OpenTDF-Logo.png',
 
   // Set the production url of your site here
@@ -53,7 +53,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/opentdf/docs/tree/main/docs/',
         },
         blog: false,
         theme: {
@@ -89,8 +89,8 @@ const config = {
             title: 'Community',
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/opentdf',
+                label: 'GitHub Discussions',
+                href: 'https://github.com/orgs/opentdf/discussions',
               },
               {
                 label: 'X',
@@ -102,17 +102,17 @@ const config = {
             title: 'More',
             items: [
               // {
-              //   label: 'Blog',
-              //   to: '/blog',
+              //   label: 'Slack',
+              //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
               // },
               {
-                label: 'GitHub',
-                href: 'https://github.com/opentdf/docs',
+                label: 'X',
+                href: 'https://twitter.com/openTDF',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} OpenTDF sponsored by <a href="https://virtru.com">Virtru</a>. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.vsLight,
