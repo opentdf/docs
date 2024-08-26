@@ -33,16 +33,18 @@ The Grant itself within platform policy is simple, comprised of just the attribu
 
 `Bob` and `Alice` want to share data equally, but maintain their ability to decrypt the data without sharing each other’s private keys.
 
-With KAS Grants, they can define a key split where the shared data is wrapped with both organization’s public keys with an AnyOf rule, meaning that each partner could decrypt the data with just one of those keys.
+With KAS Grants, they can define a key split where the shared data is wrapped with both of their public keys and AnyOf logic, meaning that each partner could decrypt the data with just one of those keys.
 
 If `Bob` assigns a grant between Bob's running/registered KAS to a known attribute value, and `Alice` defines a grant of Alice's running/registered KAS to the same attribute value,
 any data encrypted in a TDF will be decryptable with a key released by _either_ of their Key Access Servers.
 
 #### AllOf Split
 
-Unlike the `AnyOf` split above, this time `Bob` and `Alice` want to make sure _both_ of their keys must be granted for data in a TDF to be decrypted.
+Unlike the `AnyOf` split above, this time `Bob` and `Alice` want to make sure _both_ of their keys must be granted for data in a TDF
+to be decrypted. With KAS Grants, they can define a key split where the shared data is wrapped with both of their public keys and
+AllOf logic, meaning that neither partner can decrypt the data with just one of those keys.
 
-To accomplish this, they each define KAS Grants between their KASes and policy attributes, and TDF data with at least two attributes - one assigned a KAS Grant to Bob's KAS and
-another assigned a KAS Grant to Alice's KAS.
+To accomplish this, they each define KAS Grants between their KASes and policy attributes, and TDF data with at least two attributes -
+one assigned a KAS Grant to Bob's KAS and another assigned a KAS Grant to Alice's KAS.
 
 Both KASes will need to permit access and release payload keys for the data TDFd with multiple attributes assigned KAS Grants to be accessible and decrypted.
