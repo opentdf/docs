@@ -83,7 +83,6 @@ const config = {
         ],
       },
       footer: {
-        style: 'dark',
         links: [
           {
             title: 'Community',
@@ -91,10 +90,6 @@ const config = {
               {
                 label: 'GitHub Discussions',
                 href: 'https://github.com/orgs/opentdf/discussions',
-              },
-              {
-                label: 'X',
-                href: 'https://twitter.com/openTDF',
               },
             ],
           },
@@ -112,7 +107,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} OpenTDF sponsored by <a href="https://virtru.com">Virtru</a>. Built with Docusaurus.`,
+        copyright: `<span>Copyright © ${new Date().getFullYear()} OpenTDF</span><span>Sponsored by <a href="https://virtru.com" target="_blank" rel="noopener noreferrer">Virtru</a></span>`,
       },
       prism: {
         theme: prismThemes.vsLight,
@@ -121,7 +116,7 @@ const config = {
       },
       // github codeblock theme configuration
       codeblock: {
-        showGithubLink: true,
+        showGithubLink: false,
         githubLinkLabel: 'View on GitHub',
         showRunmeLink: false,
         runmeLinkLabel: 'Checkout via Runme'
