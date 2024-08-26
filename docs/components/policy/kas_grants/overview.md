@@ -25,7 +25,8 @@ should be utilized to encrypt in the following attribute KAS grant scenarios?"
 The Grant itself within platform policy is simple, comprised of just the attribute object ID (Namespace, Definition, Value) and the KAS Registry ID.
 
 > [!NOTE]
-> As KAS grants determine keys utilized on encrypt/decrypt, be careful around existing TDFs with attributes and new grants with different keys.
+> KAS grants determine keys used during encrypt to decide how key content will be secured with KASes,
+> so be aware that changes to attribute interpretation or changes to grants will result in different key wrap strategies.
 
 ### Split Scenarios
 
