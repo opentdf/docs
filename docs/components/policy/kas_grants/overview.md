@@ -38,6 +38,27 @@ With KAS Grants, they can define a key split where the shared data is wrapped wi
 If `Bob` assigns a grant between Bob's running/registered KAS to a known attribute value, and `Alice` defines a grant of Alice's running/registered KAS to the same attribute value,
 any data encrypted in a TDF will be decryptable with a key released by _either_ of their Key Access Servers.
 
+Attribute A: `https://conglomerate.com/attr/organization/value/acmeco`
+
+Attribute B: `https://conglomerate.com/attr/organization/value/example_inc`
+
+| Attribute | Namespace        | Definition   | Value       |
+| --------- | ---------------- | ------------ | ----------- |
+| A         | conglomerate.com | organization | acmeco      |
+| B         | conglomerate.com | organization | example_inc |
+
+**Attribute KAS Grant Scenarios**
+
+1. Bob & Alice represent individual KAS Grants to attributes on TDFd data
+2. Note that the attributes A and B are of _the same definition and namespace_
+
+| Definition: organization | Value: acmeco | Value: example_inc | Split |
+| ------------------------ | ------------- | ------------------ | ----- |
+| Bob, Alice               | -             | -                  | OR    |
+| -                        | Bob, Alice    | -                  | OR    |
+| -                        | -             | Bob, Alice         | OR    |
+| -                        | Bob           | Alice              | OR    |
+
 #### AllOf Split
 
 Unlike the `AnyOf` split above, this time `Bob` and `Alice` want to make sure _both_ of their keys must be granted for data in a TDF
@@ -48,3 +69,26 @@ To accomplish this, they each define KAS Grants between their KASes and policy a
 one assigned a KAS Grant to Bob's KAS and another assigned a KAS Grant to Alice's KAS.
 
 Both KASes will need to permit access and release payload keys for the data TDFd with multiple attributes assigned KAS Grants to be accessible and decrypted.
+
+Attribute A: `https://conglomerate.com/attr/organization/value/acmeco`
+
+Attribute B: `https://conglomerate.com/attr/department/value/sales`
+
+| Attribute | Namespace        | Definition   | Value     |
+| --------- | ---------------- | ------------ | --------- |
+| A         | conglomerate.com | organization | acmeco    |
+| A         | conglomerate.com | department   | marketing |
+
+**Attribute KAS Grant Scenarios**
+
+1. Bob & Alice represent individual KAS Grants to attributes on TDFd data
+2. Note that the attributes A and B are of _the same namespace but different definitions_
+
+| Definition: A | Value: A | Definition: B | Value: B | Split |
+| ------------- | -------- | ------------- | -------- | ----- |
+| Bob           | -        | Alice         | -        | AND   |
+| Bob           | -        | -             | Alice    | AND   |
+| -             | Bob      | -             | Alice    | AND   |
+
+> [!NOTE]
+> Any KAS Grants to attributes of different definitions or namespaces will be `AND` splits.
