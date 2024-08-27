@@ -73,7 +73,7 @@ Both KASes will need to permit access and release payload keys for the data TDFd
 
 Attribute A: `https://conglomerate.com/attr/organization/value/acmeco`
 
-Attribute B: `https://conglomerate.com/attr/department/value/sales`
+Attribute B: `https://conglomerate.com/attr/department/value/marketing`
 
 | Attribute | Namespace        | Definition   | Value     |
 | --------- | ---------------- | ------------ | --------- |
