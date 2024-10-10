@@ -31,11 +31,11 @@ KAS offers the following RPC methods:
 
 ## How Rewrap Works
 
-### ZTDF
+### TDF
 
 1. The client extracts two pieces of information from the TDF:
-   1. [Key Access Object (KAO)](/spec/ztdf/kao): This contains the wrapped key and the policy binding.
-   2. The [Policy](/spec/ztdf/policy) from the manifest.
+   1. [Key Access Object (KAO)](/spec/tdf/kao): This contains the wrapped key and the policy binding.
+   2. The [Policy](/spec/tdf/policy) from the manifest.
 
 2. The client generates an ephemeral asymmetric key pair, used to wrap the KAO content (such as an AES encryption key that can access the TDF payload) from KAS.
 
