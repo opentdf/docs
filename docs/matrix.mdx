@@ -41,8 +41,8 @@ The platform is made of different services. This matrix captures the high-level 
 | **Policy**        | Manage Subject Mappings      | Stable       |
 | **Policy**        | Manage Subject Mapping Sets  | Stable       |
 | **Policy**        | Manage Resource Mappings     | Stable       |
-| **Policy**        | Manage Resource Mapping Sets | Planned      |
-| **Policy**        | Unsafe Mutations[^1]         | Planned      |
+| **Policy**        | Manage Resource Mapping Sets | Stable       |
+| **Policy**        | Unsafe Mutations[^1]         | Stable       |
 
 [^1]: Unsafe Mutations are operations that can cause unintended consequences to data security. This feature will enable these operations (which are prevented in the management APIs) and bind their execution to audit events. The current workaround is to manually update the database.
 
@@ -56,26 +56,29 @@ Feature matrix for the different SDK versions.
 | **Support**[^101]          | Official | Official | Official   |
 |                            |          |          |            |
 | **Encrypt/Decrypt**[^103]  | Stable   | Stable   | Stable     |
-| - ZTDF[^110]               | Stable   | Unstable | Unstable   |
-| - NanoTDF[^111]            | Stable   | Planned  | Unstable   |
-| - ABAC[^112]               | Stable   | Unstable | Unstable   |
-| - Dissem[^113]             | Unstable | Unstable | Unstable   |
+| - ZTDF[^110]               | Stable   | Stable   | Stable     |
+| - NanoTDF[^111]            | Stable   | Stable   | Stable     |
+| - ABAC[^112]               | Stable   | Stable   | Stable     |
+| - Key Access Grants[^140]  | Stable   | Stable   | Stable     |
 |                            |          |          |            |
 | **Service APIs**[^105]     | Stable   | Stable   | Planned    |
-| - Authorization[^120]      | Stable   |          |            |
-| - Key Access Server[^121]  | Stable   |          |            |
-| - Policy: Attributes[^130] | Stable   |          |            |
+| - Authorization[^120]      | Stable   | Stable   | Planned    |
+| - Key Access Server[^121]  | Stable   | Stable   | Planned    |
+| - Policy: Attributes[^130] | Stable   | Stable   | Planned    |
+
+autoconfigure - Key Access grants - manage key splits
 
 [^101]: Support is the level of support for the SDK (Official, Community).
 [^103]: Encrypt is the ability to encrypt data.
 [^105]: Service APIs are APIs that are provided by the library to interact with the service.
-[^110]: Support for the [Zero Trust Data Format](https://github.com/opentdf/spec/tree/main/schema/tdf) utilizing JSON manifests.
+[^110]: Support for the [Zero Trust Data Format](https://github.com/opentdf/spec/tree/main/schema/tdf) utilizing JSON manifests and assertation.
 [^111]: Support for the [Nano Trusted Data Format](https://github.com/opentdf/spec/tree/main/schema/nanotdf).
 [^112]: ABAC is Attribute Based Access Control.
 [^113]: Dissem is Dissemination List (i.e., email lists).
 [^120]: Authorization APIs for managing authorization policies.
 [^121]: Key Access Server (KAS) APIs for accessing key management.
 [^130]: APIs for managing policy attributes [proto](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto).
+[^140]: Autoconfigure for key splits
 
 ## FAQ
 
