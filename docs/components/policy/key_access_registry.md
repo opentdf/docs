@@ -1,4 +1,4 @@
-# Overview
+# Key Access Registry
 
 The KAS (Key Access Server) Registry within platform policy is a store of known Key Access Servers. To learn more about a Key Access Server
 in general, please see its separate documentation.

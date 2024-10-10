@@ -1,7 +1,8 @@
 ---
 sidebar_position: 1
+slug: /components/policy
 ---
-# Overview
+# Policy
 
 Policy is the all-encompassing name for configuration of cryptographically-bound Attribute Based Access Control (ABAC) within the Platform.
 

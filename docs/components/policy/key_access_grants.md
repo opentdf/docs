@@ -1,4 +1,4 @@
-# Overview
+# Key Access Grants
 
 Key Access Grants are associations between a registered KAS (see KAS Registry docs) and an Attribute.
 

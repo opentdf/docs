@@ -1,4 +1,4 @@
-# Overview
+# Resource Mappings
 
 Resource Mappings are a mechanism to associate various terms with Attribute Values.
 

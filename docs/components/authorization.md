@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 ---
-# Overview
+# Authorization Service
 
 The authorization service is responsible for making access decisions based on attribute based access control(ABAC) policy as well as evaluating subject mappings to determine which attributes have been assigned to specific entities. The service provides two endpoints: **GetEntitlements** and **GetDecisions**.
 

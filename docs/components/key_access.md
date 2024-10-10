@@ -1,6 +1,6 @@
-# Overview
+# Key Access Service
 
-The Key Access Server (KAS) is responsible for managing the lifecycle of cryptographic keys and providing access to those keys for encryption and decryption of a TDF. KAS can be thought of as an out-of-the-box **Policy Enforcement Point** (PEP) for the OpenTDF platform.
+The Key Access Service (KAS) is responsible for managing the lifecycle of cryptographic keys and providing access to those keys for encryption and decryption of a TDF. KAS can be thought of as an out-of-the-box **Policy Enforcement Point** (PEP) for the OpenTDF platform.
 
 ## RPC Methods
 

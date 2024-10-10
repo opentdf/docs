@@ -69,12 +69,19 @@ const config = {
       // Replace with your project's social card
       image: 'img/OpenTDF-Logo.png',
       navbar: {
+        hideOnScroll: true,
         title: 'OpenTDF',
         logo: {
           alt: 'OpenTDF Logo',
           src: 'img/OpenTDF-Logo.png',
         },
         items: [
+          {
+            type: 'doc',
+            position: 'left',
+            docId: 'introduction',
+            label: 'Docs',
+          },
           {
             href: 'https://github.com/opentdf/docs',
             label: 'GitHub',
@@ -236,7 +243,7 @@ ${updatedContent}`,
       {
         name: 'otdfctl',
         id: 'otdfctl',
-        outDir: 'docs/cli',
+        outDir: 'docs/components/cli',
         sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
         documents: listRemote.listDocuments(otdfctl, ['docs/man/**/*.md'], []),
         modifyContent: (filename, content) => {

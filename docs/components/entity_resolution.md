@@ -1,4 +1,5 @@
-# Overview
+# Entity Resolution Service
+
 The entity resolution service is an IDP specific service that interacts with the IDP to get information about entities required by the authorization service. The service has two endpoints **CreateEntityChainFromJwt** and **ResolveEntities**. 
 As the service may differ from IDP to IDP, the platform consumer is required to implement their own entity resolution service for the IDP they choose to use. The service must follow the provided [protos](https://github.com/opentdf/platform/blob/main/service/entityresolution/entity_resolution.proto).
 

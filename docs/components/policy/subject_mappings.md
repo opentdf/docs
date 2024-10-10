@@ -1,4 +1,4 @@
-# Overview
+# Subject Mappings
 
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, Entities are associated with Attribute Values through a mechanism called Subject Mappings.
 
