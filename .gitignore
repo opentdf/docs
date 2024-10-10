@@ -28,3 +28,4 @@ node_modules
 /docs/spec/ztdf/AttributeObject.md
 /docs/cli/
 /docs/configuration.md
+/.idea/
