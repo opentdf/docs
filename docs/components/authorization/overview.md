@@ -49,6 +49,57 @@ message Entity {
 
 Entities are passed to the entity resolution service's `Resolve` method to be processed.
 
+An example GetEntitlements request:
+
+```
+{
+  "entities": [
+    {
+      "id": "e1",
+      "emailAddress": "alice@example.com",
+      "category": "CATEGORY_SUBJECT"
+    },
+    {
+      "id": "e2",
+      "userName": "bob",
+      "category": "CATEGORY_SUBJECT"
+    }
+  ],
+  "scope": {
+    "attributeValueFqns": [
+      "https://example.com/attr/attr1/value/value1",
+      "https://example.com/attr/attr1/value/value2"
+    ]
+  }
+}
+```
+
+The first input is a list of entities as defined above. The second is an optional attribute scope; if provided, the service will only return the entitlements contained within the specified scope. The attributes provided in the scope must be formatted as [FQNs](../policy/attributes/overview.md#fully-qualified-names).
+
+Below is an example response to the above GetEntitlements request:
+
+```
+{
+  "entitlements": [
+    {
+      "entity_id": "e1",
+      "attribute_value_fqns": [
+        "https://example.com/attr/attr1/value/value1"
+      ]
+    },
+    {
+      "entity_id": "e2",
+      "attribute_value_fqns": [
+        "https://example.com/attr/attr1/value/value1",
+        "https://example.com/attr/attr1/value/value2"
+      ]
+    }
+  ]
+}
+```
+
+The entities in the response can be mapped back to the original input using the entity ID. The "attribute_value_fqns" field includes a list of attribute FQNs to which that particular entity has been entitled. If no scope was provided, this field will include **ALL** of the attribute entitlements for that entity.
+
 ## GetDecisions
 
 The `GetDecisions` endpoint evaluates access control rules for one or more entity chains and resources. It checks whether entities have permission to perform specified actions on resources, based on provided attributes.
@@ -57,44 +108,55 @@ An example `GetDecisions` request looks like this:
 
 ```json
 {
-  "entity_chains": [
+  "decisionRequests": [
     {
-      "id": "ec1",
-      "entities": [
+      "actions": [
         {
-          "id": "bob",
-          "category": "CATEGORY_SUBJECT"
+          "standard": "STANDARD_ACTION_DECRYPT"
+        }
+      ],
+      "entityChains": [
+        {
+          "entities": [
+            {
+              "id": "e1",
+              "emailAddress": "bob@example.com",
+              "category": "CATEGORY_SUBJECT"
+            },
+            {
+              "id": "e2",
+              "userName": "alice",
+              "category": "CATEGORY_SUBJECT"
+            }
+          ],
+          "id": "ec1"
         },
         {
-          "id": "alice",
-          "category": "CATEGORY_SUBJECT"
+          "entities": [
+            {
+              "id": "e1",
+              "clientId": "client1",
+              "category": "CATEGORY_ENVIRONMENT"
+            }
+          ],
+          "id": "ec2"
         }
-      ]
-    },
-    {
-      "id": "ec2",
-      "entities": [
+      ],
+      "resourceAttributes": [
         {
-          "id": "client1",
-          "category": "CATEGORY_ENVIRONMENT"
+          "attributeValueFqns": [
+            "https://example.com/attr/attr1/value/value1"
+          ],
+          "resourceAttributesId": "ra-set-1"
+        },
+        {
+          "attributeValueFqns": [
+            "https://example.com/attr/attr1/value/value2",
+            "https://example.com/attr/attr1/value/value3"
+          ],
+          "resourceAttributesId": "ra-set-2"
         }
       ]
-    }
-  ],
-  "resource_sets": [
-    {
-      "attributes": [
-        { "key": "resource-type", "value": "file" },
-        { "key": "classification", "value": "confidential" }
-      ],
-      "resourceAttributesId": "ra-set-1"
-    },
-    {
-      "attributes": [
-        { "key": "resource-type", "value": "file" },
-        { "key": "classification", "value": "internal" }
-      ],
-      "resourceAttributesId": "ra-set-2"
     }
   ]
 }
@@ -110,28 +172,36 @@ An example `GetDecisions` response:
     {
       "entity_chain_id": "ec1",
       "resource_attributes_id": "ra-set-1",
-      "action": { "standard": "STANDARD_ACTION_DECRYPT" },
+      "action": {
+        "standard": "STANDARD_ACTION_DECRYPT"
+      },
       "decision": "DECISION_DENY",
       "obligations": []
     },
     {
       "entity_chain_id": "ec2",
       "resource_attributes_id": "ra-set-1",
-      "action": { "standard": "STANDARD_ACTION_DECRYPT" },
+      "action": {
+        "standard": "STANDARD_ACTION_DECRYPT"
+      },
       "decision": "DECISION_PERMIT",
       "obligations": []
     },
     {
       "entity_chain_id": "ec1",
       "resource_attributes_id": "ra-set-2",
-      "action": { "standard": "STANDARD_ACTION_DECRYPT" },
+      "action": {
+        "standard": "STANDARD_ACTION_DECRYPT"
+      },
       "decision": "DECISION_PERMIT",
       "obligations": []
     },
     {
       "entity_chain_id": "ec2",
       "resource_attributes_id": "ra-set-2",
-      "action": { "standard": "STANDARD_ACTION_DECRYPT" },
+      "action": {
+        "standard": "STANDARD_ACTION_DECRYPT"
+      },
       "decision": "DECISION_PERMIT",
       "obligations": []
     }
@@ -139,4 +209,4 @@ An example `GetDecisions` response:
 }
 ```
 
-In this response, there are four entries—one for each combination of entity chain and resource attribute set. The decision determines whether an entity chain is permitted to access resources with a given attribute set. For example, Bob and Alice do not have access to "ra-set-1", but Client1, being an environment entity, is automatically granted **DECISION_PERMIT** because environment entities are excluded from attribute-based decisions.
+In this response, there are four entries — one for each combination of entity chain and resource attribute set. The decision determines whether an entity chain is permitted to access resources with a given attribute set. For example, Bob and Alice do not have access to "ra-set-1", but Client1, being an environment entity, is automatically granted **DECISION_PERMIT** because environment entities are excluded from attribute-based decisions.
