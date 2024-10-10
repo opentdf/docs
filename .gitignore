@@ -28,8 +28,4 @@ node_modules
 /docs/spec/ztdf/AttributeObject.md
 /docs/cli/
 /docs/configuration.md
-/.idea/.gitignore
-/.idea/docs.iml
-/.idea/material_theme_project_new.xml
-/.idea/modules.xml
-/.idea/vcs.xml
+/.idea/
