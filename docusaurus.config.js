@@ -270,7 +270,7 @@ ${updatedContent}`,
         // options here
         name: 'platform-configuration', // used by CLI, must be path safe
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: 'docs/', // the base directory to output to.
+        outDir: 'docs/getting-started', // the base directory to output to.
         documents: ['configuration.md'], // the file names to download
         modifyContent: (filename, content) => {
             let updatedContent = content;
