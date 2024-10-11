@@ -1,0 +1,27 @@
+---
+position: 20
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import ReleaseNotes from '@site/src/components/ReleaseNotes';
+
+# Release Notes
+
+<Tabs>
+  <TabItem value="platform" label="Platform" default>
+    <ReleaseNotes repo="opentdf/platform" filter="service"/>
+  </TabItem>
+  <TabItem value="cli" label="CLI (otdfctl)">
+    <ReleaseNotes repo="opentdf/otdfctl" />
+  </TabItem>
+  <TabItem value="sdk-go" label="Go SDK">
+    <ReleaseNotes repo="opentdf/platform" filter="sdk" />
+  </TabItem>
+  <TabItem value="sdk-java" label="Java SDK">
+    <ReleaseNotes repo="opentdf/java-sdk" />
+  </TabItem>
+  <TabItem value="sdk-web" label="Web SDK">
+    <ReleaseNotes repo="opentdf/client-web" />
+  </TabItem>
+</Tabs>
