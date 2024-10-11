@@ -5,6 +5,7 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
+import matter from 'gray-matter';
 
 import listRemote from './docusaurus-lib-list-remote';
 
@@ -69,12 +70,19 @@ const config = {
       // Replace with your project's social card
       image: 'img/OpenTDF-Logo.png',
       navbar: {
+        hideOnScroll: true,
         title: 'OpenTDF',
         logo: {
           alt: 'OpenTDF Logo',
           src: 'img/OpenTDF-Logo.png',
         },
         items: [
+          {
+            type: 'doc',
+            position: 'left',
+            docId: 'introduction',
+            label: 'Docs',
+          },
           {
             href: 'https://github.com/opentdf/docs',
             label: 'GitHub',
@@ -236,24 +244,63 @@ ${updatedContent}`,
       {
         name: 'otdfctl',
         id: 'otdfctl',
-        outDir: 'docs/cli',
+        outDir: 'docs/components/cli',
         sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
         documents: listRemote.listDocuments(otdfctl, ['docs/man/**/*.md'], []),
         modifyContent: (filename, content) => {
+          const baseCommand = 'otdfctl';
+          let commandTitle, command, subcommand;
           // This will hold the new filename after processing.
-          let newFilename = filename;
+          let nextFilename = filename
+            .replace(/\.md$/, '.mdx')
+            .replace(/\/_index.mdx$/, '/index.mdx')
+            .replace(/^docs\/man\//, '');
 
-          // Check if the file is named '_index.md' and change it to 'index.md'
-          if (newFilename.endsWith('/_index.md')) {
-            newFilename = newFilename.replace('/_index.md', '/index.md');
+          if (nextFilename === 'index.mdx') {
+            nextFilename = 'index.mdx';
+            command = baseCommand;
+            commandTitle = `CLI - ${command}`;
+          } else {
+            // Extract command name
+            const paths = nextFilename.replace(/\.mdx$/, '').split('/');
+            if (paths.length >= 1) {
+              subcommand = paths[paths.length - 1];
+              if (subcommand === 'index') {
+                subcommand = paths[paths.length - 2];
+                paths.pop();
+              }
+            }
+            command = `${baseCommand} ${paths.join(' ')}`;
+            commandTitle = command;
+          }
+          
+          // Extract frontmatter from content
+          const { data, content: rawContent } = matter(content);
+          data.fullCommand = command;
+          const dataJSON = JSON.stringify(data || {}).replace(/"/g, '\\"');
+          
+          // If hidden then hide
+          if (data.command.hidden) {
+            return { content: '', filename: '' };
           }
 
-          // Strip the 'docs/' prefix from the path if it exists
-          if (newFilename.startsWith('docs/man/')) {
-            newFilename = newFilename.substring(9); // Remove the first 5 characters 'docs/'
-          }
+          // Wrap the content in CommandLineDocs component
+          const nextContent = `---
+title: ${commandTitle}
+---
+
+import React from 'react';
+import CommandLineDocs from '@site/src/components/CommandLineDocs';
+
+<CommandLineDocs {...JSON.parse("${dataJSON}")}>
+${rawContent}
+</CommandLineDocs>
+          `;
+
+          console.log(`[CLI] Converting ${filename} to ${nextFilename}`);
+
           // If it's not a README.md or no changes are needed, return the content as is
-          return { content: content, filename: newFilename };
+          return { content: nextContent, filename: nextFilename };
         },
       },
     ],
@@ -263,7 +310,7 @@ ${updatedContent}`,
         // options here
         name: 'platform-configuration', // used by CLI, must be path safe
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: 'docs/', // the base directory to output to.
+        outDir: 'docs/getting-started', // the base directory to output to.
         documents: ['configuration.md'], // the file names to download
         modifyContent: (filename, content) => {
             let updatedContent = content;

@@ -1,5 +1,4 @@
-
-# Overview
+# Resource Mappings
 
 Resource Mappings associate various terms found within data to Attribute Values, serving as a mechanism for matching data tags to Attributes.
 

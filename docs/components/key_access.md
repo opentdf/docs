@@ -1,5 +1,4 @@
-
-# Overview
+# Key Access Service
 
 The Key Access Server (KAS) manages the lifecycle of cryptographic keys and provides access to these keys for the encryption and decryption of TDFs. KAS serves as an out-of-the-box **Policy Enforcement Point (PEP)** for the OpenTDF platform.
 
@@ -75,6 +74,6 @@ At this point, the client is ready to make the rewrap request. Here's what happe
     HMAC-SHA256(B64(POLICY), KEY)
     ```
 
-6. If the policy is valid and untampered, KAS calls the [Authorization Service](../authorization/overview.md) to confirm whether the entity is allowed access to the TDF. If authorized, KAS rewraps the symmetric key with the client's public key and returns the newly wrapped key for the client to use in decrypting the TDF.
+6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the TDF. If authorized, KAS rewraps the symmetric key with the client's public key and returns the newly wrapped key for the client to use in decrypting the TDF.
 
 ### NanoTDF

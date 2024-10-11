@@ -1,15 +1,14 @@
-
 ---
 sidebar_position: 1
 ---
 
-# Overview
+# Authorization Service
 
 The Authorization service makes access decisions based on Attribute-Based Access Control (ABAC) policies and evaluates subject mappings to assign attributes to specific entities. The service provides two endpoints: **GetEntitlements** and **GetDecisions**.
 
 ## GetEntitlements
 
-The `GetEntitlements` endpoint takes a list of entities and returns the attributes to which each entity is entitled. Entitlements are based on subject mappings, as described in the [policy documentation](../policy/subject_mappings/overview.md), and the entity data returned by the [entity resolution service](entity_resolution/overview.md).
+The `GetEntitlements` endpoint takes a list of entities and returns the attributes to which each entity is entitled. Entitlements are based on subject mappings, as described in the [policy documentation](./policy/subject_mappings), and the entity data returned by the [entity resolution service](./entity_resolution).
 
 ### Entities
 
@@ -74,7 +73,7 @@ An example GetEntitlements request:
 }
 ```
 
-The first input is a list of entities as defined above. The second is an optional attribute scope; if provided, the service will only return the entitlements contained within the specified scope. The attributes provided in the scope must be formatted as [FQNs](../policy/attributes/overview.md#fully-qualified-names).
+The first input is a list of entities as defined above. The second is an optional attribute scope; if provided, the service will only return the entitlements contained within the specified scope. The attributes provided in the scope must be formatted as [FQNs](./policy/attributes#fully-qualified-names).
 
 Below is an example response to the above GetEntitlements request:
 

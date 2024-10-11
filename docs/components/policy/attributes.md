@@ -1,5 +1,4 @@
-
-# Overview
+# Attributes
 
 Attributes are the logical structure used to control access to TDF data. Entities (people, machines, users) are "entitled" to attributes. Resource data is encrypted within a TDF that contains attributes, binding ABAC policy at the cryptographic level.
 

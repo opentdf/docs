@@ -1,5 +1,4 @@
-
-# Overview
+# Key Access Grants
 
 Key Access Grants (KAS Grants) are associations between a registered Key Access Server (KAS) and an Attribute. These grants can be applied at the namespace, definition, or value level of an attribute.
 
