@@ -1,14 +1,16 @@
 # Entity Resolution Service
 
-The entity resolution service is an IDP specific service that interacts with the IDP to get information about entities required by the authorization service. The service has two endpoints **CreateEntityChainFromJwt** and **ResolveEntities**. 
-As the service may differ from IDP to IDP, the platform consumer is required to implement their own entity resolution service for the IDP they choose to use. The service must follow the provided [protos](https://github.com/opentdf/platform/blob/main/service/entityresolution/entity_resolution.proto).
+The entity resolution service is an IDP-specific service that interacts with the Identity Provider (IDP) to retrieve information about entities required by the Authorization service. The service provides two endpoints: **CreateEntityChainFromJwt** and **ResolveEntities**.
 
-## CreateEntityChainFromJwt
-This endpoint takes JWTs (usually representing IDP access tokens) and converts them into [entity chains](../overview.md#entity-chains). As stated in the authorization docs, more than one entity can be involved in a particular request. We must parse these entities from the token, categorize the entities as either subject or environment, and form an entity chain to ensure the relevant entities have the required entitlements. This endpoint is primarily used by KAS to form an entity chain from the access token it recieves on a rewrap request.
+As this service may vary between IDPs, platform consumers must implement their own entity resolution service for the IDP they choose. It should follow the provided [protos](https://github.com/opentdf/platform/blob/main/service/entityresolution/entity_resolution.proto).
 
-### Request and Response
-Below is an example request to CreateEntityChainFromJwt containing a list of tokens and IDs for each token:
-```
+## Create Entity Chain from JWT
+
+This endpoint takes JWTs (usually IDP access tokens) and converts them into [entity chains](../overview.md#entity-chains). As stated in the authorization documentation, multiple entities can be involved in a request. The token is parsed, the entities are categorized as either subjects or environments, and an entity chain is formed to ensure the relevant entities have the necessary entitlements. This endpoint is primarily used by the Key Access Server (KAS) to create an entity chain from the access token received during a rewrap request.
+
+Below is an example request to `CreateEntityChainFromJwt`, containing a list of tokens and their IDs:
+
+```json
 {
   "tokens": [
     {
@@ -23,8 +25,9 @@ Below is an example request to CreateEntityChainFromJwt containing a list of tok
 }
 ```
 
-Below is an example response to the above request:
-```
+An example response to this `CreateEntityChainFromJwt` request:
+
+```json
 {
   "entity_chains": [
     {
@@ -56,19 +59,18 @@ Below is an example response to the above request:
           "category": "CATEGORY_SUBJECT"
         }
       ]
-    },
+    }
   ]
 }
 ```
-Each token resolved to a chain with multiple entities including a client and user. 
 
 ## ResolveEntities
-This endpoint takes a list of entities and resolves them with the IDP to entity representations. As this service is implemented by the platform consumer, it is up to the implementer to build the entity representations. For example, in the Keycloak entity resolution service implementation we return the json client/user representations that the service retrieves from Keycloak.
-These entity representations will be used in the subject mapping evaluation to determine whether to map certain entitlements to each entity. The evaluation will check to see if specified selector fields in the entity representation match expected values and will assign entitlements if so. See the [policy docs](../../policy/subject_mappings/overview.md#subject-mapping-for-contributors) for more information on subject mappings and subject external value selectors.
 
-### Request and Response
-Below is an example request to ResolveEntities including a list of entities to resolve:
-```
+The `ResolveEntities` endpoint resolves a list of entities, using the IDs from a request to get further information about each entity from the IDP.
+
+An example request to `ResolveEntities`:
+
+```json
 {
   "entities": [
     {
@@ -85,8 +87,9 @@ Below is an example request to ResolveEntities including a list of entities to r
 }
 ```
 
-An example response from the Keycloak specific entity resolution service includes the client and user representations returned by the Keycloak api:
-```
+An example response to this `ResolveEntities` request:
+
+```json
 {
   "entity_representations": [
     {
@@ -187,3 +190,5 @@ An example response from the Keycloak specific entity resolution service include
   ]
 }
 ```
+
+In the above example, each entity in the request is resolved into its corresponding entity data.

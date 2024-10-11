@@ -28,3 +28,5 @@ node_modules
 /docs/spec/ztdf/AttributeObject.md
 /docs/components/cli/
 /docs/getting-started/configuration.md
+
+/.idea/
