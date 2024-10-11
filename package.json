@@ -21,11 +21,13 @@
     "clsx": "^2.0.0",
     "docusaurus-plugin-remote-content": "^4.0.0",
     "docusaurus-theme-github-codeblock": "^2.0.2",
+    "gray-matter": "^4.0.3",
     "minimatch": "^10.0.1",
     "octokit": "^4.0.2",
     "prism-react-renderer": "^2.4.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "react-error-boundary": "^4.0.13",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0"
   },
