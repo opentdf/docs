@@ -13,37 +13,37 @@ Questions regarding specific features should be raised in the [GitHub Discussion
 The following tables utilize the following terms:
 
 - **Lifecycle**:
-    - **Alpha**: The feature is in the early stages of development.
-    - **Beta**: The feature is in the later stages of development.
-    - **GA**: The feature is ready for production use.
+  - **Alpha**: The feature is in the early stages of development.
+  - **Beta**: The feature is in the later stages of development.
+  - **GA**: The feature is ready for production use.
 - **State**:
-    - **Planned**: The feature is planned but not yet started.
-    - **Unstable**: The feature is in development and may change.
-    - **Stable**: The feature is ready for production use.
+  - **Planned**: The feature is planned but not yet started.
+  - **Unstable**: The feature is in development and may change.
+  - **Stable**: The feature is ready for production use.
 - **Support**:
-    - **Official**: The service, feature, or library is officially supported by the maintainers.
-    - **Community**: The service, feature, or library is supported by the community. Community-supported features will have a link to the community repository and not be included in the OpenTDF organization.
+  - **Official**: The service, feature, or library is officially supported by the maintainers.
+  - **Community**: The service, feature, or library is supported by the community. Community-supported features will have a link to the community repository and not be included in the OpenTDF organization.
 
 ## Platform
 
 The platform is made of different services. This matrix captures the high-level state of the various service features.
 
-| Service           | Feature                      | State        |
-| ----------------- | ---------------------------- | ------------ |
-| **Authorization** | Access                       | Stable       |
-| **Key Access**    | Rewrap                       | Stable       |
-| **Key Access**    | Public Key                   | Stable       |
-| **Key Access**    | Rotate                       | Stable       |
-| **Policy**        | Manage Attribute Namespaces  | Stable       |
-| **Policy**        | Manage Attribute Definitions | Stable       |
-| **Policy**        | Manage Attribute Values      | Stable       |
-| **Policy**        | Manage Key Access Server Registry     | Stable       |
-| **Policy**        | Manage Key Access Server Grants     | Stable       |
-| **Policy**        | Manage Subject Mappings      | Stable       |
-| **Policy**        | Manage Subject Condition Sets  | Stable       |
-| **Policy**        | Manage Resource Mappings     | Stable       |
-| **Policy**        | Manage Resource Mapping Groups | Unstable       |
-| **Policy**        | Unsafe Mutations[^1]         | Stable       |
+| Service           | Feature                           | State    |
+| ----------------- | --------------------------------- | -------- |
+| **Authorization** | Access                            | Stable   |
+| **Key Access**    | Rewrap                            | Stable   |
+| **Key Access**    | Public Key                        | Stable   |
+| **Key Access**    | Rotate                            | Stable   |
+| **Policy**        | Manage Attribute Namespaces       | Stable   |
+| **Policy**        | Manage Attribute Definitions      | Stable   |
+| **Policy**        | Manage Attribute Values           | Stable   |
+| **Policy**        | Manage Key Access Server Registry | Stable   |
+| **Policy**        | Manage Key Access Server Grants   | Stable   |
+| **Policy**        | Manage Subject Mappings           | Stable   |
+| **Policy**        | Manage Subject Condition Sets     | Stable   |
+| **Policy**        | Manage Resource Mappings          | Stable   |
+| **Policy**        | Manage Resource Mapping Groups    | Unstable |
+| **Policy**        | Unsafe Mutations[^1]              | Stable   |
 
 [^1]: Unsafe Mutations are operations that can cause unintended consequences to data security. This feature will enable these operations (which are prevented in the management APIs) and bind their execution to audit events.
 
@@ -82,13 +82,19 @@ Feature matrix for the different SDK versions.
 ## FAQ
 
 <details>
-<summary>Why isn't _language_ supported as an SDK?</summary>
-To ensure we can provide the best support for the SDKs, we have decided to focus on a limited scope of languages which
-meet our criteria such as performance and environment. Python and C# were supported in the first version of the platform, but as we assessed our ability to maintain the SDKs, we decided to focus on the most popular and performant languages. We are open to community contributions to support these languages.
+  <summary>Why isn't _language_ supported as an SDK?</summary>
+
+  To ensure we can provide the best support for the SDKs, we have decided to focus
+  on a limited scope of languages which meet our criteria such as performance and
+  environment. Python and C# were supported in the first version of the platform,
+  but as we assessed our ability to maintain the SDKs, we decided to focus on the
+  most popular and performant languages. We are open to community contributions to
+  support these languages.
 </details>
 
 <details>
-<summary>Where can I get updates on the state of services and SDKs?</summary>
-The best place to get updates on the state of the services and SDKs is the
-[OpenTDF GitHub Discussions](https://github.com/orgs/opentdf/discussions).
+  <summary>Where can I get updates on the state of services and SDKs?</summary>
+
+  The best place to get updates on the state of the services and SDKs is the [OpenTDF
+  GitHub Discussions](https://github.com/orgs/opentdf/discussions).
 </details>
