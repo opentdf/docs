@@ -73,7 +73,7 @@ An example GetEntitlements request:
 }
 ```
 
-The first input is a list of entities as defined above. The second is an optional attribute scope; if provided, the service will only return the entitlements contained within the specified scope. The attributes provided in the scope must be formatted as [FQNs](../policy/attributes#fully-qualified-names).
+The first input is a list of entities as defined above. The second is an optional attribute scope; if provided, the service will only return the entitlements contained within the specified scope. The attributes provided in the scope must be formatted as [FQNs](./policy/attributes#fully-qualified-names).
 
 Below is an example response to the above GetEntitlements request:
 

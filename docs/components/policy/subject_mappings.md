@@ -8,7 +8,7 @@ Entities (subjects, users, machines, etc.) are represented by their identity as 
 
 A Subject Mapping consists of:
 
-1. A mapped [Attribute Value](../#values)
+1. A mapped [Attribute Value](./attributes#values)
 2. A mapped Subject Condition Set
 
 ```mermaid
@@ -19,7 +19,7 @@ B(Subject Mapping)<--> C(Subject Condition Set);
 
 ## Attribute Value
 
-Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](../#values) documentation.
+Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](./attributes#values) documentation.
 
 ## Subject Condition Set
 
