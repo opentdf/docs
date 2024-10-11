@@ -6,7 +6,7 @@ As this service may vary between IDPs, platform consumers must implement their o
 
 ## Create Entity Chain from JWT
 
-This endpoint takes JWTs (usually IDP access tokens) and converts them into [entity chains](../overview.md#entity-chains). As stated in the authorization documentation, multiple entities can be involved in a request. The token is parsed, the entities are categorized as either subjects or environments, and an entity chain is formed to ensure the relevant entities have the necessary entitlements. This endpoint is primarily used by the Key Access Server (KAS) to create an entity chain from the access token received during a rewrap request.
+This endpoint takes JWTs (usually IDP access tokens) and converts them into entity chains. As stated in the authorization documentation, multiple entities can be involved in a request. The token is parsed, the entities are categorized as either subjects or environments, and an entity chain is formed to ensure the relevant entities have the necessary entitlements. This endpoint is primarily used by the Key Access Server (KAS) to create an entity chain from the access token received during a rewrap request.
 
 Below is an example request to `CreateEntityChainFromJwt`, containing a list of tokens and their IDs:
 

@@ -2,13 +2,13 @@
 
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, entities are associated with Attribute values through a mechanism called Subject Mappings.
 
-Entities (subjects, users, machines, etc.) are represented by their identity as determined from an identity provider (IdP). After an entity has securely authenticated with the IdP, tthe client's token (OIDC/OAUTH2) will include claims or attributes that describe that identity. Subject Mappings define how to map these identity attributes to the attribute values defined in the OpenTDF platform. For more details on how the platform integrates with the IdP and how entities are resolved, refer to the [Authorization documentation](../../authorization/overview).
+Entities (subjects, users, machines, etc.) are represented by their identity as determined from an identity provider (IdP). After an entity has securely authenticated with the IdP, tthe client's token (OIDC/OAUTH2) will include claims or attributes that describe that identity. Subject Mappings define how to map these identity attributes to the attribute values defined in the OpenTDF platform. For more details on how the platform integrates with the IdP and how entities are resolved, refer to the [Authorization documentation](../authorization).
 
 ## Composition
 
 A Subject Mapping consists of:
 
-1. A mapped [Attribute Value](../attributes/overview/#values)
+1. A mapped [Attribute Value](../#values)
 2. A mapped Subject Condition Set
 
 ```mermaid
@@ -19,7 +19,7 @@ B(Subject Mapping)<--> C(Subject Condition Set);
 
 ## Attribute Value
 
-Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](../attributes/overview#values) documentation.
+Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](../#values) documentation.
 
 ## Subject Condition Set
 
