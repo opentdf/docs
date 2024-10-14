@@ -3,6 +3,6 @@
   "position": 3,
   "link": {
     "type": "generated-index",
-    "description": "Components that make up the OpenTDF Platform"
+    "description": "Authorization, Policy, Entity Resolution, Key Access, and a comprehensive command line are the key elements that make up the OpenTDF platform. These components work together to enforce attribute-based access control, manage cryptographic keys, and support secure data sharing through the use of the Trusted Data Format (TDF)."
   }
 }

@@ -14,7 +14,7 @@ const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'OpenTDF',
-  tagline: 'Protect the Data, Build the Future.',
+  tagline: 'Enabling secure data sharing through open, data-centric security',
   favicon: 'img/OpenTDF-Logo.png',
 
   // Set the production url of your site here
@@ -53,8 +53,8 @@ const config = {
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/opentdf/docs/tree/main/docs/',
+          // editUrl:
+            //'https://github.com/opentdf/docs/tree/main/docs/',
         },
         blog: false,
         theme: {
@@ -100,20 +100,20 @@ const config = {
                 href: 'https://github.com/orgs/opentdf/discussions',
               },
             ],
-          },
-          {
-            title: 'More',
-            items: [
+          }//,
+          //{
+           // title: 'More',
+          //  items: [
               // {
               //   label: 'Slack',
               //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
               // },
-              {
-                label: 'X',
-                href: 'https://twitter.com/openTDF',
-              },
-            ],
-          },
+              // {
+              //  label: 'X',
+              //  href: 'https://twitter.com/openTDF',
+              //},
+          //  ],
+          //},
         ],
         copyright: `<span>Copyright © ${new Date().getFullYear()} OpenTDF</span><span>Sponsored by <a href="https://virtru.com" target="_blank" rel="noopener noreferrer">Virtru</a></span>`,
       },
