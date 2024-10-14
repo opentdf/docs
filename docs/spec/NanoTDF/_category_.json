@@ -1,8 +1,8 @@
 {
-  "label": "nanoTDF",
+  "label": "NanoTDF",
   "position": 2,
   "link": {
     "type": "generated-index",
-    "description": "nanotdf schema"
+    "description": "The specification for the compact binary TDF file format."
   }
 }

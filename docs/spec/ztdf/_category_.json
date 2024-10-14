@@ -1,8 +1,8 @@
 {
-  "label": "zTDF",
+  "label": "Base TDF",
   "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "ZTDF specification"
+    "description": "The specification for the JSON encoded Base TDF data format."
   }
 }
