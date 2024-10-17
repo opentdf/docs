@@ -32,6 +32,8 @@ KAS offers the following RPC methods:
 
 ### TDF
 
+<img src="/img/kas_tdf_flow.svg" alt="KAS TDF Rewrap"/>
+
 1. The client extracts two pieces of information from the TDF:
    1. [Key Access Object (KAO)](/spec/ztdf/kao): This contains the wrapped key and the policy binding.
    2. The [Policy](/spec/ztdf/policy) from the manifest.
