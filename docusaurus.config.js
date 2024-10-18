@@ -54,7 +54,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
-            //'https://github.com/opentdf/docs/tree/main/docs/',
+          //'https://github.com/opentdf/docs/tree/main/docs/',
         },
         blog: false,
         theme: {
@@ -102,16 +102,16 @@ const config = {
             ],
           }//,
           //{
-           // title: 'More',
+          // title: 'More',
           //  items: [
-              // {
-              //   label: 'Slack',
-              //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
-              // },
-              // {
-              //  label: 'X',
-              //  href: 'https://twitter.com/openTDF',
-              //},
+          // {
+          //   label: 'Slack',
+          //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
+          // },
+          // {
+          //  label: 'X',
+          //  href: 'https://twitter.com/openTDF',
+          //},
           //  ],
           //},
         ],
@@ -129,8 +129,22 @@ const config = {
         showRunmeLink: false,
         runmeLinkLabel: 'Checkout via Runme'
       },
+      imageZoom: {
+        // CSS selector to apply the plugin to, defaults to '.markdown img'
+        selector: '.markdown img',
+        // // Optional medium-zoom options
+        // // see: https://www.npmjs.com/package/medium-zoom#options
+        // options: {
+        //   margin: 24,
+        //   background: '#BADA55',
+        //   scrollOffset: 0,
+        //   container: '#zoom-container',
+        //   template: '#zoom-template',
+        // },
+      },
     }),
   plugins: [
+    'plugin-image-zoom',
     [
       'docusaurus-plugin-remote-content',
       {
@@ -273,12 +287,12 @@ ${updatedContent}`,
             command = `${baseCommand} ${paths.join(' ')}`;
             commandTitle = command;
           }
-          
+
           // Extract frontmatter from content
           const { data, content: rawContent } = matter(content);
           data.fullCommand = command;
           const dataJSON = JSON.stringify(data || {}).replace(/"/g, '\\"');
-          
+
           // If hidden then hide
           if (data.command.hidden) {
             return { content: '', filename: '' };
@@ -313,17 +327,17 @@ ${rawContent}
         outDir: 'docs/getting-started', // the base directory to output to.
         documents: ['configuration.md'], // the file names to download
         modifyContent: (filename, content) => {
-            let updatedContent = content;
-            return {
-              content: `---
+          let updatedContent = content;
+          return {
+            content: `---
 id: configuration
 sidebar_position: 20
 title: Configuration
 ---
 
 ${updatedContent}`,
-              filename: 'configuration.md',
-            };
+            filename: 'configuration.md',
+          };
         },
       },
     ],
