@@ -62,9 +62,9 @@ KAS offers the following RPC methods:
     }
     ```
 
-At this point, the client is ready to make the rewrap request. Here's what happens within KAS:
+At this point, the client is ready to make the rewrap request. The following is an example request body. 
 
-```json
+```json title="Signed Request Token"
 {
   "signedRequestToken": "<The JWT>"
 }
@@ -84,7 +84,7 @@ At this point, the client is ready to make the rewrap request. Here's what happe
 
 NanoTDF leverages the same KAS Rewrap Endpoint but the request body differs slightly from a TDF Rewrap call. 
 
-1. The client extracts the NanoTDF [Header](../spec/NanoTDF/manifest) and from that Header extracts the KAS URL.
+1. The client extracts the NanoTDF [Header](/spec/nanotdf/manifest#331-header) and from that Header extracts the KAS URL.
 
 2. The client generates an ephemeral asymmetric key pair, used to wrap the shared secret originally generated on NanoTDF creation.
 
@@ -121,15 +121,15 @@ NanoTDF leverages the same KAS Rewrap Endpoint but the request body differs slig
     }
     ```
 
-  At this point, the client is ready to make the rewrap request. Here's what happens within KAS:
+  At this point, the client is ready to make the rewrap request. The following is an example request body. 
 
-    ```json
+    ```json title="Signed Request Token"
     {
       "signedRequestToken": "<The JWT>"
     }
     ```
 
-5. KAS extracts the encrypted policy in the NanoTDF [Header](../spec/NanoTDF/manifest) and verifies the policy binding. 
+5. KAS extracts the encrypted policy in the NanoTDF [Header](/spec/nanotdf/manifest#331-header) and verifies the policy binding. 
   - If ECDSA Binding is enabled KAS will verify the use ecdsa to verify the signature otherwise it defaults to comparing the `GMAC`
 
 6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the NanoTDF. If authorized, KAS generates a new shared key with the clients ephemeral public key and uses `AES-GCM` to encrypt the shared secret used to encrypt the NanoTDF payload.
