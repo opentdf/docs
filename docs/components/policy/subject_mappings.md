@@ -19,7 +19,7 @@ B(Subject Mapping)<--> C(Subject Condition Set);
 
 ## Attribute Value
 
-Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](./attributes#values) documentation.
+Subject Mappings link entities to Attribute Values, granting entitlements. They have no function without existing Attribute Values under Namespaced Definitions. For more information, see the [Attribute Value](./attributes) documentation.
 
 ## Subject Condition Set
 
