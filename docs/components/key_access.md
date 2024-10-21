@@ -35,8 +35,8 @@ KAS offers the following RPC methods:
 <img src="/img/kas_tdf_flow.svg" alt="KAS TDF Rewrap"/>
 
 1. The client extracts two pieces of information from the TDF:
-   1. [Key Access Object (KAO)](/spec/ztdf/kao): This contains the wrapped key and the policy binding.
-   2. The [Policy](/spec/ztdf/policy) from the manifest.
+   1. [Key Access Object (KAO)](/spec/tdf/kao): This contains the wrapped key and the policy binding.
+   2. The [Policy](/spec/tdf/policy) from the manifest.
 
 2. The client generates an ephemeral asymmetric key pair, used to wrap the KAO content (such as an AES encryption key that can access the TDF payload) from KAS.
 
@@ -50,7 +50,7 @@ KAS offers the following RPC methods:
     }
     ```
 
-4. With this `RequestBody`, the client creates a Signed Request Token, which is a JWT signed with the client's DPoP public key.
+4. With this `RequestBody`, the client creates a Signed Request Token, which is a JWT signed with the client's DPoP public key or Ephemeral Key Pair.
 
     :::note
     "Demonstration of Proof of Possession" is currently optional due to inconsistencies across identity providers.
@@ -79,3 +79,58 @@ At this point, the client is ready to make the rewrap request. Here's what happe
 6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the TDF. If authorized, KAS rewraps the symmetric key with the client's public key and returns the newly wrapped key for the client to use in decrypting the TDF.
 
 ### NanoTDF
+
+<img src="/img/kas_nano_flow.svg" alt="KAS NanoTDF Rewrap"/>
+
+NanoTDF leverages the same KAS Rewrap Endpoint but the request body differs slightly from a TDF Rewrap call. 
+
+1. The client extracts the NanoTDF [Header](/spec/NanoTDF/manifest#331-header) and from that Header extracts the KAS URL.
+
+2. The client generates an ephemeral asymmetric key pair, used to wrap the shared secret originally generated on NanoTDF creation.
+
+3. Because NanoTDF doesn't have the concept of a Key Access Object the client builds one. The Key Access Object is then used to help build a `RequestBody`: 
+
+  ```json title="Key Access"
+   {
+    "header": "<nanotdf header>",
+    "type": "remote",
+    "url": "https://kas.opentdf.io",
+    "protocol": "kas"
+    }
+  ```
+
+  ```json title="Request Body"
+    {
+      "requestBody": {
+        "algorithm": "ec:secp256r1",
+        "keyAccess": "<key access>",
+        "clientPublicKey": "<client public key>"
+      }
+    }
+  ```
+
+4. With this `RequestBody`, the client creates a Signed Request Token, which is a JWT signed with the client's DPoP public key or Ephemeral Key Pair
+
+    :::note
+    "Demonstration of Proof of Possession" is currently optional due to inconsistencies across identity providers.
+    :::
+
+    ```json title="Body of JWT"
+    {
+      "requestBody": "<RequestBody>"
+    }
+    ```
+
+  At this point, the client is ready to make the rewrap request. Here's what happens within KAS:
+
+    ```json
+    {
+      "signedRequestToken": "<The JWT>"
+    }
+    ```
+
+5. KAS extracts the encrypted policy in the NanoTDF [Header](/spec/NanoTDF/manifest#331-header) and verifies the policy binding. 
+  - If ECDSA Binding is enabled KAS will verify the use ecdsa to verify the signature otherwise it defaults to comparing the `GMAC`
+
+6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the NanoTDF. If authorized, KAS generates a new shared key with the clients ephemeral public key and uses `AES-GCM` to encrypt the shared secret used to encrypt the NanoTDF payload.
+
