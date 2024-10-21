@@ -191,9 +191,9 @@ ${updatedContent}`,
       'docusaurus-plugin-remote-content',
       {
         // options here
-        name: 'ztdf', // used by CLI, must be path safe
+        name: 'tdf', // used by CLI, must be path safe
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/spec/main/schema/tdf/', // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: 'docs/spec/ztdf/', // the base directory to output to.
+        outDir: 'docs/spec/tdf/', // the base directory to output to.
         documents: [
           'Manifest.md',
           'KeyAccessObject.md',
