@@ -18,3 +18,6 @@ jobs:
           filter_mode: added
           vale_flags: "--glob=!blog/*"
           debug: true
+      - name: find files
+        if: always()
+        run: tree -f  / | grep RedHat
