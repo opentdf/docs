@@ -16,4 +16,5 @@ jobs:
       - uses: errata-ai/vale-action@v2.1.1
         with:
           filter_mode: added
-          vale_flags: "--glob='!blog/*'"
+          vale_flags: "--glob=!blog/*"
+          debug: true
