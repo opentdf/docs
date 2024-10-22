@@ -21,3 +21,5 @@ jobs:
       - name: find files
         if: always()
         run: tree -f  / | grep RedHat
+      - name: list styles
+        run: ls .github/vale-styles
