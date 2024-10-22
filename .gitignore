@@ -30,8 +30,3 @@ node_modules
 /docs/getting-started/configuration.md
 
 /.idea/
-
-# Ignore all downloaded packages and files in vale-styles
-.github/vale-styles/*
-# Except for the config directory where we keep the vocab
-!.github/vale-styles/config/
