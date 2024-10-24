@@ -114,11 +114,10 @@ public class EncryptExample {
         var kasInfo = new Config.KASInfo();
         kasInfo.URL = "http://localhost:8080/kas";
 
-        var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo), Config.withDataAttributes("https://example.com/attr/color/value/red"));
+        var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo), Config.withDataAttributes("https://mynamespace.com/attr/test/value/test1"));
 
         String str = "Hello, World!";
         
-        // Convert String to InputStream
         var in = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
 
         FileOutputStream fos = new FileOutputStream("my.ciphertext");
