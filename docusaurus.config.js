@@ -120,7 +120,7 @@ const config = {
       prism: {
         theme: prismThemes.vsLight,
         darkTheme: prismThemes.dracula,
-        additionalLanguages: ['bash', 'protobuf', "json"],
+        additionalLanguages: ['bash', 'protobuf', "json", "java"],
       },
       // github codeblock theme configuration
       codeblock: {
