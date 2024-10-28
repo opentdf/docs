@@ -17,10 +17,3 @@ jobs:
         with:
           filter_mode: added
           vale_flags: "--glob=!blog/* --config=.vale.ini"
-          debug: true
-      # - name: find files
-      #   if: always()
-      #   run: tree -f  / | grep RedHat
-      - name: list styles
-        if: always()
-        run: ls .github/vale-styles
