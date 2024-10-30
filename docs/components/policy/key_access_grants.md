@@ -4,7 +4,7 @@ Key Access Grants (KAS Grants) are associations between a registered Key Access 
 
 KAS Grants enable key split behaviors on TDFs with attributes, facilitating various collaboration scenarios around shared policies. Grants follow the specificity matrix below, which determines the KAS public keys used for encryption in various KAS grant scenarios:
 
-| Namespace KAS Grant | Attr Definition KAS Grant | Attr Value KAS Grant | Granted Data Encryption Key Utilized in Split |
+| Namespace KAS Grant | Attribute Definition KAS Grant | Attribute Value KAS Grant | Granted Data Encryption Key Utilized in Split |
 | ------------------- | ------------------------- | -------------------- | --------------------------------------------- |
 | yes                 | no                        | no                   | namespace                                     |
 | yes                 | yes                       | no                   | attribute definition                          |
@@ -43,10 +43,11 @@ Example attributes:
 - Attribute A: `https://conglomerate.com/attr/organization/value/acmeco`
 - Attribute B: `https://conglomerate.com/attr/department/value/marketing`
 
-| Attribute | Namespace        | Definition   | Value     |
-| --------- | ---------------- | ------------ | --------- |
-| A         | conglomerate.com | organization | acmeco    |
-| B         | conglomerate.com | department   | marketing |
+
+| Attribute | Namespace          | Definition     | Value     |
+| --------- | ----------------   | ------------   | --------- |
+| A         | `conglomerate.com` | `organization` | `acmeco`    |
+| B         | `conglomerate.com` | `department`   | `marketing` |
 
 **Attribute KAS Grant Scenarios:**
 

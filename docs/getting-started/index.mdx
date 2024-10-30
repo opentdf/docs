@@ -16,7 +16,7 @@ This guide will walk you through setting up a new platform locally and walk you 
 
 ## Getting the Platform Running
 
-The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [keycloak](https://www.keycloak.org/), and a [postgres](https://www.postgresql.org/) database.
+The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
 
 :::warning
 Not for production use.
@@ -324,7 +324,7 @@ export PLATFORM_HOST=https://platform.opentdf.local:8443
 
 ## Trust Self Signed Certificates
 
-During the bootstrapping process `caddy` will generate self signed certificiates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command.
+During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command.
 
 Example of extracting the certificate from the container.
 
@@ -342,7 +342,7 @@ docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/
 
 ## Login to the Platform
 
-During the provisioning of the platform, a few test clients were created in **keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
+During the provisioning of the platform, a few test clients were created in **Keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
 
 ```shell
 otdfctl --host $PLATFORM_HOST auth client-credentials --client-id opentdf --client-secret secret
@@ -764,7 +764,7 @@ NOTE   Use 'subject-mappings get --id=f6bf9fc7-e23b-4276-9dfc-7a61f359edfd --jso
 
 Now that we have the subject mapping in place we should be able to decrypt the data.
 
-#### Example zTDF sucessful decryption
+#### Example zTDF successful decryption
 
 ```shell
 otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
@@ -775,7 +775,7 @@ otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
 my first encrypted tdf
 ```
 
-#### Example nanoTDF sucessful decryption
+#### Example nanoTDF successful decryption
 
 ```shell
 otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
@@ -786,6 +786,6 @@ otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
 my first encrypted tdf
 ```
 
-## Takeways and Next Steps
+## Takeaways and Next Steps
 
 In this document you have learned how to create a namespace, attribute, subject mapping, and encrypt/decrypt data with the **OpenTDF Platform**.

@@ -1,0 +1,17 @@
+name: Vale
+
+on:
+  pull_request:
+    branches:
+      - main
+    
+jobs:
+  vale-check:
+    name: Vale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: errata-ai/vale-action@v2.1.1
+        with:
+          filter_mode: added
+          vale_flags: "--glob=!blog/* --config=.vale.ini"

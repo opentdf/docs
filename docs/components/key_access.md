@@ -130,7 +130,7 @@ NanoTDF leverages the same KAS Rewrap Endpoint but the request body differs slig
     ```
 
 5. KAS extracts the encrypted policy in the NanoTDF [Header](/spec/nanotdf/manifest#331-header) and verifies the policy binding. 
-  - If ECDSA Binding is enabled KAS will verify the use ecdsa to verify the signature otherwise it defaults to comparing the `GMAC`
+  - If ECDSA Binding is enabled KAS will verify the use ECDSA to verify the signature otherwise it defaults to comparing the `GMAC`
 
 6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the NanoTDF. If authorized, KAS generates a new shared key with the clients ephemeral public key and uses `AES-GCM` to encrypt the shared secret used to encrypt the NanoTDF payload.
 

@@ -2,7 +2,7 @@
 
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, entities are associated with Attribute values through a mechanism called Subject Mappings.
 
-Entities (subjects, users, machines, etc.) are represented by their identity as determined from an identity provider (IdP). After an entity has securely authenticated with the IdP, tthe client's token (OIDC/OAUTH2) will include claims or attributes that describe that identity. Subject Mappings define how to map these identity attributes to the attribute values defined in the OpenTDF platform. For more details on how the platform integrates with the IdP and how entities are resolved, refer to the [Authorization documentation](../authorization).
+Entities (subjects, users, machines, etc.) are represented by their identity as determined from an identity provider (IdP). After an entity has securely authenticated with the IdP, the client's token (OIDC/OAUTH2) will include claims or attributes that describe that identity. Subject Mappings define how to map these identity attributes to the attribute values defined in the OpenTDF platform. For more details on how the platform integrates with the IdP and how entities are resolved, refer to the [Authorization documentation](../authorization).
 
 ## Composition
 
