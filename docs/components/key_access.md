@@ -16,7 +16,7 @@ KAS offers the following RPC methods:
   https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996f/service/kas/kas.proto#L34-L43
   ```
 
-- `Rewrap` - This method takes a key wrapped using a key retrieved from the `PublicKey` endpoint and re-wraps it with a client key. The process succeeds only if the following conditions are met:
+- `Rewrap` - This method takes a key wrapped using a key retrieved from the `PublicKey` endpoint and rewraps it with a client key. The process succeeds only if the following conditions are met:
   - The policy binding is validated.
   - The authorization service confirms that the entity is allowed access to the TDF.
 
@@ -76,7 +76,7 @@ At this point, the client is ready to make the rewrap request. The following is 
     HMAC-SHA256(B64(POLICY), KEY)
     ```
 
-6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the TDF. If authorized, KAS re-wraps the symmetric key with the client's public key and returns the newly wrapped key for the client to use in decrypting the TDF.
+6. If the policy is valid and untampered, KAS calls the [Authorization Service](./authorization) to confirm whether the entity is allowed access to the TDF. If authorized, KAS rewraps the symmetric key with the client's public key and returns the newly wrapped key for the client to use in decrypting the TDF.
 
 ### NanoTDF
 
