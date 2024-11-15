@@ -291,7 +291,10 @@ ${updatedContent}`,
           // Extract frontmatter from content
           const { data, content: rawContent } = matter(content);
           data.fullCommand = command;
-          const dataJSON = JSON.stringify(data || {}).replace(/"/g, '\\"');
+          const dataJSON = JSON.stringify(data || {})
+            .replace(/"/g, '\\"')
+            .replace(/'/g, "\\'")
+            .replace(/\n/g, '\\n');
 
           // If hidden then hide
           if (data.command.hidden) {
