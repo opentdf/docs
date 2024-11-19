@@ -135,7 +135,33 @@ public class EncryptExample {
 </TabItem>
 <TabItem value="js" label="Javascript">
 
-```javascript
+```typescript
+import { AuthProviders, NanoTDFClient } from '@opentdf/sdk';
+
+// Configuration Options
+const kasEndpoint = "http://localhost:65432/kas";
+
+// Authentication options (vary by middleware)
+const oidcOrigin = "http://localhost:65432/auth/realms/tdf";
+const clientId = "applicationNameFromIdP";
+const refreshToken = "refreshTokenValueFromIdP";
+
+// AuthProviders are middlewares that add `Authorization` or other bearer tokens to requests.
+// These include The `refresh` provider can be handed a refresh and optional access token.
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId,
+  exchange: 'refresh',
+  refreshToken,
+  oidcOrigin,
+});
+
+const client = new NanoTDFClient({
+  authProvider,
+  kasEndpoint,
+});
+client.dataAttributes = ["http://opentdf.io/attr/class/value/secret"]
+const cipherText = await client.encrypt(plainText);
+const clearText = await client.decrypt(cipherText);
 ```
 
 </TabItem>
