@@ -161,7 +161,7 @@ const client = new TDF3Client({
 });
 
 // ABAC
-client.dataAttributes = ["http://example.com/attr/classification/value/secret"]
+const attributes = ["http://example.com/attr/classification/value/secret"]
 
 // encrypt
 const source = new ReadableStream({
@@ -170,7 +170,7 @@ const source = new ReadableStream({
       controller.close();
     },
 });
-const ciphertextStream = await client.encrypt({ offline: true, source });
+const ciphertextStream = await client.encrypt({ offline: true, source, scope: {attributes} });
 
 // decrypt
 const plaintextStream = await client.decrypt({
