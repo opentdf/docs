@@ -4,7 +4,7 @@ import TabItem from '@theme/TabItem';
 <details>
 <summary>Encrypting / Decrypting zTDF</summary>
 <Tabs>
-<TabItem value="js" label="Typescript">
+<TabItem value="ts" label="Typescript">
 ```typescript
 import { AuthProviders, NanoTDFClient } from '@opentdf/sdk';
 
@@ -30,8 +30,10 @@ const client = new NanoTDFClient({
   kasEndpoint,
 });
 
-// ABAC encrypt
-client.dataAttributes = ["http://opentdf.io/attr/class/value/secret"]
+// ABAC
+client.dataAttributes = ["http://example.com/attr/classification/value/secret"]
+
+// encrypt
 const cipherText = await client.encrypt(plainText);
 
 // decrypt

@@ -160,12 +160,23 @@ const client = new TDF3Client({
   kasEndpoint,
 });
 
-// ABAC encrypt
-client.dataAttributes = ["http://opentdf.io/attr/class/value/secret"]
-const cipherText = await client.encrypt(plainText);
+// ABAC
+client.dataAttributes = ["http://example.com/attr/classification/value/secret"]
+
+// encrypt
+const source = new ReadableStream({
+    pull(controller) {
+      controller.enqueue(new TextEncoder().encode(string));
+      controller.close();
+    },
+});
+const ciphertextStream = await client.encrypt({ offline: true, source });
 
 // decrypt
-const clearText = await client.decrypt(cipherText);
+const plaintextStream = await client.decrypt({
+    source: { type: 'stream', location: ciphertextStream }
+});
+const plaintext = await plaintextStream.toString();
 ```
 
 </TabItem>
