@@ -1,0 +1,44 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+<summary>Encrypting / Decrypting zTDF</summary>
+<Tabs>
+<TabItem value="ts" label="Typescript">
+```typescript
+import { AuthProviders, NanoTDFClient } from '@opentdf/sdk';
+
+// Configuration Options
+const kasEndpoint = "https://kas.example.com";
+
+// Authentication options (vary by middleware)
+const oidcOrigin = "https://idp.example.com";
+const clientId = "applicationNameFromIdP";
+const refreshToken = "userRefreshTokenValueFromIdP";
+
+// AuthProviders are middlewares that add `Authorization` or other bearer tokens to requests.
+// These include The `refresh` provider can be handed a refresh and optional access token.
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId,
+  exchange: 'refresh',
+  refreshToken,
+  oidcOrigin,
+});
+
+const client = new NanoTDFClient({
+  authProvider,
+  kasEndpoint,
+});
+
+// ABAC
+client.dataAttributes = ["http://example.com/attr/classification/value/secret"]
+
+// encrypt
+const cipherText = await client.encrypt(plainText);
+
+// decrypt
+const clearText = await client.decrypt(cipherText);
+```
+</TabItem>
+</Tabs>
+</details>
