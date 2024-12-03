@@ -75,6 +75,7 @@ export default function Home() {
                 Virtru Data Security Platform
               </a>{" "}
               for more.
+              </p>
             </p>
           </Columns.Item>
         </Columns>
