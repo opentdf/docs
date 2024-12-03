@@ -28,6 +28,22 @@ const config: Config = {
   organizationName: 'opentdf', // Usually your GitHub org/user name.
   projectName: 'docs', // Usually your repo name.
 
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: {
+        type: 'application/ld+json',
+      },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'OpenTDF',
+        url: 'https://opentdf.io',
+        logo: 'https://docs.opentdf.io/img/opentdf-social.png',
+      }),
+    }
+  ],
+
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   markdown: {
@@ -70,14 +86,15 @@ const config: Config = {
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
-      // Replace with your project's social card
-      image: 'img/OpenTDF-Logo.png',
+      image: 'img/opentdf-social.png',
       navbar: {
         hideOnScroll: true,
         title: 'OpenTDF',
         logo: {
-          alt: 'OpenTDF Logo',
+          alt: 'OpenTDF - Protect the Data, Build the Future',
           src: 'img/OpenTDF-Logo.png',
+          width: 32,
+          height: 32,
         },
         items: [
           {
