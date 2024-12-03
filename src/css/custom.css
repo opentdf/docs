@@ -29,6 +29,25 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 } */
 
+/**************
+** ROOT
+***************/
+:root {
+  --vds-color-blue-lightest: #eff8ff;
+  --vds-color-blue-lighter: #dceeff;
+  --vds-color-blue-light: #b3dbff;
+  --vds-color-blue-dark: #6bbaff;
+  --vds-color-blue-darker: #1e96ff;
+  --vds-color-blue-darkest: #011e38;
+  --vds-color-blue-006: #01396b;
+  --vds-color-blue-007: #002c52;
+
+  --vds-color-black-001: #181d27;
+  --vds-color-grey-005: #e9eaeb;
+
+  --vds-color-typography-accent: var(--vds-color-blue-007);
+
+}
 
 :root {
   --ifm-color-primary: #004987;
@@ -48,6 +67,11 @@
   --ifm-heading-font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --ifm-font-family-base: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
+
+
+/**************
+** THEME
+***************/
 
 .docusaurus-highlight-code-line {
   background-color: rgba(0, 0, 0, 0.1);
@@ -83,12 +107,147 @@ html[data-theme='dark'] .table-of-contents__link--active {
   width: 200px;
 }
 
-.footer__copyright {
-  display: flex;
-  justify-content: space-between;
-}
-
 /* TODO not sure the right selector syntax to hide Figma footer in iframe */
 a[class*="embed_documentation_footer-"] {
   display: none !important;
+}
+
+/**************
+** FOOTER
+***************/
+
+.footer {
+  height: auto;
+  background-color: var(--vds-color-blue-darkest);
+  color: var(--vds-color-blue-lighter);
+}
+.footer .container {
+  display: flex;
+  justify-content: space-between;
+  gap: 3rem;
+  flex-direction: row-reverse;
+  padding: 1rem 0;
+  align-items: flex-start;
+}
+
+.footer__links {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.footer__link-item {
+  font-size: 1.1rem;
+  color: var(--vds-color-blue-light);
+}
+
+.footer__title {
+  font-size: .9rem;
+  color: var(--vds-color-blue-dark);
+}
+
+.footer__bottom {
+  flex: 1;
+  text-align: left;
+}
+
+.footer__bottom img {
+  height: 46px;
+  margin: 0;
+}
+
+.footer__copyright {
+  display: flex;
+  justify-content: space-between;
+  color: var(--vds-color-blue-darker);
+}
+
+@media (min-width: 1201px) {
+  /* Styles for xl breakpoint */
+}
+
+@media (max-width: 1200px) {
+  .footer .container {
+    padding: var(--vds-homepage-container-padding-lg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .footer .container {
+    padding: var(--vds-homepage-container-padding-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .footer .container {
+    justify-content: center;
+    padding: var(--vds-homepage-container-padding-sm);
+  }
+
+  .footer__copyright {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer .container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: var(--vds-homepage-container-padding-xs);
+  }
+}
+
+/**************
+** HOMEPAGE
+
+Breakpoints:
+- xs: 480px
+- sm: 768px
+- md: 1024px
+- lg: 1200px
+- xl: >1200px (default)
+***************/
+
+:root {
+  --vds-homepage-container-padding-xs: 0 2rem;
+  --vds-homepage-container-padding-sm: 0 2rem;
+  --vds-homepage-container-padding-md: 0 2rem;
+  --vds-homepage-container-padding-lg: 0 2rem;
+  --vds-homepage-container-padding-xl: 0;
+
+  --vds-homepage-font-size-xl: 3rem;
+  --vds-homepage-font-size-lg: 2.5rem;
+  --vds-homepage-font-size-md: 2rem;
+  --vds-homepage-font-size-sm: 1.5rem;
+  --vds-homepage-font-size-xs: 1.2rem;
+  --vds-homepage-font-size-xxs: 1rem;
+  --vds-homepage-font-size-xxxs: 0.875rem;
+
+  --vds-homepage-subtitle-font-size: var(--vds-homepage-font-size-xxxs);
+  --vds-homepage-subtitle-font-weight: 300;
+  --vds-homepage-subtitle-color: #555;
+  --vds-homepage-subtitle-margin: 0 0 0.5rem 0;
+
+  --vds-homepage-title-font-size: var(--vds-homepage-font-size-md);
+  --vds-homepage-title-font-weight: 500;
+  --vds-homepage-title-margin: 0 0 2rem 0;
+
+  --vds-homepage-body-font-size: var(--vds-homepage-font-size-xs);
+  --vds-homepage-body-line-height: 1.5;
+}
+
+.homepage p {
+  font-size: var(--vds-homepage-body-font-size);
+  line-height: var(--vds-homepage-body-line-height);
+}
+
+.homepage .navbar {
+  background-color: var(--vds-color-blue-lighter);
+  border: 0;
+  box-shadow: 0 1px 2px 0 var(--vds-color-blue-lighter);
+}
+.navbar .navbar__brand {
+  color: var(--vds-color-blue-006);
+  font-size: 1.5rem;
 }
