@@ -79,8 +79,8 @@ export default function Home() {
           description="Ideas for leveraging OpenTDF in your own applications"
           imageUrl=""
         >
-          <Features.Item title="SecureCycle" description="SecureCycle is a sample application that demonstrates how OpenTDF safeguards private health information &hyphen; in this case, sensitive data related to period tracking and symptoms." icon="carbon:location-heart"
-          callToAction={{ title: 'Learn more', url: 'https://google.com' }} />
+          {/* <Features.Item title="SecureCycle" description="SecureCycle is a sample application that demonstrates how OpenTDF safeguards private health information &hyphen; in this case, sensitive data related to period tracking and symptoms." icon="carbon:location-heart"
+          callToAction={{ title: 'Learn more', url: 'https://google.com' }} /> */}
           <Features.Item title="Secure IoT Sensor Data" description="From full-motion video to biometric devices, attach access controls and preserve data integrity to guard against data spoofing." icon="carbon:fingerprint-recognition" />
           <Features.Item title="Secure Data Sharing" description="Securely share data with partners, customers, and suppliers, and maintain control over who can access it." icon="carbon:ai-governance-lifecycle" />
         </Features>

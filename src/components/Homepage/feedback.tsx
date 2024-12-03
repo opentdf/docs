@@ -8,7 +8,7 @@ export default function Feedback({
 }: {
   children: React.ReactNode;
   title: string;
-  iframe: React.ReactNode;
+  iframe?: React.ReactNode;
 }) {
   if (!title || title === "") {
     title = "Feedback";

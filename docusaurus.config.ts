@@ -115,11 +115,11 @@ const config: Config = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/docs/getting-started/configuration',
+                to: '/getting-started/configuration',
               },
               {
                 label: 'Documentation',
-                to: '/docs',
+                to: '/introduction',
               },
               {
                 label: 'GitHub Discussions',
