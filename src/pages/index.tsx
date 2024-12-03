@@ -49,10 +49,9 @@ export default function Home() {
             to uphold the highest standards of data security in an interconnected world.
             </p>
           </Columns.Item>
-          <Columns.Item title="Project Overview and Current State" subtitle="The latest">
+          <Columns.Item title="Project Overview and Current State" subtitle="What's New">
             <p>
-            OpenTDF is a cutting-edge open-source platform dedicated to providing robust, 
-            data-centric security solutions. In 2023, we undertook a significant re-architecture 
+            In 2023, the OpenTDF team undertook a significant re-architecture 
             of the OpenTDF platform to enhance its extensibility and interoperability, 
             responding to the evolving needs of our diverse user base and the dynamic cybersecurity landscape.
             See our {" "}<a href="https://github.com/opentdf/">Github Organization Page</a> to navigate the new repositories. 
@@ -62,10 +61,7 @@ export default function Home() {
             adopting standardized policy schemas, and improving platform APIs and SDKs both in 
             developer experience and in capability. By focusing on extensibility, we have enabled 
             developers to customize and extend OpenTDF’s functionalities to suit specific use cases, 
-            fostering innovation and adaptability. Enhancing interoperability ensures that OpenTDF 
-            can smoothly integrate with various data sources, security frameworks, and third-party applications, promoting a cohesive and versatile security ecosystem.
-            <p>
-            As we continue to advance, our focus remains on empowering the community with a secure, adaptable, 
+            fostering innovation and adaptability. As we continue to advance, our focus remains on empowering the community with a secure, adaptable, 
             and interoperable platform that meets the highest standards of data protection and fosters collaborative innovation.
             </p>
             <p>
@@ -75,7 +71,6 @@ export default function Home() {
                 Virtru Data Security Platform
               </a>{" "}
               for more.
-              </p>
             </p>
           </Columns.Item>
         </Columns>
