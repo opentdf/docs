@@ -5,14 +5,14 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
+import type {Config} from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
 import matter from 'gray-matter';
-
 import listRemote from './docusaurus-lib-list-remote';
 
 const otdfctl = listRemote.createRepo('opentdf', 'otdfctl', 'main');
 
-/** @type {import('@docusaurus/types').Config} */
-const config = {
+const config: Config = {
   title: 'OpenTDF',
   tagline: 'Enabling secure data sharing through open, data-centric security',
   favicon: 'img/OpenTDF-Logo.png',
@@ -59,14 +59,17 @@ const config = {
         blog: false,
         theme: {
           customCss: './src/css/custom.css',
-        },
+        }
       }),
     ],
   ],
 
-  themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
+  themeConfig: {
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: true,
+        respectPrefersColorScheme: false,
+      },
       // Replace with your project's social card
       image: 'img/OpenTDF-Logo.png',
       navbar: {
@@ -91,31 +94,57 @@ const config = {
         ],
       },
       footer: {
+        style: 'dark',
+        logo: {
+          alt: 'OpenTDF Logo',
+          src: 'img/opentdf-logo-horizontal.png',
+          href: 'https://opentdf.io',
+        },
         links: [
           {
-            title: 'Community',
+            title: 'Sponsors',
             items: [
+              {
+                label: 'Virtru',
+                href: 'https://virtru.com',
+              },
+            ],
+          },
+          {
+            title: 'Support',
+            items: [
+              {
+                label: 'Getting Started',
+                to: '/docs/getting-started/configuration',
+              },
+              {
+                label: 'Documentation',
+                to: '/docs',
+              },
               {
                 label: 'GitHub Discussions',
                 href: 'https://github.com/orgs/opentdf/discussions',
               },
             ],
-          }//,
-          //{
-          // title: 'More',
-          //  items: [
-          // {
-          //   label: 'Slack',
-          //   href: 'https://join.slack.com/t/opentdf/shared_invite/zt-2h6j6n5ly-BVUq~bIPoMeSu~20XQswFw',
-          // },
-          // {
-          //  label: 'X',
-          //  href: 'https://twitter.com/openTDF',
-          //},
-          //  ],
-          //},
+          },
+          {
+            title: 'More',
+            items: [
+              {
+                label: 'Showcase',
+                href: 'https://github.com/orgs/opentdf/discussions/categories/show-and-tell',
+              },
+              {
+                label: 'Roadmap',
+                href: 'https://github.com/orgs/opentdf/discussions/1806'
+              }
+            ],
+          }
         ],
-        copyright: `<span>Copyright © ${new Date().getFullYear()} OpenTDF</span><span>Sponsored by <a href="https://virtru.com" target="_blank" rel="noopener noreferrer">Virtru</a></span>`,
+        copyright: `
+          <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
+          <iconify-icon data-icon="mdi:shield-check" style="color: #00FF00;"></iconify-icon>
+        `,
       },
       prism: {
         theme: prismThemes.vsLight,
@@ -142,7 +171,7 @@ const config = {
         //   template: '#zoom-template',
         // },
       },
-    }),
+    } satisfies Preset.ThemeConfig,
   plugins: [
     'plugin-image-zoom',
     [

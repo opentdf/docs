@@ -1,0 +1,147 @@
+.container {
+  justify-content: center;
+  align-items: center;
+  /* Fix for a strange 1px gap at the bottom of the hero */
+  border: 1px solid transparent;
+  border-bottom-color: white;
+  background: var(--vds-color-blue-lighter);
+  background-image: url(/static/landing-bg.png);
+  background-repeat: no-repeat;
+  background-size: 100%;
+  background-position: bottom;
+  color: var(--ifm-hero-text-color);
+}
+
+.containerInner {
+  text-align: center;
+  margin: auto;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-weight: bold;
+  z-index: 5;
+}
+
+.tag > div {
+  border: 1px solid var(--vds-color-blue-darker);
+  color: var(--vds-color-blue-darkest);
+  border-radius: 25px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.1rem 0.8rem;
+}
+
+.heading {
+  font-size: 4rem;
+  color: var(--vds-color-blue-007);
+}
+
+.content {
+  position: relative;
+  font-size: 1.5rem;
+  width: 50vw;
+  margin: auto;
+  z-index: 5;
+}
+
+.callToAction {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  z-index: 5;
+}
+
+.callToAction > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  background-color: var(--vds-color-blue-006);
+  color: var(--ifm-color-white);
+  font-weight: bold;
+  border-radius: 5px;
+  margin: 1rem;
+  padding: 2rem 1rem;
+}
+
+.video {
+  display: flex;
+  justify-content: center;
+  max-width: 1018px;
+  margin: auto;
+  padding: 0 1rem;
+}
+
+.video > iframe {
+  /* aspect-ratio: 16 / 9; */
+  width: 100% !important;
+  height: 720px;
+}
+
+@media (min-width: 1201px) {
+}
+
+@media (max-width: 1200px) {
+}
+
+@media (max-width: 1024px) {
+  .heading {
+    font-size: 3rem;
+  }
+
+  .content {
+    width: 70vw;
+    font-size: 1.25rem;
+  }
+
+  .callToAction > a {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .video > iframe {
+    height: 540px;
+  }
+}
+
+@media (max-width: 768px) {
+  .heading {
+    font-size: 2.5rem;
+  }
+
+  .content {
+    width: 90vw;
+    font-size: 1rem;
+  }
+
+  .callToAction > a {
+    padding: 1rem 0.5rem;
+  }
+
+  .video > iframe {
+    height: 405px;
+  }
+}
+
+@media (max-width: 480px) {
+  .heading {
+    font-size: 2rem;
+  }
+
+  .content {
+    width: 100vw;
+    font-size: 0.875rem;
+  }
+
+  .callToAction > a {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .video > iframe {
+    height: 270px;
+  }
+}

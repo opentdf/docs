@@ -1,0 +1,37 @@
+.title {
+  font-size: var(--vds-homepage-title-font-size);
+  font-weight: var(--vds-homepage-title-font-weight);
+  color: var(--vds-homepage-title-color);
+}
+
+.subtitle {
+  font-size: var(--vds-homepage-subtitle-font-size);
+  font-weight: var(--vds-homepage-subtitle-font-weight);
+  color: var(--vds-homepage-subtitle-color);
+  margin: var(--vds-homepage-subtitle-margin);
+}
+
+.content {
+  font-size: var(--vds-homepage-body-font-size);
+  line-height: var(--vds-homepage-body-line-height);
+}
+
+@media (max-width: 480px) {
+  /* Styles for xs breakpoint */
+}
+
+@media (max-width: 768px) {
+  /* Styles for sm breakpoint */
+}
+
+@media (max-width: 1024px) {
+  /* Styles for md breakpoint */
+}
+
+@media (max-width: 1200px) {
+  /* Styles for lg breakpoint */
+}
+
+@media (min-width: 1201px) {
+  /* Styles for xl breakpoint */
+}
