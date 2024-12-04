@@ -1,10 +1,15 @@
 import React from "react";
 import Layout from "@theme/Layout";
+import Head from "@docusaurus/Head";
 import { Columns, Hero, Features, Feedback } from "../components/Homepage";
 
 export default function Home() {
   return (
     <div className="homepage">
+      <Head>
+        <meta property="og:title" content="OpenTDF - Protect the Data, Build the Future" />
+        <meta property="og:description" content="Persistent data centric security that extends owner control wherever data travels." />
+      </Head>
       <Layout title="OpenTDF" description="OpenTDF">
         <Hero
           heading="Protect the Data, Build the Future"
