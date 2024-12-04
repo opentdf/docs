@@ -18,51 +18,51 @@ export default function Home() {
           }}
         >
           <p>
-            OpenTDF (Trusted Data Format) is a foundational platform that allows you to build and
-            integrate “forever control” of your or your users&rsquo; respective data into new and
-            existing applications.
+          OpenTDF is an open source system for implementing data centric security. 
+          It provides the basic services required to enable the definition, application, 
+          and enforcement of attribute based policies using the Trust Data Format (TDF). 
+          TDF is an open standard that enables you to cryptographically bind 
+          attribute based access control (ABAC) policy to a data object so that 
+          the policy travels with the data wherever it goes.
           </p>
           <p>
-            OpenTDF includes encryption, but it is much more than that. It includes additional
-            cryptographically secured metadata that can ensure policy control throughout the
-            lifecycle of data. Imagine being able to grant or revoke, “turn off”, access to your
-            data at any time, even if it is not contained within your own network or application
-            anymore.
+          OpenTDF builds upon a decade of experience at Virtru 
+          protecting data objects at scale using the Trusted Data Format 
+          for organizations of all sizes and across all industries.
           </p>
         </Hero>
         <Columns>
-          <Columns.Item title="Zerotrust and OpenTDF" subtitle="The concept">
+          <Columns.Item title="Zero Trust and OpenTDF" subtitle="Why OpenTDF?">
             <p>
-              The concept of forever control stems from an increasingly common concept known as zero
-              trust. Zero trust removes the implicit trust that many of us have granted to our data
-              throughout its historical lifecycle. Zero trust says don&rsquo;t release the data
-              unless there is a way to maintain control over it.
+            Today's cybersecurity landscape is increasingly adopting and requiring Zero Trust models and frameworks. 
+            Zero Trust operates on the principle of "never trust, always verify," 
+            ensuring that every access request is authenticated, authorized, and encrypted, 
+            regardless of its origin. OpenTDF implements this model by providing an open-source framework, specification, and set of services
+            that prioritizes the protection and integrity of data at every stage. 
             </p>
             <p>
-              While the idea of zero trust sounds great, making it happen is a bit more difficult.
-              That&rsquo;s where OpenTDF comes in. By implementing or integrating OpenTDF into
-              applications and projects, the appropriate owner of a respective piece of data can
-              maintain control over that data forever, or at least as long as the data has not yet
-              completed its intended lifecycle.
+            By integrating OpenTDF’s data security features with a Zero Trust architecture, 
+            organizations can enforce strict access controls, ensure data is continuously monitored, 
+            and maintain comprehensive visibility into data interactions. This synergy not only 
+            minimizes the risk of data breaches but also fosters a secure environment where data 
+            can be shared and utilized with confidence. Together, Zero Trust and OpenTDF empower businesses 
+            to uphold the highest standards of data security in an interconnected world.
             </p>
           </Columns.Item>
-          <Columns.Item title="Project Overview and Current State" subtitle="The refresh">
+          <Columns.Item title="Project Overview and Current State" subtitle="What's New">
             <p>
-              The OpenTDF project was first released in 2022 when the creators realized a real and
-              pressing need in the community - the ability to protect data wherever it goes. This
-              critical pillar of zero-trust and data-centric security, and the rising needs of
-              data-centric interoperability, have fueled the OpenTDF team to build extensible,
-              reliable, and easy-to-use software to create value out-of-the-box while also providing
-              a clear path to production-scale deployments.
+            In 2023, the OpenTDF team undertook a significant re-architecture 
+            of the OpenTDF platform to enhance its extensibility and interoperability, 
+            responding to the evolving needs of our diverse user base and the dynamic cybersecurity landscape.
+            See our {" "}<a href="https://github.com/opentdf/">Github Organization Page</a> to navigate the new repositories. 
             </p>
             <p>
-              To this end, the OpenTDF project has gotten a refresh - you can find details of how to
-              get started on Github. The project refresh is in its early stages, so if you&rsquo;d
-              like to keep up to date with the latest in OpenTDF, please give the new{" "}
-              <a href="https://github.com/opentdf/platform">Platform Github</a>
-              repository a Star and a Watch to get notifications about the latest development.
-              Please also feel free to submit issues or discussion topics there - we&rsquo;d love to
-              hear from you!
+            This comprehensive overhaul involved simplifying core service components, 
+            adopting standardized policy schemas, and improving platform APIs and SDKs both in 
+            developer experience and in capability. By focusing on extensibility, we have enabled 
+            developers to customize and extend OpenTDF’s functionalities to suit specific use cases, 
+            fostering innovation and adaptability. As we continue to advance, our focus remains on empowering the community with a secure, adaptable, 
+            and interoperable platform that meets the highest standards of data protection and fosters collaborative innovation.
             </p>
             <p>
               Through the sponsorship of Virtru and its partners, the OpenTDF project has been
