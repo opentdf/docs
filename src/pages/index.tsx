@@ -12,14 +12,10 @@ export default function Home() {
       </Head>
       <Layout title="OpenTDF" description="OpenTDF">
         <Hero
-          heading="Protect the Data, Build the Future"
+          heading="OpenTDF: A toolkit for zero trust, data-centric security"
           callToAction={{
             text: "Get Started",
             url: "/getting-started",
-          }}
-          video={{
-            url: "https://www.youtube.com/embed/mOZaPsR3nic",
-            title: "Virtru Data Protection Gateway: Automatically Protect the Sensitive Data You Share",
           }}
         >
           <p>
