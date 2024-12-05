@@ -18,7 +18,9 @@ export default function Hero({
     url: string;
   };
 }) {
-  let videoEl: React.ReactNode = null;
+  let videoEl = (
+    <div className={styles.video + " " + styles.videoEmpty}></div>
+  )
   if (video) {
     videoEl = (
       <div className={styles.video}>
