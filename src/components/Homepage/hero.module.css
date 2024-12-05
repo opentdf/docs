@@ -75,12 +75,23 @@
   max-width: 1018px;
   margin: auto;
   padding: 0 1rem;
+  min-height: 300px;
 }
 
 .video > iframe {
   /* aspect-ratio: 16 / 9; */
   width: 100% !important;
   height: 720px;
+}
+
+@media (min-width: 1700px) {
+  .container{
+    background-image: none;
+  }
+  
+  .video {
+    min-height: inherit;
+  }
 }
 
 @media (min-width: 1201px) {
@@ -103,6 +114,10 @@
     padding: 1.5rem 0.75rem;
   }
 
+  .video {
+    min-height: 300px;
+  }
+
   .video > iframe {
     height: 540px;
   }
@@ -122,6 +137,10 @@
     padding: 1rem 0.5rem;
   }
 
+  .video {
+    min-height: 150px;
+  }
+
   .video > iframe {
     height: 405px;
   }
@@ -139,6 +158,10 @@
 
   .callToAction > a {
     padding: 0.75rem 0.5rem;
+  }
+
+  .video {
+    min-height: 100px;
   }
 
   .video > iframe {
