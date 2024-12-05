@@ -41,9 +41,11 @@
   --vds-color-blue-darkest: #011e38;
   --vds-color-blue-006: #01396b;
   --vds-color-blue-007: #002c52;
+  --vds-color-blue-008: #edf7ff;
 
   --vds-color-black-001: #181d27;
   --vds-color-grey-005: #e9eaeb;
+  --vds-color-grey-006: #535862;
 
   --vds-color-typography-accent: var(--vds-color-blue-007);
 

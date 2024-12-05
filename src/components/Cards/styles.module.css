@@ -1,0 +1,7 @@
+.card_accent--primary {
+  background-color: var(--ifm-color-primary);
+}
+
+.card_accent--secondary {
+  background-color: var(--ifm-color-secondary);
+}

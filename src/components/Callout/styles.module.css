@@ -1,0 +1,24 @@
+.container {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 2rem 2rem;
+  background-color: var(--vds-color-blue-008);
+  border-radius: 0.5rem;
+  color: var(--vds-color-grey-006);
+  font-size: 1.5rem;
+}
+
+.title {
+  padding-top: 0;
+  padding-bottom: 1rem;
+  color: var(--ifm-color-primary);
+  line-height: 2rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.callToAction {
+  color: var(--ifm-color-primary);
+}

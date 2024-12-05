@@ -2,10 +2,70 @@
 sidebar_position: 1
 ---
 
-# Introduction
+import React from 'react';
+import Callout from '@site/src/components/Callout';
+import Cards from '@site/src/components/Cards';
 
-<div style={{ flex: 1, float: 'right' , marginLeft: '20px' }}>
-    <img src="/img/OpenTDF-Logo.png" alt="OpenTDF" style={{ maxWidth: '100%' }} />
-</div>
+# Welcome to OpenTDF Docs
 
-OpenTDF is an open source system for implementing data centric security. It provides the basic services required to enable the definition, application, and enforcement of attribute based policies using the Trust Data Format (TDF). TDF is an open standard that enables the cryptographic binding of attribute-based access control (ABAC) policy do a data object so that the policy travels with the data.
+Find all the information you need to get started with OpenTDF.
+
+<Callout
+  title="Quick Start"
+  callToAction={{
+    label: 'Learn more',
+    link: '/getting-started',
+  }}
+>
+  This guide will walk you through setting up a new OpenTDF platform locally and walk you through
+  some of the basic concepts within the OpenTDF platform.
+</Callout>
+
+<Cards 
+  height={300}
+  columns={3}
+  items={[
+    {
+      name: 'TDF',
+      description: `
+        The Trust Data Format (TDF) is an open standard that enables the cryptographic binding ofattribute-based
+         access control (ABAC) policy to a data object so that the policy travels with the data.`,
+      url: '/category/base-tdf',
+    },
+    {
+      name: 'Policy',
+      description: `The OpenTDF Policy engine enables creation, enforcement, and subscription to policies. By
+      using attribute-based access control (ABAC) policies, the OpenTDF Policy engine can enforce flexible,
+      fine-grained access control based on entity entitlements.`,
+      url: '/components/policy',
+    },
+    {
+      name: 'Authorization',
+      description: `The OpenTDF Authorization service enables policy driven, access based decisions using
+      attribute-based access control (ABAC) based on entity entitlements. These decisions are used to enforce
+      both data privacy and application security, ensuring consistent policy enforcement across all policy
+      enforcement points.`,
+      url: '/components/authorization',
+    },
+  ]}
+/>
+
+### Explore by Feature
+
+<Cards
+  accentColor="secondary"
+  height={200}
+  columns={2}
+  items={[
+    {
+      name: 'SDK',
+      description: 'Learn about the Trust Data Format (TDF) and how it enables the cryptographic binding of attribute-based access control (ABAC) policy to a data object.',
+      url: '/category/sdk',
+    },
+    {
+      name: 'CLI',
+      description: 'Learn about the OpenTDF CLI tool (otdfctl) and how it can be used to manage the OpenTDF platform.',
+      url: '/components/cli',
+    },
+  ]}
+/>
