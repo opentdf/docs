@@ -28,6 +28,10 @@
   width: 100%;
 }
 
+#contact-form {
+  width: 50%;
+}
+
 @media (min-width: 1201px) {
 }
 
