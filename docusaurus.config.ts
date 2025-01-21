@@ -18,7 +18,7 @@ const config: Config = {
   favicon: 'img/OpenTDF-Logo.png',
 
   // Set the production url of your site here
-  url: 'https://docs.opentdf.io',
+  url: 'https://opentdf.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -39,7 +39,7 @@ const config: Config = {
         '@type': 'Organization',
         name: 'OpenTDF',
         url: 'https://opentdf.io',
-        logo: 'https://docs.opentdf.io/img/opentdf-social.png',
+        logo: 'https://opentdf.io/img/opentdf-social.png',
       }),
     }
   ],
