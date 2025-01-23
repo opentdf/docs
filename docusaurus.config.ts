@@ -5,7 +5,7 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import matter from 'gray-matter';
 import listRemote from './docusaurus-lib-list-remote';
@@ -81,114 +81,114 @@ const config: Config = {
   ],
 
   themeConfig: {
-      colorMode: {
-        defaultMode: 'light',
-        disableSwitch: true,
-        respectPrefersColorScheme: false,
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
+    },
+    image: 'img/opentdf-social.png',
+    navbar: {
+      hideOnScroll: true,
+      title: 'OpenTDF',
+      logo: {
+        alt: 'OpenTDF - Protect the Data, Build the Future',
+        src: 'img/OpenTDF-Logo.png',
+        width: 32,
+        height: 32,
       },
-      image: 'img/opentdf-social.png',
-      navbar: {
-        hideOnScroll: true,
-        title: 'OpenTDF',
-        logo: {
-          alt: 'OpenTDF - Protect the Data, Build the Future',
-          src: 'img/OpenTDF-Logo.png',
-          width: 32,
-          height: 32,
+      items: [
+        {
+          type: 'doc',
+          position: 'left',
+          docId: 'introduction',
+          label: 'Docs',
         },
-        items: [
-          {
-            type: 'doc',
-            position: 'left',
-            docId: 'introduction',
-            label: 'Docs',
-          },
-          {
-            href: 'https://github.com/opentdf/docs',
-            label: 'GitHub',
-            position: 'right',
-          },
-        ],
+        {
+          href: 'https://github.com/opentdf/docs',
+          label: 'GitHub',
+          position: 'right',
+        },
+      ],
+    },
+    footer: {
+      style: 'dark',
+      logo: {
+        alt: 'OpenTDF Logo',
+        src: 'img/opentdf-logo-horizontal.png',
+        href: 'https://opentdf.io',
       },
-      footer: {
-        style: 'dark',
-        logo: {
-          alt: 'OpenTDF Logo',
-          src: 'img/opentdf-logo-horizontal.png',
-          href: 'https://opentdf.io',
+      links: [
+        {
+          title: 'Sponsors',
+          items: [
+            {
+              label: 'Virtru',
+              href: 'https://virtru.com',
+            },
+          ],
         },
-        links: [
-          {
-            title: 'Sponsors',
-            items: [
-              {
-                label: 'Virtru',
-                href: 'https://virtru.com',
-              },
-            ],
-          },
-          {
-            title: 'Support',
-            items: [
-              {
-                label: 'Getting Started',
-                to: '/getting-started/configuration',
-              },
-              {
-                label: 'Documentation',
-                to: '/introduction',
-              },
-              {
-                label: 'GitHub Discussions',
-                href: 'https://github.com/orgs/opentdf/discussions',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              {
-                label: 'Showcase',
-                href: 'https://github.com/orgs/opentdf/discussions/categories/show-and-tell',
-              },
-              {
-                label: 'Roadmap',
-                href: 'https://github.com/orgs/opentdf/discussions/1806'
-              }
-            ],
-          }
-        ],
-        copyright: `
+        {
+          title: 'Support',
+          items: [
+            {
+              label: 'Getting Started',
+              to: '/getting-started/configuration',
+            },
+            {
+              label: 'Documentation',
+              to: '/introduction',
+            },
+            {
+              label: 'GitHub Discussions',
+              href: 'https://github.com/orgs/opentdf/discussions',
+            },
+          ],
+        },
+        {
+          title: 'More',
+          items: [
+            {
+              label: 'Showcase',
+              href: 'https://github.com/orgs/opentdf/discussions/categories/show-and-tell',
+            },
+            {
+              label: 'Roadmap',
+              href: 'https://github.com/orgs/opentdf/discussions/1806'
+            }
+          ],
+        }
+      ],
+      copyright: `
           <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
           <iconify-icon data-icon="mdi:shield-check" style="color: #00FF00;"></iconify-icon>
         `,
-      },
-      prism: {
-        theme: prismThemes.vsLight,
-        darkTheme: prismThemes.dracula,
-        additionalLanguages: ['bash', 'protobuf', "json", "java"],
-      },
-      // github codeblock theme configuration
-      codeblock: {
-        showGithubLink: false,
-        githubLinkLabel: 'View on GitHub',
-        showRunmeLink: false,
-        runmeLinkLabel: 'Checkout via Runme'
-      },
-      imageZoom: {
-        // CSS selector to apply the plugin to, defaults to '.markdown img'
-        selector: '.markdown img',
-        // // Optional medium-zoom options
-        // // see: https://www.npmjs.com/package/medium-zoom#options
-        // options: {
-        //   margin: 24,
-        //   background: '#BADA55',
-        //   scrollOffset: 0,
-        //   container: '#zoom-container',
-        //   template: '#zoom-template',
-        // },
-      },
-    } satisfies Preset.ThemeConfig,
+    },
+    prism: {
+      theme: prismThemes.vsLight,
+      darkTheme: prismThemes.dracula,
+      additionalLanguages: ['bash', 'protobuf', "json", "java"],
+    },
+    // github codeblock theme configuration
+    codeblock: {
+      showGithubLink: false,
+      githubLinkLabel: 'View on GitHub',
+      showRunmeLink: false,
+      runmeLinkLabel: 'Checkout via Runme'
+    },
+    imageZoom: {
+      // CSS selector to apply the plugin to, defaults to '.markdown img'
+      selector: '.markdown img',
+      // // Optional medium-zoom options
+      // // see: https://www.npmjs.com/package/medium-zoom#options
+      // options: {
+      //   margin: 24,
+      //   background: '#BADA55',
+      //   scrollOffset: 0,
+      //   container: '#zoom-container',
+      //   template: '#zoom-template',
+      // },
+    },
+  } satisfies Preset.ThemeConfig,
   plugins: [
     [
       '@docusaurus/plugin-ideal-image',
@@ -381,7 +381,7 @@ ${rawContent}
         name: 'platform-configuration', // used by CLI, must be path safe
         sourceBaseUrl: 'https://raw.githubusercontent.com/opentdf/platform/main/docs/', // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: 'docs/getting-started', // the base directory to output to.
-        documents: ['configuration.md'], // the file names to download
+        documents: ['Configuring.md'], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content;
           return {
