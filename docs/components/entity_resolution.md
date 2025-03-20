@@ -265,7 +265,9 @@ For example:
 
 You can configure which ERS to use by updating the platform's configuration file (e.g., `config.yaml`).
 ```yaml
-entity_resolution_service: "keycloak" # Options: "keycloak", "claims"
+services:
+  entityresolution:
+    mode: "claims" # Options: "keycloak", "claims"
 ```
 
 ### Default Behavior:
