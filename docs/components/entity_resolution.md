@@ -208,18 +208,16 @@ The **Keycloak ERS** is tightly integrated with Keycloak, a popular open-source 
 #### Behavior of `CreateEntityChainFromJwt`
 The **Keycloak ERS** processes each JWT by interacting with Keycloak's APIs to extract entity information. The behavior includes:
 - Parsing the JWT to extract claims such as `client_id` and `username`.
-- Using Keycloak's API to retrieve detailed information about the entities, such as roles, groups, and permissions.
 - Categorizing entities as either `CATEGORY_SUBJECT` (e.g., users) or `CATEGORY_ENVIRONMENT` (e.g., clients or service accounts).
-- Constructing an entity chain for each token, where each chain contains the resolved entities and their associated metadata.
+- Constructing an entity chain for each token, where each chain contains the extracted entities and their associated metadata.
 
 For example:
-- A token with a `client_id` claim is resolved into an environment entity.
-- A token with a `username` claim is resolved into a subject entity.
+- A token with a `client_id` claim is resolved into a chain with the client as the environment entity and the client service account as the subject entity.
+- A token with a `username` claim is resolved into a chain with the user as the subject entity and the client as the environment entity.
 
 #### Behavior of `ResolveEntities`
 The **Keycloak ERS** resolves entities by querying Keycloak's APIs based on the provided entity identifiers (e.g., `email`, `username`, or `client_id`). The behavior includes:
 - Looking up users or clients in Keycloak using the provided identifiers.
-- Expanding groups to include all members if the entity represents a group.
 - Returning detailed entity representations, including attributes such as roles, permissions, and metadata.
 
 For example:
@@ -239,7 +237,7 @@ The **Claims ERS** processes each JWT by extracting claims directly from the tok
 - Parsing the JWT to extract claims.
 - Wrapping the claims in a structured format (e.g., `structpb.Struct`) for further processing.
 - Categorizing all produced entities as `CATEGORY_SUBJECT`.
-- Constructing an entity chain for each token, where each chain contains a single entity of type `Claims` with the claims of that token.
+- Constructing an entity chain for each token, where each chain contains a single entity of type `claims` with the claims of that token.
 
 
 #### Behavior of `ResolveEntities`
