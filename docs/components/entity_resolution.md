@@ -192,3 +192,153 @@ An example response to this `ResolveEntities` request:
 ```
 
 In the above example, each entity in the request is resolved into its corresponding entity data.
+
+## Built-In Entity Resolution Services
+
+The platform includes two built-in Entity Resolution Services (ERS): **Keycloak ERS** and **Claims ERS**. These services provide flexibility for different use cases and IdP configurations.
+
+### Keycloak Entity Resolution Service
+The **Keycloak ERS** is tightly integrated with Keycloak, a popular open-source identity and access management solution. It retrieves entity information directly from Keycloak's APIs and is ideal for environments where Keycloak is the primary IdP.
+
+#### Key Features:
+- Direct integration with Keycloak's identity management system.
+- Supports resolving entities using Keycloak-specific attributes and roles.
+- Leverages Keycloak's APIs for detailed entity information.
+
+#### Behavior of `CreateEntityChainFromJwt`
+The **Keycloak ERS** processes each JWT by interacting with Keycloak's APIs to extract entity information. The behavior includes:
+- Parsing the JWT to extract claims such as `client_id` and `username`.
+- Using Keycloak's API to retrieve detailed information about the entities, such as roles, groups, and permissions.
+- Categorizing entities as either `CATEGORY_SUBJECT` (e.g., users) or `CATEGORY_ENVIRONMENT` (e.g., clients or service accounts).
+- Constructing an entity chain for each token, where each chain contains the resolved entities and their associated metadata.
+
+For example:
+- A token with a `client_id` claim is resolved into an environment entity.
+- A token with a `username` claim is resolved into a subject entity.
+
+#### Behavior of `ResolveEntities`
+The **Keycloak ERS** resolves entities by querying Keycloak's APIs based on the provided entity identifiers (e.g., `email`, `username`, or `client_id`). The behavior includes:
+- Looking up users or clients in Keycloak using the provided identifiers.
+- Expanding groups to include all members if the entity represents a group.
+- Returning detailed entity representations, including attributes such as roles, permissions, and metadata.
+
+For example:
+- An entity with an `email` identifier is resolved into a user entity with detailed attributes.
+- An entity with a `client_id` identifier is resolved into a client entity with its associated permissions.
+
+### Claims Entity Resolution Service
+The **Claims ERS** is a more flexible service that resolves entities based on claims embedded in tokens (e.g., JWTs). It is designed for environments where tokens come from multiple sources or where Keycloak is not used.
+
+#### Key Features:
+- Processes claims-based tokens to extract and resolve entities.
+- Supports custom token formats and claims structures.
+- Does not require Keycloak as a dependency.
+
+#### Behavior of `CreateEntityChainFromJwt`
+The **Claims ERS** processes each JWT by extracting claims directly from the token without relying on an external IdP. The behavior includes:
+- Parsing the JWT to extract claims.
+- Wrapping the claims in a structured format (e.g., `structpb.Struct`) for further processing.
+- Categorizing all produced entities as `CATEGORY_SUBJECT`.
+- Constructing an entity chain for each token, where each chain contains a single entity of type `Claims` with the claims of that token.
+
+
+#### Behavior of `ResolveEntities`
+The **Claims ERS** resolves entities by processing the claims embedded in the provided entities. The behavior includes:
+- Extracting claims from the entity's `claims` field.
+- Converting the claims into a structured format for further processing.
+- Returning detailed entity representations, including the extracted claims as additional properties.
+
+For example:
+- An entity with a `claims` field containing `roles` and `department` is resolved into a subject entity with those attributes.
+- An entity with a `claims` field containing custom attributes is resolved into a subject entity with those custom attributes.
+
+### Comparison: Keycloak ERS vs. Claims ERS
+
+| Feature                        | Keycloak ERS                                   | Claims ERS                                   |
+|--------------------------------|-----------------------------------------------|---------------------------------------------|
+| **Primary Use Case**           | Keycloak-based identity resolution.           | Claims-based token resolution.              |
+| **Integration**                | Tightly coupled with Keycloak.                | Works with any token format containing claims. |
+| **Customization**              | Limited to Keycloak's identity model.         | Highly customizable for different token formats. |
+| **Dependency**                 | Requires Keycloak as the IdP.                 | No external dependency on Keycloak.         |
+
+---
+
+## Selecting an Entity Resolution Service
+
+You can configure which ERS to use by updating the platform's configuration file (e.g., `config.yaml`).
+```yaml
+entity_resolution_service: "keycloak" # Options: "keycloak", "claims"
+```
+
+### Default Behavior:
+If no ERS is specified, the platform defaults to the Keycloak ERS.
+
+By configuring the appropriate ERS, you can tailor the platform to your specific IdP and token requirements.
+
+## Examples
+
+### Claims Entity Resolution Service with Token and Subject Mapping
+
+This example demonstrates how the **Claims Entity Resolution Service (ERS)** processes a token to resolve claims into entities and maps a specific claim value to an attribute using a subject mapping.
+
+#### Scenario
+
+A user has a token with the following claims:
+```json
+{
+  "sub": "user123",
+  "roles": ["developer", "admin"],
+  "department": "engineering"
+}
+```
+We want to map the `department` claim `"engineering"` to an attribute that grants access to a specific resource.
+
+#### Step 1: Token Processing by Claims ERS
+The **Claims ERS** processes the token to extract claims and resolve them into entities. The getEntitiesFromToken function in the Claims ERS converts the token into an entity representation.
+
+##### Resolved entity:
+```json
+{
+  "id": "jwtentity-claims",
+  "category": "CATEGORY_SUBJECT",
+  "additional_props": [
+    {
+      "department": "engineering",
+      "roles": ["developer", "admin"]
+    }
+  ]
+}
+```
+
+#### Step 2: Subject Mapping Configuration
+The subject mapping defines how the `department` claim is mapped to an attribute. For example:
+```yaml
+subject_mappings:
+  - attribute_value_id: "74babca6-016f-4f3e-a99b-4e46ea8d0fd8" # ID of the attribute value
+    subject_condition_set:
+      conditions:
+        - key: "department"
+          operator: "SUBJECT_MAPPING_OPERATOR_ENUM_IN"
+          values:
+            - "engineering"
+```
+This configuration specifies:
+
+- The `department` claim must have the value `"engineering"`.
+- If the condition is met, the user is granted the attribute with ID `74babca6-016f-4f3e-a99b-4e46ea8d0fd8`.
+
+#### Step 3: Subject Mapping Evaluation
+The resolved entity is evaluated against the subject mapping. The `department` claim matches the condition `"engineering"`, so the mapping is applied.
+
+Evaluation Logic:
+
+1. The `department` claim is extracted from the resolved entity.
+2. The value `"engineering"` is checked against the subject mapping condition.
+3. Since the condition is satisfied, the attribute value (`74babca6-016f-4f3e-a99b-4e46ea8d0fd8`) is granted.
+
+#### Step 4: Result
+The user is granted an entitlement to the attribute value corresponding to `74babca6-016f-4f3e-a99b-4e46ea8d0fd8`. Ex: `https://example.com/attr/department/value/engineering`
+
+
+#### Summary
+This example illustrates how the **Claims ERS** processes a token, resolves claims into entities, and evaluates subject mappings to grant entitlements. By defining subject mappings, administrators can enforce fine-grained access control based on token claims.
