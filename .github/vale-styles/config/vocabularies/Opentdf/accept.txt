@@ -22,3 +22,5 @@ JavaScript
 Autoconfigure
 requester(?('s))
 rewrap(?(s))
+Keycloak
+ERS
