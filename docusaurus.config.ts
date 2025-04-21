@@ -416,6 +416,11 @@ ${finalContent ? finalContent : ""}`;
               "../../diagrams/",
               "../../../../static/img/"
             );
+            // Fix segment link to point to integrity_information.md
+            updatedContent = updatedContent.replaceAll(
+              "./segment.md",
+              "./integrity_information.md"
+            );
             return {
               content: `---
 sidebar_position: 1
@@ -442,6 +447,19 @@ ${updatedContent}`,
               "../../diagrams/",
               "../static/img/"
             );
+            updatedContent = updatedContent.replaceAll(
+              "protocol/protocol.md",
+              "protocol/"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "schema/nanotdf/README.md",
+              "schema/nanotdf.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/nanotdf.md",
+              "schema/nanotdf.md"
+            );
+
             return {
               content: `---
 sidebar_position: 1
@@ -496,19 +514,111 @@ ${updatedContent}`,
       {
         name: "spec-concept",
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/schema/",
-        outDir: "docs/spec/schema/",
-        documents: ["README.md"],
+          "https://raw.githubusercontent.com/opentdf/spec/main/concepts/",
+        outDir: "docs/spec/concepts/",
+        documents: ["access_control.md", "security.md"],
         modifyContent: (filename: string, content: string) => {
-          if (filename === "README.md") {
+          if (filename === "access_control.md") {
             let updatedContent = content.replaceAll(
               "../../diagrams/",
               "../../static/img/"
             );
+            // Fix broken markdown links as specified
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/policy.md",
+              "../../spec/schema/opentdf/policy.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/key_access_object.md",
+              "../../spec/schema/opentdf/key_access_object.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/opentdf/policy.md",
+              "../../spec/schema/opentdf/policy.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/opentdf/key_access_object.md",
+              "../../spec/schema/opentdf/key_access_object.md"
+            );
             return {
               content: `---
 sidebar_position: 1
-title: Concept
+title: Access Control
+---
+${updatedContent}`,
+              filename: "access_control.md",
+            };
+          }
+          if (filename === "security.md") {
+            let updatedContent = content.replaceAll(
+              "../../diagrams/",
+              "../../static/img/"
+            );
+            // Fix broken markdown links as specified
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/integrity_information.md",
+              "../../spec/schema/opentdf/integrity_information.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/key_access_object.md",
+              "../../spec/schema/opentdf/key_access_object.md"
+            );
+            return {
+              content: `---
+sidebar_position: 2
+title: Security
+---
+${updatedContent}`,
+              filename: "security.md",
+            };
+          }
+          return { content: content };
+        },
+      },
+    ],
+    [
+      "docusaurus-plugin-remote-content",
+      {
+        name: "spec-protocol",
+        sourceBaseUrl:
+          "https://raw.githubusercontent.com/opentdf/spec/main/protocol/",
+        outDir: "docs/spec/protocol/",
+        documents: ["protocol.md"],
+        modifyContent: (filename: string, content: string) => {
+          if (filename === "protocol.md") {
+            let updatedContent = content.replaceAll(
+              "../../diagrams/",
+              "../../static/img/"
+            );
+            // Fix broken markdown links as specified
+            updatedContent = updatedContent.replaceAll(
+              "./opentdf/key_access.md",
+              "../schema/opentdf/key_access_object.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/opentdf/key_access.md",
+              "../schema/opentdf/key_access_object.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/key_access_object.md",
+              "../schema/opentdf/key_access_object.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "../schema/OpenTDF/policy.md",
+              "../schema/opentdf/policy.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "./opentdf/segment.md",
+              "../schema/opentdf/integrity_information.md"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "./opentdf/integrity_information.md",
+              "../schema/opentdf/integrity_information.md"
+            );
+            return {
+              content: `---
+sidebar_position: 1
+title: Protocol
 ---
 ${updatedContent}`,
               filename: "index.md",
