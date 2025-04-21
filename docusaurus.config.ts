@@ -449,7 +449,19 @@ ${updatedContent}`,
             );
             updatedContent = updatedContent.replaceAll(
               "protocol/protocol.md",
-              "protocol/"
+              "spec/protocol"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "(schema/)",
+              "(spec/schema/)"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "(concepts/)",
+              "(category/concepts)"
+            );
+            updatedContent = updatedContent.replaceAll(
+              "(protocol/)",
+              "(spec/protocol)"
             );
             updatedContent = updatedContent.replaceAll(
               "schema/nanotdf/README.md",
