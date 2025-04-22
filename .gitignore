@@ -21,11 +21,8 @@ yarn-error.log*
 node_modules
 
 # Ignore Remote Content
-/docs/spec/nanotdf/manifest.md
-/docs/spec/tdf/KeyAccessObject.md
-/docs/spec/tdf/Manifest.md
-/docs/spec/tdf/PolicyObject.md
-/docs/spec/tdf/AttributeObject.md
+/docs/spec/index.md
+/docs/spec/**/*.md
 /docs/components/cli/
 /docs/getting-started/configuration.md
 
