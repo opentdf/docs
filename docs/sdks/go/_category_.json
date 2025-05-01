@@ -1,0 +1,8 @@
+{
+  "label": "Go SDK",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Documentation for the Go SDK - the reference implementation of OpenTDF"
+  }
+}
