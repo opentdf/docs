@@ -108,6 +108,10 @@ const config: Config = {
           label: "GitHub",
           position: "right",
         },
+        {
+          type: "search",
+          position: "right",
+        },
       ],
     },
     footer: {
@@ -731,6 +735,7 @@ ${updatedContent}`,
         },
       },
     ],
+    require.resolve("docusaurus-lunr-search"),
   ],
 };
 
