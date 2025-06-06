@@ -11,6 +11,81 @@ import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 
+// --- OpenAPI Config Helper ---
+// Global toggle to enable or disable sidebarOptions for all OpenAPI configurations
+const APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY = true;
+const DEFAULT_OPENAPI_OUTPUT_DIR = "docs/openapi/";
+const DEFAULT_OPENAPI_SIDEBAR_OPTIONS = { groupPathsBy: "tag" };
+
+interface ApiSpecDefinition {
+  id: string; // Unique key for the API spec, e.g., "authorization"
+  specPath: string;
+  outputDir?: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
+  sidebarOptions?: { groupPathsBy: string }; // Optional: overrides DEFAULT_OPENAPI_SIDEBAR_OPTIONS
+}
+
+function createOpenApiConfig(
+  specPath: string,
+  outputDir: string,
+  sidebarOptionsValue?: { groupPathsBy: string }
+): OpenApiPlugin.Options {
+  const apiConfig: OpenApiPlugin.Options = {
+    specPath,
+    outputDir,
+  };
+
+  if (APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY && sidebarOptionsValue) {
+    apiConfig.sidebarOptions = sidebarOptionsValue;
+  }
+  return apiConfig;
+}
+
+// Define all your OpenAPI specifications here
+const openApiSpecs: ApiSpecDefinition[] = [
+  {
+    id: "authorization",
+    specPath: "./specs/authorization/authorization.swagger.json",
+    // outputDir: "docs/openapi/auth", // Example of overriding outputDir
+    // sidebarOptions: { groupPathsBy: "summary" }, // Example of overriding sidebarOptions
+  },
+  {
+    id: "authorization_v2",
+    specPath: "./specs/authorization/v2/authorization.swagger.json",
+  },
+  {
+    id: "common",
+    specPath: "./specs/common/common.swagger.json",
+  },
+  {
+    id: "entity",
+    specPath: "./specs/entity/entity.swagger.json",
+  },
+  {
+    id: "entityresolution",
+    specPath: "./specs/entityresolution/entity_resolution.swagger.json",
+  },
+  {
+    id: "kas",
+    specPath: "./specs/kas/kas.swagger.json",
+  },
+  {
+    id: "wellknownconfiguration",
+    specPath: "./specs/wellknownconfiguration/wellknown_configuration.swagger.json",
+  },
+  // Add more entries here for other OpenAPI specs
+];
+
+// Dynamically build the OpenAPI plugin configuration
+const openApiDocsConfig = openApiSpecs.reduce((acc, spec) => {
+  acc[spec.id] = createOpenApiConfig(
+    spec.specPath,
+    spec.outputDir || DEFAULT_OPENAPI_OUTPUT_DIR,
+    spec.sidebarOptions || DEFAULT_OPENAPI_SIDEBAR_OPTIONS
+  );
+  return acc;
+}, {} as Record<string, OpenApiPlugin.Options>);
+// --- End OpenAPI Config Helper ---
+
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
 const config: Config = {
@@ -743,59 +818,7 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: {
-          authorization: { // Unique key
-            specPath: "./specs/authorization/authorization.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          authorization_v2: { // Unique key
-            specPath: "./specs/authorization/v2/authorization.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          common: { // Unique key
-            specPath: "./specs/common/common.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          entity: { // Unique key
-            specPath: "./specs/entity/entity.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          entityresolution: { // Unique key
-            specPath: "./specs/entityresolution/entity_resolution.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          kas: { // Unique key
-            specPath: "./specs/kas/kas.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          wellknownconfiguration: { // Unique key
-            specPath: "./specs/wellknownconfiguration/wellknown_configuration.swagger.json",
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-
-          // Add more entries here for other OpenAPI specs from the platform as needed
-        },
+        config: openApiDocsConfig, // Use the dynamically generated config
       },
     ],
     require.resolve("docusaurus-lunr-search"),
