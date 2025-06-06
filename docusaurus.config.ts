@@ -746,34 +746,53 @@ ${updatedContent}`,
         config: {
           authorization: { // Unique key
             specPath: "./specs/authorization/authorization.swagger.json",
-            outputDir: "docs/openapi/authorization/",
+            outputDir: "docs/openapi/",
             sidebarOptions: {
               groupPathsBy: "tag",
             },
           } satisfies OpenApiPlugin.Options,
           authorization_v2: { // Unique key
             specPath: "./specs/authorization/v2/authorization.swagger.json",
-            outputDir: "docs/openapi/authorization/v2/",
+            outputDir: "docs/openapi/",
             sidebarOptions: {
               groupPathsBy: "tag",
             },
           } satisfies OpenApiPlugin.Options,
           common: { // Unique key
             specPath: "./specs/common/common.swagger.json",
-            outputDir: "docs/openapi/common/",
+            outputDir: "docs/openapi/",
             sidebarOptions: {
               groupPathsBy: "tag",
             },
-          } satisfies OpenApiPlugin.Options,         
-          // kas: { // Unique key for the KAS API
-          //   specPath: "./specs/kas.openapi.yaml",
-          //   // outputDir: "docs/api/kas/", // Output directory for KAS API docs
-          //   outputDir: "docs/spec/",
-          //   sidebarOptions: {
-          //     groupPathsBy: "tag",
-          //   },
-          // } satisfies OpenApiPlugin.Options,
-
+          } satisfies OpenApiPlugin.Options,
+          entity: { // Unique key
+            specPath: "./specs/entity/entity.swagger.json",
+            outputDir: "docs/openapi/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          entityresolution: { // Unique key
+            specPath: "./specs/entityresolution/entity_resolution.swagger.json",
+            outputDir: "docs/openapi/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          kas: { // Unique key
+            specPath: "./specs/kas/kas.swagger.json",
+            outputDir: "docs/openapi/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          wellknownconfiguration: { // Unique key
+            specPath: "./specs/wellknownconfiguration/wellknown_configuration.swagger.json",
+            outputDir: "docs/openapi/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
 
           // Add more entries here for other OpenAPI specs from the platform as needed
         },
