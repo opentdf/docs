@@ -69,7 +69,7 @@ const config: Config = {
         docs: {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
-          // docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
+          docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
@@ -744,6 +744,27 @@ ${updatedContent}`,
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
         config: {
+          authorization: { // Unique key
+            specPath: "./specs/authorization/authorization.swagger.json",
+            outputDir: "docs/openapi/authorization/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          authorization_v2: { // Unique key
+            specPath: "./specs/authorization/v2/authorization.swagger.json",
+            outputDir: "docs/openapi/authorization/v2/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          common: { // Unique key
+            specPath: "./specs/common/common.swagger.json",
+            outputDir: "docs/openapi/common/",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,         
           // kas: { // Unique key for the KAS API
           //   specPath: "./specs/kas.openapi.yaml",
           //   // outputDir: "docs/api/kas/", // Output directory for KAS API docs
@@ -752,14 +773,7 @@ ${updatedContent}`,
           //     groupPathsBy: "tag",
           //   },
           // } satisfies OpenApiPlugin.Options,
-          authorization: { // Unique key for the KAS API
-            specPath: "./specs/authorization.swagger.json",
-            // outputDir: "docs/api/kas/", // Output directory for KAS API docs
-            outputDir: "docs/openapi/",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
+
 
           // Add more entries here for other OpenAPI specs from the platform as needed
         },
