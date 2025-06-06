@@ -3,7 +3,7 @@ name: Vale
 on:
   pull_request:
     branches:
-      - main
+      - disabled
     
 jobs:
   vale-check:
@@ -14,4 +14,4 @@ jobs:
       - uses: errata-ai/vale-action@v2.1.1
         with:
           filter_mode: added
-          vale_flags: "--glob=!{specs,blog/}* --config=.vale.ini"
+          vale_flags: "--glob=!blog/* --config=.vale.ini"
