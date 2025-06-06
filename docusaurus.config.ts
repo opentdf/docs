@@ -44,33 +44,33 @@ function createOpenApiConfig(
 const openApiSpecs: ApiSpecDefinition[] = [
   {
     id: "authorization",
-    specPath: "./specs/authorization/authorization.swagger.json",
+    specPath: "./specs/authorization/authorization.openapi.yaml",
     // outputDir: "docs/openapi/auth", // Example of overriding outputDir
     // sidebarOptions: { groupPathsBy: "summary" }, // Example of overriding sidebarOptions
   },
   {
     id: "authorization_v2",
-    specPath: "./specs/authorization/v2/authorization.swagger.json",
+    specPath: "./specs/authorization/v2/authorization.openapi.yaml",
   },
   {
     id: "common",
-    specPath: "./specs/common/common.swagger.json",
+    specPath: "./specs/common/common.openapi.yaml",
   },
   {
     id: "entity",
-    specPath: "./specs/entity/entity.swagger.json",
+    specPath: "./specs/entity/entity.openapi.yaml",
   },
   {
     id: "entityresolution",
-    specPath: "./specs/entityresolution/entity_resolution.swagger.json",
+    specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
   },
   {
     id: "kas",
-    specPath: "./specs/kas/kas.swagger.json",
+    specPath: "./specs/kas/kas.openapi.yaml",
   },
   {
     id: "wellknownconfiguration",
-    specPath: "./specs/wellknownconfiguration/wellknown_configuration.swagger.json",
+    specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
   },
   // Add more entries here for other OpenAPI specs
 ];
