@@ -2,6 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "OpenTDF Key Access Service",
+    "description": "The Key Access Service (KAS) provides access to keys and key metadata for the OpenTDF system. It supports legacy and v2 endpoints for retrieving public keys and rewrapping keys.",
     "version": "1.5.0",
     "license": {
       "name": "BSD 3-Clause Clear",

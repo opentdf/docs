@@ -1,5 +1,6 @@
 openapi: 3.1.0
 info:
+  version: v2
   title: authorization.v2
 paths:
   /authorization.v2.AuthorizationService/GetDecision:
