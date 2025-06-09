@@ -10,19 +10,18 @@ import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
+import { openApiSpecs, preprocessOpenApiSpecs } from "./preprocessing"
 
 // --- OpenAPI Config Helper ---
 // Global toggle to enable or disable sidebarOptions for all OpenAPI configurations
-const APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY = true;
+const APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY = false;
 const DEFAULT_OPENAPI_OUTPUT_DIR = "docs/openapi/";
-const DEFAULT_OPENAPI_SIDEBAR_OPTIONS = { groupPathsBy: "tag" };
+const DEFAULT_OPENAPI_SIDEBAR_OPTIONS = { 
+  // groupPathsBy: "tagGroup" 
+  groupPathsBy: 'tag',
+  categoryLinkSource: 'tag'
+};
 
-interface ApiSpecDefinition {
-  id: string; // Unique key for the API spec, e.g., "authorization"
-  specPath: string;
-  outputDir?: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
-  sidebarOptions?: { groupPathsBy: string }; // Optional: overrides DEFAULT_OPENAPI_SIDEBAR_OPTIONS
-}
 
 function createOpenApiConfig(
   specPath: string,
@@ -40,45 +39,13 @@ function createOpenApiConfig(
   return apiConfig;
 }
 
-// Define all your OpenAPI specifications here
-const openApiSpecs: ApiSpecDefinition[] = [
-  {
-    id: "authorization",
-    specPath: "./specs/authorization/authorization.swagger.json",
-    // outputDir: "docs/openapi/auth", // Example of overriding outputDir
-    // sidebarOptions: { groupPathsBy: "summary" }, // Example of overriding sidebarOptions
-  },
-  {
-    id: "authorization_v2",
-    specPath: "./specs/authorization/v2/authorization.swagger.json",
-  },
-  {
-    id: "common",
-    specPath: "./specs/common/common.swagger.json",
-  },
-  {
-    id: "entity",
-    specPath: "./specs/entity/entity.swagger.json",
-  },
-  {
-    id: "entityresolution",
-    specPath: "./specs/entityresolution/entity_resolution.swagger.json",
-  },
-  {
-    id: "kas",
-    specPath: "./specs/kas/kas.swagger.json",
-  },
-  {
-    id: "wellknownconfiguration",
-    specPath: "./specs/wellknownconfiguration/wellknown_configuration.swagger.json",
-  },
-  // Add more entries here for other OpenAPI specs
-];
+// Run the preprocessor before generating the config
+preprocessOpenApiSpecs();
 
 // Dynamically build the OpenAPI plugin configuration
 const openApiDocsConfig = openApiSpecs.reduce((acc, spec) => {
   acc[spec.id] = createOpenApiConfig(
-    spec.specPath,
+    spec.specPathModified || spec.specPath, // Use the modified path if available
     spec.outputDir || DEFAULT_OPENAPI_OUTPUT_DIR,
     spec.sidebarOptions || DEFAULT_OPENAPI_SIDEBAR_OPTIONS
   );
