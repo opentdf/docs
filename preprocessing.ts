@@ -108,37 +108,6 @@ async function preprocessOpenApiSpecs() {
                 });
             }
 
-
-            // Add standard headers to all operations
-            //   if (apiSpec.paths) {
-            //     Object.keys(apiSpec.paths).forEach(path => {
-            //       const pathObj = apiSpec.paths[path];
-            //       Object.keys(pathObj).forEach(method => {
-            //         if (typeof pathObj[method] === 'object') {
-            //           // Example preprocessor logic: add standard parameters to all operations
-            //           if (!pathObj[method].parameters) {
-            //             pathObj[method].parameters = [];
-            //           }
-
-            //           // Add a trace ID parameter to all operations as an example
-            //           const hasTraceId = pathObj[method].parameters.some(
-            //             p => p.name === 'X-Trace-Id'
-            //           );
-
-            //           if (!hasTraceId) {
-            //             pathObj[method].parameters.push({
-            //               name: 'X-Trace-Id',
-            //               in: 'header',
-            //               schema: { type: 'string' },
-            //               required: false,
-            //               description: 'Trace ID for request tracking (added by preprocessor)'
-            //             });
-            //           }
-            //         }
-            //       });
-            //     });
-            //   }
-
             // Write the modified YAML to the target file
             fs.writeFileSync(targetPath, yaml.dump(apiSpec), 'utf8');
             console.log(`✅ Updated: ${targetPath}`);
