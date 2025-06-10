@@ -1,0 +1,672 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "authorization",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "https://example.com"
+  } ],
+  "tags" : [ {
+    "name" : "authorization.AuthorizationService"
+  } ],
+  "paths" : {
+    "/v1/authorization" : {
+      "post" : {
+        "tags" : [ "authorization.AuthorizationService" ],
+        "summary" : "GetDecisions",
+        "operationId" : "authorization.AuthorizationService.GetDecisions",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/authorization.GetDecisionsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "default" : {
+            "description" : "Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/connect.error"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/authorization.GetDecisionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/token/authorization" : {
+      "post" : {
+        "tags" : [ "authorization.AuthorizationService" ],
+        "summary" : "GetDecisionsByToken",
+        "operationId" : "authorization.AuthorizationService.GetDecisionsByToken",
+        "parameters" : [ {
+          "name" : "decisionRequests.actions.id",
+          "in" : "query",
+          "description" : "Generated uuid in database",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "id",
+            "description" : "Generated uuid in database"
+          }
+        }, {
+          "name" : "decisionRequests.actions.standard",
+          "in" : "query",
+          "description" : "Deprecated",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/policy.Action.StandardAction"
+          }
+        }, {
+          "name" : "decisionRequests.actions.custom",
+          "in" : "query",
+          "description" : "Deprecated",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "custom",
+            "description" : "Deprecated"
+          }
+        }, {
+          "name" : "decisionRequests.actions.name",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "name"
+          }
+        }, {
+          "name" : "decisionRequests.actions.metadata.createdAt.seconds",
+          "in" : "query",
+          "description" : "Represents seconds of UTC time since Unix epoch\n 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to\n 9999-12-31T23:59:59Z inclusive.",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "seconds",
+            "description" : "Represents seconds of UTC time since Unix epoch\n 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to\n 9999-12-31T23:59:59Z inclusive.",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "decisionRequests.actions.metadata.createdAt.nanos",
+          "in" : "query",
+          "description" : "Non-negative fractions of a second at nanosecond resolution. Negative\n second values with fractions must still have non-negative nanos values\n that count forward in time. Must be from 0 to 999,999,999\n inclusive.",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "nanos",
+            "description" : "Non-negative fractions of a second at nanosecond resolution. Negative\n second values with fractions must still have non-negative nanos values\n that count forward in time. Must be from 0 to 999,999,999\n inclusive.",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "decisionRequests.actions.metadata.labels.key",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "key"
+          }
+        }, {
+          "name" : "decisionRequests.actions.metadata.labels.value",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "value"
+          }
+        }, {
+          "name" : "decisionRequests.tokens.id",
+          "in" : "query",
+          "description" : "ephemeral id for tracking between request and response",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "id",
+            "description" : "ephemeral id for tracking between request and response"
+          }
+        }, {
+          "name" : "decisionRequests.tokens.jwt",
+          "in" : "query",
+          "description" : "the token",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "jwt",
+            "description" : "the token"
+          }
+        }, {
+          "name" : "decisionRequests.resourceAttributes.resourceAttributesId",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "resource_attributes_id"
+          }
+        }, {
+          "name" : "decisionRequests.resourceAttributes.attributeValueFqns",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "title" : "attribute_value_fqns",
+            "items" : { }
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/connect.error"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/authorization.GetDecisionsByTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entitlements" : {
+      "post" : {
+        "tags" : [ "authorization.AuthorizationService" ],
+        "summary" : "GetEntitlements",
+        "operationId" : "authorization.AuthorizationService.GetEntitlements",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/authorization.GetEntitlementsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "default" : {
+            "description" : "Error",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/connect.error"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/authorization.GetEntitlementsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "authorization.DecisionResponse.Decision" : {
+        "title" : "Decision",
+        "enum" : [ "DECISION_UNSPECIFIED", "DECISION_DENY", "DECISION_PERMIT" ]
+      },
+      "authorization.Entity.Category" : {
+        "title" : "Category",
+        "enum" : [ "CATEGORY_UNSPECIFIED", "CATEGORY_SUBJECT", "CATEGORY_ENVIRONMENT" ]
+      },
+      "policy.Action.StandardAction" : {
+        "title" : "StandardAction",
+        "enum" : [ "STANDARD_ACTION_UNSPECIFIED", "STANDARD_ACTION_DECRYPT", "STANDARD_ACTION_TRANSMIT" ]
+      },
+      "authorization.DecisionRequest" : {
+        "title" : "DecisionRequest",
+        "properties" : {
+          "actions" : {
+            "title" : "actions",
+            "items" : {
+              "$ref" : "#/components/schemas/policy.Action"
+            }
+          },
+          "entityChains" : {
+            "title" : "entity_chains",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.EntityChain"
+            }
+          },
+          "resourceAttributes" : {
+            "title" : "resource_attributes",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.ResourceAttribute"
+            }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Example Request Get Decisions to answer the question -  Do Bob (represented by entity chain ec1)\nand Alice (represented by entity chain ec2) have TRANSMIT authorization for\n2 resources; resource1 (attr-set-1) defined by attributes foo:bar  resource2 (attr-set-2) defined by attribute foo:bar, color:red ?\n\n{\n\"actions\": [\n{\n\"standard\": \"STANDARD_ACTION_TRANSMIT\"\n}\n],\n\"entityChains\": [\n{\n\"id\": \"ec1\",\n\"entities\": [\n{\n\"emailAddress\": \"bob@example.org\"\n}\n]\n},\n{\n\"id\": \"ec2\",\n\"entities\": [\n{\n\"userName\": \"alice@example.org\"\n}\n]\n}\n],\n\"resourceAttributes\": [\n{\n\"resourceAttributeId\":  \"attr-set-1\",\n\"attributeFqns\": [\n\"https://www.example.org/attr/foo/value/value1\"\n]\n},\n{\n\"resourceAttributeId\":  \"attr-set-2\",\n\"attributeFqns\": [\n\"https://example.net/attr/attr1/value/value1\",\n\"https://example.net/attr/attr1/value/value2\"\n]\n}\n]\n}"
+      },
+      "authorization.DecisionResponse" : {
+        "title" : "DecisionResponse",
+        "properties" : {
+          "entityChainId" : {
+            "title" : "entity_chain_id",
+            "description" : "ephemeral entity chain id from the request"
+          },
+          "resourceAttributesId" : {
+            "title" : "resource_attributes_id",
+            "description" : "ephemeral resource attributes id from the request"
+          },
+          "action" : {
+            "$ref" : "#/components/schemas/policy.Action"
+          },
+          "decision" : {
+            "$ref" : "#/components/schemas/authorization.DecisionResponse.Decision"
+          },
+          "obligations" : {
+            "title" : "obligations",
+            "description" : "optional list of obligations represented in URI format",
+            "items" : { }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Example response for a Decision Request -  Do Bob (represented by entity chain ec1)\nand Alice (represented by entity chain ec2) have TRANSMIT authorization for\n2 resources; resource1 (attr-set-1) defined by attributes foo:bar  resource2 (attr-set-2) defined by attribute foo:bar, color:red ?\n\nResults:\n- bob has permitted authorization to transmit for a resource defined by attr-set-1 attributes and has a watermark obligation\n- bob has denied authorization to transmit a for a resource defined by attr-set-2 attributes\n- alice has permitted authorization to transmit for a resource defined by attr-set-1 attributes\n- alice has denied authorization to transmit a for a resource defined by attr-set-2 attributes\n\n{\n\"entityChainId\":  \"ec1\",\n\"resourceAttributesId\":  \"attr-set-1\",\n\"decision\":  \"DECISION_PERMIT\",\n\"obligations\":  [\n\"http://www.example.org/obligation/watermark\"\n]\n},\n{\n\"entityChainId\":  \"ec1\",\n\"resourceAttributesId\":  \"attr-set-2\",\n\"decision\":  \"DECISION_PERMIT\"\n},\n{\n\"entityChainId\":  \"ec2\",\n\"resourceAttributesId\":  \"attr-set-1\",\n\"decision\":  \"DECISION_PERMIT\"\n},\n{\n\"entityChainId\":  \"ec2\",\n\"resourceAttributesId\":  \"attr-set-2\",\n\"decision\":  \"DECISION_DENY\"\n}"
+      },
+      "authorization.Entity" : {
+        "title" : "Entity",
+        "properties" : {
+          "id" : {
+            "title" : "id",
+            "description" : "ephemeral id for tracking between request and response"
+          },
+          "category" : {
+            "$ref" : "#/components/schemas/authorization.Entity.Category"
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "PE (Person Entity) or NPE (Non-Person Entity)",
+        "oneOf" : [ {
+          "title" : "claims",
+          "required" : [ "claims" ],
+          "properties" : {
+            "claims" : {
+              "$ref" : "#/components/schemas/google.protobuf.Any"
+            }
+          }
+        }, {
+          "title" : "client_id",
+          "required" : [ "clientId" ],
+          "properties" : {
+            "clientId" : {
+              "title" : "client_id"
+            }
+          }
+        }, {
+          "title" : "custom",
+          "required" : [ "custom" ],
+          "properties" : {
+            "custom" : {
+              "$ref" : "#/components/schemas/authorization.EntityCustom"
+            }
+          }
+        }, {
+          "title" : "email_address",
+          "required" : [ "emailAddress" ],
+          "properties" : {
+            "emailAddress" : {
+              "title" : "email_address",
+              "description" : "one of the entity options must be set"
+            }
+          }
+        }, {
+          "title" : "remote_claims_url",
+          "required" : [ "remoteClaimsUrl" ],
+          "properties" : {
+            "remoteClaimsUrl" : {
+              "title" : "remote_claims_url"
+            }
+          }
+        }, {
+          "title" : "user_name",
+          "required" : [ "userName" ],
+          "properties" : {
+            "userName" : {
+              "title" : "user_name"
+            }
+          }
+        }, {
+          "title" : "uuid",
+          "required" : [ "uuid" ],
+          "properties" : {
+            "uuid" : {
+              "title" : "uuid"
+            }
+          }
+        } ]
+      },
+      "authorization.EntityChain" : {
+        "title" : "EntityChain",
+        "properties" : {
+          "id" : {
+            "title" : "id",
+            "description" : "ephemeral id for tracking between request and response"
+          },
+          "entities" : {
+            "title" : "entities",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.Entity"
+            }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "A set of related PE and NPE"
+      },
+      "authorization.EntityCustom" : {
+        "title" : "EntityCustom",
+        "properties" : {
+          "extension" : {
+            "$ref" : "#/components/schemas/google.protobuf.Any"
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Entity type for custom entities beyond the standard types"
+      },
+      "authorization.EntityEntitlements" : {
+        "title" : "EntityEntitlements",
+        "properties" : {
+          "entityId" : {
+            "title" : "entity_id"
+          },
+          "attributeValueFqns" : {
+            "title" : "attribute_value_fqns",
+            "items" : { }
+          }
+        },
+        "additionalProperties" : false
+      },
+      "authorization.GetDecisionsByTokenRequest" : {
+        "title" : "GetDecisionsByTokenRequest",
+        "properties" : {
+          "decisionRequests" : {
+            "title" : "decision_requests",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.TokenDecisionRequest"
+            }
+          }
+        },
+        "additionalProperties" : { }
+      },
+      "authorization.GetDecisionsByTokenResponse" : {
+        "title" : "GetDecisionsByTokenResponse",
+        "properties" : {
+          "decisionResponses" : {
+            "title" : "decision_responses",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.DecisionResponse"
+            }
+          }
+        },
+        "additionalProperties" : false
+      },
+      "authorization.GetDecisionsRequest" : {
+        "title" : "GetDecisionsRequest",
+        "properties" : {
+          "decisionRequests" : {
+            "title" : "decision_requests",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.DecisionRequest"
+            }
+          }
+        },
+        "additionalProperties" : false
+      },
+      "authorization.GetDecisionsResponse" : {
+        "title" : "GetDecisionsResponse",
+        "properties" : {
+          "decisionResponses" : {
+            "title" : "decision_responses",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.DecisionResponse"
+            }
+          }
+        },
+        "additionalProperties" : false
+      },
+      "authorization.GetEntitlementsRequest" : {
+        "title" : "GetEntitlementsRequest",
+        "properties" : {
+          "entities" : {
+            "title" : "entities",
+            "description" : "list of requested entities",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.Entity"
+            }
+          },
+          "scope" : {
+            "$ref" : "#/components/schemas/authorization.ResourceAttribute"
+          },
+          "withComprehensiveHierarchy" : {
+            "title" : "with_comprehensive_hierarchy",
+            "description" : "optional parameter to return a full list of entitlements - returns lower hierarchy attributes",
+            "nullable" : true
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Request to get entitlements for one or more entities for an optional attribute scope\n\nExample: Get entitlements for bob and alice (both represented using an email address\n\n{\n\"entities\": [\n{\n\"id\": \"e1\",\n\"emailAddress\": \"bob@example.org\"\n},\n{\n\"id\": \"e2\",\n\"emailAddress\": \"alice@example.org\"\n}\n],\n\"scope\": {\n\"attributeFqns\": [\n\"https://example.net/attr/attr1/value/value1\",\n\"https://example.net/attr/attr1/value/value2\"\n]\n}\n}"
+      },
+      "authorization.GetEntitlementsResponse" : {
+        "title" : "GetEntitlementsResponse",
+        "properties" : {
+          "entitlements" : {
+            "title" : "entitlements",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.EntityEntitlements"
+            }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Example Response for a request of : Get entitlements for bob and alice (both represented using an email address\n\n{\n\"entitlements\":  [\n{\n\"entityId\":  \"e1\",\n\"attributeValueReferences\":  [\n{\n\"attributeFqn\":  \"http://www.example.org/attr/foo/value/bar\"\n}\n]\n},\n{\n\"entityId\":  \"e2\",\n\"attributeValueReferences\":  [\n{\n\"attributeFqn\":  \"http://www.example.org/attr/color/value/red\"\n}\n]\n}\n]\n}"
+      },
+      "authorization.ResourceAttribute" : {
+        "title" : "ResourceAttribute",
+        "properties" : {
+          "resourceAttributesId" : {
+            "title" : "resource_attributes_id"
+          },
+          "attributeValueFqns" : {
+            "title" : "attribute_value_fqns",
+            "items" : { }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "A logical bucket of attributes belonging to a \"Resource\""
+      },
+      "authorization.Token" : {
+        "title" : "Token",
+        "properties" : {
+          "id" : {
+            "title" : "id",
+            "description" : "ephemeral id for tracking between request and response"
+          },
+          "jwt" : {
+            "title" : "jwt",
+            "description" : "the token"
+          }
+        },
+        "additionalProperties" : false
+      },
+      "authorization.TokenDecisionRequest" : {
+        "title" : "TokenDecisionRequest",
+        "properties" : {
+          "actions" : {
+            "title" : "actions",
+            "items" : {
+              "$ref" : "#/components/schemas/policy.Action"
+            }
+          },
+          "tokens" : {
+            "title" : "tokens",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.Token"
+            }
+          },
+          "resourceAttributes" : {
+            "title" : "resource_attributes",
+            "items" : {
+              "$ref" : "#/components/schemas/authorization.ResourceAttribute"
+            }
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Example Request Get Decisions by Token to answer the question -  Do Bob and client1 (represented by token tok1)\nand Alice and client2 (represented by token tok2) have TRANSMIT authorization for\n2 resources; resource1 (attr-set-1) defined by attributes foo:bar  resource2 (attr-set-2) defined by attribute foo:bar, color:red ?\n\n{\n\"actions\": [\n{\n\"standard\": \"STANDARD_ACTION_TRANSMIT\"\n}\n],\n\"tokens\": [\n{\n\"id\": \"tok1\",\n\"jwt\": ....\n},\n{\n\"id\": \"tok2\",\n\"jwt\": .....\n}\n],\n\"resourceAttributes\": [\n{\n\"attributeFqns\": [\n\"https://www.example.org/attr/foo/value/value1\"\n]\n},\n{\n\"attributeFqns\": [\n\"https://example.net/attr/attr1/value/value1\",\n\"https://example.net/attr/attr1/value/value2\"\n]\n}\n]\n}"
+      },
+      "common.Metadata" : {
+        "title" : "Metadata",
+        "properties" : {
+          "createdAt" : {
+            "$ref" : "#/components/schemas/google.protobuf.Timestamp"
+          },
+          "updatedAt" : {
+            "$ref" : "#/components/schemas/google.protobuf.Timestamp"
+          },
+          "labels" : {
+            "title" : "labels",
+            "additionalProperties" : {
+              "title" : "value"
+            },
+            "description" : "optional short description"
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Struct to uniquely identify a resource with optional additional metadata"
+      },
+      "common.Metadata.LabelsEntry" : {
+        "title" : "LabelsEntry",
+        "properties" : {
+          "key" : {
+            "title" : "key"
+          },
+          "value" : {
+            "title" : "value"
+          }
+        },
+        "additionalProperties" : { }
+      },
+      "google.protobuf.Any" : {
+        "properties" : {
+          "type" : { },
+          "value" : {
+            "format" : "binary"
+          },
+          "debug" : {
+            "additionalProperties" : false
+          }
+        },
+        "additionalProperties" : { },
+        "description" : "Contains an arbitrary serialized message along with a @type that describes the type of the serialized message."
+      },
+      "google.protobuf.Timestamp" : {
+        "description" : "A Timestamp represents a point in time independent of any time zone or local\n calendar, encoded as a count of seconds and fractions of seconds at\n nanosecond resolution. The count is relative to an epoch at UTC midnight on\n January 1, 1970, in the proleptic Gregorian calendar which extends the\n Gregorian calendar backwards to year one.\n\n All minutes are 60 seconds long. Leap seconds are \"smeared\" so that no leap\n second table is needed for interpretation, using a [24-hour linear\n smear](https://developers.google.com/time/smear).\n\n The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By\n restricting to that range, we ensure that we can convert to and from [RFC\n 3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.\n\n # Examples\n\n Example 1: Compute Timestamp from POSIX `time()`.\n\n     Timestamp timestamp;\n     timestamp.set_seconds(time(NULL));\n     timestamp.set_nanos(0);\n\n Example 2: Compute Timestamp from POSIX `gettimeofday()`.\n\n     struct timeval tv;\n     gettimeofday(&tv, NULL);\n\n     Timestamp timestamp;\n     timestamp.set_seconds(tv.tv_sec);\n     timestamp.set_nanos(tv.tv_usec * 1000);\n\n Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.\n\n     FILETIME ft;\n     GetSystemTimeAsFileTime(&ft);\n     UINT64 ticks = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;\n\n     // A Windows tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z\n     // is 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.\n     Timestamp timestamp;\n     timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));\n     timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));\n\n Example 4: Compute Timestamp from Java `System.currentTimeMillis()`.\n\n     long millis = System.currentTimeMillis();\n\n     Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)\n         .setNanos((int) ((millis % 1000) * 1000000)).build();\n\n Example 5: Compute Timestamp from Java `Instant.now()`.\n\n     Instant now = Instant.now();\n\n     Timestamp timestamp =\n         Timestamp.newBuilder().setSeconds(now.getEpochSecond())\n             .setNanos(now.getNano()).build();\n\n Example 6: Compute Timestamp from current time in Python.\n\n     timestamp = Timestamp()\n     timestamp.GetCurrentTime()\n\n # JSON Mapping\n\n In JSON format, the Timestamp type is encoded as a string in the\n [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is, the\n format is \"{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z\"\n where {year} is always expressed using four digits while {month}, {day},\n {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional\n seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),\n are optional. The \"Z\" suffix indicates the timezone (\"UTC\"); the timezone\n is required. A proto3 JSON serializer should always use UTC (as indicated by\n \"Z\") when printing the Timestamp type and a proto3 JSON parser should be\n able to accept both UTC and other timezones (as indicated by an offset).\n\n For example, \"2017-01-15T01:30:15.01Z\" encodes 15.01 seconds past\n 01:30 UTC on January 15, 2017.\n\n In JavaScript, one can convert a Date object to this format using the\n standard\n [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)\n method. In Python, a standard `datetime.datetime` object can be converted\n to this format using\n [`strftime`](https://docs.python.org/2/library/time.html#time.strftime) with\n the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java, one can use\n the Joda Time's [`ISODateTimeFormat.dateTime()`](\n http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()\n ) to obtain a formatter capable of generating timestamps in this format.",
+        "format" : "date-time"
+      },
+      "policy.Action" : {
+        "title" : "Action",
+        "properties" : {
+          "id" : {
+            "title" : "id",
+            "description" : "Generated uuid in database"
+          },
+          "name" : {
+            "title" : "name"
+          },
+          "metadata" : {
+            "$ref" : "#/components/schemas/common.Metadata"
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "An action an entity can take",
+        "oneOf" : [ {
+          "title" : "custom",
+          "required" : [ "custom" ],
+          "properties" : {
+            "custom" : {
+              "title" : "custom",
+              "description" : "Deprecated"
+            }
+          }
+        }, {
+          "title" : "standard",
+          "required" : [ "standard" ],
+          "properties" : {
+            "standard" : {
+              "$ref" : "#/components/schemas/policy.Action.StandardAction"
+            }
+          }
+        } ]
+      },
+      "connect-protocol-version" : {
+        "title" : "Connect-Protocol-Version",
+        "description" : "Define the version of the Connect protocol",
+        "enum" : [ 1 ]
+      },
+      "connect-timeout-header" : {
+        "title" : "Connect-Timeout-Ms",
+        "description" : "Define the timeout, in ms"
+      },
+      "connect.error" : {
+        "title" : "Connect Error",
+        "properties" : {
+          "code" : {
+            "description" : "The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].",
+            "enum" : [ "canceled", "unknown", "invalid_argument", "deadline_exceeded", "not_found", "already_exists", "permission_denied", "resource_exhausted", "failed_precondition", "aborted", "out_of_range", "unimplemented", "internal", "unavailable", "data_loss", "unauthenticated" ]
+          },
+          "message" : {
+            "description" : "A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client."
+          },
+          "detail" : {
+            "$ref" : "#/components/schemas/google.protobuf.Any"
+          }
+        },
+        "additionalProperties" : false,
+        "description" : "Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation"
+      }
+    }
+  }
+}
