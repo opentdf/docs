@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 
+// Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
+const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
@@ -84,8 +86,11 @@ async function preprocessOpenApiSpecs() {
 
             // Apply your preprocessing modifications here
             if (apiSpec.info) {
-                apiSpec.info.description = apiSpec.info.description || '';
-                apiSpec.info.description = `[Preprocessed on ${new Date().toISOString()}] ${apiSpec.info.description}`;
+                apiSpec.info.description = apiSpec.info.description ?? '';
+                if (ADD_TIMESTAMP_TO_DESCRIPTION) {
+                    // Add a timestamp to the description if the flag is set
+                    apiSpec.info.description = `[Preprocessed on ${new Date().toISOString()}] ${apiSpec.info.description}`;
+                }
             }
 
             // First check if apiSpec.info exists, else initialize it
