@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: entityresolution
-  description: '[Preprocessed on 2025-06-09T20:38:26.427Z] '
+  description: ''
   version: v1
 paths:
   /entityresolution/resolve:

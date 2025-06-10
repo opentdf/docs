@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   version: v2
   title: authorization.v2
-  description: '[Preprocessed on 2025-06-09T20:38:26.422Z] '
+  description: ''
 paths:
   /authorization.v2.AuthorizationService/GetDecision:
     post:

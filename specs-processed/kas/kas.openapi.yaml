@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: kas
-  description: '[Preprocessed on 2025-06-09T20:38:26.428Z] '
+  description: ''
   version: v1
 paths:
   /kas/v2/kas_public_key:

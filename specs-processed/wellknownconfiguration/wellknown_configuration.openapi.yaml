@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: wellknownconfiguration
-  description: '[Preprocessed on 2025-06-09T20:38:26.429Z] '
+  description: ''
   version: v1
 paths:
   /.well-known/opentdf-configuration:
