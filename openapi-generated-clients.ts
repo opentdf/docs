@@ -1,5 +1,8 @@
 /**
  * This file defines language tabs configuration for OpenAPI documentation
+ * 
+ * TODO: Note that the languages commented below have been removed, since we offer
+ * official SDKs for them, and we don't want to duplicate code or cause confusion.
  */
 const languageTabs = [
     // {
