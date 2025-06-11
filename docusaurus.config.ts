@@ -70,7 +70,7 @@ const config: Config = {
       {
         docs: {
           routeBasePath: "/",
-          sidebarPath: require.resolve("./sidebars.js"),
+          sidebarPath: "./sidebars.js",
           docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
