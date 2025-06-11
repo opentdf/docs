@@ -11,7 +11,7 @@ const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 let finalConfiguration: Plugin.PluginOptions = {
   petstore: {
     specPath: "specs-processed/petstore.yaml",
-    outputDir: "docs/SDK Samples/petstore",
+    outputDir: "docs/SDK-Samples/petstore",
     downloadUrl:
       "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
     sidebarOptions: {
@@ -21,7 +21,7 @@ let finalConfiguration: Plugin.PluginOptions = {
   } satisfies OpenApiPlugin.Options,
   bookstore: {
     specPath: "specs-processed/bookstore.yaml",
-    outputDir: "docs/SDK Samples/bookstore",
+    outputDir: "docs/SDK-Samples/bookstore",
     // downloadUrl:
     //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
     sidebarOptions: {
