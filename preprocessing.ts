@@ -10,8 +10,12 @@ interface ApiSpecDefinition {
     specPath: string;
     specPathModified?: string; // New field for the preprocessed spec location
     outputDir?: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
-    sidebarOptions?: { groupPathsBy: string }; // Optional: overrides DEFAULT_OPENAPI_SIDEBAR_OPTIONS
-}
+    sidebarOptions?: {
+        groupPathsBy: string,
+        categoryLinkSource: string
+    }; 
+}; 
+
 
 // Define all your OpenAPI specifications here
 const openApiSpecs: ApiSpecDefinition[] = [
@@ -20,6 +24,10 @@ const openApiSpecs: ApiSpecDefinition[] = [
         specPath: "./specs/authorization/authorization.openapi.yaml",
         outputDir: "docs/authorization",
         // specPathModified is auto-generated if not specified
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "authorization_v2",
@@ -27,31 +35,55 @@ const openApiSpecs: ApiSpecDefinition[] = [
         outputDir: "docs/authorization_v2",
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "common",
         specPath: "./specs/common/common.openapi.yaml",
         outputDir: "docs/common",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "entity",
         specPath: "./specs/entity/entity.openapi.yaml",
         outputDir: "docs/entity",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "entityresolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
         outputDir: "docs/entityresolution",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
         outputDir: "docs/kas",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     {
         id: "wellknownconfiguration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
         outputDir: "docs/wellknownconfiguration",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
     },
     // Add more entries here for other OpenAPI specs
 ];
@@ -122,20 +154,20 @@ async function preprocessOpenApiSpecs() {
 
             // Ensure all paths have proper tags for grouping
             if (apiSpec.paths) {
-              Object.keys(apiSpec.paths).forEach(path => {
-                const pathItem = apiSpec.paths[path];
-                
-                // Process each operation in the path
-                ['get', 'post', 'put', 'delete', 'patch'].forEach(method => {
-                  if (pathItem[method]) {
-                    const operation = pathItem[method];
-                    
-                    // Replace any existing tags with just the spec id
-                    // This ensures operations only appear under their parent
-                    operation.tags = [spec.id];
-                  }
+                Object.keys(apiSpec.paths).forEach(path => {
+                    const pathItem = apiSpec.paths[path];
+
+                    // Process each operation in the path
+                    ['get', 'post', 'put', 'delete', 'patch'].forEach(method => {
+                        if (pathItem[method]) {
+                            const operation = pathItem[method];
+
+                            // Replace any existing tags with just the spec id
+                            // This ensures operations only appear under their parent
+                            operation.tags = [spec.id];
+                        }
+                    });
                 });
-              });
             }
 
             // Write the modified YAML to the target file
