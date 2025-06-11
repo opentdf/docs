@@ -115,18 +115,22 @@ const openApiSpecs: ApiSpecDefinition[] = [
     // Add more entries here for other OpenAPI specs
 ];
 
-// Merge 'openApiSpecs' into 'finalConfiguration'
-// Object.entries(openApiSpecs).forEach(([key, value]) => {
-//   finalConfiguration[key] = {
-//     ...(typeof value === "object" && value !== null ? value : {}),
-//   };
-// });
-
 // Merge 'finalConfiguration' into 'openApiSpecs'
-Object.entries(finalConfiguration).forEach(([key, value]) => {
-  openApiSpecs[key] = {
-    ...(typeof value === "object" && value !== null ? value : {}),
-  };
+Object.entries(finalConfiguration).forEach(([id, specDetails]) => {
+  if (typeof specDetails === 'object' && specDetails !== null) {
+    // Ensure specDetails has all required fields of ApiSpecDefinition or cast appropriately
+    // The structure of OpenApiPlugin.Options (used in finalConfiguration)
+    // is similar enough to ApiSpecDefinition for this to work if 'id' is added.
+    const apiSpecDef: ApiSpecDefinition = {
+      id: id,
+      specPath: (specDetails as any).specPath,
+      outputDir: (specDetails as any).outputDir,
+      // specPathModified will be auto-generated if not present in specDetails
+      specPathModified: (specDetails as any).specPathModified,
+      sidebarOptions: (specDetails as any).sidebarOptions,
+    };
+    openApiSpecs.push(apiSpecDef);
+  }
 });
 
 /**
