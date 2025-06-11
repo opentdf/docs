@@ -6,30 +6,11 @@ import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
-// We'll merge 'openApiSpecs' with 'samplesConfiguration' later
-let samplesConfiguration = {
-  petstore: {
-    specPath: "specs-processed/petstore.yaml",
-    outputDir: "docs/SDK-Samples/petstore",
-    downloadUrl:
-      "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
-    sidebarOptions: {
-      groupPathsBy: "tag",
-      categoryLinkSource: "tag",
-    },
-  } satisfies OpenApiPlugin.Options,
-  bookstore: {
-    specPath: "specs-processed/bookstore.yaml",
-    outputDir: "docs/SDK-Samples/bookstore",
-    // downloadUrl:
-    //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
-    sidebarOptions: {
-      groupPathsBy: "tag",
-      categoryLinkSource: "tag",
-    },
-  } satisfies OpenApiPlugin.Options,
-};
+// Read BUILD_OPENAPI_SAMPLES once
+const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
+// Initialize empty samples configuration - will be populated conditionally
+let samplesConfiguration = {};
 
 interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
@@ -120,23 +101,44 @@ openApiSpecsArray.forEach((spec) => {
     openApiSpecs[id] = specDetails;
 });
 
-// Merge 'samplesConfiguration' into 'openApiSpecs'
-Object.entries(samplesConfiguration).forEach(([id, specDetails]) => {
-  if (typeof specDetails === 'object' && specDetails !== null) {
-    openApiSpecs[id] = {
-      specPath: (specDetails as any).specPath,
-      outputDir: (specDetails as any).outputDir,
-      specPathModified: (specDetails as any).specPathModified,
-      sidebarOptions: (specDetails as any).sidebarOptions,
-    };
-  }
-});
-
 /**
  * Ensures that required spec files exist in specs-processed directory
- * by copying from specs directory or downloading from URLs
+ * by copying from specs directory or downloading from URLs.
+ * Also populates samplesConfiguration if BUILD_OPENAPI_SAMPLES is enabled.
  */
 async function copySamplesToProcessedSpecs() {
+  // Only process samples if BUILD_OPENAPI_SAMPLES is enabled
+  if (!BUILD_OPENAPI_SAMPLES) {
+    console.log('🔍 Skipping sample OpenAPI specs (BUILD_OPENAPI_SAMPLES is not set to 1)');
+    return;
+  }
+  
+  console.log('🔍 Including sample OpenAPI specs (petstore, bookstore) based on BUILD_OPENAPI_SAMPLES=1');
+  
+  // Populate samples configuration when enabled
+  samplesConfiguration = {
+    petstore: {
+      specPath: "specs-processed/petstore.yaml",
+      outputDir: "docs/SDK-Samples/petstore",
+      downloadUrl:
+        "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
+      sidebarOptions: {
+        groupPathsBy: "tag",
+        categoryLinkSource: "tag",
+      },
+    } satisfies OpenApiPlugin.Options,
+    bookstore: {
+      specPath: "specs-processed/bookstore.yaml",
+      outputDir: "docs/SDK-Samples/bookstore",
+      // downloadUrl:
+      //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
+      sidebarOptions: {
+        groupPathsBy: "tag",
+        categoryLinkSource: "tag",
+      },
+    } satisfies OpenApiPlugin.Options,
+  };
+  
   console.log('🔄 Ensuring sample files exist in "specs-processed" directory...');
   
   const processedDir = path.resolve(__dirname, 'specs-processed');
@@ -157,6 +159,18 @@ async function copySamplesToProcessedSpecs() {
   // Always copy from source directory, overwriting if it exists
   console.log(`Copying bookstore spec from ${bookstoreSourcePath}`);
   fs.copyFileSync(bookstoreSourcePath, bookstorePath);
+  
+  // Add the samples to the main openApiSpecs object
+  Object.entries(samplesConfiguration).forEach(([id, specDetails]) => {
+    if (typeof specDetails === 'object' && specDetails !== null) {
+      openApiSpecs[id] = {
+        specPath: (specDetails as any).specPath,
+        outputDir: (specDetails as any).outputDir,
+        specPathModified: (specDetails as any).specPathModified,
+        sidebarOptions: (specDetails as any).sidebarOptions,
+      };
+    }
+  });
 };
 
 /**
@@ -165,7 +179,7 @@ async function copySamplesToProcessedSpecs() {
 async function preprocessOpenApiSpecs() {
     console.log('🔄 Preprocessing OpenAPI specification files...');
     
-    // Copy sample files to "specs-processed" directory
+    // Copy sample files to "specs-processed" directory and populate samples config if enabled
     await copySamplesToProcessedSpecs();
 
     // Process each spec
