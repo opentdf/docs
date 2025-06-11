@@ -40,30 +40,6 @@ let sampleConfig: Plugin.PluginOptions = {
   } satisfies OpenApiPlugin.Options,
 };
 
-// Custom sidebar generator that includes operations and schemas
-function primaryPagesOnlySidebarGenerator(
-  item: ApiPageMetadata | SchemaPageMetadata,
-  context: { sidebarOptions: SidebarOptions; basePath: string }
-) {
-  // Return info pages
-  if (item.infoId === item.title) {
-    return item; // Return the item as is if it's an info page
-  }
-
-  // Return operation pages - they contain the actual API endpoints
-  if ('method' in item && item.method) {
-    return item;
-  }
-
-  // Return schema pages as they are useful for reference
-  if ('schemaName' in item && item.schemaName) {
-    return item;
-  }
-
-  // Skip other types of pages
-  return null;
-}
-
 // Run the preprocessor before generating the config
 preprocessOpenApiSpecs();
 
@@ -73,15 +49,11 @@ const openApiDocsConfig: Plugin.PluginOptions = {};
 // Instead of using reduce, add each spec configuration individually
 openApiSpecs.forEach((spec) => {
   const outputDir = spec.outputDir;
-  const sidebarOptions = { // Always use these options
-    groupPathsBy: "tag",
-    categoryLinkSource: "tag",
-  };
+
 
   openApiDocsConfig[spec.id] = {
     specPath: spec.specPathModified || spec.specPath,
     outputDir,
-    sidebarOptions, // Assign the new sidebarOptions here
   };
 });
 
