@@ -47,7 +47,7 @@ const config: Config = {
     },
   ],
 
-  onBrokenLinks: "warn",
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   onBrokenAnchors: "warn",
   markdown: {
