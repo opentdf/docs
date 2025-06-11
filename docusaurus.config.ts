@@ -11,8 +11,34 @@ import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 import { openApiSpecs, preprocessOpenApiSpecs } from "./preprocessing"
+import { ApiPageMetadata, SchemaPageMetadata, SidebarOptions } from "docusaurus-plugin-openapi-docs/src/types";
+import type * as Plugin from "@docusaurus/types/src/plugin";
 
 // --- OpenAPI Config Helper ---
+// We'll merge 'openApiDocsConfig' with 'sampleConfig' later
+let sampleConfig: Plugin.PluginOptions = {
+  petstore: {
+    specPath: "specs-processed/petstore.yaml",
+    outputDir: "docs/petstore",
+    downloadUrl:
+      "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
+    sidebarOptions: {
+      groupPathsBy: "tag",
+      categoryLinkSource: "tag",
+    },
+  } satisfies OpenApiPlugin.Options,
+  bookstore: {
+    specPath: "specs-processed/bookstore.yaml",
+    outputDir: "docs/bookstore",
+    // downloadUrl:
+    //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
+    sidebarOptions: {
+      groupPathsBy: "tag",
+      categoryLinkSource: "tag",
+    },
+  } satisfies OpenApiPlugin.Options,
+};
+
 // Global toggle to enable or disable sidebarOptions for all OpenAPI configurations
 const APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY = false;
 const DEFAULT_OPENAPI_OUTPUT_DIR = "docs/openapi/";
@@ -879,28 +905,7 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: {
-          petstore: {
-            specPath: "specs-processed/petstore.yaml",
-            outputDir: "docs/petstore",
-            downloadUrl:
-              "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-              categoryLinkSource: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-          bookstore: {
-            specPath: "specs-processed/bookstore.yaml",
-            outputDir: "docs/bookstore",
-            // downloadUrl:
-            //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-              categoryLinkSource: "tag",
-            },
-          } satisfies OpenApiPlugin.Options,
-        } satisfies Plugin.PluginOptions,
+        config: sampleConfig
         // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
 
       },
