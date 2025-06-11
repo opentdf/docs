@@ -7,8 +7,8 @@ import type * as Plugin from "@docusaurus/types/src/plugin";
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
-// We'll merge 'openApiSpecs' with 'finalConfiguration' later
-let finalConfiguration: Plugin.PluginOptions = {
+// We'll merge 'openApiSpecs' with 'samplesConfiguration' later
+let samplesConfiguration: Plugin.PluginOptions = {
   petstore: {
     specPath: "specs-processed/petstore.yaml",
     outputDir: "docs/SDK-Samples/petstore",
@@ -121,8 +121,8 @@ openApiSpecsArray.forEach((spec) => {
     openApiSpecs[id] = specDetails;
 });
 
-// Merge 'finalConfiguration' into 'openApiSpecs'
-Object.entries(finalConfiguration).forEach(([id, specDetails]) => {
+// Merge 'samplesConfiguration' into 'openApiSpecs'
+Object.entries(samplesConfiguration).forEach(([id, specDetails]) => {
   if (typeof specDetails === 'object' && specDetails !== null) {
     openApiSpecs[id] = {
       specPath: (specDetails as any).specPath,

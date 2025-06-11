@@ -13,26 +13,6 @@ import { openApiSpecs } from "./preprocessing";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import languageTabs from "./openapi-generated-sdks";
 
-// --- OpenAPI Config Helper ---
-
-// Dynamically build the OpenAPI plugin configuration from preprocessed specs
-// const openApiDocsConfig: Plugin.PluginOptions = {};
-
-// // Convert the array of ApiSpecDefinition objects to the format needed by the OpenAPI plugin
-// openApiSpecs.forEach((spec) => {
-//   try {
-//     openApiDocsConfig[spec.id] = {
-//       specPath: spec.specPathModified || spec.specPath, // Use modified path if available, otherwise original path
-//       outputDir: spec.outputDir,
-//       sidebarOptions: spec.sidebarOptions,
-//     };
-//   } catch (error) {
-//     console.error(`Failed to configure OpenAPI spec ${spec.id}:`, error);
-//   }
-// });
-
-// --- End OpenAPI Config Helper ---
-
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
 const config: Config = {
