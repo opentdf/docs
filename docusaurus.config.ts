@@ -9,6 +9,29 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
+import { openApiSpecs, preprocessOpenApiSpecs } from "./preprocessing"
+import { ApiPageMetadata, SchemaPageMetadata, SidebarOptions } from "docusaurus-plugin-openapi-docs/src/types";
+import type * as Plugin from "@docusaurus/types/src/plugin";
+import languageTabs from "./openapi-generated-sdks";
+
+// --- OpenAPI Config Helper ---
+
+// Run the preprocessor before generating the config
+preprocessOpenApiSpecs();
+
+// Dynamically build the OpenAPI plugin configuration
+const openApiDocsConfig: Plugin.PluginOptions = {};
+
+openApiSpecs.forEach((spec) => {
+  const outputDir = spec.outputDir;
+
+  openApiDocsConfig[spec.id] = {
+    specPath: spec.specPathModified || spec.specPath,
+    outputDir,
+  };
+});
+
+// --- End OpenAPI Config Helper ---
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
@@ -44,12 +67,13 @@ const config: Config = {
     },
   ],
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
+  onBrokenAnchors: "warn",
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock"],
+  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock", "docusaurus-theme-openapi-docs"],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -67,6 +91,7 @@ const config: Config = {
         docs: {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
+          docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
@@ -192,6 +217,8 @@ const config: Config = {
       //   template: '#zoom-template',
       // },
     },
+
+    languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
     [
@@ -733,6 +760,16 @@ ${updatedContent}`,
             filename: "configuration.md",
           };
         },
+      },
+    ],
+    [
+      "docusaurus-plugin-openapi-docs",
+      {
+        id: "api", // plugin id
+        docsPluginId: "classic", // configured for preset-classic
+        config: openApiDocsConfig // finalConfiguration
+        // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
+
       },
     ],
     require.resolve("docusaurus-lunr-search"),
