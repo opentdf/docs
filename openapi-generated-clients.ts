@@ -2,21 +2,6 @@
  * This file defines language tabs configuration for OpenAPI documentation
  */
 const languageTabs = [
-    {
-        highlight: "python",
-        language: "python",
-        logoClass: "python",
-    },
-    {
-        highlight: "bash",
-        language: "curl",
-        logoClass: "curl",
-    },
-    {
-        highlight: "csharp",
-        language: "csharp",
-        logoClass: "csharp",
-    },
     // {
     //   highlight: "go",
     //   language: "go",
@@ -27,6 +12,27 @@ const languageTabs = [
     //   language: "nodejs",
     //   logoClass: "nodejs",
     // },
+    // {
+    //   highlight: "java",
+    //   language: "java",
+    //   logoClass: "java",
+    //   variant: "unirest",
+    // },
+    // {
+    //   highlight: "javascript",
+    //   language: "javascript",
+    //   logoClass: "javascript",
+    // },       
+    {
+        highlight: "bash",
+        language: "curl",
+        logoClass: "curl",
+    },
+    {
+        highlight: "csharp",
+        language: "csharp",
+        logoClass: "csharp",
+    },
     {
         highlight: "ruby",
         language: "ruby",
@@ -37,12 +43,6 @@ const languageTabs = [
         language: "php",
         logoClass: "php",
     },
-    // {
-    //   highlight: "java",
-    //   language: "java",
-    //   logoClass: "java",
-    //   variant: "unirest",
-    // },
     {
         highlight: "powershell",
         language: "powershell",
@@ -53,11 +53,6 @@ const languageTabs = [
         language: "dart",
         logoClass: "dart",
     },
-    // {
-    //   highlight: "javascript",
-    //   language: "javascript",
-    //   logoClass: "javascript",
-    // },
     {
         highlight: "c",
         language: "c",
@@ -92,6 +87,11 @@ const languageTabs = [
         highlight: "rust",
         language: "rust",
         logoClass: "rust",
+    },
+    {
+        highlight: "python",
+        language: "python",
+        logoClass: "python",
     },
 ];
 
