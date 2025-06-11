@@ -2,13 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
-import type * as Plugin from "@docusaurus/types/src/plugin";
 
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 // We'll merge 'openApiSpecs' with 'samplesConfiguration' later
-let samplesConfiguration: Plugin.PluginOptions = {
+let samplesConfiguration = {
   petstore: {
     specPath: "specs-processed/petstore.yaml",
     outputDir: "docs/SDK-Samples/petstore",
