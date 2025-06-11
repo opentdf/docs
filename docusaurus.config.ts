@@ -16,11 +16,11 @@ import type * as Plugin from "@docusaurus/types/src/plugin";
 import languageTabs from "./openapi-generated-sdks";
 
 // --- OpenAPI Config Helper ---
-// We'll merge 'openApiDocsConfig' with 'sampleConfig' later
-let sampleConfig: Plugin.PluginOptions = {
+// We'll merge 'openApiSpecs' with 'finalConfiguration' later
+let finalConfiguration: Plugin.PluginOptions = {
   petstore: {
     specPath: "specs-processed/petstore.yaml",
-    outputDir: "docs/petstore",
+    outputDir: "docs/SDK Samples/petstore",
     downloadUrl:
       "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
     sidebarOptions: {
@@ -30,7 +30,7 @@ let sampleConfig: Plugin.PluginOptions = {
   } satisfies OpenApiPlugin.Options,
   bookstore: {
     specPath: "specs-processed/bookstore.yaml",
-    outputDir: "docs/bookstore",
+    outputDir: "docs/SDK Samples/bookstore",
     // downloadUrl:
     //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
     sidebarOptions: {
@@ -46,10 +46,8 @@ preprocessOpenApiSpecs();
 // Dynamically build the OpenAPI plugin configuration
 const openApiDocsConfig: Plugin.PluginOptions = {};
 
-// Instead of using reduce, add each spec configuration individually
 openApiSpecs.forEach((spec) => {
   const outputDir = spec.outputDir;
-
 
   openApiDocsConfig[spec.id] = {
     specPath: spec.specPathModified || spec.specPath,
@@ -57,8 +55,12 @@ openApiSpecs.forEach((spec) => {
   };
 });
 
-// Add the sidebarPath property to the configuration
-// openApiDocsConfig["sidebarPath"] = require.resolve("./sidebars.js");
+// Merge 'openApiSpecs' into 'finalConfiguration'
+Object.entries(openApiDocsConfig).forEach(([key, value]) => {
+  finalConfiguration[key] = {
+    ...(typeof value === "object" && value !== null ? value : {}),
+  };
+});
 
 // --- End OpenAPI Config Helper ---
 
@@ -796,7 +798,7 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: sampleConfig
+        config: finalConfiguration
         // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
 
       },

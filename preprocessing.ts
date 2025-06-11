@@ -22,7 +22,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
-        outputDir: "docs/authorization",
+        outputDir: "docs/SDK (OpenAPI clients)/authorization",
         // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
@@ -32,7 +32,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "authorization_v2",
         specPath: "./specs/authorization/v2/authorization.openapi.yaml",
-        outputDir: "docs/authorization_v2",
+        outputDir: "docs/SDK (OpenAPI clients)/authorization_v2",
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
         sidebarOptions: {
@@ -43,7 +43,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "common",
         specPath: "./specs/common/common.openapi.yaml",
-        outputDir: "docs/common",
+        outputDir: "docs/SDK (OpenAPI clients)/common",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -52,7 +52,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "entity",
         specPath: "./specs/entity/entity.openapi.yaml",
-        outputDir: "docs/entity",
+        outputDir: "docs/SDK (OpenAPI clients)/entity",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -61,7 +61,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "entityresolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
-        outputDir: "docs/entityresolution",
+        outputDir: "docs/SDK (OpenAPI clients)/entityresolution",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -70,7 +70,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
-        outputDir: "docs/kas",
+        outputDir: "docs/SDK (OpenAPI clients)/kas",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -79,7 +79,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "wellknownconfiguration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
-        outputDir: "docs/wellknownconfiguration",
+        outputDir: "docs/SDK (OpenAPI clients)/wellknownconfiguration",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
