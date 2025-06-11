@@ -1,9 +1,36 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
+import type * as Plugin from "@docusaurus/types/src/plugin";
 
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
+
+// We'll merge 'openApiSpecs' with 'finalConfiguration' later
+let finalConfiguration: Plugin.PluginOptions = {
+  petstore: {
+    specPath: "specs-processed/petstore.yaml",
+    outputDir: "docs/SDK Samples/petstore",
+    downloadUrl:
+      "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
+    sidebarOptions: {
+      groupPathsBy: "tag",
+      categoryLinkSource: "tag",
+    },
+  } satisfies OpenApiPlugin.Options,
+  bookstore: {
+    specPath: "specs-processed/bookstore.yaml",
+    outputDir: "docs/SDK Samples/bookstore",
+    // downloadUrl:
+    //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
+    sidebarOptions: {
+      groupPathsBy: "tag",
+      categoryLinkSource: "tag",
+    },
+  } satisfies OpenApiPlugin.Options,
+};
+
 
 interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
@@ -22,7 +49,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/authorization",
+        outputDir: "docs/SDK-OpenAPI/authorization",
         // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
@@ -32,7 +59,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "authorization_v2",
         specPath: "./specs/authorization/v2/authorization.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/authorization_v2",
+        outputDir: "docs/SDK-OpenAPI/authorization_v2",
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
         sidebarOptions: {
@@ -43,7 +70,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "common",
         specPath: "./specs/common/common.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/common",
+        outputDir: "docs/SDK-OpenAPI/common",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -52,7 +79,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "entity",
         specPath: "./specs/entity/entity.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/entity",
+        outputDir: "docs/SDK-OpenAPI/entity",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -61,7 +88,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "entityresolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/entityresolution",
+        outputDir: "docs/SDK-OpenAPI/entityresolution",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -70,7 +97,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/kas",
+        outputDir: "docs/SDK-OpenAPI/kas",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -79,7 +106,7 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "wellknownconfiguration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
-        outputDir: "docs/SDK (OpenAPI clients)/wellknownconfiguration",
+        outputDir: "docs/SDK-OpenAPI/wellknownconfiguration",
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "tag",
@@ -88,6 +115,19 @@ const openApiSpecs: ApiSpecDefinition[] = [
     // Add more entries here for other OpenAPI specs
 ];
 
+// Merge 'openApiSpecs' into 'finalConfiguration'
+// Object.entries(openApiSpecs).forEach(([key, value]) => {
+//   finalConfiguration[key] = {
+//     ...(typeof value === "object" && value !== null ? value : {}),
+//   };
+// });
+
+// Merge 'finalConfiguration' into 'openApiSpecs'
+Object.entries(finalConfiguration).forEach(([key, value]) => {
+  openApiSpecs[key] = {
+    ...(typeof value === "object" && value !== null ? value : {}),
+  };
+});
 
 /**
  * Preprocesses OpenAPI YAML files before they're consumed by docusaurus-plugin-openapi-docs

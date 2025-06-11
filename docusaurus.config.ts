@@ -9,36 +9,12 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
-import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 import { openApiSpecs, preprocessOpenApiSpecs } from "./preprocessing"
 import { ApiPageMetadata, SchemaPageMetadata, SidebarOptions } from "docusaurus-plugin-openapi-docs/src/types";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import languageTabs from "./openapi-generated-sdks";
 
 // --- OpenAPI Config Helper ---
-// We'll merge 'openApiSpecs' with 'finalConfiguration' later
-let finalConfiguration: Plugin.PluginOptions = {
-  petstore: {
-    specPath: "specs-processed/petstore.yaml",
-    outputDir: "docs/SDK Samples/petstore",
-    downloadUrl:
-      "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
-    sidebarOptions: {
-      groupPathsBy: "tag",
-      categoryLinkSource: "tag",
-    },
-  } satisfies OpenApiPlugin.Options,
-  bookstore: {
-    specPath: "specs-processed/bookstore.yaml",
-    outputDir: "docs/SDK Samples/bookstore",
-    // downloadUrl:
-    //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
-    sidebarOptions: {
-      groupPathsBy: "tag",
-      categoryLinkSource: "tag",
-    },
-  } satisfies OpenApiPlugin.Options,
-};
 
 // Run the preprocessor before generating the config
 preprocessOpenApiSpecs();
@@ -52,13 +28,6 @@ openApiSpecs.forEach((spec) => {
   openApiDocsConfig[spec.id] = {
     specPath: spec.specPathModified || spec.specPath,
     outputDir,
-  };
-});
-
-// Merge 'openApiSpecs' into 'finalConfiguration'
-Object.entries(openApiDocsConfig).forEach(([key, value]) => {
-  finalConfiguration[key] = {
-    ...(typeof value === "object" && value !== null ? value : {}),
   };
 });
 
@@ -121,7 +90,7 @@ const config: Config = {
       {
         docs: {
           routeBasePath: "/",
-          sidebarPath: "./sidebars.js",
+          sidebarPath: require.resolve("./sidebars.js"),
           docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
@@ -798,7 +767,7 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: finalConfiguration
+        config: openApiDocsConfig // finalConfiguration
         // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
 
       },
