@@ -879,7 +879,30 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: openApiDocsConfig, // Use the dynamically generated config
+        config: {
+          petstore: {
+            specPath: "specs-processed/petstore.yaml",
+            outputDir: "docs/petstore",
+            downloadUrl:
+              "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+              categoryLinkSource: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+          bookstore: {
+            specPath: "specs-processed/bookstore.yaml",
+            outputDir: "docs/bookstore",
+            // downloadUrl:
+            //   "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/bookstore.yaml",
+            sidebarOptions: {
+              groupPathsBy: "tag",
+              categoryLinkSource: "tag",
+            },
+          } satisfies OpenApiPlugin.Options,
+        } satisfies Plugin.PluginOptions,
+        // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
+
       },
     ],
     require.resolve("docusaurus-lunr-search"),
