@@ -1,3 +1,6 @@
+/**
+ * This file defines language tabs configuration for OpenAPI documentation
+ */
 const languageTabs = [
     {
         highlight: "python",

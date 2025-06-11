@@ -36,16 +36,15 @@ interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
     specPath: string;
     specPathModified?: string; // New field for the preprocessed spec location
-    outputDir?: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
+    outputDir: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
     sidebarOptions?: {
         groupPathsBy: string,
         categoryLinkSource: string
     }; 
 }; 
 
-
 // Define all your OpenAPI specifications here
-const openApiSpecs: ApiSpecDefinition[] = [
+let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
@@ -115,32 +114,63 @@ const openApiSpecs: ApiSpecDefinition[] = [
     // Add more entries here for other OpenAPI specs
 ];
 
+// Convert array to object keyed by id
+let openApiSpecs: Record<string, Omit<ApiSpecDefinition, 'id'>> = {};
+openApiSpecsArray.forEach((spec) => {
+    const { id, ...specDetails } = spec;
+    openApiSpecs[id] = specDetails;
+});
+
 // Merge 'finalConfiguration' into 'openApiSpecs'
 Object.entries(finalConfiguration).forEach(([id, specDetails]) => {
   if (typeof specDetails === 'object' && specDetails !== null) {
-    // Ensure specDetails has all required fields of ApiSpecDefinition or cast appropriately
-    // The structure of OpenApiPlugin.Options (used in finalConfiguration)
-    // is similar enough to ApiSpecDefinition for this to work if 'id' is added.
-    const apiSpecDef: ApiSpecDefinition = {
-      id: id,
+    openApiSpecs[id] = {
       specPath: (specDetails as any).specPath,
       outputDir: (specDetails as any).outputDir,
-      // specPathModified will be auto-generated if not present in specDetails
       specPathModified: (specDetails as any).specPathModified,
       sidebarOptions: (specDetails as any).sidebarOptions,
     };
-    openApiSpecs.push(apiSpecDef);
   }
 });
+
+/**
+ * Ensures that required spec files exist in specs-processed directory
+ * by copying from specs directory or downloading from URLs
+ */
+async function copySamplesToProcessedSpecs() {
+  console.log('🔄 Ensuring sample files exist in "specs-processed" directory...');
+  
+  const processedDir = path.resolve(__dirname, 'specs-processed');
+  fs.mkdirSync(processedDir, { recursive: true });
+  
+  // Handle petstore specifically - it has a downloadUrl
+  const petstorePath = path.resolve(__dirname, 'specs-processed/petstore.yaml');
+  const petstoreSourcePath = path.resolve(__dirname, 'specs/petstore.yaml');
+  
+  // Always copy from source directory, overwriting if it exists
+  console.log(`Copying petstore spec from ${petstoreSourcePath}`);
+  fs.copyFileSync(petstoreSourcePath, petstorePath);
+  
+  // Handle bookstore specifically
+  const bookstorePath = path.resolve(__dirname, 'specs-processed/bookstore.yaml');
+  const bookstoreSourcePath = path.resolve(__dirname, 'specs/bookstore.yaml');
+  
+  // Always copy from source directory, overwriting if it exists
+  console.log(`Copying bookstore spec from ${bookstoreSourcePath}`);
+  fs.copyFileSync(bookstoreSourcePath, bookstorePath);
+};
 
 /**
  * Preprocesses OpenAPI YAML files before they're consumed by docusaurus-plugin-openapi-docs
  */
 async function preprocessOpenApiSpecs() {
     console.log('🔄 Preprocessing OpenAPI specification files...');
+    
+    // Copy sample files to "specs-processed" directory
+    await copySamplesToProcessedSpecs();
 
     // Process each spec
-    for (const spec of openApiSpecs) {
+    for (const [id, spec] of Object.entries(openApiSpecs)) {
         const sourcePath = path.resolve(__dirname, spec.specPath);
         const parsedPath = path.parse(spec.specPath);
 
@@ -208,7 +238,7 @@ async function preprocessOpenApiSpecs() {
 
                             // Replace any existing tags with just the spec id
                             // This ensures operations only appear under their parent
-                            operation.tags = [spec.id];
+                            operation.tags = [id]; // Use id instead of spec.id
                         }
                     });
                 });
@@ -220,10 +250,15 @@ async function preprocessOpenApiSpecs() {
         } catch (error) {
             console.error(`❌ Error processing ${sourcePath}:`, error);
         }
+
+        spec.specPath = spec.specPathModified; // Update the original specPath to the modified one
+
+        // Delete the specPathModified property to avoid confusion
+        delete spec.specPathModified;
     }
 
     console.log('✨ OpenAPI preprocessing complete');
-}
+};
 
 // Execute the preprocessing function
 preprocessOpenApiSpecs().catch(error => {
@@ -231,4 +266,4 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-export { openApiSpecs, preprocessOpenApiSpecs, ApiSpecDefinition };
+export { openApiSpecs };

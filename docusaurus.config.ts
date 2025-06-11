@@ -9,27 +9,27 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
-import { openApiSpecs, preprocessOpenApiSpecs } from "./preprocessing"
-import { ApiPageMetadata, SchemaPageMetadata, SidebarOptions } from "docusaurus-plugin-openapi-docs/src/types";
+import { openApiSpecs } from "./preprocessing";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import languageTabs from "./openapi-generated-sdks";
 
 // --- OpenAPI Config Helper ---
 
-// Run the preprocessor before generating the config
-preprocessOpenApiSpecs();
+// Dynamically build the OpenAPI plugin configuration from preprocessed specs
+// const openApiDocsConfig: Plugin.PluginOptions = {};
 
-// Dynamically build the OpenAPI plugin configuration
-const openApiDocsConfig: Plugin.PluginOptions = {};
-
-openApiSpecs.forEach((spec) => {
-  const outputDir = spec.outputDir;
-
-  openApiDocsConfig[spec.id] = {
-    specPath: spec.specPathModified || spec.specPath,
-    outputDir,
-  };
-});
+// // Convert the array of ApiSpecDefinition objects to the format needed by the OpenAPI plugin
+// openApiSpecs.forEach((spec) => {
+//   try {
+//     openApiDocsConfig[spec.id] = {
+//       specPath: spec.specPathModified || spec.specPath, // Use modified path if available, otherwise original path
+//       outputDir: spec.outputDir,
+//       sidebarOptions: spec.sidebarOptions,
+//     };
+//   } catch (error) {
+//     console.error(`Failed to configure OpenAPI spec ${spec.id}:`, error);
+//   }
+// });
 
 // --- End OpenAPI Config Helper ---
 
@@ -90,7 +90,7 @@ const config: Config = {
       {
         docs: {
           routeBasePath: "/",
-          sidebarPath: "./sidebars.js",
+          sidebarPath: require.resolve("./sidebars.js"),
           docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
@@ -217,7 +217,6 @@ const config: Config = {
       //   template: '#zoom-template',
       // },
     },
-
     languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
@@ -767,9 +766,7 @@ ${updatedContent}`,
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: openApiDocsConfig // finalConfiguration
-        // config: openApiDocsConfig satisfies Plugin.PluginOptions, // Use the dynamically generated config
-
+        config: openApiSpecs 
       },
     ],
     require.resolve("docusaurus-lunr-search"),
