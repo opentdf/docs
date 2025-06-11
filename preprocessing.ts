@@ -18,33 +18,40 @@ const openApiSpecs: ApiSpecDefinition[] = [
     {
         id: "authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
+        outputDir: "docs/authorization",
         // specPathModified is auto-generated if not specified
     },
     {
         id: "authorization_v2",
         specPath: "./specs/authorization/v2/authorization.openapi.yaml",
+        outputDir: "docs/authorization_v2",
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
     },
     {
         id: "common",
         specPath: "./specs/common/common.openapi.yaml",
+        outputDir: "docs/common",
     },
     {
         id: "entity",
         specPath: "./specs/entity/entity.openapi.yaml",
+        outputDir: "docs/entity",
     },
     {
         id: "entityresolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
+        outputDir: "docs/entityresolution",
     },
     {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
+        outputDir: "docs/kas",
     },
     {
         id: "wellknownconfiguration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
+        outputDir: "docs/wellknownconfiguration",
     },
     // Add more entries here for other OpenAPI specs
 ];
@@ -59,10 +66,10 @@ async function preprocessOpenApiSpecs() {
     // Process each spec
     for (const spec of openApiSpecs) {
         const sourcePath = path.resolve(__dirname, spec.specPath);
+        const parsedPath = path.parse(spec.specPath);
 
         // Generate modified path if not specified
         if (!spec.specPathModified) {
-            const parsedPath = path.parse(spec.specPath);
             // Store processed files in a 'specs-processed' directory by default
             spec.specPathModified = path.join(
                 parsedPath.dir.replace(/^\.\/specs/, './specs-processed'),
@@ -111,6 +118,24 @@ async function preprocessOpenApiSpecs() {
                     url: 'https://example.com', // Default server URL
                     description: 'Example OpenTDF platform URL'
                 });
+            }
+
+            // Ensure all paths have proper tags for grouping
+            if (apiSpec.paths) {
+              Object.keys(apiSpec.paths).forEach(path => {
+                const pathItem = apiSpec.paths[path];
+                
+                // Process each operation in the path
+                ['get', 'post', 'put', 'delete', 'patch'].forEach(method => {
+                  if (pathItem[method]) {
+                    const operation = pathItem[method];
+                    
+                    // Replace any existing tags with just the spec id
+                    // This ensures operations only appear under their parent
+                    operation.tags = [spec.id];
+                  }
+                });
+              });
             }
 
             // Write the modified YAML to the target file

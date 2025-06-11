@@ -40,44 +40,54 @@ let sampleConfig: Plugin.PluginOptions = {
   } satisfies OpenApiPlugin.Options,
 };
 
-// Global toggle to enable or disable sidebarOptions for all OpenAPI configurations
-const APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY = false;
-const DEFAULT_OPENAPI_OUTPUT_DIR = "docs/openapi/";
-const DEFAULT_OPENAPI_SIDEBAR_OPTIONS = { 
-  // groupPathsBy: "tagGroup" 
-  groupPathsBy: 'tag',
-  categoryLinkSource: 'tag'
-};
-
-
-function createOpenApiConfig(
-  specPath: string,
-  outputDir: string,
-  sidebarOptionsValue?: { groupPathsBy: string }
-): OpenApiPlugin.Options {
-  const apiConfig: OpenApiPlugin.Options = {
-    specPath,
-    outputDir,
-  };
-
-  if (APPLY_OPENAPI_SIDEBAR_OPTIONS_GLOBALLY && sidebarOptionsValue) {
-    apiConfig.sidebarOptions = sidebarOptionsValue;
+// Custom sidebar generator that includes operations and schemas
+function primaryPagesOnlySidebarGenerator(
+  item: ApiPageMetadata | SchemaPageMetadata,
+  context: { sidebarOptions: SidebarOptions; basePath: string }
+) {
+  // Return info pages
+  if (item.infoId === item.title) {
+    return item; // Return the item as is if it's an info page
   }
-  return apiConfig;
+
+  // Return operation pages - they contain the actual API endpoints
+  if ('method' in item && item.method) {
+    return item;
+  }
+
+  // Return schema pages as they are useful for reference
+  if ('schemaName' in item && item.schemaName) {
+    return item;
+  }
+
+  // Skip other types of pages
+  return null;
 }
 
 // Run the preprocessor before generating the config
 preprocessOpenApiSpecs();
 
 // Dynamically build the OpenAPI plugin configuration
-const openApiDocsConfig = openApiSpecs.reduce((acc, spec) => {
-  acc[spec.id] = createOpenApiConfig(
-    spec.specPathModified || spec.specPath, // Use the modified path if available
-    spec.outputDir || DEFAULT_OPENAPI_OUTPUT_DIR,
-    spec.sidebarOptions || DEFAULT_OPENAPI_SIDEBAR_OPTIONS
-  );
-  return acc;
-}, {} as Record<string, OpenApiPlugin.Options>);
+const openApiDocsConfig: Plugin.PluginOptions = {};
+
+// Instead of using reduce, add each spec configuration individually
+openApiSpecs.forEach((spec) => {
+  const outputDir = spec.outputDir;
+  const sidebarOptions = { // Always use these options
+    groupPathsBy: "tag",
+    categoryLinkSource: "tag",
+  };
+
+  openApiDocsConfig[spec.id] = {
+    specPath: spec.specPathModified || spec.specPath,
+    outputDir,
+    sidebarOptions, // Assign the new sidebarOptions here
+  };
+});
+
+// Add the sidebarPath property to the configuration
+// openApiDocsConfig["sidebarPath"] = require.resolve("./sidebars.js");
+
 // --- End OpenAPI Config Helper ---
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
