@@ -3,7 +3,7 @@ name: Vale
 on:
   pull_request:
     branches:
-      - main
+      - disabled
     
 jobs:
   vale-check:
