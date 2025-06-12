@@ -243,8 +243,13 @@ async function preprocessOpenApiSpecs() {
             // Check for 'servers.url' and set a default if missing
             if (apiSpec.servers.length === 0 || !apiSpec.servers.some(server => server.url)) {
                 apiSpec.servers.push({
-                    url: 'https://example.com', // Default server URL
-                    description: 'Example OpenTDF platform URL'
+                    url: '{platformEndpoint}', // A server URL variable, which users can edit in the web UI
+                    description: 'Example OpenTDF platform URL, such as https://platform.localhost',
+                    variables: {
+                        platformEndpoint: {
+                            default: 'platformEndpoint'
+                        }
+                    }
                 });
             }
 
