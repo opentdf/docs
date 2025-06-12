@@ -74,6 +74,15 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         },
     },
     {
+        id: "entityresolution_v2",
+        specPath: "./specs/entityresolution/v2/entity_resolution.openapi.yaml",
+        outputDir: "docs/SDK-OpenAPI/entityresolution_v2",
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
+    },
+    {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
         outputDir: "docs/SDK-OpenAPI/kas",
