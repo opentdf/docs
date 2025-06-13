@@ -7,7 +7,7 @@ import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 // The location prefix of built OpenAPI documentation
-const OUTPUT_PREFIX = 'docs/SDK-OpenAPI';
+const OUTPUT_PREFIX = 'docs/OpenAPI-clients';
 
 // Read BUILD_OPENAPI_SAMPLES once
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
