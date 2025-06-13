@@ -45,7 +45,6 @@
     "@docusaurus/tsconfig": "^3.6.3",
     "@docusaurus/types": "^3.6.3",
     "@iconify-icon/react": "^2.1.0",
-    "glob": "^11.0.2",
     "typescript": "^5.7.2"
   },
   "browserslist": {
