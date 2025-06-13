@@ -31,7 +31,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: "docs/SDK-OpenAPI/wellknownconfiguration",
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     {
@@ -41,7 +41,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     {
@@ -52,7 +52,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     {
@@ -61,7 +61,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: "docs/SDK-OpenAPI/entityresolution/v1",
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     {
@@ -70,7 +70,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: "docs/SDK-OpenAPI/entityresolution/v2",
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     {
@@ -79,7 +79,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: "docs/SDK-OpenAPI/kas",
         sidebarOptions: {
             groupPathsBy: "tag",
-            categoryLinkSource: "tag",
+            categoryLinkSource: "info",
         },
     },
     // Add more entries here for other OpenAPI specs
