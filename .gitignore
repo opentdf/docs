@@ -1,3 +1,7 @@
+specs-processed/
+docs/SDK-OpenAPI/
+docs/SDK-Samples/
+
 # Dependencies
 /node_modules
 
