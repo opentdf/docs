@@ -16,14 +16,14 @@ interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
     specPath: string;
     specPathModified?: string; // New field for the preprocessed spec location
-    outputDir: string; // Optional: overrides DEFAULT_OPENAPI_OUTPUT_DIR
+    outputDir: string;
     sidebarOptions?: {
         groupPathsBy: string,
         categoryLinkSource: string
     }; 
 }; 
 
-// Define all your OpenAPI specifications here
+// Define our OpenAPI specifications here
 let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "Well-Known Configuration",
@@ -201,7 +201,10 @@ async function preprocessOpenApiSpecs() {
             // Parse YAML to object
             const apiSpec = yaml.load(fileContents);
 
-            // Apply your preprocessing modifications here
+            // Apply preprocessing modifications: ensure '.info' exists
+            apiSpec.info ??= {};
+
+            // Apply preprocessing modifications: ensure '.info.description' exists
             if (apiSpec.info) {
                 apiSpec.info.description = apiSpec.info.description ?? '';
                 if (ADD_TIMESTAMP_TO_DESCRIPTION) {
@@ -210,19 +213,16 @@ async function preprocessOpenApiSpecs() {
                 }
             }
 
-            // First check if apiSpec.info exists, else initialize it
-            apiSpec.info ??= {};
-
-            // Check for 'info.version' and set a default if missing
+            // Apply preprocessing modifications: ensure '.info.version' exists
             if (!apiSpec.info?.version) {
                 apiSpec.info = apiSpec.info ?? {};
                 apiSpec.info.version = 'v1'; // Default version
             }
 
-            // First check if apiSpec.servers exists, else initialize it
+            // Apply preprocessing modifications: ensure '.apiSpec.servers' exists
             apiSpec.servers ??= [];
 
-            // Check for 'servers.url' and set a default if missing
+            // Apply preprocessing modifications: ensure '.apiSpec.servers.url' exists and set a default if missing
             if (apiSpec.servers.length === 0 || !apiSpec.servers.some(server => server.url)) {
                 apiSpec.servers.push({
                     url: '{platformEndpoint}', // A server URL variable, which users can edit in the web UI
