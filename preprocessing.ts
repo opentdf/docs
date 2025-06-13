@@ -6,6 +6,9 @@ import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
+// The location prefix of built OpenAPI documentation
+const OUTPUT_PREFIX = 'docs/OpenAPI-clients';
+
 // Read BUILD_OPENAPI_SAMPLES once
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
@@ -28,7 +31,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "Well-Known Configuration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/wellknownconfiguration",
+        outputDir: `${OUTPUT_PREFIX}/wellknownconfiguration`,
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -37,7 +40,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "V1 Authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/authorization/v1",
+        outputDir: `${OUTPUT_PREFIX}/authorization/v1`,
         // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
@@ -47,7 +50,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "V2 Authorization",
         specPath: "./specs/authorization/v2/authorization.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/authorization/v2",
+        outputDir: `${OUTPUT_PREFIX}/authorization/v2`,
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
         sidebarOptions: {
@@ -58,7 +61,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "V1 Entity Resolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/entityresolution/v1",
+        outputDir: `${OUTPUT_PREFIX}/entityresolution/v1`,
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -67,7 +70,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "V2 Entity Resolution",
         specPath: "./specs/entityresolution/v2/entity_resolution.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/entityresolution/v2",
+        outputDir: `${OUTPUT_PREFIX}/entityresolution/v2`,
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -76,7 +79,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
-        outputDir: "docs/SDK-OpenAPI/kas",
+        outputDir: `${OUTPUT_PREFIX}/kas`,
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
