@@ -1,0 +1,14 @@
+language: en-US
+disabledRules: []
+enabledRules: []
+disabledCategories: []
+dictionary:
+  - OpenTDF
+  - SDKs
+# This helps LanguageTool understand Markdown format
+markup:
+  - markdown
+# Skip code blocks and inline code
+skipPatterns:
+  - '```[\s\S]*?```'  # Skip fenced code blocks
+  - '`[^`]*`'          # Skip inline code

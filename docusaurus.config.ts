@@ -9,6 +9,8 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
+import { openApiSpecs } from "./preprocessing";
+import languageTabs from "./openapi-generated-clients";
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
@@ -46,10 +48,11 @@ const config: Config = {
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
+  onBrokenAnchors: "warn",
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock"],
+  themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock", "docusaurus-theme-openapi-docs"],
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -67,6 +70,7 @@ const config: Config = {
         docs: {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
+          docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
@@ -106,6 +110,10 @@ const config: Config = {
         {
           href: "https://github.com/opentdf/docs",
           label: "GitHub",
+          position: "right",
+        },
+        {
+          type: "search",
           position: "right",
         },
       ],
@@ -188,6 +196,7 @@ const config: Config = {
       //   template: '#zoom-template',
       // },
     },
+    languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
     [
@@ -731,6 +740,15 @@ ${updatedContent}`,
         },
       },
     ],
+    [
+      "docusaurus-plugin-openapi-docs",
+      {
+        id: "api", // plugin id
+        docsPluginId: "classic", // configured for preset-classic
+        config: openApiSpecs 
+      },
+    ],
+    require.resolve("docusaurus-lunr-search"),
   ],
 };
 
