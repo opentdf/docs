@@ -3,6 +3,13 @@ import type { PluginConfig } from '@docusaurus/types';
 /**
  * Returns an array of plugin configurations that fetch and process OpenTDF specification
  * documentation from GitHub repositories and organize them into the docs/spec directory.
+ * 
+ * This function contains several steps, which create the 'docs/spec' directory structure,
+ * including:
+ * - docs/spec/concepts
+ * - docs/spec/protocol
+ * - docs/spec/schema
+ * - docs/spec/index.md
  */
 export function getSpecDocumentationPlugins(): PluginConfig[] {
   return [
