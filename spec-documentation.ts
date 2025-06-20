@@ -1,17 +1,101 @@
 import type { PluginConfig } from '@docusaurus/types';
 
+
+// Dynamically create category data, and write JSON files to
+// disk using a dynamic path like `${outDir}/concepts/_category_.json`
+function createCategoryJsonFiles(outDir: string) {
+  const fs = require('fs');
+  const path = require('path');
+  
+  const categories = [
+    {
+      path: `${outDir}/_category_.json`,
+      content: {
+        label: "Specification",
+        position: 10,
+        link: {
+          type: "doc",
+          id: "spec/index"
+        }
+      }
+    },
+    {
+      path: `${outDir}/concepts/_category_.json`,
+      content: {
+        label: "Concepts",
+        position: 1,
+        link: {
+          type: "generated-index"
+        }
+      }
+    },
+    {
+      path: `${outDir}/protocol/_category_.json`,
+      content: {
+        label: "Protocol",
+        position: 1
+      }
+    },
+    {
+      path: `${outDir}/schema/_category_.json`,
+      content: {
+        label: "Schema",
+        position: 2,
+        link: {
+          type: "doc",
+          id: "spec/schema/index"
+        }
+      }
+    },
+    {
+      path: `${outDir}/schema/opentdf/_category_.json`,
+      content: {
+        label: "OpenTDF",
+        position: 1,
+        link: {
+          type: "doc",
+          id: "spec/schema/opentdf/index"
+        }
+      }
+    }
+  ];
+  
+  // Ensure directories exist before writing files
+  categories.forEach(category => {
+    const dirPath = path.dirname(category.path);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    
+    // Write the category JSON file
+    fs.writeFileSync(
+      category.path,
+      JSON.stringify(category.content, null, 2),
+      'utf8'
+    );
+    
+    console.log(`Created: ${category.path}`);
+  });
+  
+  console.log('All category files created successfully');
+}
+
+
 /**
  * Returns an array of plugin configurations that fetch and process OpenTDF specification
- * documentation from GitHub repositories and organize them into the docs/spec directory.
+ * documentation from GitHub repositories and organize them into the ${outDir} directory.
  * 
- * This function contains several steps, which create the 'docs/spec' directory structure,
+ * This function contains several steps, which create the directory structure under the provided outDir,
  * including:
- * - docs/spec/concepts
- * - docs/spec/protocol
- * - docs/spec/schema
- * - docs/spec/index.md
+ * - {outDir}/concepts
+ * - {outDir}/protocol
+ * - {outDir}/schema
+ * - {outDir}/index.md
  */
-export function getSpecDocumentationPlugins(): PluginConfig[] {
+export function getSpecDocumentationPlugins(outDir: string = "docs/spec"): PluginConfig[] {
+
+  createCategoryJsonFiles(outDir);
+
   return [
     [
       "docusaurus-plugin-remote-content",
@@ -20,7 +104,7 @@ export function getSpecDocumentationPlugins(): PluginConfig[] {
         name: "nanotdf", // used by CLI, must be path safe
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "docs/spec/schema/", // the base directory to output to.
+        outDir: `${outDir}/schema/`, // the base directory to output to.
         documents: ["README.md"], // the file names to download
         modifyContent: (filename, content) => {
           if (filename === "README.md") {
@@ -72,7 +156,7 @@ ${updatedContent}`,
         name: "tdf", // used by CLI, must be path safe
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/schema/OpenTDF/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "docs/spec/schema/opentdf/", // the base directory to output to.
+        outDir: `${outDir}/schema/opentdf/`, // the base directory to output to.
         documents: [
           "manifest.md",
           "key_access_object.md",
@@ -220,7 +304,7 @@ ${finalContent ? finalContent : ""}`;
         name: "opentdf-index",
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/schema/OpenTDF/",
-        outDir: "docs/spec/schema/opentdf/",
+        outDir: `${outDir}/schema/opentdf/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
           if (filename === "README.md") {
@@ -251,21 +335,24 @@ ${updatedContent}`,
       {
         name: "spec-index",
         sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/",
-        outDir: "docs/spec/",
+        outDir: `${outDir}/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
           if (filename === "README.md") {
+            // Extract the output directory name from the outDir parameter
+            const dirName = outDir.split('/').pop();
+            
             let updatedContent = content.replaceAll(
               "../../diagrams/",
               "../static/img/"
             );
             updatedContent = updatedContent.replaceAll(
               "protocol/protocol.md",
-              "spec/protocol"
+              `${dirName}/protocol`
             );
             updatedContent = updatedContent.replaceAll(
               "(schema/)",
-              "(spec/schema/)"
+              `(${dirName}/schema/)`
             );
             updatedContent = updatedContent.replaceAll(
               "(concepts/)",
@@ -273,7 +360,7 @@ ${updatedContent}`,
             );
             updatedContent = updatedContent.replaceAll(
               "(protocol/)",
-              "(spec/protocol)"
+              `(${dirName}/protocol)`
             );
             updatedContent = updatedContent.replaceAll(
               "schema/nanotdf/README.md",
@@ -303,7 +390,7 @@ ${updatedContent}`,
         name: "schema-index",
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/schema/",
-        outDir: "docs/spec/schema/",
+        outDir: `${outDir}/schema/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
           if (filename === "README.md") {
@@ -339,30 +426,33 @@ ${updatedContent}`,
         name: "spec-concept",
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/concepts/",
-        outDir: "docs/spec/concepts/",
+        outDir: `${outDir}/concepts/`,
         documents: ["access_control.md", "security.md"],
         modifyContent: (filename: string, content: string) => {
           if (filename === "access_control.md") {
+            // Extract the output directory name from the outDir parameter
+            const dirName = outDir.split('/').pop();
+            
             let updatedContent = content.replaceAll(
               "../../diagrams/",
               "../../static/img/"
             );
-            // Fix broken markdown links as specified
+            // Fix broken markdown links with dynamic outDir name
             updatedContent = updatedContent.replaceAll(
               "../schema/OpenTDF/policy.md",
-              "../../spec/schema/opentdf/policy.md"
+              `../../${dirName}/schema/opentdf/policy.md`
             );
             updatedContent = updatedContent.replaceAll(
               "../schema/OpenTDF/key_access_object.md",
-              "../../spec/schema/opentdf/key_access_object.md"
+              `../../${dirName}/schema/opentdf/key_access_object.md`
             );
             updatedContent = updatedContent.replaceAll(
               "../schema/opentdf/policy.md",
-              "../../spec/schema/opentdf/policy.md"
+              `../../${dirName}/schema/opentdf/policy.md`
             );
             updatedContent = updatedContent.replaceAll(
               "../schema/opentdf/key_access_object.md",
-              "../../spec/schema/opentdf/key_access_object.md"
+              `../../${dirName}/schema/opentdf/key_access_object.md`
             );
             return {
               content: `---
@@ -374,18 +464,21 @@ ${updatedContent}`,
             };
           }
           if (filename === "security.md") {
+            // Extract the output directory name from the outDir parameter
+            const dirName = outDir.split('/').pop();
+            
             let updatedContent = content.replaceAll(
               "../../diagrams/",
               "../../static/img/"
             );
-            // Fix broken markdown links as specified
+            // Fix broken markdown links with dynamic outDir name
             updatedContent = updatedContent.replaceAll(
               "../schema/OpenTDF/integrity_information.md",
-              "../../spec/schema/opentdf/integrity_information.md"
+              `../../${dirName}/schema/opentdf/integrity_information.md`
             );
             updatedContent = updatedContent.replaceAll(
               "../schema/OpenTDF/key_access_object.md",
-              "../../spec/schema/opentdf/key_access_object.md"
+              `../../${dirName}/schema/opentdf/key_access_object.md`
             );
             return {
               content: `---
@@ -406,7 +499,7 @@ ${updatedContent}`,
         name: "spec-protocol",
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/spec/main/protocol/",
-        outDir: "docs/spec/protocol/",
+        outDir: `${outDir}/protocol/`,
         documents: ["protocol.md"],
         modifyContent: (filename: string, content: string) => {
           if (filename === "protocol.md") {
