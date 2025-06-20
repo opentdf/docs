@@ -4,9 +4,9 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 
 ### Installation
 
-```
-$ nvm use
-$ npm ci
+```shell
+nvm use
+npm ci
 ```
 
 ### Local Development
