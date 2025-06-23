@@ -70,7 +70,7 @@ function createCategoryJsonFiles(outDir: string) {
     // Write the category JSON file
     fs.writeFileSync(
       category.path,
-      JSON.stringify(category.content, null, 2),
+      JSON.stringify(category.content, null, 2) + '\n',
       'utf8'
     );
     
