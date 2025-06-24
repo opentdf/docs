@@ -38,6 +38,10 @@ The definition for creating a key can be found in the key_access_registry [proto
 
 Let's look at a valid request and disect it:
 
+>[!NOTE]
+>These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/main/service/internal/fixtures/policy_fixtures.yaml#L541) file located
+>in opentdf.
+
 ```json5
 {
   "kas_id": "db740f79-cf85-41b2-a27f-663b0e2b169b",
