@@ -11,7 +11,7 @@ import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
 import { openApiSpecs } from "./preprocessing";
 import languageTabs from "./openapi-generated-clients";
-import { getSpecDocumentationPlugins } from './spec-documentation';
+import { getSpecDocumentationPlugins } from './src/utils/spec-documentation';
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
