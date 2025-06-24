@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-slug: /components/policy/keymanagement
+slug: /components/policy/keymanagement/quickstart
 ---
 
 # Quickstart for using the new key management architecture
