@@ -13,7 +13,7 @@ A key manager is essentially a client that is used for either performing cryptog
 
 ## How do I register a key manager?
 
-If you have written your own key manager, you can register it with KAS by providing it's factory method with a [server option](https://github.com/opentdf/platform/blob/main/service/pkg/server/options.go#L131) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
+If you have written your own key manager, you can register it with KAS by providing its factory method with a [server option](https://github.com/opentdf/platform/blob/main/service/pkg/server/options.go#L131) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
 
 ### Provider configurations
 
