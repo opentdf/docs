@@ -75,8 +75,8 @@ Let's look at a valid request and dissect it:
   
 | Key Mode                          | `mode` Value | Description |
 | --------------------------------- | ------------ | ----------- |
-| `KEY_MODE_CONFIG_ROOT_KEY`        | 1            | Root Key is stored within Virtru's database and the symmetric wrapping key is stored in KAS |
-| `KEY_MODE_PROVIDER_ROOT_KEY`      | 2            | Root Key is stored within Virtru's database and the symmetric wrapping key is stored externally |
+| `KEY_MODE_CONFIG_ROOT_KEY`        | 1            | Root Key is stored within the platform's database and the symmetric wrapping key is stored in KAS |
+| `KEY_MODE_PROVIDER_ROOT_KEY`      | 2            | Root Key is stored within the platform's database and the symmetric wrapping key is stored externally |
 | `KEY_MODE_REMOTE`                 | 3            | Root Key and wrapping key are stored remotely |
 | `KEY_MODE_PUBLIC_KEY_ONLY`        | 4            | Root Key and wrapping key are stored remotely. Use this when importing another org's policy information |
 
