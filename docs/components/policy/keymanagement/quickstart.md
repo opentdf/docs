@@ -90,7 +90,7 @@ Let's look at a valid request and dissect it:
 >[!NOTE]
 >You can also specify metadata for the key via a common metadata structure, but that is not covered here.
 
-The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database where the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where the key mode **KEY_MODE_REMOTE** is handy.
+The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database, and the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where the key mode **KEY_MODE_REMOTE** is handy.
 
 ```json5
 {
