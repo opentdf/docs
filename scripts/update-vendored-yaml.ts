@@ -10,27 +10,27 @@ async function updateVendoredYaml() {
     // Map of specPath (relative to project root) to their upstream raw GitHub URLs
     const vendoredSpecs = [
         {
-            specPath: './specs/authorization/authorization.openapi.yaml',
+            specPath: '../specs/authorization/authorization.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/authorization.openapi.yaml',
         },
         {
-            specPath: './specs/authorization/v2/authorization.openapi.yaml',
+            specPath: '../specs/authorization/v2/authorization.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/v2/authorization.openapi.yaml',
         },
         {
-            specPath: './specs/entityresolution/entity_resolution.openapi.yaml',
+            specPath: '../specs/entityresolution/entity_resolution.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/entity_resolution.openapi.yaml',
         },
         {
-            specPath: './specs/entityresolution/v2/entity_resolution.openapi.yaml',
+            specPath: '../specs/entityresolution/v2/entity_resolution.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/v2/entity_resolution.openapi.yaml',
         },
         {
-            specPath: './specs/kas/kas.openapi.yaml',
+            specPath: '../specs/kas/kas.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/kas/kas.openapi.yaml',
         },
         {
-            specPath: './specs/wellknownconfiguration/wellknown_configuration.openapi.yaml',
+            specPath: '../specs/wellknownconfiguration/wellknown_configuration.openapi.yaml',
             url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/wellknownconfiguration/wellknown_configuration.openapi.yaml',
         },
         // Add more entries here as needed
