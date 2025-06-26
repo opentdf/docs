@@ -15,9 +15,10 @@ Below is a guide to setting up platform to use the new key management features.
 Checklist:
 
 >[!IMPORTANT]
->You can spin KAS up without activating the key management features
+>You can spin KAS up without activating the key management features.
 >This gives you time to create or migrate keys to the platform
->before KAS expects keys to come from the platform.
+>before KAS expects keys to come from the platform, which would
+>be helpful for migrations.
 
 1. Key management is activated for KAS.
 2. A key has been created.
