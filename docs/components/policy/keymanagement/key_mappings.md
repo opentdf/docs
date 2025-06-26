@@ -8,7 +8,7 @@ slug: /components/policy/keymanagement/key_mappings
 >[!IMPORTANT]
 >v0.5.0 of the SDK will prefer key mappings over
 >grants. Meaning if a key mapping shows up for an attribute
->We will use the mapping and not the grant.
+>the SDK will use the mapping and not the grant.
 >You **should** migrate all grants over to mappings in one
 >sitting
 
