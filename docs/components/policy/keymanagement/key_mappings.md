@@ -13,7 +13,7 @@ slug: /components/policy/keymanagement/key_mappings
 >sitting
 
 >[!IMPORTANT]
->As of v0.7.0 of the Opentdf platform,
+>As of v0.7.0 of the OpenTDF platform,
 >grants can no longer be assigned.
 
 Key mappings are now the replacement for key access server grants. The idea for mapping a key to an attribute definition/value/namespace is the same as grants, except now we separate the keys from key access servers. Previously an admin was expected to add a key directly to the KeyAccessServer object, as either **remote** or **cached**, and then assign a key access server to an attribute. That process is known as a grant. Now users should create a key, and assign that key to an attribute.
@@ -65,4 +65,4 @@ OpenTDF CLI
 otdfctl policy attributes key assign --attribute 3d25d33e-2469-4990-a9ed-fdd13ce74436 --key-id 8f7e6d5c-4b3a-2d1e-9f8d-7c6b5a432f1d
 ```
 
-Now you have successfully created key mapping.
+Now you have successfully created a key mapping.

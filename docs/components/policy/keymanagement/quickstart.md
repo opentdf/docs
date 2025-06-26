@@ -78,8 +78,8 @@ Let's look at a valid request and dissect it:
   
 | Key Mode                          | `mode` Value | Description |
 | --------------------------------- | ------------ | ----------- |
-| `KEY_MODE_CONFIG_ROOT_KEY`        | 1            | Root Key is stored within Virtru's database and the symmetric wrapping key is stored in KAS |
-| `KEY_MODE_PROVIDER_ROOT_KEY`      | 2            | Root Key is stored within Virtru's database and the symmetric wrapping key is stored externally |
+| `KEY_MODE_CONFIG_ROOT_KEY`        | 1            | Root Key is stored within the platform's database and the symmetric wrapping key is stored in KAS |
+| `KEY_MODE_PROVIDER_ROOT_KEY`      | 2            | Root Key is stored within the platform's database and the symmetric wrapping key is stored externally |
 | `KEY_MODE_REMOTE`                 | 3            | Root Key and wrapping key are stored remotely |
 | `KEY_MODE_PUBLIC_KEY_ONLY`        | 4            | Root Key and wrapping key are stored remotely. Use this when importing another org's policy information |
 
@@ -93,7 +93,7 @@ Let's look at a valid request and dissect it:
 >[!NOTE]
 >You can also specify metadata for the key via a common metadata structure, but that is not covered here.
 
-The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database where the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where the key mode **KEY_MODE_REMOTE** is handy.
+The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database, and the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where the key mode **KEY_MODE_REMOTE** is handy.
 
 ```json5
 {

@@ -1,11 +1,11 @@
 ---
 sidebar_position: 1
-slug: /components/policy/keymanagement/kas_managers
+slug: /components/policy/keymanagement/key_managers
 ---
 
 # Key Managers
 
-With the new key architecture Opentdf has added the flexibility for an organization to store keys outside of a key access server or the platform. For example, if you want to use OpenTDF and your encryption keys are stored within AWS KMS, this is now totally possible through **key managers**.
+With the new key architecture OpenTDF has added the flexibility for an organization to store keys outside of a key access server or the platform. For example, if you want to use OpenTDF and your encryption keys are stored within AWS KMS, this is now totally possible through **key managers**.
 
 ## What is a key manager?
 
@@ -13,7 +13,7 @@ A key manager is essentially a client that is used for either performing cryptog
 
 ## How do I register a key manager?
 
-If you have written your own key manager, you can register it with KAS by providing it's factory method with a [server option](https://github.com/opentdf/platform/blob/main/service/pkg/server/options.go#L131) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
+If you have written your own key manager, you can register it with KAS by providing its factory method with a [server option](https://github.com/opentdf/platform/blob/main/service/pkg/server/options.go#L131) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
 
 ### Provider configurations
 
@@ -22,7 +22,7 @@ Provider configurations are a way of entangling a key to a specific manager. The
 The basic flow is as follows:
 >[!NOTE]
 >In the below example, r1 is just an example key id.
->Key managers are apart of KAS, and not external services
+>Key managers are a part of KAS, and not external services
 >although they can reach out to external services to perform
 >needed operations.
 
@@ -54,4 +54,4 @@ When registering your provider configuration and your key manager the name must 
 
 - [key manager interface](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L33).
 - [NamedKeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L62)
-- [KeyManagerFactor](https://github.com/opentdf/platform/blob/main/service/trust/delegating_key_service.go#L21)
+- [KeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/delegating_key_service.go#L21)
