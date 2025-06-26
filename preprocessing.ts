@@ -20,6 +20,7 @@ interface ApiSpecDefinition {
     specPath: string;
     specPathModified?: string; // New field for the preprocessed spec location
     outputDir: string;
+    url?: string; // Upstream raw GitHub URL for vendored spec
     sidebarOptions?: {
         groupPathsBy: string,
         categoryLinkSource: string
@@ -32,6 +33,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "Well-Known Configuration",
         specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/wellknownconfiguration`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/wellknownconfiguration/wellknown_configuration.openapi.yaml',
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -41,6 +43,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "V1 Authorization",
         specPath: "./specs/authorization/authorization.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/authorization/v1`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/authorization.openapi.yaml',
         // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
@@ -51,6 +54,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "V2 Authorization",
         specPath: "./specs/authorization/v2/authorization.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/authorization/v2`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/v2/authorization.openapi.yaml',
         // Example of custom modified path:
         specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
         sidebarOptions: {
@@ -62,6 +66,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "V1 Entity Resolution",
         specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v1`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/entity_resolution.openapi.yaml',
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -71,6 +76,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "V2 Entity Resolution",
         specPath: "./specs/entityresolution/v2/entity_resolution.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v2`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/v2/entity_resolution.openapi.yaml',
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -80,6 +86,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         id: "kas",
         specPath: "./specs/kas/kas.openapi.yaml",
         outputDir: `${OUTPUT_PREFIX}/kas`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/kas/kas.openapi.yaml',
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -88,10 +95,10 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     // Add more entries here for other OpenAPI specs
 ];
 
-// Convert array to object keyed by id
-let openApiSpecs: Record<string, Omit<ApiSpecDefinition, 'id'>> = {};
+// Convert array to object keyed by id, omitting 'url' for Docusaurus config
+let openApiSpecs: Record<string, Omit<ApiSpecDefinition, 'id' | 'url'>> = {};
 openApiSpecsArray.forEach((spec) => {
-    const { id, ...specDetails } = spec;
+    const { id, url, ...specDetails } = spec;
     openApiSpecs[id] = specDetails;
 });
 
@@ -278,4 +285,4 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-export { openApiSpecs };
+export { openApiSpecs, openApiSpecsArray };
