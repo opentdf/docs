@@ -41,7 +41,7 @@ sequenceDiagram
 When registering your provider configuration and your key manager the name must match. For example, the [basic manager name](https://github.com/opentdf/platform/blob/main/service/internal/security/basic_manager.go#L23) is **opentdf.io/basic**. For example, if you create a manager with name **opentdf.io/aws**, you would need to create a provider configuration with the same name and tie it to a key when creating the key. In addition, when registering the manager you need to pass in the same name as what the provider configuration expects.
 
 >[!IMPORTANT]
->When private keys should be stored within the platform database,
+>If private keys are meant to be stored within the platform database,
 >there should be no provider configuration added to the key. Since
 >an empty provider configuration is assumed to be tied to the
 >default manager.
