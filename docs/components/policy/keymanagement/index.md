@@ -24,7 +24,7 @@ sequenceDiagram
 >The **key manager** is apart of the key access server, but is called out specifically because it is a new
 >concept for the platform. Read more about [managers](./key_managers.md).
 
-The above is a very basic flow of how KAS now would perform a rewrap (decrypt) operation. Basically, KAS now needs to reach out to a third-party to get the private key to rewrap the data encryption key that is sent in the rewrap request, which will then be unwrapped on the client and used to decrypt the payload of the TDF.
+The graphic above is a representation of a basic flow of how KAS now would perform a rewrap (decrypt) operation.  KAS now needs to reach out to a third-party to get the private key to rewrap the data encryption key that is sent in the rewrap request, which will then be unwrapped on the client and used to decrypt the payload of the TDF.
 
 In the example above, the KAS (key access server) reaches out to the platform to get a key, but it's totally possible with the new architecture that the platform database could only store a reference to the key. What this means is that the private key could be stored externally, say in a KMS or HSM, outside of the platform's control.
 
