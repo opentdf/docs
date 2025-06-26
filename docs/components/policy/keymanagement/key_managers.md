@@ -5,7 +5,7 @@ slug: /components/policy/keymanagement/key_managers
 
 # Key Managers
 
-With the new key architecture Opentdf has added the flexibility for an organization to store keys outside of a key access server or the platform. For example, if you want to use OpenTDF and your encryption keys are stored within AWS KMS, this is now totally possible through **key managers**.
+With the new key architecture OpenTDF has added the flexibility for an organization to store keys outside of a key access server or the platform. For example, if you want to use OpenTDF and your encryption keys are stored within AWS KMS, this is now totally possible through **key managers**.
 
 ## What is a key manager?
 
