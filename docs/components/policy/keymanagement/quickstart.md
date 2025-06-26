@@ -119,3 +119,8 @@ Follow the [key mapping](./key_mappings.md) guide for creating mappings.
 ## Setting base key (Optional, but recommended)
 
 Follow the [base key setup](./base_key.md) guide for setting a base key.
+
+## Important additional comments
+
+1. As of version 0.7.0 of the OpenTDF platform, there is no way to delete a key. If you would like to deactivate a key, use the **RotateKey** rpc.
+2. When creating a key of mode **KEY_MODE_CONFIG_ROOT_KE** the **wrapped_key** is expected to be base64 encoded.
