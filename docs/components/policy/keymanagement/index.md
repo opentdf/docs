@@ -5,7 +5,7 @@ slug: /components/policy/keymanagement
 
 # Key Management
 
-Key management is the new way for managing key encryption keys for the platform. Asymmetric keys or a reference to a key will now be stored either within the platform database directly. Those keys will then be used for TDF creation and decryption.
+Key management is the new way for managing key encryption keys for the platform. Asymmetric keys or a reference to a key will now be stored either within the platform database directly, or stored externally using a Key Management Provider or a Hardware Security Module (abstracted as a Key Manager). Those keys will then be used for TDF creation and decryption.
 
 ## How does everything work?
 
