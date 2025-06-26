@@ -22,7 +22,7 @@ Checklist:
 1. Key management is activated for KAS.
 2. A key has been created.
 3. Assign key mappings. (optional, but recommended)
-4. Base Key is set (optional, but preferred)
+4. Base Key is set (optional, but recommended)
 
 ## Key management is activated for KAS
 
