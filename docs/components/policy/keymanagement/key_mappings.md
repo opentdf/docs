@@ -30,4 +30,4 @@ Key mappings are now the replacement for key access server grants. The idea for 
 3. [create an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L415)
 4. [assign a key to an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L457)
 
-Now you have successfully created key mapping.
+Now you have successfully created a key mapping.
