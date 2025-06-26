@@ -51,5 +51,5 @@ The primary difference is that the **Key Manager** needs to reach out to the KMS
    1. Create/Read/Update
    2. Key Rotation
 3. Grants are being deprecated for [key mappings](./key_mappings.md).
-4. Admins can now set a [base key](./base_key.md) to used as the default key when no key mappings/grants are found.
+4. Admins can now set a [base key](./base_key.md) to be used as the default key when no key mappings/grants are found.
 5. Asymmetric keys can now be stored outside of a Key Access Server, by registering a **key manager** at startup and creating a provider configuration that is tied to the key manager.
