@@ -13,7 +13,7 @@ Key management is the new way for managing key encryption keys for the platform.
 sequenceDiagram
     User->>+SDK: Decrypt TDF
     SDK->>+KAS: Rewrap key
-    KAS->>+Platform: Retrieve key 
+    KAS->>+Platform: Retrieve key
     Platform->>+KAS: Returns key
     KAS->>+Key Manager: Decrypt data encryption key
     KAS->>+KAS: Key Manager performs rewrap of KAO
