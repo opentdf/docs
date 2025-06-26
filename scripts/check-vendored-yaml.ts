@@ -1,34 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-
-// List of vendored spec files and their upstream URLs (must match preprocessing.ts)
-const vendoredSpecs = [
-  {
-    specPath: './specs/authorization/authorization.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/authorization.openapi.yaml',
-  },
-  {
-    specPath: './specs/authorization/v2/authorization.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/v2/authorization.openapi.yaml',
-  },
-  {
-    specPath: './specs/entityresolution/entity_resolution.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/entity_resolution.openapi.yaml',
-  },
-  {
-    specPath: './specs/entityresolution/v2/entity_resolution.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/v2/entity_resolution.openapi.yaml',
-  },
-  {
-    specPath: './specs/kas/kas.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/kas/kas.openapi.yaml',
-  },
-  {
-    specPath: './specs/wellknownconfiguration/wellknown_configuration.openapi.yaml',
-    url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/wellknownconfiguration/wellknown_configuration.openapi.yaml',
-  },
-];
+import { openApiSpecsArray } from '../preprocessing';
 
 function fileHash(filePath: string): string {
   if (!fs.existsSync(filePath)) return '';
@@ -38,16 +11,19 @@ function fileHash(filePath: string): string {
 
 async function main() {
   let hasDiff = false;
-  for (const { specPath, url } of vendoredSpecs) {
-    const absPath = path.resolve(__dirname, '..', specPath);
+  for (const spec of openApiSpecsArray) {
+    if (!spec.url) continue; // Only process specs with a URL
+    // Remove leading './' for specPath if present, and resolve relative to this script
+    const specPath = spec.specPath.replace(/^\.\//, '../');
+    const absPath = path.resolve(__dirname, specPath);
     const tmpPath = absPath + '.tmp';
     // Download to tmpPath
     const https = await import('https');
     await new Promise<void>((resolve, reject) => {
       const file = fs.createWriteStream(tmpPath);
-      https.get(url, (response) => {
+      https.get(spec.url, (response) => {
         if (response.statusCode !== 200) {
-          reject(new Error(`Failed to download ${url}: Status ${response.statusCode}`));
+          reject(new Error(`Failed to download ${spec.url}: Status ${response.statusCode}`));
           return;
         }
         response.pipe(file);
@@ -64,7 +40,7 @@ async function main() {
     const newHash = fileHash(tmpPath);
     if (oldHash !== newHash) {
       hasDiff = true;
-      console.error(`❌ Vendored file out of date: ${specPath}\nPlease run 'npm run update-vendored-yaml' to update.`);
+      console.error(`❌ Vendored file out of date: ${spec.specPath}\nPlease run 'npm run update-vendored-yaml' to update.`);
     }
     fs.unlinkSync(tmpPath);
   }
