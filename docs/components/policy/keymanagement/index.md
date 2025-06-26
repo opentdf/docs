@@ -21,7 +21,7 @@ sequenceDiagram
 ```
 
 >[!NOTE]
->The KAS manager is apart of the key access server, but is called out specifically because it is a new
+>The **key manager** is apart of the key access server, but is called out specifically because it is a new
 >concept for the platform. Read more about [managers](./key_managers.md).
 
 The above is a very basic flow of how KAS now would perform a rewrap (decrypt) operation. Basically, KAS now needs to reach out to a third-party to get the private key to rewrap the data encryption key that is sent in the rewrap request, which will then be unwrapped on the client and used to decrypt the payload of the TDF.
