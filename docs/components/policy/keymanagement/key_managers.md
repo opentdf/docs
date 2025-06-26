@@ -22,7 +22,7 @@ Provider configurations are a way of entangling a key to a specific manager. The
 The basic flow is as follows:
 >[!NOTE]
 >In the below example, r1 is just an example key id.
->Key managers are apart of KAS, and not external services
+>Key managers are a part of KAS, and not external services
 >although they can reach out to external services to perform
 >needed operations.
 
