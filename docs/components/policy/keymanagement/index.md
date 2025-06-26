@@ -42,7 +42,7 @@ sequenceDiagram
     KAS->>+SDK: Return rewrapped key
 ```
 
-Basically the only difference is that the **Key Manager** needs to reach out to the KMS to perform the rewrap operation. To connect KAS to a specific external key provider you would need to use a [provider configuration](./key_managers.md). To perform the following flow, read about [managers](./key_managers.md)
+The primary difference is that the **Key Manager** needs to reach out to the KMS to perform the rewrap operation. To connect KAS to a specific external key provider you would need to use a [provider configuration](./key_managers.md). To learn more about the following flow, read about [key managers](./key_managers.md)
 
 ## What is different with the new key architecture?
 
