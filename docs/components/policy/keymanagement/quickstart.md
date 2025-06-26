@@ -36,7 +36,7 @@ Checklist:
 
 The definition for creating a key can be found in the key_access_registry [proto](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L399-L421).
 
-Let's look at a valid request and disect it:
+Let's look at a valid request and dissect it:
 
 >[!NOTE]
 >These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/main/service/internal/fixtures/policy_fixtures.yaml#L541) file located
