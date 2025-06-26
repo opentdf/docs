@@ -54,4 +54,4 @@ When registering your provider configuration and your key manager the name must 
 
 - [key manager interface](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L33).
 - [NamedKeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L62)
-- [KeyManagerFactor](https://github.com/opentdf/platform/blob/main/service/trust/delegating_key_service.go#L21)
+- [KeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/delegating_key_service.go#L21)
