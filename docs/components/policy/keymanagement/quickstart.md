@@ -32,6 +32,9 @@ Checklist:
 
 ## Creating a key
 
+>[!NOTE]
+>You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
+
 1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L630).
 2. Once you have a **Key Access Server** registered you will then want to create a key for that registered KAS.
 
