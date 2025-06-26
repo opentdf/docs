@@ -18,7 +18,7 @@ When using the [kas-registry proto](https://github.com/opentdf/platform/blob/mai
 
 ## Effects of using base key
 
-1. When a base key is specified the SDK will prefer to use it over passed the passed in kas info list. The SDK will **overwrite** the following information if a base key is registered with the platform:
+1. When a base key is specified the SDK will prefer to use it over the passed in kas info list. The SDK will **overwrite** the following information if a base key is registered with the platform:
    1. The passed in kas information list
    2. The key algorithm
 2. If a base key is not present, the SDK will fallback to using the passed in kas information list and key algorithm.
