@@ -9,6 +9,27 @@ function fileHash(filePath: string): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+function downloadFile(url: string, dest: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    import('https').then(https => {
+      const file = fs.createWriteStream(dest);
+      https.get(url, (response: any) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download ${url}: Status ${response.statusCode}`));
+          return;
+        }
+        response.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          resolve();
+        });
+      }).on('error', (err: any) => {
+        fs.unlink(dest, () => reject(err));
+      });
+    }).catch(reject);
+  });
+}
+
 async function main() {
   let hasDiff = false;
   for (const spec of openApiSpecsArray) {
@@ -18,23 +39,7 @@ async function main() {
     const absPath = path.resolve(__dirname, specPath);
     const tmpPath = absPath + '.tmp';
     // Download to tmpPath
-    const https = await import('https');
-    await new Promise<void>((resolve, reject) => {
-      const file = fs.createWriteStream(tmpPath);
-      https.get(spec.url, (response) => {
-        if (response.statusCode !== 200) {
-          reject(new Error(`Failed to download ${spec.url}: Status ${response.statusCode}`));
-          return;
-        }
-        response.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          resolve();
-        });
-      }).on('error', (err) => {
-        fs.unlink(tmpPath, () => reject(err));
-      });
-    });
+    await downloadFile(spec.url, tmpPath);
     // Compare hashes
     const oldHash = fileHash(absPath);
     const newHash = fileHash(tmpPath);
