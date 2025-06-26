@@ -28,6 +28,7 @@ Checklist:
 
 - To activate key management for KAS you will need to modify the **key_management** within the opentdf.yaml file to be true. [opentdf-dev.yaml](https://github.com/opentdf/platform/blob/main/opentdf-dev.yaml#L24).
 - You will also need to set a root key to be used with the basic manager. The root key should be 32 bytes long.
+  - In addition, the root key should be hex encoded.
 
 ## Creating a key
 
