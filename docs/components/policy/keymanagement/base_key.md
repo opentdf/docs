@@ -14,7 +14,7 @@ A base key, or default key, is a key that will be used when no grants or key map
 
 When using the [kas-registry proto](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L659-L662) and an active connection to the platform you can use the above base key rpcs to set and retrieve the base key.
 
-[opencli base key](https://github.com/opentdf/otdfctl/tree/main/docs/man/policy/kas-registry/key/base) provides documentation on how to set / get base keys with opentdf's cli.
+[otdfctl base key](https://github.com/opentdf/otdfctl/tree/main/docs/man/policy/kas-registry/key/base) provides documentation on how to set / get base keys with the OpenTDF CLI.
 
 ## Effects of using base key
 
