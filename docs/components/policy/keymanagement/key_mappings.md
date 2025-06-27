@@ -6,7 +6,7 @@ slug: /components/policy/keymanagement/key_mappings
 # Key mappings
 
 :::important
-
+Before leveraging Key Mappings make sure to [migrate](../key_access_grants.md#migration-to-key-mappings) your existing KAS Grants.
 :::
 
 :::important
