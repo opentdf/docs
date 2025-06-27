@@ -110,7 +110,7 @@ The first step is to create new keys for each existing KAS. Before the introduct
 
 Use the following table to map the integer algorithm value from a cached key to the `--algorithm` flag in `tructl`.
 
-| `alg` Value | `tructl` Flag              |
+| `alg` Value | `otdfctl` Flag              |
 | :---------- | :------------------------- |
 | 1           | `--algorithm rsa:2048`     |
 | 2           | `--algorithm rsa:4096`     |
