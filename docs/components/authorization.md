@@ -118,11 +118,12 @@ In all decision flows, the access logic is as follows:
 4. given the relevant entitlements and resource attributes, are the attribute definition rules satisfied by the entity's entitlements
 for the requested action name?
 
-A Decision will be to _deny_ if:
-1. no subject mappings apply to an entity, or none containing the requested action for the resource's attribute values
-2. some subject mappings apply to an entity that entitle the requested action on some of the resource's attribute values, but the entitlements
-are insufficient to satisfy the attribute definition rule (ANY_OF, ALL_OF, HIERARCHY) given the requested resource's attribute
-values
+In other words, a Decision will be to _deny_ if:
+1. no subject mappings apply to an entity
+2. some subject mappings apply to an entity, but none containing the specific requested action
+3. some subject mappings apply to an entity, but they only entitle the specific requested action on attribute values other than
+those of the requested resource
+4. the subject mappings entitle some of the resource's attribute values for the requested action, but not enough to satisfy the attribute definition rule (ANY_OF, ALL_OF, HIERARCHY) given the requested resource's attribute values
 
 Endpoints:
 1. `GetDecision`: can this entity take this action on this resource?
