@@ -42,7 +42,7 @@ The `GetEntitlements` endpoint takes an Entity Identifier and returns the entitl
 Entitlements are driven by subject mappings, as described in the [policy documentation](./policy/subject_mappings), and the entity data returned by the [entity resolution service](./entity_resolution).
 
 The request flag `with_comprehensive_hierarchy` will drive response behavior for attribute values on definitions with a `hierarchy` rule. If the flag
-is ommitted or passed with value `false`, the response will contain strictly the resolved subject mappings' entitled actions for each attribute value.
+is omitted or passed with value `false`, the response will contain strictly the resolved subject mappings' entitled actions for each attribute value.
 However, if it is set to `true` in a request, actions will propagate down hierarchically to each lower-hierarchy attribute value within the response. This propagation behavior is the same utilized during `GetDecision` flows to drive ABAC entitlement between entities and resources.
 
 Say there are three subject mappings for a single entity as the EntityIdentifier ephemeral ID `entity_xyz`:
