@@ -22,7 +22,7 @@ Two versions of Authorization Service are currently served simultaneously by the
 ### Changes
 
 Version 2 of Authorization Service introduced the following changes:
-- consideration of policy `actions` contained in `subject mappings` within entitlement decisioning
+- consideration of policy [actions](./policy/actions.md) contained in [subject mappings](./policy/subject_mappings.md) within entitlement decisioning
 - API structure and clarity improvements
   - [entity identifier](#entityidentifier)
   - multiplexing design within decisioning
@@ -117,6 +117,12 @@ In all decision flows, the access logic is as follows:
 3. given the entitled Actions per each Attribute Value, which Attribute Definitions are relevant to the Resource attributes?
 4. given the relevant entitlements and resource attributes, are the attribute definition rules satisfied by the entity's entitlements
 for the requested action name?
+
+A Decision will be to _deny_ if:
+1. no subject mappings apply to an entity, or none containing the requested action for the resource's attribute values
+2. some subject mappings apply to an entity that entitle the requested action on some of the resource's attribute values, but the entitlements
+are insufficient to satisfy the attribute definition rule (ANY_OF, ALL_OF, HIERARCHY) given the requested resource's attribute
+values
 
 Endpoints:
 1. `GetDecision`: can this entity take this action on this resource?
