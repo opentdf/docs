@@ -139,13 +139,6 @@ The `GetEntitlements` endpoint takes a list of entities and returns the attribut
 
 #### Entities
 
-An entity is any being or structure interacting with the platform. A **person entity (PE)** represents an actual user, while a **non-person entity (NPE)** represents a system or program interacting on behalf of a user or via automation.
-
-Entities are categorized into two types:
-
-- **Subject entities**: These include PEs or NPEs and are evaluated in access decisions.
-- **Environment entities**: These are excluded from access decisions.
-
 Entities can be identified using various methods, as shown in the proto definition:
 
 ```protobuf
