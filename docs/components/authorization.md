@@ -48,7 +48,7 @@ However, if it is set to `true` in a request, actions will propagate down hierar
 Say there are three subject mappings for a single entity as the EntityIdentifier ephemeral ID `entity_xyz`:
 1. contains actions `read, update` and a mapped attribute value `https://example.com/attr/department/value/engineering` on an ANY_OF definition
 2. contains action `read` and a mapped attribute value `https://example.com/attr/level/value/higher` on a HIERARCHY definition containing values `higher, medium, lower`, which therefore gets propagated down comprehensively
-2. contains action `delete` and a mapped attribute value `https://example.com/attr/level/value/lower` on a HIERARCHY definition containing values `higher, medium, lower`
+3. contains action `delete` and a mapped attribute value `https://example.com/attr/level/value/lower` on a HIERARCHY definition containing values `higher, medium, lower`
 
 The `GetEntitlements` response would look like the below if `with_comprehensive_hierarchy` is set to `true`:
 
@@ -134,7 +134,7 @@ Endpoints:
   - one Entity Identifier
   - one Action (`name` is required)
   - multiple Resources
-2. `GetDecisionBulk`: more performant batch processing of multiple `GetDecisionMultiResource` requests
+3. `GetDecisionBulk`: more performant batch processing of multiple `GetDecisionMultiResource` requests
   - useful for multiple entities
   - useful for multiple actions
 

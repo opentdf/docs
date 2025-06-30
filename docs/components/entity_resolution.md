@@ -40,7 +40,7 @@ Below is an example request to `CreateEntityChainsFromTokens`, containing a list
 }
 ```
 
-An example response to this `CreateEntityChainFromJwt` request:
+An example response to this `CreateEntityChainsFromTokens` request:
 
 ```json
 {
