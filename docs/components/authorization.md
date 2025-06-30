@@ -6,7 +6,7 @@ sidebar_position: 1
 
 The Authorization service makes access decisions based on Attribute-Based Access Control (ABAC) policies and evaluates subject mappings and attribute definition rules to determine allowed actions on attribute values for specified entities.
 
-An entity is any being or principal interacting with the platform. A **person entity (PE)** represents an actual user, while a **non-person entity (NPE)** represents a system or program interacting on behalf of a user or via automation.
+An entity is any being or principal interacting with the platform. A **person entity (PE)** represents an actual user, while a **non-person entity (NPE)** represents a system or program interacting on behalf of a user/organization or via automation.
 
 Entities are categorized into two types:
 
