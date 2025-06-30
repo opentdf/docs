@@ -4,7 +4,9 @@ The entity resolution service is an IdP-specific service that interacts with the
 
 As this service may vary between IdP, platform consumers must implement their own entity resolution service for the IdP they choose. It should follow the provided [protos](https://github.com/opentdf/platform/blob/main/service/entityresolution/v2/entity_resolution.proto).
 
-Two versions are currently served simultaneously by the platform, with version 1 being deprecated soon.
+Two versions of the EntityResolutionService are currently served simultaneously by the platform, with version 1 being deprecated soon:
+- [v2](#v2-latest)
+- [v1](#v1-soon-to-be-deprecated)
 
 ## v2 (latest)
 
