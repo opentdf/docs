@@ -3,9 +3,10 @@
 Actions are a set of `standard` and `custom` verbs at the core of an Access Decision.
 
 In the context of an entitlement decision, the Actions within Subject Mappings answer
-"what can an Entity _do_ to a Resource?"
+"what can an Entity _do_ to a Resource?" 
 
-Together with attribute definition rules, they drive the ABAC 
+Together with attribute definition rules, they drive the ABAC policy and decisioning of the
+platform.
 
 ## Standard Actions
 
