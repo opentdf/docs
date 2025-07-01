@@ -108,7 +108,7 @@ The first step is to create new keys for each existing KAS. Before the introduct
 
 #### Algorithm Mapping
 
-Use the following table to map the integer algorithm value from a cached key to the `--algorithm` flag in `tructl`.
+Use the following table to map the integer algorithm value from a cached key to the `--algorithm` flag in `otdfctl`.
 
 | `alg` Value | `otdfctl` Flag              |
 | :---------- | :------------------------- |
