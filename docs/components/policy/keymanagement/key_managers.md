@@ -20,11 +20,12 @@ If you have written your own key manager, you can register it with KAS by provid
 Provider configurations are a way of entangling a key to a specific manager. The [key management proto](https://github.com/opentdf/platform/blob/main/service/policy/keymanagement/key_management.proto#L76) provides specifics on what RPCs are available as well as what is expected within each call. One of the most important parts of the provider configuration is the **name** field. The **name** field is what KAS will look for when trying to instantiate a specific manager. If no manager with that name is found, KAS will attempt to use the default manager.
 
 The basic flow is as follows:
->[!NOTE]
->In the below example, r1 is just an example key id.
->Key managers are a part of KAS, and not external services
->although they can reach out to external services to perform
->needed operations.
+:::note
+In the below example, r1 is just an example key id.
+Key managers are a part of KAS, and not external services
+although they can reach out to external services to perform
+needed operations.
+:::
 
 ```mermaid
 sequenceDiagram
@@ -40,15 +41,17 @@ sequenceDiagram
 
 When registering your provider configuration and your key manager the name must match. For example, the [basic manager name](https://github.com/opentdf/platform/blob/main/service/internal/security/basic_manager.go#L23) is **opentdf.io/basic**. For example, if you create a manager with name **opentdf.io/aws**, you would need to create a provider configuration with the same name and tie it to a key when creating the key. In addition, when registering the manager you need to pass in the same name as what the provider configuration expects.
 
->[!IMPORTANT]
->If private keys are meant to be stored within the platform database,
->there should be no provider configuration added to the key. Since
->an empty provider configuration is assumed to be tied to the
->default manager.
+:::important
+If private keys are meant to be stored within the platform database,
+there should be no provider configuration added to the key. Since
+an empty provider configuration is assumed to be tied to the
+default manager.
+:::
 
->[!IMPORTANT]
->Provider configuration names must be unique.
->You cannot delete provider configurations that are tied to keys.
+:::important
+Provider configuration names must be unique.
+You cannot delete provider configurations that are tied to keys.
+:::
 
 ## Helpful links
 

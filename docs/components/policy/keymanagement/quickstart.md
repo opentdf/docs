@@ -5,20 +5,22 @@ slug: /components/policy/keymanagement/quickstart
 
 # Quickstart for using the new key management architecture
 
->[!IMPORTANT]
->This quickstart is meant to aid users trying to test the new key management
->features, by standing up a new platform. This quickstart is not meant as a
->migration guide.
+:::important
+This quickstart is meant to aid users trying to test the new key management
+features, by standing up a new platform. This quickstart is not meant as a
+migration guide.
+:::
 
 Below is a guide to setting up platform to use the new key management features.
 
 Checklist:
 
->[!IMPORTANT]
->You can spin KAS up without activating the key management features.
->This gives you time to create or migrate keys to the platform
->before KAS expects keys to come from the platform, which would
->be helpful for migrations.
+:::important
+You can spin KAS up without activating the key management features.
+This gives you time to create or migrate keys to the platform
+before KAS expects keys to come from the platform, which would
+be helpful for migrations.
+:::
 
 1. Key management is activated for KAS.
 2. A key has been created.
@@ -33,8 +35,9 @@ Checklist:
 
 ## Creating a key
 
->[!NOTE]
->You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
+:::note
+You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
+:::
 
 1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L630).
 2. Once you have a **Key Access Server** registered you will then want to create a key for that registered KAS.
@@ -43,9 +46,10 @@ The definition for creating a key can be found in the key_access_registry [proto
 
 Let's look at a valid request and dissect it:
 
->[!NOTE]
->These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/main/service/internal/fixtures/policy_fixtures.yaml#L541) file located
->in opentdf.
+:::note
+These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/main/service/internal/fixtures/policy_fixtures.yaml#L541) file located
+in opentdf.
+:::
 
 ```json5
 {
@@ -67,32 +71,34 @@ Let's look at a valid request and dissect it:
 - The **key_id** can be any name you wish to associate with the key to be created, which will show up in the manifest of the TDF. (Required)
 - The **key_algorithm** is the specific cipher bit/shape of the key and can be one of the following: (Required)
 
-| Key Algorithm     | `alg` Value |
-| ----------------- | ----------- |
-| `rsa:2048`        | 1           |
-| `rsa:4096`        | 2           |
-| `ec:secp256r1`    | 3           |
-| `ec:secp384r1`    | 4           |
-| `ec:secp521r1`    | 5           |
+| Key Algorithm  | `alg` Value |
+| -------------- | ----------- |
+| `rsa:2048`     | 1           |
+| `rsa:4096`     | 2           |
+| `ec:secp256r1` | 3           |
+| `ec:secp384r1` | 4           |
+| `ec:secp521r1` | 5           |
 
 - The **key_mode** basically tells the KAS during a rewrap where to expect the key so that it can perform a decryption. Available modes are: (Required)
   
-| Key Mode                          | `mode` Value | Description |
-| --------------------------------- | ------------ | ----------- |
-| `KEY_MODE_CONFIG_ROOT_KEY`        | 1            | Root Key is stored within the platform's database and the symmetric wrapping key is stored in KAS |
-| `KEY_MODE_PROVIDER_ROOT_KEY`      | 2            | Root Key is stored within the platform's database and the symmetric wrapping key is stored externally |
-| `KEY_MODE_REMOTE`                 | 3            | Root Key and wrapping key are stored remotely |
-| `KEY_MODE_PUBLIC_KEY_ONLY`        | 4            | Root Key and wrapping key are stored remotely. Use this when importing another org's policy information |
+| Key Mode                     | `mode` Value | Description                                                                                             |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
+| `KEY_MODE_CONFIG_ROOT_KEY`   | 1            | Root Key is stored within the platform's database and the symmetric wrapping key is stored in KAS       |
+| `KEY_MODE_PROVIDER_ROOT_KEY` | 2            | Root Key is stored within the platform's database and the symmetric wrapping key is stored externally   |
+| `KEY_MODE_REMOTE`            | 3            | Root Key and wrapping key are stored remotely                                                           |
+| `KEY_MODE_PUBLIC_KEY_ONLY`   | 4            | Root Key and wrapping key are stored remotely. Use this when importing another org's policy information |
 
 - The **public_key_ctx** holds the public key for the asymmetric key pair. (Required)
 - The **private_key_ctx** holds the encrypted private key and a **key_id** specific to the symmetric key that is wrapping that key.
 
->[!IMPORTANT]
->Wrapped_Key is only required for KEY_MODE_CONFIG_ROOT_KEY and KEY_MODE_PROVIDER_ROOT_KEY.
->Key_Id is required for all key modes except KEY_MODE_PUBLIC_KEY_ONLY
+:::important
+Wrapped_Key is only required for KEY_MODE_CONFIG_ROOT_KEY and KEY_MODE_PROVIDER_ROOT_KEY.
+Key_Id is required for all key modes except KEY_MODE_PUBLIC_KEY_ONLY
+:::
 
->[!NOTE]
->You can also specify metadata for the key via a common metadata structure, but that is not covered here.
+:::note
+You can also specify metadata for the key via a common metadata structure, but that is not covered here.
+:::
 
 The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database, and the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where the key mode **KEY_MODE_REMOTE** is handy.
 
