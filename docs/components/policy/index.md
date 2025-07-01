@@ -20,6 +20,7 @@ Components of Policy include:
   - Namespaces
   - Definitions
   - Values
+- Actions
 - Subject Mappings
   - Subject Condition Sets
 - Resource Mappings
