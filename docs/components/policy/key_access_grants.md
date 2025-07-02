@@ -3,7 +3,7 @@
 :::caution
 In v0.7.0 of the platform creating grants is now deprecated in favor of
 [key mappings](./keymanagement/key_mappings.md). Version 0.7.0 of the platform
-will error when attempting to assign key access servers to attributes. 
+will error when attempting to assign key access servers to attributes.
 :::
 Key Access Grants (KAS Grants) are associations between a registered Key Access Server (KAS) and an Attribute. These grants can be applied at the namespace, definition, or value level of an attribute.
 
@@ -49,7 +49,6 @@ Example attributes:
 - Attribute A: `https://conglomerate.com/attr/organization/value/acmeco`
 - Attribute B: `https://conglomerate.com/attr/department/value/marketing`
 
-
 | Attribute | Namespace          | Definition     | Value       |
 | --------- | ------------------ | -------------- | ----------- |
 | A         | `conglomerate.com` | `organization` | `acmeco`    |
@@ -69,6 +68,7 @@ Example attributes:
 :::note
 Any KAS Grants on attributes of different definitions or namespaces will use `AND` splits.
 :::
+
 ## Migration to Key Mappings
 
 This section outlines the process for migrating from the legacy KAS grant system to the new key mapping system.
@@ -81,7 +81,20 @@ This section outlines the process for migrating from the legacy KAS grant system
 
 The first step is to create new keys for each existing KAS. Before the introduction of the new key management functionality, a KAS was associated with either a `Remote` or `Cached` public key.
 
--   **Remote Key Example:**
+:::important
+If you own the registered Key Access Server and your specific KAS is using **this**
+instance of the platform, you should **import** your keys instead of creating a key
+of mode **KEY_MODE_CONFIG_ROOT_KEY**.
+
+You should **ONLY** create keys of mode **KEY_MODE_PUBLIC_KEY_ONLY** for Key Access Servers that you either:
+
+1. Do not control, meaning it is external to your organization.
+2. The specific Key Access Server is meant to be external from **this** platform.
+
+:::
+
+- **Remote Key Example:**
+
     ```json
     "public_key": {
       "PublicKey": {
@@ -89,7 +102,9 @@ The first step is to create new keys for each existing KAS. Before the introduct
       }
     }
     ```
--   **Cached Key Example:**
+
+- **Cached Key Example:**
+
     ```json
     "public_key": {
       "PublicKey": {
@@ -119,6 +134,7 @@ Use the following table to map the integer algorithm value from a cached key to 
 | 7           | `--algorithm ec:secp521r1` |
 
 The `KasPublicKeyAlgEnum` proto definition:
+
 ```proto
 enum KasPublicKeyAlgEnum {
   KAS_PUBLIC_KEY_ALG_ENUM_UNSPECIFIED = 0;
@@ -146,26 +162,30 @@ Create a new key for each existing KAS grant, using the public key from the gran
 
 After creating the new keys, map them to the corresponding namespaces, attribute definitions, and attribute values.
 
-1.  **List Current KAS Grants**
+1. **List Current KAS Grants**
     To see all existing grants, run:
+
     ```shell
     ./otdfctl policy kas-grants list --json
     ```
 
-2.  **Create Key Mappings**
+2. **Create Key Mappings**
     For each grant, create a new key mapping using the appropriate command from the Assigning Keys to Policy Resources section.
 
-    -   **For a Namespace Grant:**
+    - **For a Namespace Grant:**
+
         ```shell
         ./otdfctl policy attributes namespaces key assign --namespace https://demo.com --key-id <newly_created_key_id>
         ```
 
-    -   **For an Attribute Definition Grant:**
+    - **For an Attribute Definition Grant:**
+
         ```shell
         ./otdfctl policy attributes key assign --attribute https://demo.com/attr/key --key-id <newly_created_key_id>
         ```
 
-    -   **For an Attribute Value Grant:**
+    - **For an Attribute Value Grant:**
+
         ```shell
         ./otdfctl policy attributes value key assign --value https://demo.com/attr/key/value/1 --key-id <newly_created_key_id>
         ```
