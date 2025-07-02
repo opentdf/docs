@@ -82,15 +82,14 @@ This section outlines the process for migrating from the legacy KAS grant system
 The first step is to create new keys for each existing KAS. Before the introduction of the new key management functionality, a KAS was associated with either a `Remote` or `Cached` public key.
 
 :::important
-If you own the registered Key Access Server and your specific KAS is using **this**
-instance of the platform, you should **import** your keys instead of creating a key
-of mode **KEY_MODE_CONFIG_ROOT_KEY**.
+:::important
+If you own the registered Key Access Server and your specific KAS is using this instance of the platform, you should import your keys instead of creating a key of mode `KEY_MODE_CONFIG_ROOT_KEY`.
 
-You should **ONLY** create keys of mode **KEY_MODE_PUBLIC_KEY_ONLY** for Key Access Servers that you either:
+You should only create keys of mode `KEY_MODE_PUBLIC_KEY_ONLY` for Key Access Servers that you either:
 
 1. Do not control, meaning it is external to your organization.
-2. The specific Key Access Server is meant to be external from **this** platform.
-
+2. The specific Key Access Server is meant to be external from this platform.
+:::
 :::
 
 - **Remote Key Example:**
