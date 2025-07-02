@@ -8,7 +8,7 @@ slug: /components/policy/keymanagement/quickstart
 :::important
 This quickstart is meant to aid users trying to test the new key management
 features, by standing up a new platform. This quickstart is not meant as a
-migration guide.
+migration guide. Currently, while key management is experimental, we recommend to use key management with **ONLY** new deployments.
 :::
 
 Below is a guide to setting up platform to use the new key management features.
