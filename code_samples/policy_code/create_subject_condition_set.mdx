@@ -55,11 +55,12 @@ func main() {
 		},
 	}
 
-	_, err = client.SubjectMapping.CreateSubjectConditionSet(context.Background(), coditionset)
+	log, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(), coditionset)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Printf("Created Subject Condition Set with ID: %s\n", resp.GetSubjectConditionSet().GetId())
 }
 ```
 
