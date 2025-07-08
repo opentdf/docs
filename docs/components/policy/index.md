@@ -23,5 +23,6 @@ Components of Policy include:
 - Actions
 - Subject Mappings
   - Subject Condition Sets
+- Registered Resources
 - Resource Mappings
 - Key Access Grants (KAS Grants)
