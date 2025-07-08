@@ -11,6 +11,8 @@ docs/SDK-Samples/
 # Generated files
 .docusaurus
 .cache-loader
+# Ignore all generated _category_.json files in docs/spec
+/docs/spec/**/_category_.json
 
 # Misc
 .DS_Store
