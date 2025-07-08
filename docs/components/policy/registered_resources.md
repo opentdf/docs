@@ -14,6 +14,10 @@ A Registered Resource has a unique name and may contain multiple, unique Registe
 
 A Registered Resource Value is used to represent a specific instance of the Registered Resource and can be referenced by a FQN (Fully Qualified Name) in the form of `https://reg_res/<registered_resource.name>/value/<registered_resource_value.value>`.
 
+:::tip
+Registered Resource Values are not namespaced, so their FQNs cannot contain one. To address this, a prefix of `https://reg_res/` has been chosen to identify a FQN as a Registered Resource Value.
+:::
+
 Registered Resource Values may contain multiple Action Attribute Values, which are unique mappings of an action to an attribute value. These mappings are used in Policy Decision Points for access control decisions.
 
 ```mermaid
