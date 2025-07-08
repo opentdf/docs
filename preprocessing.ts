@@ -9,6 +9,9 @@ const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 // The location prefix of built OpenAPI documentation
 const OUTPUT_PREFIX = 'docs/OpenAPI-clients';
 
+// The index page for OpenAPI documentation, to support bookmarking & sharing the URL
+const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
+
 // Read BUILD_OPENAPI_SAMPLES once
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
@@ -275,6 +278,24 @@ async function preprocessOpenApiSpecs() {
         // Delete the specPathModified property to avoid confusion
         delete spec.specPathModified;
     }
+
+    // Create the index page for OpenAPI documentation
+    const indexContent = `---
+title: OpenAPI Clients
+sidebar_position: 7
+---
+# OpenAPI Clients
+
+OpenAPI client examples are available for platform endpoints.  
+
+Expand each section in the navigation panel to access the OpenAPI documentation for each service.
+`
+
+    // Ensure the file 'OPENAPI_INDEX_PAGE' exists
+    fs.mkdirSync(path.dirname(OPENAPI_INDEX_PAGE), { recursive: true });
+
+    fs.writeFileSync(OPENAPI_INDEX_PAGE, indexContent, 'utf8');
+    console.log(`✅ Created OpenAPI index page at ${OPENAPI_INDEX_PAGE}`);
 
     console.log('✨ OpenAPI preprocessing complete');
 };
