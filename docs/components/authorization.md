@@ -35,6 +35,13 @@ The entity identifier is a request proto object allowing multiple structures rep
 - a Token (access token JWT)
 - the FQN of a Registered Resource Value (_EXPERIMENTAL_)
 
+#### Resource
+
+The resource is a request proto object allowing multiple structures representing a resource to stand in as the resource in an Auth Service Decision request:
+- a list of Attribute Values FQNs
+- the FQN of a Registered Resource Value (_EXPERIMENTAL_)
+
+
 ### GetEntitlements
 
 The `GetEntitlements` endpoint takes an Entity Identifier and returns the entitled actions per attribute value back (entitlements).
