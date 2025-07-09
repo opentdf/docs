@@ -10,36 +10,37 @@ import TabItem from '@theme/TabItem';
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/opentdf/platform/sdk"
 )
 
 func main() {
+	log.Println("🚀 Starting OpenTDF example...")
 
 	platformEndpoint := "http://localhost:9002"
+	log.Printf("📡 Connecting to platform: %s", platformEndpoint)
 
 	// Create a new client
+	log.Println("🔐 Initializing new SDK client...")
 	client, err := sdk.New(
 		platformEndpoint,
 		sdk.WithClientCredentials("opentdf", "secret", nil),
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("❌ Client initialization failed: %v", err)
 	}
 
 	// Encrypt ztdf
-
+	log.Println("📝 Preparing sensitive data for encryption...")
 	str := strings.NewReader("Sensitive data!")
 	buf := &bytes.Buffer{}
-	out := bufio.NewWriter(buf)
 
-	manifest, err := client.CreateTDF(out, str,
+	log.Println("🔒 Encrypting data...")
+	manifest, err := client.CreateTDF(buf, str,
 		//sdk.WithDataAttributes("https://opentdf.io/attr/role/value/developer"),
 		sdk.WithKasInformation(
 			sdk.KASInfo{
@@ -49,25 +50,27 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("❌ Encryption failed: %v", err)
 	}
 
-	//Flush data to buffer
-	out.Flush()
-
-	log.Printf("TDF Manifest: %v", manifest)
+	log.Println("✅ Data successfully encrypted")
+	log.Printf("📋 TDF Manifest details:\n\n%v\n\n", manifest)
 
 	// Decrypt ztdf
+	log.Println("🔓 Decrypting data...")
 	tdfReader, err := client.LoadTDF(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("❌ Decryption failed: %v", err)
 	}
 
-	// Write decrypted data to stdout
-	_, err = tdfReader.WriteTo(os.Stdout)
-	if err != nil {
-		log.Fatal(err)
+	// Create a buffer to capture the decrypted data
+	var decryptedBuf bytes.Buffer
+	if _, err = tdfReader.WriteTo(&decryptedBuf); err != nil {
+		log.Fatalf("❌ Failed to write decrypted data: %v", err)
 	}
+
+	log.Printf("📤 Decrypted content: \n\n%s\n\n", decryptedBuf.String())
+	log.Println("✅ Example complete!")
 }
 ```
 
