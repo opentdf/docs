@@ -24,7 +24,7 @@ Two versions of Authorization Service are currently served simultaneously by the
 Version 2 of Authorization Service introduced the following changes:
 - consideration of policy [actions](./policy/actions.md) contained in [subject mappings](./policy/subject_mappings.md) within entitlement decisioning
 - API structure and clarity improvements
-  - [entity identifier](#entityidentifier)
+  - [entity identifier](#entity-identifier)
   - multiplexing design within decisioning
   - removal of scopes when retrieving entitlements, in deference to decision APIs
 
