@@ -79,57 +79,83 @@ func main() {
 
 ```java
 package io.opentdf.platform;
+
 import io.opentdf.platform.sdk.*;
 import java.io.ByteArrayInputStream;
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.io.FileOutputStream;
+import java.nio.file.Files;
 
-import com.nimbusds.jose.JOSEException;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 import java.nio.file.StandardOpenOption;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import org.apache.commons.codec.DecoderException;
 
 public class EncryptExample {
-    public static void main(String[] args) throws IOException, JOSEException, AutoConfigureException, InterruptedException, ExecutionException {
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "localhost:8080";
 
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-                .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
-                .build();
-
-        var kasInfo = new Config.KASInfo();
-        kasInfo.URL = "http://localhost:8080/kas";
-
-        var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo), Config.withDataAttributes("https://mynamespace.com/attr/test/value/test1"));
-
-        String str = "Hello, World!";
-        
-        var in = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
-
-        FileOutputStream fos = new FileOutputStream("my.ciphertext");
-
-        new TDF().createTDF(in, fos, tdfConfig, sdk.getServices().kas(), sdk.getServices().attributes());
-	Path path = Paths.get("my.ciphertext");
-        try (var in = FileChannel.open(path, StandardOpenOption.READ)) {
-            var reader = new TDF().loadTDF(in, sdk.getServices().kas());
-            reader.readPayload(System.out);
+    public static void main(String[] args) {
+        try {
+            System.out.println("🚀 Starting OpenTDF example...");
+            
+            String clientId = "opentdf";
+            String clientSecret = "secret";
+            String platformEndpoint = "http://localhost:8080";
+            
+            System.out.println("📡 Connecting to platform: " + platformEndpoint);
+            
+            // Create a new client
+            System.out.println("🔐 Initializing new SDK client...");
+            SDKBuilder builder = SDKBuilder.newBuilder();
+            SDK sdk = builder.platformEndpoint(platformEndpoint)
+                    .clientSecret(clientId, clientSecret)
+                    .useInsecurePlaintextConnection(true) // Set to true for http:// connections
+                    .build();
+            
+            // Encrypt TDF
+            System.out.println("📝 Preparing sensitive data for encryption...");
+            String sensitiveData = "Sensitive data!";
+            
+            var kasInfo = new Config.KASInfo();
+            kasInfo.URL = platformEndpoint + "/kas";
+            
+            var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+            
+            var inputStream = new ByteArrayInputStream(sensitiveData.getBytes(StandardCharsets.UTF_8));
+            var outputStream = new ByteArrayOutputStream();
+            
+            System.out.println("🔒 Encrypting data...");
+            sdk.createTDF(inputStream, outputStream, tdfConfig);
+            
+            System.out.println("✅ Data successfully encrypted");
+            System.out.println("📋 TDF created with " + outputStream.size() + " bytes");
+            
+            // Decrypt TDF
+            System.out.println("🔓 Decrypting data...");
+            var encryptedData = outputStream.toByteArray();
+            
+            // Save to temporary file for decryption
+            Path tempFile = Files.createTempFile("encrypted", ".tdf");
+            try {                
+                Files.write(tempFile, encryptedData);
+                
+                try (var fileChannel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
+                    var readerConfig = Config.newTDFReaderConfig();
+                    var reader = sdk.loadTDF(fileChannel, readerConfig);
+                    var decryptedOutput = new ByteArrayOutputStream();
+                    reader.readPayload(decryptedOutput);
+                    
+                    String decryptedContent = new String(decryptedOutput.toByteArray(), StandardCharsets.UTF_8);
+                    System.out.println("📤 Decrypted content: \n\n" + decryptedContent + "\n");
+                }
+            } catch (Exception e) {
+                // Clean up
+                Files.deleteIfExists(tempFile);
+            }
+            
+            System.out.println("✅ Example complete!");
+        } catch (IOException | AutoConfigureException e) {
+            System.err.println("❌ Error occurred: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
