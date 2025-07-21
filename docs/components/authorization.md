@@ -22,11 +22,12 @@ Two versions of Authorization Service are currently served simultaneously by the
 ### Changes
 
 Version 2 of Authorization Service introduced the following changes:
-- consideration of policy [actions](./policy/actions.md) contained in [subject mappings](./policy/subject_mappings.md) within entitlement decisioning
+- Consideration of policy [actions](./policy/actions.md) contained in [subject mappings](./policy/subject_mappings.md) within entitlement decisioning
 - API structure and clarity improvements
   - [entity identifier](#entity-identifier)
   - multiplexing design within decisioning
   - removal of scopes when retrieving entitlements, in deference to decision APIs
+- Removal of configurable custom `rego` support
 
 #### Entity Identifier
 
@@ -40,7 +41,6 @@ The entity identifier is a request proto object allowing multiple structures rep
 The resource is a request proto object allowing multiple structures representing a resource to stand in as the resource in an Auth Service Decision request:
 - a list of Attribute Values FQNs
 - the FQN of a Registered Resource Value (_EXPERIMENTAL_)
-
 
 ### GetEntitlements
 
