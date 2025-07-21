@@ -27,7 +27,7 @@ Version 2 of Authorization Service introduced the following changes:
   - [entity identifier](#entity-identifier)
   - multiplexing design within decisioning
   - removal of scopes when retrieving entitlements, in deference to decision APIs
-- Removal of configurable custom `rego` support
+- Removal of configurable custom `Rego` support
 
 #### Entity Identifier
 
