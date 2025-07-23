@@ -83,10 +83,10 @@ in opentdf.
   
 | Key Mode                     | `mode` Value | Description                                                                                             |
 | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
-| `KEY_MODE_CONFIG_ROOT_KEY`   | 1            | Root Key is stored within the platform's database and the symmetric wrapping key is stored in KAS       |
-| `KEY_MODE_PROVIDER_ROOT_KEY` | 2            | Root Key is stored within the platform's database and the symmetric wrapping key is stored externally   |
-| `KEY_MODE_REMOTE`            | 3            | Root Key and wrapping key are stored remotely                                                           |
-| `KEY_MODE_PUBLIC_KEY_ONLY`   | 4            | Root Key and wrapping key are stored remotely. Use this when importing another org's policy information |
+| `KEY_MODE_CONFIG_ROOT_KEY`   | 1            | The symmetric wrapping (root) key is stored with the platform configuration and the wrapped KAS key is stored in the platform database. |
+| `KEY_MODE_PROVIDER_ROOT_KEY` | 2            | The symmetric wrapping (root) key is stored external to the platform using a KMS or HSM interface. The wrapped KAS key is stored in the platform's database.   |
+| `KEY_MODE_REMOTE`            | 3            | Both the symmetric wrapping (root) key and the wrapped KAS key is stored external to the platform using a KMS or HSM interface. This is also referred to as `STRICT_MODE`.                                                           |
+| `KEY_MODE_PUBLIC_KEY_ONLY`   | 4            | No private key information is stored. This is used  when importing another org's policy information. |
 
 - The **public_key_ctx** holds the public key for the asymmetric key pair. (Required)
 - The **private_key_ctx** holds the encrypted private key and a **key_id** specific to the symmetric key that is wrapping that key.
