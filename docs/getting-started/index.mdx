@@ -340,6 +340,127 @@ docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/
 docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
+### Import and Trust Certificates by Operating System
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+1. **Import certificates to Keychain:**
+   ```shell
+   # Import both certificates to the System keychain
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/keycloak.opentdf.local.crt
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/platform.opentdf.local.crt
+   ```
+
+2. **Alternative: Using Keychain Access GUI:**
+   - Open **Keychain Access** (Applications → Utilities → Keychain Access)
+   - Drag and drop both `.crt` files into the **System** keychain
+   - Double-click each certificate and set **Trust** → **When using this certificate** to **Always Trust**
+   - Enter your admin password when prompted
+
+3. **Verify certificates are trusted:**
+   ```shell
+   security verify-cert -c ./opentdf-certs/keycloak.opentdf.local.crt
+   security verify-cert -c ./opentdf-certs/platform.opentdf.local.crt
+   ```
+
+**References:**
+- [Add certificates to a keychain](https://support.apple.com/guide/keychain-access/add-certificates-to-a-keychain-kyca2431/mac)
+- [Change trust settings of a certificate](https://support.apple.com/guide/keychain-access/change-the-trust-settings-of-a-certificate-kyca11871/mac)
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+1. **Import certificates using PowerShell (Run as Administrator):**
+   ```powershell
+   # Import to Trusted Root Certification Authorities
+   Import-Certificate -FilePath ".\opentdf-certs\keycloak.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
+   Import-Certificate -FilePath ".\opentdf-certs\platform.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
+   ```
+
+2. **Alternative: Using Certificate Manager GUI:**
+   - Press `Win + R`, type `certmgr.msc`, and press Enter
+   - Navigate to **Trusted Root Certification Authorities** → **Certificates**
+   - Right-click and select **All Tasks** → **Import**
+   - Follow the wizard to import both `.crt` files
+   - Choose **Place all certificates in the following store** → **Trusted Root Certification Authorities**
+
+3. **Alternative: Using MMC (Microsoft Management Console):**
+   - Press `Win + R`, type `mmc`, and press Enter
+   - Go to **File** → **Add/Remove Snap-in**
+   - Add **Certificates** snap-in for **Local Computer**
+   - Navigate to **Certificates (Local Computer)** → **Trusted Root Certification Authorities** → **Certificates**
+   - Right-click and import both certificates
+
+</details>
+
+<details>
+<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-certificates directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /usr/local/share/ca-certificates/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /usr/local/share/ca-certificates/
+   
+   # Update the certificate store
+   sudo update-ca-certificates
+   ```
+
+2. **Verify certificates are installed:**
+   ```shell
+   # Check if certificates are in the trusted store
+   awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt | grep opentdf
+   ```
+
+</details>
+
+<details>
+<summary><strong>Linux (RHEL/CentOS/Fedora)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-trust directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
+   
+   # Update the certificate store
+   sudo update-ca-trust
+   ```
+
+2. **Verify certificates are installed:**
+   ```shell
+   # Check if certificates are trusted
+   trust list | grep "opentdf.local"
+   ```
+
+</details>
+
+<details>
+<summary><strong>Linux (Arch Linux)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-certificates directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
+   
+   # Update the certificate store
+   sudo trust extract-compat
+   ```
+
+</details>
+
+:::tip Browser-specific Certificate Installation
+Some browsers (like Firefox) maintain their own certificate stores. If you continue to see certificate warnings in your browser after following the OS-specific steps above, you may need to import the certificates directly into your browser's certificate store.
+:::
+
+:::warning Certificate Validity
+These self-signed certificates are only valid for local development. Never use self-signed certificates in production environments.
+:::
+
 ## Create a Profile
 Creating a profile allows us to store the host we want to connect to and then to tie our credentials to it when we login.
 
