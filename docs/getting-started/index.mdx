@@ -18,6 +18,13 @@ This guide will walk you through setting up a new platform locally and walk you 
 
 The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
 
+> **Note for Apple M4 chip users:**  
+> If you are running on an Apple M4 chip, set the Java environment variable before running any commands:
+> ```sh
+> export JAVA_OPTS_APPEND="-XX:UseSVE=0"
+> ```
+> This resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
+
 :::warning
 Not for production use.
 :::
@@ -131,8 +138,9 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: changeme
       KC_FEATURES: 'preview,token-exchange'
       KC_HEALTH_ENABLED: 'true'
+      JAVA_OPTS_APPEND: '${JAVA_OPTS_APPEND:-}'
     healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/ready']
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java ${JAVA_OPTS_APPEND} /tmp/HealthCheck.java http://localhost:9000/health/ready']
       interval: 5s
       timeout: 10s
       retries: 3
@@ -314,17 +322,9 @@ In order for the services to communicate correctly you will need to update your 
 echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
 ```
 
-## Export Environment Variables
-
-For the remainder of this guide you will want to export the following environment variables.
-
-```shell
-export PLATFORM_HOST=https://platform.opentdf.local:8443
-```
-
 ## Trust Self Signed Certificates
 
-During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command.
+During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
 
 Example of extracting the certificate from the container.
 
@@ -340,12 +340,19 @@ docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/
 docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
+## Create a Profile
+Creating a profile allows us to store the host we want to connect to and then to tie our credentials to it when we login.
+
+```shell
+otdfctl profile create platform-otdf-local https://platform.otdf.local:8443
+```
+
 ## Login to the Platform
 
 During the provisioning of the platform, a few test clients were created in **Keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
 
 ```shell
-otdfctl --host $PLATFORM_HOST auth client-credentials --client-id opentdf --client-secret secret
+otdfctl --profile platform-otdf-local auth client-credentials opentdf secret
 ```
 
 ## Create A Namespace
@@ -355,7 +362,7 @@ In this first step you are going to create a new `namespace`. A namespace is a w
 You will see an empty list of namespaces when you first start the platform.
 
 ```shell
-otdfctl --host $PLATFORM_HOST --tls-no-verify  policy attributes namespaces list
+otdfctl --profile platform-otdf-local policy attributes namespaces list
 ```
 
 ```shell
@@ -370,7 +377,7 @@ NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 ### Create a new namespace
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces create --name opentdf.io
+otdfctl --profile platform-otdf-local policy attributes namespaces create --name opentdf.io
 ```
 
 ```shell
@@ -391,7 +398,7 @@ NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to 
 With that namespace created we should be able to see it in the list of namespaces as well as get the details of the namespace.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces list
+otdfctl --profile platform-otdf-local policy attributes namespaces list
 ```
   
 ```shell
@@ -413,7 +420,7 @@ export NAMESPACE_ID=<id>
 ### Get the details of the namespace
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces get --id=$NAMESPACE_ID
+otdfctl --profile platform-otdf-local policy attributes namespaces get --id=$NAMESPACE_ID
 ```
 
 ```shell
@@ -457,7 +464,7 @@ You can also create values at the same time when creating the definition. This i
 ### Create attribute definition
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
+otdfctl --profile platform-otdf-local policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
 ```
 
 ```shell
@@ -485,7 +492,7 @@ export ATTRIBUTE_ID=<id>
 
 ```shell
 # Create admin value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value admin
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value admin
 ```
 
 ```shell
@@ -510,7 +517,7 @@ export ADMIN_VALUE_ID=<id>
 
 ```shell
 # Create developer value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value developer
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value developer
 ```
 
 ```shell
@@ -535,7 +542,7 @@ export DEVELOPER_VALUE_ID=<id>
 
 ```shell
 # Create guest value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value guest
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value guest
 ```
 
 ```shell
@@ -563,7 +570,7 @@ export GUEST_VALUE_ID=<id>
 Now that we have listed values for the attribute, we can get the details of the attribute. You should see the added values in the list now.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes get --id=$ATTRIBUTE_ID
+otdfctl --profile platform-otdf-local policy attributes get --id=$ATTRIBUTE_ID
 ```
 
 ```shell
@@ -595,7 +602,7 @@ With `subject mappings` there is a sub-resource  called `subject condition sets`
 Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set. You can use this file to create a new condition set.
 
 ```shell
- otdfctl --host $PLATFORM_HOST  policy subject-condition-sets create -j <path to file>/subject_condition_set.json
+ otdfctl --profile platform-otdf-local policy subject-condition-sets create -j <path to file>/subject_condition_set.json
 ```
 
 ```shell
@@ -622,7 +629,7 @@ export SUBJECT_CONDITION_SET_ID=<id>
 With the condition set created we can now create a new subject mapping that is tied to the subject condition set.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -659,13 +666,13 @@ Within the `otdfctl` CLI there is basic functionality to interact with `zTDF` an
 #### Example zTDF encryption
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3
+echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
 ```
 
 #### Example nanoTDF encryption
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano
+echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano
 ```
 
 ### Decrypt Data Without Attributes
@@ -673,7 +680,7 @@ echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example
 Because we didn't add any attributes to the data we encrypted, we should be able to decrypt the data without any issues.
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -682,12 +689,12 @@ my first encrypted tdf
 ```
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+my first encrypted nano tdf
 ```
 
 ### Encrypt Data With Attributes
@@ -701,13 +708,13 @@ rm example.tdf example.nano.tdf
 #### Example zTDF encryption with attributes
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
+echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
 ```
 
 #### Example nanoTDF encryption with attributes
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
+echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
 ```
 
 ### Decrypt Data With Attributes
@@ -717,7 +724,7 @@ In this first example we will try to decrypt the data but it will fail because w
 #### Example zTDF failed decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -729,7 +736,7 @@ ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap split
 #### Example nanoTDF failed decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
@@ -742,7 +749,7 @@ What we have to do now is assign the entitlement of `https://opentdf.io/attr/rol
 #### Create a new subject mapping
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -767,7 +774,7 @@ Now that we have the subject mapping in place we should be able to decrypt the d
 #### Example zTDF successful decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -778,12 +785,12 @@ my first encrypted tdf
 #### Example nanoTDF successful decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+my first encrypted nano tdf
 ```
 
 ## Takeaways and Next Steps
