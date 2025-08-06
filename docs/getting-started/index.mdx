@@ -62,7 +62,6 @@ configs:
       }
 services:
   caddy:
-    #image: cgr.dev/chainguard/caddy:latest-dev #@sha256:20e31e59503a775f28e7eb0d724384055236a35c52ff4e5aca6caac8390d61dc
     image: caddy:alpine
     command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
     configs:
@@ -80,7 +79,7 @@ services:
       timeout: 5s
       retries: 3
   check-certs:
-    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    image: bash:latest
     volumes:
       - type: volume
         source: caddy_data
@@ -88,6 +87,8 @@ services:
         volume:
           subpath: caddy/certificates/local/keycloak.opentdf.local/
     command:
+      - bash
+      - -c
       - |
         echo "Checking certificates"
         ls -alh /etc/ssl/certs
@@ -103,11 +104,11 @@ services:
     - 'sh'
     - '-c'
     - |
-      chmod -R 665 /configs
+      chmod -R 777 /configs
       ls -alh /configs
-      chmod -R 665 /keys
+      chmod -R 777 /keys
       ls -alh /keys
-      chmod -R 665 /data
+      chmod -R 777 /data
       ls -alh /data
     volumes:
       - configs:/configs
@@ -120,7 +121,7 @@ services:
 
   #----------------------------------------------------------------
   keycloak:
-    image: cgr.dev/chainguard/keycloak:latest@sha256:7e06ca655329cb8256ee2d226e32d48377a1d0e436de4fb10bdd428ed4848afa # 25.0.1
+    image: keycloak/keycloak:25.0
     restart: unless-stopped
     command: ['start-dev']
     environment:
@@ -130,8 +131,8 @@ services:
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: changeme
-      KC_HOSTNAME: '<https://keycloak.opentdf.local:9443>'
-      KC_HOSTNAME_ADMIN: '<https://keycloak.opentdf.local:9443>'
+      KC_HOSTNAME: 'https://keycloak.opentdf.local:9443'
+      KC_HOSTNAME_ADMIN: 'https://keycloak.opentdf.local:9443'
       KC_HTTP_ENABLED: 'true'
       KC_HTTP_PORT: 8888
       KEYCLOAK_ADMIN: admin
@@ -150,20 +151,20 @@ services:
         condition: service_healthy
         restart: true
   keycloak-db:
-    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: changeme
       POSTGRES_USER: postgres
       POSTGRES_DB: keycloak
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 2m
   download-keycloak-config:
-    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    image: curlimages/curl:latest
     volumes:
       - configs:/configs
     command: ['-o', '/configs/keycloak-config.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/cmd/keycloak_data.yaml']
@@ -201,7 +202,7 @@ services:
 
   #----------------------------------------------------------------
   download-platform-config:
-    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    image: curlimages/curl:latest
     volumes:
       - configs:/configs
     command: ['-o', '/configs/.opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
@@ -209,10 +210,12 @@ services:
       ensure-permissions:
         condition: service_completed_successfully
   modify-platform-config:
-    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    image: bash:latest
     volumes:
       - configs:/configs
     command:
+      - bash
+      - -c
       - |
         echo "Modifying /configs/.opentdf.yaml"
         echo "$(</configs/.opentdf.yaml )"
@@ -275,7 +278,7 @@ services:
     environment:
       OPENTDF_DB_HOST: platform-db
       OPENTDF_DB_USER: postgres
-      OPENTDF_DB_PASSWORD: changeme2
+      OPENTDF_DB_PASSWORD: changeme
     depends_on:
       keycloak:
         condition: service_healthy
@@ -298,14 +301,14 @@ services:
       check-certs:
         condition: service_completed_successfully
   platform-db:
-    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
       POSTGRES_DB: opentdf
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
