@@ -45,7 +45,7 @@ import (
 )
 
 func main() {
-    platformEndpoint := "http://localhost:9002"
+    platformEndpoint := "http://localhost:8080"
     
     // Create authenticated client
     client, err := sdk.New(
@@ -75,7 +75,7 @@ public class AuthorizationSetup {
     public static void main(String[] args) {
         String clientId = "opentdf";
         String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:9002";
+        String platformEndpoint = "http://localhost:8080";
         
         SDKBuilder builder = new SDKBuilder();
         SDK sdk = builder.platformEndpoint(platformEndpoint)
@@ -95,7 +95,7 @@ public class AuthorizationSetup {
 import { SDK } from '@opentdf/client';
 
 const sdk = new SDK({
-  platformEndpoint: 'http://localhost:9002',
+  platformEndpoint: 'http://localhost:8080',
   clientId: 'opentdf',
   clientSecret: 'secret'
 });
