@@ -967,6 +967,113 @@ async function getBulkDecisions(sdk) {
 ```
 
 </TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedException {
+    GetDecisionBulkRequest request = GetDecisionBulkRequest.newBuilder()
+        .addDecisionRequests(
+            GetDecisionMultiResourceRequest.newBuilder()
+                .setEntityIdentifier(
+                    EntityIdentifier.newBuilder()
+                        .setEntityChain(
+                            EntityChain.newBuilder()
+                                .addEntities(
+                                    Entity.newBuilder()
+                                        .setId("user-123")
+                                        .setEmailAddress("user@company.com")
+                                )
+                        )
+                )
+                .setAction(
+                    Action.newBuilder()
+                        .setName("decrypt")
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-1")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/public")
+                        )
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-2")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/confidential")
+                        )
+                )
+        )
+        .build();
+    
+    GetDecisionBulkResponse resp = sdk.getServices()
+        .authorization()
+        .getDecisionBulk(request)
+        .get();
+    
+    for (GetDecisionMultiResourceResponse response : resp.getDecisionResponsesList()) {
+        if (response.hasAllPermitted()) {
+            System.out.println("All resources permitted: " + response.getAllPermitted().getValue());
+        }
+        for (ResourceDecision resourceDecision : response.getResourceDecisionsList()) {
+            System.out.println("Resource " + resourceDecision.getEphemeralResourceId() + 
+                ": " + resourceDecision.getDecision());
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getBulkDecisions(sdk) {
+  const request = {
+    decisionRequests: [{
+      entityIdentifier: {
+        entityChain: {
+          entities: [{
+            id: 'user-123',
+            emailAddress: 'user@company.com'
+          }]
+        }
+      },
+      action: {
+        name: 'decrypt'
+      },
+      resources: [
+        {
+          ephemeralId: 'resource-1',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/public']
+          }
+        },
+        {
+          ephemeralId: 'resource-2',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/confidential']
+          }
+        }
+      ]
+    }]
+  };
+  
+  const response = await sdk.authorization.getDecisionBulk(request);
+  
+  response.decisionResponses.forEach(resp => {
+    if (resp.allPermitted !== undefined) {
+      console.log('All resources permitted:', resp.allPermitted.value);
+    }
+    resp.resourceDecisions.forEach(resourceDecision => {
+      console.log(`Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`);
+    });
+  });
+}
+```
+
+</TabItem>
 </Tabs>
 
 ## Entity Types and Authentication
@@ -1065,6 +1172,70 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
             fmt.Printf("Obligations: %v\n", dr.GetObligations())
         }
     }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getDecisionWithToken(SDK sdk, String jwtToken) throws ExecutionException, InterruptedException {
+    GetDecisionRequest request = GetDecisionRequest.newBuilder()
+        .setEntityIdentifier(
+            EntityIdentifier.newBuilder()
+                .setToken(
+                    Token.newBuilder()
+                        .setId("token-1")
+                        .setJwt(jwtToken)
+                )
+        )
+        .setAction(
+            Action.newBuilder()
+                .setName("decrypt")
+        )
+        .setResource(
+            Resource.newBuilder()
+                .setAttributeValues(
+                    Resource.AttributeValues.newBuilder()
+                        .addFqns("https://company.com/attr/classification/value/public")
+                )
+        )
+        .build();
+    
+    GetDecisionResponse resp = sdk.getServices()
+        .authorization()
+        .getDecision(request)
+        .get();
+    
+    System.out.println("Token-based decision: " + resp.getDecision().getDecision());
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getDecisionWithToken(sdk, jwtToken) {
+  const request = {
+    entityIdentifier: {
+      token: {
+        id: 'token-1',
+        jwt: jwtToken
+      }
+    },
+    action: {
+      name: 'decrypt'
+    },
+    resource: {
+      attributeValues: {
+        fqns: ['https://company.com/attr/classification/value/public']
+      }
+    }
+  };
+  
+  const response = await sdk.authorization.getDecision(request);
+  
+  console.log('Token-based decision:', response.decision.decision);
 }
 ```
 
