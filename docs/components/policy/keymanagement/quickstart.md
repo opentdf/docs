@@ -85,11 +85,11 @@ in opentdf.
 | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
 | `KEY_MODE_CONFIG_ROOT_KEY`   | 1            | The symmetric wrapping (root) key is stored with the platform configuration and the wrapped KAS key is stored in the platform database.|
 | `KEY_MODE_PROVIDER_ROOT_KEY` | 2            | The symmetric wrapping (root) key is stored external to the platform using a KMS or HSM interface. The wrapped KAS key is stored in the platform's database.|
-| `KEY_MODE_REMOTE`            | 3            | The private portion of the asymmetric key is stored external to the platform using a KMS or HSM interface. This is also referred to as `STRICT_MODE`. No root key is required here. |
+| `KEY_MODE_REMOTE`            | 3            | The private portion of the asymmetric key is stored external to the platform using a KMS or HSM interface. This is also referred to as `STRICT_MODE`. No symmetric (root) key is required here. |
 | `KEY_MODE_PUBLIC_KEY_ONLY`   | 4            | No private key information is stored. This is used when importing another org's policy information.|
 
 - The **public_key_ctx** holds the public key for the asymmetric key pair. (Required)
-- The **private_key_ctx** holds the encrypted private key and a **key_id** specific to the symmetric key that is wrapping that key. For keys of mode **KEY_MODE_REMOTE**, the **key_id** within private_key_ctx is used for identifying the remote private key. Our [key managers](./key_managers.md) use the **key_id** field present within the private_key_ctx when making requests to your external KMS/HSM instead of the **key_id** field at the root of the object. We do this to allow for larger key identifiers, which might be necessary for external providers. (Ex: arns with AWS)
+- The **private_key_ctx** holds the encrypted private key and a **key_id** specific to the symmetric key that is wrapping the private key. For keys of mode **KEY_MODE_REMOTE**, the **key_id** within private_key_ctx is used for identifying the remote private key. Our [key managers](./key_managers.md) use the **key_id** field present within the private_key_ctx when making requests to your external KMS/HSM instead of the **key_id** field at the root of the object. We do this to allow for larger key identifiers, which might be necessary for external providers. (Ex: arns with AWS)
 
 :::important
 Wrapped_Key is only required for KEY_MODE_CONFIG_ROOT_KEY and KEY_MODE_PROVIDER_ROOT_KEY.
