@@ -810,6 +810,162 @@ async function getBulkDecisions(sdk) {
 }
 ```
 
+#### V1 API (Legacy)
+
+```go
+func getBulkDecisionsV1(client *sdk.SDK) {
+    // V1 API uses GetDecisions for bulk processing
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "decrypt"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "user@company.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/public"},
+            },
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/confidential"},
+            },
+        },
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(),
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Entity chain %s: %v\n",
+            dr.GetEntityChainId(),
+            dr.GetDecision())
+        if len(dr.GetObligations()) > 0 {
+            fmt.Printf("Obligations: %v\n", dr.GetObligations())
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedException {
+    GetDecisionBulkRequest request = GetDecisionBulkRequest.newBuilder()
+        .addDecisionRequests(
+            GetDecisionMultiResourceRequest.newBuilder()
+                .setEntityIdentifier(
+                    EntityIdentifier.newBuilder()
+                        .setEntityChain(
+                            EntityChain.newBuilder()
+                                .addEntities(
+                                    Entity.newBuilder()
+                                        .setId("user-123")
+                                        .setEmailAddress("user@company.com")
+                                )
+                        )
+                )
+                .setAction(
+                    Action.newBuilder()
+                        .setName("decrypt")
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-1")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/public")
+                        )
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-2")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/confidential")
+                        )
+                )
+        )
+        .build();
+    
+    GetDecisionBulkResponse resp = sdk.getServices()
+        .authorization()
+        .getDecisionBulk(request)
+        .get();
+    
+    for (GetDecisionMultiResourceResponse response : resp.getDecisionResponsesList()) {
+        if (response.hasAllPermitted()) {
+            System.out.println("All resources permitted: " + response.getAllPermitted().getValue());
+        }
+        for (ResourceDecision resourceDecision : response.getResourceDecisionsList()) {
+            System.out.println("Resource " + resourceDecision.getEphemeralResourceId() + 
+                ": " + resourceDecision.getDecision());
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getBulkDecisions(sdk) {
+  const request = {
+    decisionRequests: [{
+      entityIdentifier: {
+        entityChain: {
+          entities: [{
+            id: 'user-123',
+            emailAddress: 'user@company.com'
+          }]
+        }
+      },
+      action: {
+        name: 'decrypt'
+      },
+      resources: [
+        {
+          ephemeralId: 'resource-1',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/public']
+          }
+        },
+        {
+          ephemeralId: 'resource-2',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/confidential']
+          }
+        }
+      ]
+    }]
+  };
+  
+  const response = await sdk.authorization.getDecisionBulk(request);
+  
+  response.decisionResponses.forEach(resp => {
+    if (resp.allPermitted !== undefined) {
+      console.log('All resources permitted:', resp.allPermitted.value);
+    }
+    resp.resourceDecisions.forEach(resourceDecision => {
+      console.log(`Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`);
+    });
+  });
+}
+```
+
 </TabItem>
 </Tabs>
 
