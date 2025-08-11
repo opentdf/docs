@@ -39,7 +39,7 @@ be helpful for migrations.
 You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
 :::
 
-1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L630).
+1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L59).
 2. Once you have a **Key Access Server** registered you will then want to create a key for that registered KAS.
 
 The definition for creating a key can be found in the key_access_registry [proto](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L399-L421).
@@ -120,7 +120,7 @@ The above JSON request covers registering a key where the asymmetric key pair wi
 
 The above is a valid request for registering a key with the platform where the private key is stored externally from the platform. The difference between the two requests is:
 
-- The **wrapped_key** should not be within the **private_key_ctx**, in addition a provider configuration has been registered with the system. See details on [provider configuration](./key_managers.md#provider-configurations). In small detail, adding a provider configuration reference to a key tells KAS what [manager](./key_managers.md) should be used to complete a rewrap operation.
+- The **wrapped_key** should not be within the **private_key_ctx**, in addition a provider configuration has been registered with the system. See details on [provider configuration](./key_managers.md#provider-configurations). In small detail, adding a provider configuration reference to a key tells KAS what [key manager](./key_managers.md) should be used to complete a rewrap operation.
 
 ## Assigning Key Mappings (Optional, but recommended)
 
