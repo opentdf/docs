@@ -74,8 +74,8 @@ import java.util.concurrent.ExecutionException;
 public class AuthorizationSetup {
     public static void main(String[] args) {
         String clientId = "opentdf";
-        String clientSecret = "secret"; 
-        String platformEndpoint = "localhost:8080";
+        String clientSecret = "secret";
+        String platformEndpoint = "http://localhost:9002";
         
         SDKBuilder builder = new SDKBuilder();
         SDK sdk = builder.platformEndpoint(platformEndpoint)
@@ -234,7 +234,7 @@ func getEntitlementsWithScope(client *sdk.SDK) {
                 },
             },
         },
-        // Only return entitlements within this attribute scope
+        // When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value
         WithComprehensiveHierarchy: proto.Bool(true),
     }
     
@@ -298,11 +298,12 @@ func getDecision(client *sdk.SDK) {
         log.Fatal(err)
     }
     
-    if decision.Decision.Decision == authorization.Decision_DECISION_PERMIT {
+    resDecision := decision.GetDecision()
+    if resDecision.GetDecision() == authorization.Decision_DECISION_PERMIT {
         fmt.Println("Access granted")
         // Process any obligations
-        if len(decision.Decision.Obligations) > 0 {
-            fmt.Printf("Obligations to fulfill: %v\n", decision.Decision.Obligations)
+        if len(resDecision.GetObligations()) > 0 {
+            fmt.Printf("Obligations to fulfill: %v\n", resDecision.GetObligations())
         }
     } else {
         fmt.Println("Access denied")
@@ -448,12 +449,15 @@ func getBulkDecisions(client *sdk.SDK) {
         log.Fatal(err)
     }
     
-    for _, resp := range decisions.DecisionResponses {
-        fmt.Printf("All resources permitted: %v\n", resp.AllPermitted)
-        for _, resourceDecision := range resp.ResourceDecisions {
+    for _, resp := range decisions.GetDecisionResponses() {
+        allPermitted := resp.GetAllPermitted()
+        if allPermitted != nil {
+            fmt.Printf("All resources permitted: %v\n", allPermitted.GetValue())
+        }
+        for _, resourceDecision := range resp.GetResourceDecisions() {
             fmt.Printf("Resource %s: %v\n", 
-                resourceDecision.EphemeralResourceId,
-                resourceDecision.Decision)
+                resourceDecision.GetEphemeralResourceId(),
+                resourceDecision.GetDecision())
         }
     }
 }
@@ -566,19 +570,27 @@ func safeAuthorizationCall(client *sdk.SDK, req *authorization.GetDecisionReques
         // Log the error for debugging
         log.Printf("Authorization error: %v", err)
         
-        // Implement your fallback policy
+        // Implement your fallback policy. Choose one of the options below.
+        
         // Option 1: Deny by default (more secure)
-        return handleAccessDenied()
+        handleAccessDenied()
+        return
         
+        /*
         // Option 2: Allow by default (less secure, only for non-critical resources)
-        // return handleAccessAllowed()
+        handleAccessAllowed()
+        return
+        */
         
+        /*
         // Option 3: Retry with exponential backoff
-        // return retryWithBackoff(client, req)
+        retryWithBackoff(client, req)
+        return
+        */
     }
     
     // Process successful response
-    return handleDecisionResponse(decision)
+    handleDecisionResponse(decision)
 }
 ```
 
