@@ -34,10 +34,14 @@ package main
 
 import (
     "context"
+    "fmt"
     "log"
     
     "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/entity"
+    "github.com/opentdf/platform/protocol/go/policy"
     "github.com/opentdf/platform/sdk"
+    "google.golang.org/protobuf/proto"
 )
 
 func main() {
@@ -61,6 +65,11 @@ func main() {
 
 ```java
 import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.authorization.*;
+import io.opentdf.platform.entity.*;
+import io.opentdf.platform.policy.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class AuthorizationSetup {
     public static void main(String[] args) {
@@ -550,7 +559,7 @@ Always implement comprehensive error handling for authorization calls:
 <TabItem value="go" label="Go">
 
 ```go
-func safeAuthorizationCall(client *sdk.SDK) {
+func safeAuthorizationCall(client *sdk.SDK, req *authorization.GetDecisionRequest) {
     decision, err := client.Authorization.GetDecision(context.Background(), req)
     
     if err != nil {
