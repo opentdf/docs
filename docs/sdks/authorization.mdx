@@ -126,9 +126,9 @@ func getEntitlements(client *sdk.SDK) {
             EntityChain: &entity.EntityChain{
                 Entities: []*entity.Entity{
                     {
-                        Id: "entity-1",
-                        EntityType: &entity.Entity_ClientId{
-                            ClientId: "opentdf",
+                        Id: "user-bob",
+                        EntityType: &entity.Entity_EmailAddress{
+                            EmailAddress: "bob@OrgA.com",
                         },
                     },
                 },
@@ -164,8 +164,8 @@ public void getEntitlements(SDK sdk) throws ExecutionException, InterruptedExcep
                     EntityChain.newBuilder()
                         .addEntities(
                             Entity.newBuilder()
-                                .setId("entity-1")
-                                .setClientId("opentdf")
+                                .setId("user-bob")
+                                .setEmailAddress("bob@OrgA.com")
                         )
                 )
         )
@@ -194,8 +194,8 @@ async function getEntitlements(sdk) {
     entityIdentifier: {
       entityChain: {
         entities: [{
-          id: 'entity-1',
-          clientId: 'opentdf'
+          id: 'user-bob',
+          emailAddress: 'bob@OrgA.com'
         }]
       }
     }
