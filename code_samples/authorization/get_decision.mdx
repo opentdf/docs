@@ -14,6 +14,7 @@ import (
 	"log"
 
 	"github.com/opentdf/platform/protocol/go/authorization"
+	"github.com/opentdf/platform/protocol/go/entity"
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/sdk"
 )
@@ -32,47 +33,36 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get Entitlements
-
-	decision := &authorization.GetDecisionsRequest{
-		DecisionRequests: []*authorization.DecisionRequest{
-			{
-				Actions: []*policy.Action{
+	// Get Decision using v2 API
+	decisionReq := &authorization.GetDecisionRequest{
+		EntityIdentifier: &authorization.EntityIdentifier{
+			EntityChain: &entity.EntityChain{
+				Entities: []*entity.Entity{
 					{
-						Value: &policy.Action_Standard{
-							Standard: policy.Action_STANDARD_ACTION_DECRYPT,
+						Id: "entity-1",
+						EntityType: &entity.Entity_ClientId{
+							ClientId: "opentdf",
 						},
-					},
-				},
-				EntityChains: []*authorization.EntityChain{
-					{
-						Id: "entity-chain-1",
-						Entities: []*authorization.Entity{
-							{
-								Id: "entity-1",
-								EntityType: &authorization.Entity_ClientId{
-									ClientId: "opentdf",
-								},
-							},
-						},
-					},
-				},
-				ResourceAttributes: []*authorization.ResourceAttribute{
-					{
-						ResourceAttributesId: "resource-attribute-1",
-						AttributeValueFqns:   []string{"https://opentdf.io/attr/role/value/developer"},
 					},
 				},
 			},
 		},
+		Action: &policy.Action{
+			Name: "decrypt",
+		},
+		Resource: &authorization.Resource{
+			AttributeValues: &authorization.Resource_AttributeValues{
+				Fqns: []string{"https://opentdf.io/attr/role/value/developer"},
+			},
+		},
 	}
 
-	decisions, err := client.Authorization.GetDecisions(context.Background(), decision)
+	decision, err := client.Authorization.GetDecision(context.Background(), decisionReq)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Decisions: %v", decisions.GetDecisionResponses())
+	log.Printf("Decision: %v", decision.GetDecision().GetDecision())
 }
 ```
 

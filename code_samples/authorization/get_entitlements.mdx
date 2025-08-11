@@ -14,6 +14,7 @@ import (
 	"log"
 
 	"github.com/opentdf/platform/protocol/go/authorization"
+	"github.com/opentdf/platform/protocol/go/entity"
 	"github.com/opentdf/platform/sdk"
 )
 
@@ -31,14 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get Entitlements
-
+	// Get Entitlements using v2 API
 	entitlementReq := &authorization.GetEntitlementsRequest{
-		Entities: []*authorization.Entity{
-			{
-				Id: "entity-1",
-				EntityType: &authorization.Entity_ClientId{
-					ClientId: "opentdf",
+		EntityIdentifier: &authorization.EntityIdentifier{
+			EntityChain: &entity.EntityChain{
+				Entities: []*entity.Entity{
+					{
+						Id: "entity-1",
+						EntityType: &entity.Entity_ClientId{
+							ClientId: "opentdf",
+						},
+					},
 				},
 			},
 		},
