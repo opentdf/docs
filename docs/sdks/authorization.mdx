@@ -670,7 +670,7 @@ func getDecisionWithToken(client *sdk.SDK, jwtToken string) {
         log.Fatal(err)
     }
     
-    fmt.Printf("Token-based decision: %v\n", decision.Decision.Decision)
+    fmt.Printf("Token-based decision: %v\n", decision.GetDecision().GetDecision())
 }
 ```
 
