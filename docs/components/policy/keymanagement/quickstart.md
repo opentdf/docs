@@ -29,7 +29,7 @@ be helpful for migrations.
 
 ## Key management is activated for KAS
 
-- To activate key management for KAS you will need to modify the **key_management** field within the opentdf.yaml file to be true. [opentdf-dev.yaml](https://github.com/opentdf/platform/blob/main/opentdf-dev.yaml#L24).
+- To activate key management for KAS you will need to modify the **key_management** field within the opentdf.yaml file to be true. [opentdf-dev.yaml](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/opentdf-dev.yaml#L25).
 - You will also need to set a root key to be used with the basic manager. The root key should be 32 bytes long.
   - In addition, the root key should be hex encoded.
 
@@ -39,15 +39,15 @@ be helpful for migrations.
 You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
 :::
 
-1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L59).
+1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L59).
 2. Once you have a **Key Access Server** registered you will then want to create a key for that registered KAS.
 
-The definition for creating a key can be found in the key_access_registry [proto](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L399-L421).
+The definition for creating a key can be found in the key_access_registry [proto](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L379).
 
 Let's look at a valid request and dissect it:
 
 :::note
-These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/main/service/internal/fixtures/policy_fixtures.yaml#L541) file located
+These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/internal/fixtures/policy_fixtures.yaml#L528) file located
 in opentdf.
 :::
 
