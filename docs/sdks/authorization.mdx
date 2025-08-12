@@ -403,6 +403,10 @@ public void getDecision(SDK sdk) throws ExecutionException, InterruptedException
     
     if (resp.getDecision().getDecision() == Decision.DECISION_PERMIT) {
         System.out.println("Access granted");
+        // Process any obligations
+        if (resp.getDecision().getObligationsCount() > 0) {
+            System.out.println("Obligations to fulfill: " + resp.getDecision().getObligationsList());
+        }
     } else {
         System.out.println("Access denied");
     }

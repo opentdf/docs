@@ -62,7 +62,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Decision: %v", decision.GetDecision().GetDecision())
+	decisionResult := decision.GetDecision()
+	log.Printf("Decision: %v", decisionResult.GetDecision())
+	if decisionResult.GetDecision() == authorization.Decision_DECISION_PERMIT && len(decisionResult.GetObligations()) > 0 {
+		log.Printf("Obligations: %v", decisionResult.GetObligations())
+	}
 }
 ```
 
@@ -119,7 +123,11 @@ public class GetDecision {
 
         GetDecisionResponse resp = sdk.getServices().authorization().getDecision(request).get();
 
-        System.out.println("Decision: " + resp.getDecision().getDecision());
+        Decision decision = resp.getDecision();
+        System.out.println("Decision: " + decision.getDecision());
+        if (decision.getDecision() == Decision.DECISION_PERMIT && decision.getObligationsCount() > 0) {
+            System.out.println("Obligations: " + decision.getObligationsList());
+        }
     }
 }
 ```
@@ -128,6 +136,55 @@ public class GetDecision {
 <TabItem value="js" label="Javascript">
 
 ```javascript
+const { AuthzClient } = require('@opentdf/client');
+
+async function main() {
+  const platformEndpoint = 'http://localhost:8080';
+  const clientId = 'opentdf';
+  const clientSecret = 'secret';
+
+  // Create a new client
+  const client = new AuthzClient({
+    endpoint: platformEndpoint,
+    auth: {
+      clientId,
+      clientSecret
+    }
+  });
+
+  // Get Decision using v2 API
+  const request = {
+    entityIdentifier: {
+      entityChain: {
+        entities: [{
+          id: 'entity-1',
+          clientId: 'opentdf'
+        }]
+      }
+    },
+    action: {
+      name: 'decrypt'
+    },
+    resource: {
+      attributeValues: {
+        fqns: ['https://opentdf.io/attr/role/value/developer']
+      }
+    }
+  };
+
+  try {
+    const response = await client.getDecision(request);
+    
+    console.log('Decision:', response.decision.decision);
+    if (response.decision.decision === 'DECISION_PERMIT' && response.decision.obligations?.length > 0) {
+      console.log('Obligations:', response.decision.obligations);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+main();
 ```
 
 </TabItem>
