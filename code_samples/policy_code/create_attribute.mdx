@@ -11,10 +11,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"log"
 
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
 	"github.com/opentdf/platform/sdk"
 )
 
@@ -32,20 +34,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Create a new attribute
-	namespaceID := "f9ac9403-a12f-4ed3-b3c9-a46910361b4d"
+	// List namespaces to get a namespace ID
+	listResponse, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+	if err != nil {
+		log.Fatalf("failed to list namespaces: %s", err)
+	}
 
+	if len(listResponse.GetNamespaces()) == 0 {
+		log.Fatal("no namespaces found")
+	}
+
+	namespaceID := listResponse.GetNamespaces()[0].GetId()
+
+	// Create a new attribute
 	attrRequest := &attributes.CreateAttributeRequest{
 		NamespaceId: namespaceID,
-		Name:        "role",
+		Name:        "role" + "-" + rand.Text()[:4],
 		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
 		Values:      []string{"admin", "developer", "guest"},
 	}
 
-	_, err = client.Attributes.CreateAttribute(context.Background(), attrRequest)
+	attribute, err := client.Attributes.CreateAttribute(context.Background(), attrRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Created attribute: %s with ID: %s in namespace: %s\n", attribute.GetAttribute().Name, attribute.GetAttribute().GetId(), namespaceID)
 }
 ```
 

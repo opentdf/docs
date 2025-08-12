@@ -20,7 +20,9 @@ Components of Policy include:
   - Namespaces
   - Definitions
   - Values
+- Actions
 - Subject Mappings
   - Subject Condition Sets
+- Registered Resources
 - Resource Mappings
 - Key Access Grants (KAS Grants)

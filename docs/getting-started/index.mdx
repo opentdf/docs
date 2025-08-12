@@ -18,6 +18,13 @@ This guide will walk you through setting up a new platform locally and walk you 
 
 The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
 
+> **Note for Apple M4 chip users:**  
+> If you are running on an Apple M4 chip, set the Java environment variable before running any commands:
+> ```sh
+> export JAVA_OPTS_APPEND="-XX:UseSVE=0"
+> ```
+> This resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
+
 :::warning
 Not for production use.
 :::
@@ -55,7 +62,6 @@ configs:
       }
 services:
   caddy:
-    #image: cgr.dev/chainguard/caddy:latest-dev #@sha256:20e31e59503a775f28e7eb0d724384055236a35c52ff4e5aca6caac8390d61dc
     image: caddy:alpine
     command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
     configs:
@@ -73,7 +79,7 @@ services:
       timeout: 5s
       retries: 3
   check-certs:
-    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    image: bash:latest
     volumes:
       - type: volume
         source: caddy_data
@@ -81,6 +87,8 @@ services:
         volume:
           subpath: caddy/certificates/local/keycloak.opentdf.local/
     command:
+      - bash
+      - -c
       - |
         echo "Checking certificates"
         ls -alh /etc/ssl/certs
@@ -96,11 +104,11 @@ services:
     - 'sh'
     - '-c'
     - |
-      chmod -R 665 /configs
+      chmod -R 777 /configs
       ls -alh /configs
-      chmod -R 665 /keys
+      chmod -R 777 /keys
       ls -alh /keys
-      chmod -R 665 /data
+      chmod -R 777 /data
       ls -alh /data
     volumes:
       - configs:/configs
@@ -113,7 +121,7 @@ services:
 
   #----------------------------------------------------------------
   keycloak:
-    image: cgr.dev/chainguard/keycloak:latest@sha256:7e06ca655329cb8256ee2d226e32d48377a1d0e436de4fb10bdd428ed4848afa # 25.0.1
+    image: keycloak/keycloak:25.0
     restart: unless-stopped
     command: ['start-dev']
     environment:
@@ -123,16 +131,17 @@ services:
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: changeme
-      KC_HOSTNAME: '<https://keycloak.opentdf.local:9443>'
-      KC_HOSTNAME_ADMIN: '<https://keycloak.opentdf.local:9443>'
+      KC_HOSTNAME: 'https://keycloak.opentdf.local:9443'
+      KC_HOSTNAME_ADMIN: 'https://keycloak.opentdf.local:9443'
       KC_HTTP_ENABLED: 'true'
       KC_HTTP_PORT: 8888
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: changeme
       KC_FEATURES: 'preview,token-exchange'
       KC_HEALTH_ENABLED: 'true'
+      JAVA_OPTS_APPEND: '${JAVA_OPTS_APPEND:-}'
     healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/ready']
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java ${JAVA_OPTS_APPEND} /tmp/HealthCheck.java http://localhost:9000/health/ready']
       interval: 5s
       timeout: 10s
       retries: 3
@@ -142,20 +151,20 @@ services:
         condition: service_healthy
         restart: true
   keycloak-db:
-    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: changeme
       POSTGRES_USER: postgres
       POSTGRES_DB: keycloak
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 2m
   download-keycloak-config:
-    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    image: curlimages/curl:latest
     volumes:
       - configs:/configs
     command: ['-o', '/configs/keycloak-config.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/cmd/keycloak_data.yaml']
@@ -193,7 +202,7 @@ services:
 
   #----------------------------------------------------------------
   download-platform-config:
-    image: cgr.dev/chainguard/curl:latest-dev@sha256:8afd56d4c8692ddfdc0ed2b54da2d1e02c0946433cb318700645f9cd70ccdb3a
+    image: curlimages/curl:latest
     volumes:
       - configs:/configs
     command: ['-o', '/configs/.opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
@@ -201,10 +210,12 @@ services:
       ensure-permissions:
         condition: service_completed_successfully
   modify-platform-config:
-    image: cgr.dev/chainguard/bash:latest@sha256:553a2674ec4f7d8a701873c1dcb43138f83e787ac1d17043cba0085ae3bd7038
+    image: bash:latest
     volumes:
       - configs:/configs
     command:
+      - bash
+      - -c
       - |
         echo "Modifying /configs/.opentdf.yaml"
         echo "$(</configs/.opentdf.yaml )"
@@ -267,7 +278,7 @@ services:
     environment:
       OPENTDF_DB_HOST: platform-db
       OPENTDF_DB_USER: postgres
-      OPENTDF_DB_PASSWORD: changeme2
+      OPENTDF_DB_PASSWORD: changeme
     depends_on:
       keycloak:
         condition: service_healthy
@@ -290,14 +301,14 @@ services:
       check-certs:
         condition: service_completed_successfully
   platform-db:
-    image: cgr.dev/chainguard/postgres:latest@sha256:f359eed58238db0c9dc24b791e11b197e997e799eb42455f31099fc1492617e7
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
       POSTGRES_DB: opentdf
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -314,17 +325,9 @@ In order for the services to communicate correctly you will need to update your 
 echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
 ```
 
-## Export Environment Variables
-
-For the remainder of this guide you will want to export the following environment variables.
-
-```shell
-export PLATFORM_HOST=https://platform.opentdf.local:8443
-```
-
 ## Trust Self Signed Certificates
 
-During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command.
+During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
 
 Example of extracting the certificate from the container.
 
@@ -340,12 +343,140 @@ docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/
 docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
+### Import and Trust Certificates by Operating System
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+1. **Import certificates to Keychain:**
+   ```shell
+   # Import both certificates to the System keychain
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/keycloak.opentdf.local.crt
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/platform.opentdf.local.crt
+   ```
+
+2. **Alternative: Using Keychain Access GUI:**
+   - Open **Keychain Access** (Applications → Utilities → Keychain Access)
+   - Drag and drop both `.crt` files into the **System** keychain
+   - Double-click each certificate and set **Trust** → **When using this certificate** to **Always Trust**
+   - Enter your admin password when prompted
+
+3. **Verify certificates are trusted:**
+   ```shell
+   security verify-cert -c ./opentdf-certs/keycloak.opentdf.local.crt
+   security verify-cert -c ./opentdf-certs/platform.opentdf.local.crt
+   ```
+
+**References:**
+- [Add certificates to a keychain](https://support.apple.com/guide/keychain-access/add-certificates-to-a-keychain-kyca2431/mac)
+- [Change trust settings of a certificate](https://support.apple.com/guide/keychain-access/change-the-trust-settings-of-a-certificate-kyca11871/mac)
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+1. **Import certificates using PowerShell (Run as Administrator):**
+   ```powershell
+   # Import to Trusted Root Certification Authorities
+   Import-Certificate -FilePath ".\opentdf-certs\keycloak.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
+   Import-Certificate -FilePath ".\opentdf-certs\platform.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
+   ```
+
+2. **Alternative: Using Certificate Manager GUI:**
+   - Press `Win + R`, type `certmgr.msc`, and press Enter
+   - Navigate to **Trusted Root Certification Authorities** → **Certificates**
+   - Right-click and select **All Tasks** → **Import**
+   - Follow the wizard to import both `.crt` files
+   - Choose **Place all certificates in the following store** → **Trusted Root Certification Authorities**
+
+3. **Alternative: Using MMC (Microsoft Management Console):**
+   - Press `Win + R`, type `mmc`, and press Enter
+   - Go to **File** → **Add/Remove Snap-in**
+   - Add **Certificates** snap-in for **Local Computer**
+   - Navigate to **Certificates (Local Computer)** → **Trusted Root Certification Authorities** → **Certificates**
+   - Right-click and import both certificates
+
+</details>
+
+<details>
+<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-certificates directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /usr/local/share/ca-certificates/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /usr/local/share/ca-certificates/
+   
+   # Update the certificate store
+   sudo update-ca-certificates
+   ```
+
+2. **Verify certificates are installed:**
+   ```shell
+   # Check if certificates are in the trusted store
+   awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt | grep opentdf
+   ```
+
+</details>
+
+<details>
+<summary><strong>Linux (RHEL/CentOS/Fedora)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-trust directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
+   
+   # Update the certificate store
+   sudo update-ca-trust
+   ```
+
+2. **Verify certificates are installed:**
+   ```shell
+   # Check if certificates are trusted
+   trust list | grep "opentdf.local"
+   ```
+
+</details>
+
+<details>
+<summary><strong>Linux (Arch Linux)</strong></summary>
+
+1. **Copy certificates to system certificate directory:**
+   ```shell
+   # Copy certificates to the ca-certificates directory
+   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
+   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
+   
+   # Update the certificate store
+   sudo trust extract-compat
+   ```
+
+</details>
+
+:::tip Browser-specific Certificate Installation
+Some browsers (like Firefox) maintain their own certificate stores. If you continue to see certificate warnings in your browser after following the OS-specific steps above, you may need to import the certificates directly into your browser's certificate store.
+:::
+
+:::warning Certificate Validity
+These self-signed certificates are only valid for local development. Never use self-signed certificates in production environments.
+:::
+
+## Create a Profile
+Creating a profile allows us to store the host we want to connect to and then to tie our credentials to it when we login.
+
+```shell
+otdfctl profile create platform-otdf-local https://platform.otdf.local:8443
+```
+
 ## Login to the Platform
 
 During the provisioning of the platform, a few test clients were created in **Keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
 
 ```shell
-otdfctl --host $PLATFORM_HOST auth client-credentials --client-id opentdf --client-secret secret
+otdfctl --profile platform-otdf-local auth client-credentials opentdf secret
 ```
 
 ## Create A Namespace
@@ -355,7 +486,7 @@ In this first step you are going to create a new `namespace`. A namespace is a w
 You will see an empty list of namespaces when you first start the platform.
 
 ```shell
-otdfctl --host $PLATFORM_HOST --tls-no-verify  policy attributes namespaces list
+otdfctl --profile platform-otdf-local policy attributes namespaces list
 ```
 
 ```shell
@@ -370,7 +501,7 @@ NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 ### Create a new namespace
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces create --name opentdf.io
+otdfctl --profile platform-otdf-local policy attributes namespaces create --name opentdf.io
 ```
 
 ```shell
@@ -391,7 +522,7 @@ NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to 
 With that namespace created we should be able to see it in the list of namespaces as well as get the details of the namespace.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces list
+otdfctl --profile platform-otdf-local policy attributes namespaces list
 ```
   
 ```shell
@@ -413,7 +544,7 @@ export NAMESPACE_ID=<id>
 ### Get the details of the namespace
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes namespaces get --id=$NAMESPACE_ID
+otdfctl --profile platform-otdf-local policy attributes namespaces get --id=$NAMESPACE_ID
 ```
 
 ```shell
@@ -457,7 +588,7 @@ You can also create values at the same time when creating the definition. This i
 ### Create attribute definition
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
+otdfctl --profile platform-otdf-local policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
 ```
 
 ```shell
@@ -485,7 +616,7 @@ export ATTRIBUTE_ID=<id>
 
 ```shell
 # Create admin value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value admin
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value admin
 ```
 
 ```shell
@@ -510,7 +641,7 @@ export ADMIN_VALUE_ID=<id>
 
 ```shell
 # Create developer value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value developer
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value developer
 ```
 
 ```shell
@@ -535,7 +666,7 @@ export DEVELOPER_VALUE_ID=<id>
 
 ```shell
 # Create guest value
-otdfctl --host $PLATFORM_HOST  policy attributes values create -a $ATTRIBUTE_ID --value guest
+otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value guest
 ```
 
 ```shell
@@ -563,7 +694,7 @@ export GUEST_VALUE_ID=<id>
 Now that we have listed values for the attribute, we can get the details of the attribute. You should see the added values in the list now.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy attributes get --id=$ATTRIBUTE_ID
+otdfctl --profile platform-otdf-local policy attributes get --id=$ATTRIBUTE_ID
 ```
 
 ```shell
@@ -595,7 +726,7 @@ With `subject mappings` there is a sub-resource  called `subject condition sets`
 Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set. You can use this file to create a new condition set.
 
 ```shell
- otdfctl --host $PLATFORM_HOST  policy subject-condition-sets create -j <path to file>/subject_condition_set.json
+ otdfctl --profile platform-otdf-local policy subject-condition-sets create -j <path to file>/subject_condition_set.json
 ```
 
 ```shell
@@ -622,7 +753,7 @@ export SUBJECT_CONDITION_SET_ID=<id>
 With the condition set created we can now create a new subject mapping that is tied to the subject condition set.
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -659,13 +790,13 @@ Within the `otdfctl` CLI there is basic functionality to interact with `zTDF` an
 #### Example zTDF encryption
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3
+echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
 ```
 
 #### Example nanoTDF encryption
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano
+echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano
 ```
 
 ### Decrypt Data Without Attributes
@@ -673,7 +804,7 @@ echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example
 Because we didn't add any attributes to the data we encrypted, we should be able to decrypt the data without any issues.
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -682,12 +813,12 @@ my first encrypted tdf
 ```
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+my first encrypted nano tdf
 ```
 
 ### Encrypt Data With Attributes
@@ -701,13 +832,13 @@ rm example.tdf example.nano.tdf
 #### Example zTDF encryption with attributes
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
+echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
 ```
 
 #### Example nanoTDF encryption with attributes
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --host $PLATFORM_HOST -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
+echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
 ```
 
 ### Decrypt Data With Attributes
@@ -717,7 +848,7 @@ In this first example we will try to decrypt the data but it will fail because w
 #### Example zTDF failed decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -729,7 +860,7 @@ ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap split
 #### Example nanoTDF failed decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
@@ -742,7 +873,7 @@ What we have to do now is assign the entitlement of `https://opentdf.io/attr/rol
 #### Create a new subject mapping
 
 ```shell
-otdfctl --host $PLATFORM_HOST  policy subject-mappings create --action-standard DECRYPT --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -767,7 +898,7 @@ Now that we have the subject mapping in place we should be able to decrypt the d
 #### Example zTDF successful decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```
 
 ```shell
@@ -778,12 +909,12 @@ my first encrypted tdf
 #### Example nanoTDF successful decryption
 
 ```shell
-otdfctl decrypt --host $PLATFORM_HOST --tdf-type nano example.nano.tdf
+otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+my first encrypted nano tdf
 ```
 
 ## Takeaways and Next Steps
