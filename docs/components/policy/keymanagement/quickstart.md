@@ -39,8 +39,8 @@ be helpful for migrations.
 You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
 :::
 
-1. You will want to have already created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L59).
-2. Once you have a **Key Access Server** registered you will then want to create a key for that registered KAS.
+1. You should already have created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L59).
+2. Once you have a **Key Access Server** registered you should then create a key for that registered KAS.
 
 The definition for creating a key can be found in the key_access_registry [proto](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L379).
 
@@ -85,7 +85,7 @@ in opentdf.
 | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
 | `KEY_MODE_CONFIG_ROOT_KEY`   | 1            | The symmetric wrapping (root) key is stored with the platform configuration and the wrapped KAS key is stored in the platform database.|
 | `KEY_MODE_PROVIDER_ROOT_KEY` | 2            | The symmetric wrapping (root) key is stored external to the platform using a KMS or HSM interface. The wrapped KAS key is stored in the platform's database.|
-| `KEY_MODE_REMOTE`            | 3            | The private portion of the asymmetric key is stored external to the platform using a KMS or HSM interface. This is also referred to as `STRICT_MODE`. No symmetric (root) key is required here. |
+| `KEY_MODE_REMOTE`            | 3            | The private portion of the asymmetric key is stored external to the platform using a KMS or HSM interface. This is also referred to as `STRICT_MODE`. No symmetric (root) key is required here since the platform is not storing any sensitive key material. |
 | `KEY_MODE_PUBLIC_KEY_ONLY`   | 4            | No private key information is stored. This is used when importing another org's policy information.|
 
 - The **public_key_ctx** holds the public key for the asymmetric key pair. (Required)
