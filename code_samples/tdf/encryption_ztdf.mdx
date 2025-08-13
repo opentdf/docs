@@ -20,7 +20,7 @@ import (
 func main() {
 	log.Println("🚀 Starting OpenTDF example...")
 
-	platformEndpoint := "http://localhost:9002"
+	platformEndpoint := "http://localhost:8080"
 	log.Printf("📡 Connecting to platform: %s", platformEndpoint)
 
 	// Create a new client
@@ -218,7 +218,7 @@ async function main() {
 
         // Write input data to temporary file
         const inputData = "This is sensitive data that will be encrypted with OpenTDF!";
-        console.log("📝 Writing input data to temp file...");
+        console.log("📝 Preparing sensitive data for encryption...");
         fs.writeFileSync(inputFile, inputData, 'utf8');
         console.log(`✅ Input file written: ${inputData}`);
 
@@ -261,29 +261,8 @@ async function main() {
         // Read and display the decrypted content
         const decryptedContent = fs.readFileSync(decryptedFile, 'utf8');
         console.log('✅ Data decrypted and saved to file!');
-        console.log(`📤 Decrypted content: "${decryptedContent}"`);
+        console.log(`📤 Decrypted content: \n\n"${decryptedContent}"\n\n`);
 
-        // Verify the round-trip worked
-        if (inputData === decryptedContent) {
-            console.log('🎉 SUCCESS: Input and decrypted data match perfectly!');
-        } else {
-            console.log('❌ ERROR: Input and decrypted data do not match!');
-            console.log(`Original: "${inputData}"`);
-            console.log(`Decrypted: "${decryptedContent}"`);
-        }
-
-        // Clean up temporary files
-        console.log("🧹 Cleaning up temporary files...");
-        try {
-            fs.unlinkSync(inputFile);
-            fs.unlinkSync(encryptedFile);
-            fs.unlinkSync(decryptedFile);
-            console.log("✅ Temporary files cleaned up");
-        } catch (err) {
-            console.log("⚠️  Warning: Could not clean up some temporary files:", err);
-        }
-
-        console.log("✅ Example complete!");
         process.exit(0);
     } catch (error) {
         console.error("❌ Error occurred:", error);
