@@ -1,3 +1,8 @@
+/*
+
+When making changes to this file, consider: https://virtru.atlassian.net/browse/DSPX-1577
+
+*/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -22,7 +27,7 @@ const specsProcessedDir = path.join(repoRoot, 'specs-processed');
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 // The location prefix of built OpenAPI documentation
-const OUTPUT_PREFIX = 'docs/OpenAPI-clients';
+const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
 
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
 const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
@@ -158,21 +163,21 @@ async function copySamplesToProcessedSpecs() {
   
   console.log('🔄 Ensuring sample files exist in "specs-processed" directory...');
   
-  const processedDir = path.resolve(__dirname, 'specs-processed');
-  fs.mkdirSync(processedDir, { recursive: true });
-  
+  // Use canonical processed and source directories
+  fs.mkdirSync(specsProcessedDir, { recursive: true });
+
   // Handle petstore specifically - it has a downloadUrl
-  const petstorePath = path.resolve(__dirname, 'specs-processed/petstore.yaml');
-  const petstoreSourcePath = path.resolve(__dirname, 'specs/petstore.yaml');
-  
+  const petstorePath = path.join(specsProcessedDir, 'petstore.yaml');
+  const petstoreSourcePath = path.join(specsDir, 'petstore.yaml');
+
   // Always copy from source directory, overwriting if it exists
   console.log(`Copying petstore spec from ${petstoreSourcePath}`);
   fs.copyFileSync(petstoreSourcePath, petstorePath);
-  
+
   // Handle bookstore specifically
-  const bookstorePath = path.resolve(__dirname, 'specs-processed/bookstore.yaml');
-  const bookstoreSourcePath = path.resolve(__dirname, 'specs/bookstore.yaml');
-  
+  const bookstorePath = path.join(specsProcessedDir, 'bookstore.yaml');
+  const bookstoreSourcePath = path.join(specsDir, 'bookstore.yaml');
+
   // Always copy from source directory, overwriting if it exists
   console.log(`Copying bookstore spec from ${bookstoreSourcePath}`);
   fs.copyFileSync(bookstoreSourcePath, bookstorePath);
@@ -206,14 +211,14 @@ async function preprocessOpenApiSpecs() {
 
         // Generate modified path if not specified
         if (!spec.specPathModified) {
-            // Store processed files in a 'specs-processed' directory by default
-            spec.specPathModified = path.join(
-                parsedPath.dir.replace(/^\.\/specs/, './specs-processed'),
-                parsedPath.base
-            );
+            // Extract the relative path from specsDir
+            const relativePath = path.relative(specsDir, spec.specPath);
+            
+            // Store processed files in 'specs-processed' directory while preserving the original directory structure
+            spec.specPathModified = path.join(specsProcessedDir, relativePath);
         }
 
-        const targetPath = path.resolve(__dirname, spec.specPathModified);
+        const targetPath = path.resolve(spec.specPathModified);
 
         console.log(`Processing: ${sourcePath} → ${targetPath}`);
 
@@ -313,10 +318,6 @@ Expand each section in the navigation panel to access the OpenAPI documentation 
     console.log('✨ OpenAPI preprocessing complete');
 };
 
-// Execute the preprocessing function
-preprocessOpenApiSpecs().catch(error => {
-    console.error('Failed to preprocess OpenAPI specs:', error);
-    process.exit(1);
-});
 
-export { openApiSpecs, openApiSpecsArray };
+// Export the function and data without automatically executing it
+export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs };
