@@ -1,17 +1,13 @@
 openapi: 3.1.0
 info:
-  title: policy.attributes
+  title: policy.obligations
 paths:
-  /policy.attributes.AttributesService/ListAttributes:
+  /policy.obligations.Service/ListObligations:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: ListAttributes
-      description: |-
-        --------------------------------------*
-         Attribute RPCs
-        ---------------------------------------
-      operationId: policy.attributes.AttributesService.ListAttributes
+        - policy.obligations.Service
+      summary: ListObligations
+      operationId: policy.obligations.Service.ListObligations
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -26,7 +22,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.ListAttributesRequest'
+              $ref: '#/components/schemas/policy.obligations.ListObligationsRequest'
         required: true
       responses:
         default:
@@ -40,13 +36,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.ListAttributesResponse'
-  /policy.attributes.AttributesService/ListAttributeValues:
+                $ref: '#/components/schemas/policy.obligations.ListObligationsResponse'
+  /policy.obligations.Service/GetObligation:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: ListAttributeValues
-      operationId: policy.attributes.AttributesService.ListAttributeValues
+        - policy.obligations.Service
+      summary: GetObligation
+      operationId: policy.obligations.Service.GetObligation
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -61,7 +57,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.ListAttributeValuesRequest'
+              $ref: '#/components/schemas/policy.obligations.GetObligationRequest'
         required: true
       responses:
         default:
@@ -75,13 +71,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.ListAttributeValuesResponse'
-  /policy.attributes.AttributesService/GetAttribute:
+                $ref: '#/components/schemas/policy.obligations.GetObligationResponse'
+  /policy.obligations.Service/GetObligationsByFQNs:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: GetAttribute
-      operationId: policy.attributes.AttributesService.GetAttribute
+        - policy.obligations.Service
+      summary: GetObligationsByFQNs
+      operationId: policy.obligations.Service.GetObligationsByFQNs
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -96,7 +92,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.GetAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.GetObligationsByFQNsRequest'
         required: true
       responses:
         default:
@@ -110,74 +106,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.GetAttributeResponse'
-  /attributes/*/fqn:
-    get:
-      tags:
-        - policy.attributes.AttributesService
-      summary: GetAttributeValuesByFqns
-      operationId: policy.attributes.AttributesService.GetAttributeValuesByFqns
-      parameters:
-        - name: fqns
-          in: query
-          description: |-
-            Required
-             Fully Qualified Names of attribute values (i.e. https://<namespace>/attr/<attribute_name>/value/<value_name>), normalized to lower case.
-          schema:
-            type: array
-            items:
-              type: string
-              maxItems: 250
-              minItems: 1
-            title: fqns
-            maxItems: 250
-            minItems: 1
-            description: |-
-              Required
-               Fully Qualified Names of attribute values (i.e. https://<namespace>/attr/<attribute_name>/value/<value_name>), normalized to lower case.
-        - name: withValue.withKeyAccessGrants
-          in: query
-          description: Deprecated
-          schema:
-            type: boolean
-            title: with_key_access_grants
-            description: Deprecated
-        - name: withValue.withSubjectMaps
-          in: query
-          schema:
-            type: boolean
-            title: with_subject_maps
-        - name: withValue.withResourceMaps
-          in: query
-          schema:
-            type: boolean
-            title: with_resource_maps
-        - name: withValue.withAttribute.withKeyAccessGrants
-          in: query
-          description: Deprecated
-          schema:
-            type: boolean
-            title: with_key_access_grants
-            description: Deprecated
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.GetAttributeValuesByFqnsResponse'
-  /policy.attributes.AttributesService/CreateAttribute:
+                $ref: '#/components/schemas/policy.obligations.GetObligationsByFQNsResponse'
+  /policy.obligations.Service/CreateObligation:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: CreateAttribute
-      operationId: policy.attributes.AttributesService.CreateAttribute
+        - policy.obligations.Service
+      summary: CreateObligation
+      operationId: policy.obligations.Service.CreateObligation
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -192,7 +127,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.CreateAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.CreateObligationRequest'
         required: true
       responses:
         default:
@@ -206,13 +141,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.CreateAttributeResponse'
-  /policy.attributes.AttributesService/UpdateAttribute:
+                $ref: '#/components/schemas/policy.obligations.CreateObligationResponse'
+  /policy.obligations.Service/UpdateObligation:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: UpdateAttribute
-      operationId: policy.attributes.AttributesService.UpdateAttribute
+        - policy.obligations.Service
+      summary: UpdateObligation
+      operationId: policy.obligations.Service.UpdateObligation
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -227,7 +162,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.UpdateAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.UpdateObligationRequest'
         required: true
       responses:
         default:
@@ -241,13 +176,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.UpdateAttributeResponse'
-  /policy.attributes.AttributesService/DeactivateAttribute:
+                $ref: '#/components/schemas/policy.obligations.UpdateObligationResponse'
+  /policy.obligations.Service/DeleteObligation:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: DeactivateAttribute
-      operationId: policy.attributes.AttributesService.DeactivateAttribute
+        - policy.obligations.Service
+      summary: DeleteObligation
+      operationId: policy.obligations.Service.DeleteObligation
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -262,7 +197,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.DeactivateAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.DeleteObligationRequest'
         required: true
       responses:
         default:
@@ -276,17 +211,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.DeactivateAttributeResponse'
-  /policy.attributes.AttributesService/GetAttributeValue:
+                $ref: '#/components/schemas/policy.obligations.DeleteObligationResponse'
+  /policy.obligations.Service/GetObligationValue:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: GetAttributeValue
-      description: |-
-        --------------------------------------*
-         Value RPCs
-        ---------------------------------------
-      operationId: policy.attributes.AttributesService.GetAttributeValue
+        - policy.obligations.Service
+      summary: GetObligationValue
+      operationId: policy.obligations.Service.GetObligationValue
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -301,7 +232,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.GetAttributeValueRequest'
+              $ref: '#/components/schemas/policy.obligations.GetObligationValueRequest'
         required: true
       responses:
         default:
@@ -315,13 +246,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.GetAttributeValueResponse'
-  /policy.attributes.AttributesService/CreateAttributeValue:
+                $ref: '#/components/schemas/policy.obligations.GetObligationValueResponse'
+  /policy.obligations.Service/GetObligationValuesByFQNs:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: CreateAttributeValue
-      operationId: policy.attributes.AttributesService.CreateAttributeValue
+        - policy.obligations.Service
+      summary: GetObligationValuesByFQNs
+      operationId: policy.obligations.Service.GetObligationValuesByFQNs
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -336,7 +267,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.CreateAttributeValueRequest'
+              $ref: '#/components/schemas/policy.obligations.GetObligationValuesByFQNsRequest'
         required: true
       responses:
         default:
@@ -350,13 +281,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.CreateAttributeValueResponse'
-  /policy.attributes.AttributesService/UpdateAttributeValue:
+                $ref: '#/components/schemas/policy.obligations.GetObligationValuesByFQNsResponse'
+  /policy.obligations.Service/CreateObligationValue:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: UpdateAttributeValue
-      operationId: policy.attributes.AttributesService.UpdateAttributeValue
+        - policy.obligations.Service
+      summary: CreateObligationValue
+      operationId: policy.obligations.Service.CreateObligationValue
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -371,7 +302,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.UpdateAttributeValueRequest'
+              $ref: '#/components/schemas/policy.obligations.CreateObligationValueRequest'
         required: true
       responses:
         default:
@@ -385,13 +316,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.UpdateAttributeValueResponse'
-  /policy.attributes.AttributesService/DeactivateAttributeValue:
+                $ref: '#/components/schemas/policy.obligations.CreateObligationValueResponse'
+  /policy.obligations.Service/UpdateObligationValue:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: DeactivateAttributeValue
-      operationId: policy.attributes.AttributesService.DeactivateAttributeValue
+        - policy.obligations.Service
+      summary: UpdateObligationValue
+      operationId: policy.obligations.Service.UpdateObligationValue
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -406,7 +337,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.DeactivateAttributeValueRequest'
+              $ref: '#/components/schemas/policy.obligations.UpdateObligationValueRequest'
         required: true
       responses:
         default:
@@ -420,17 +351,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.DeactivateAttributeValueResponse'
-  /policy.attributes.AttributesService/AssignKeyAccessServerToAttribute:
+                $ref: '#/components/schemas/policy.obligations.UpdateObligationValueResponse'
+  /policy.obligations.Service/DeleteObligationValue:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: AssignKeyAccessServerToAttribute
-      description: |-
-        --------------------------------------*
-         Attribute <> Key Access Server RPCs
-        ---------------------------------------
-      operationId: policy.attributes.AttributesService.AssignKeyAccessServerToAttribute
+        - policy.obligations.Service
+      summary: DeleteObligationValue
+      operationId: policy.obligations.Service.DeleteObligationValue
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -445,7 +372,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.AssignKeyAccessServerToAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.DeleteObligationValueRequest'
         required: true
       responses:
         default:
@@ -459,14 +386,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.AssignKeyAccessServerToAttributeResponse'
-      deprecated: true
-  /policy.attributes.AttributesService/RemoveKeyAccessServerFromAttribute:
+                $ref: '#/components/schemas/policy.obligations.DeleteObligationValueResponse'
+  /policy.obligations.Service/AddObligationTrigger:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: RemoveKeyAccessServerFromAttribute
-      operationId: policy.attributes.AttributesService.RemoveKeyAccessServerFromAttribute
+        - policy.obligations.Service
+      summary: AddObligationTrigger
+      operationId: policy.obligations.Service.AddObligationTrigger
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -481,7 +407,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.RemoveKeyAccessServerFromAttributeRequest'
+              $ref: '#/components/schemas/policy.obligations.AddObligationTriggerRequest'
         required: true
       responses:
         default:
@@ -495,14 +421,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.RemoveKeyAccessServerFromAttributeResponse'
-      deprecated: true
-  /policy.attributes.AttributesService/AssignKeyAccessServerToValue:
+                $ref: '#/components/schemas/policy.obligations.AddObligationTriggerResponse'
+  /policy.obligations.Service/RemoveObligationTrigger:
     post:
       tags:
-        - policy.attributes.AttributesService
-      summary: AssignKeyAccessServerToValue
-      operationId: policy.attributes.AttributesService.AssignKeyAccessServerToValue
+        - policy.obligations.Service
+      summary: RemoveObligationTrigger
+      operationId: policy.obligations.Service.RemoveObligationTrigger
       parameters:
         - name: Connect-Protocol-Version
           in: header
@@ -517,7 +442,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/policy.attributes.AssignKeyAccessServerToValueRequest'
+              $ref: '#/components/schemas/policy.obligations.RemoveObligationTriggerRequest'
         required: true
       responses:
         default:
@@ -531,195 +456,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/policy.attributes.AssignKeyAccessServerToValueResponse'
-      deprecated: true
-  /policy.attributes.AttributesService/RemoveKeyAccessServerFromValue:
-    post:
-      tags:
-        - policy.attributes.AttributesService
-      summary: RemoveKeyAccessServerFromValue
-      operationId: policy.attributes.AttributesService.RemoveKeyAccessServerFromValue
-      parameters:
-        - name: Connect-Protocol-Version
-          in: header
-          required: true
-          schema:
-            $ref: '#/components/schemas/connect-protocol-version'
-        - name: Connect-Timeout-Ms
-          in: header
-          schema:
-            $ref: '#/components/schemas/connect-timeout-header'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/policy.attributes.RemoveKeyAccessServerFromValueRequest'
-        required: true
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.RemoveKeyAccessServerFromValueResponse'
-      deprecated: true
-  /policy.attributes.AttributesService/AssignPublicKeyToAttribute:
-    post:
-      tags:
-        - policy.attributes.AttributesService
-      summary: AssignPublicKeyToAttribute
-      operationId: policy.attributes.AttributesService.AssignPublicKeyToAttribute
-      parameters:
-        - name: Connect-Protocol-Version
-          in: header
-          required: true
-          schema:
-            $ref: '#/components/schemas/connect-protocol-version'
-        - name: Connect-Timeout-Ms
-          in: header
-          schema:
-            $ref: '#/components/schemas/connect-timeout-header'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/policy.attributes.AssignPublicKeyToAttributeRequest'
-        required: true
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.AssignPublicKeyToAttributeResponse'
-  /policy.attributes.AttributesService/RemovePublicKeyFromAttribute:
-    post:
-      tags:
-        - policy.attributes.AttributesService
-      summary: RemovePublicKeyFromAttribute
-      operationId: policy.attributes.AttributesService.RemovePublicKeyFromAttribute
-      parameters:
-        - name: Connect-Protocol-Version
-          in: header
-          required: true
-          schema:
-            $ref: '#/components/schemas/connect-protocol-version'
-        - name: Connect-Timeout-Ms
-          in: header
-          schema:
-            $ref: '#/components/schemas/connect-timeout-header'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/policy.attributes.RemovePublicKeyFromAttributeRequest'
-        required: true
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.RemovePublicKeyFromAttributeResponse'
-  /policy.attributes.AttributesService/AssignPublicKeyToValue:
-    post:
-      tags:
-        - policy.attributes.AttributesService
-      summary: AssignPublicKeyToValue
-      operationId: policy.attributes.AttributesService.AssignPublicKeyToValue
-      parameters:
-        - name: Connect-Protocol-Version
-          in: header
-          required: true
-          schema:
-            $ref: '#/components/schemas/connect-protocol-version'
-        - name: Connect-Timeout-Ms
-          in: header
-          schema:
-            $ref: '#/components/schemas/connect-timeout-header'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/policy.attributes.AssignPublicKeyToValueRequest'
-        required: true
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.AssignPublicKeyToValueResponse'
-  /policy.attributes.AttributesService/RemovePublicKeyFromValue:
-    post:
-      tags:
-        - policy.attributes.AttributesService
-      summary: RemovePublicKeyFromValue
-      operationId: policy.attributes.AttributesService.RemovePublicKeyFromValue
-      parameters:
-        - name: Connect-Protocol-Version
-          in: header
-          required: true
-          schema:
-            $ref: '#/components/schemas/connect-protocol-version'
-        - name: Connect-Timeout-Ms
-          in: header
-          schema:
-            $ref: '#/components/schemas/connect-timeout-header'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/policy.attributes.RemovePublicKeyFromValueRequest'
-        required: true
-      responses:
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/connect.error'
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/policy.attributes.RemovePublicKeyFromValueResponse'
+                $ref: '#/components/schemas/policy.obligations.RemoveObligationTriggerResponse'
 components:
   schemas:
-    common.ActiveStateEnum:
-      type: string
-      title: ActiveStateEnum
-      enum:
-        - ACTIVE_STATE_ENUM_UNSPECIFIED
-        - ACTIVE_STATE_ENUM_ACTIVE
-        - ACTIVE_STATE_ENUM_INACTIVE
-        - ACTIVE_STATE_ENUM_ANY
-      description: 'buflint ENUM_VALUE_PREFIX: to make sure that C++ scoping rules aren''t violated when users add new enum values to an enum in a given package'
     common.MetadataUpdateEnum:
       type: string
       title: MetadataUpdateEnum
@@ -1032,40 +771,6 @@ components:
       required:
         - rule
       additionalProperties: false
-    policy.AttributeValueSelector:
-      type: object
-      properties:
-        withKeyAccessGrants:
-          type: boolean
-          title: with_key_access_grants
-          description: Deprecated
-        withSubjectMaps:
-          type: boolean
-          title: with_subject_maps
-        withResourceMaps:
-          type: boolean
-          title: with_resource_maps
-        withAttribute:
-          title: with_attribute
-          $ref: '#/components/schemas/policy.AttributeValueSelector.AttributeSelector'
-      title: AttributeValueSelector
-      additionalProperties: false
-    policy.AttributeValueSelector.AttributeSelector:
-      type: object
-      properties:
-        withKeyAccessGrants:
-          type: boolean
-          title: with_key_access_grants
-          description: Deprecated
-        withNamespace:
-          title: with_namespace
-          $ref: '#/components/schemas/policy.AttributeValueSelector.AttributeSelector.NamespaceSelector'
-      title: AttributeSelector
-      additionalProperties: false
-    policy.AttributeValueSelector.AttributeSelector.NamespaceSelector:
-      type: object
-      title: NamespaceSelector
-      additionalProperties: false
     policy.Condition:
       type: object
       properties:
@@ -1239,6 +944,65 @@ components:
           title: kas_keys
           description: Keys for the namespace
       title: Namespace
+      additionalProperties: false
+    policy.Obligation:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        namespace:
+          title: namespace
+          $ref: '#/components/schemas/policy.Namespace'
+        name:
+          type: string
+          title: name
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/policy.ObligationValue'
+          title: values
+        metadata:
+          title: metadata
+          $ref: '#/components/schemas/common.Metadata'
+      title: Obligation
+      additionalProperties: false
+    policy.ObligationTrigger:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        obligationValue:
+          title: obligation_value
+          $ref: '#/components/schemas/policy.ObligationValue'
+        action:
+          title: action
+          $ref: '#/components/schemas/policy.Action'
+        attributeValue:
+          title: attribute_value
+          $ref: '#/components/schemas/policy.Value'
+        metadata:
+          title: metadata
+          $ref: '#/components/schemas/common.Metadata'
+      title: ObligationTrigger
+      additionalProperties: false
+    policy.ObligationValue:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        obligation:
+          title: obligation
+          $ref: '#/components/schemas/policy.Obligation'
+        value:
+          type: string
+          title: value
+        metadata:
+          title: metadata
+          $ref: '#/components/schemas/common.Metadata'
+      title: ObligationValue
       additionalProperties: false
     policy.PageRequest:
       type: object
@@ -1508,388 +1272,248 @@ components:
           $ref: '#/components/schemas/common.Metadata'
       title: Value
       additionalProperties: false
-    policy.attributes.AssignKeyAccessServerToAttributeRequest:
+    policy.obligations.AddObligationTriggerRequest:
       type: object
       properties:
-        attributeKeyAccessServer:
-          title: attribute_key_access_server
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKeyAccessServer'
-      title: AssignKeyAccessServerToAttributeRequest
-      additionalProperties: false
-    policy.attributes.AssignKeyAccessServerToAttributeResponse:
-      type: object
-      properties:
-        attributeKeyAccessServer:
-          title: attribute_key_access_server
-          $ref: '#/components/schemas/policy.attributes.AttributeKeyAccessServer'
-      title: AssignKeyAccessServerToAttributeResponse
-      additionalProperties: false
-    policy.attributes.AssignKeyAccessServerToValueRequest:
-      type: object
-      properties:
-        valueKeyAccessServer:
-          title: value_key_access_server
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKeyAccessServer'
-      title: AssignKeyAccessServerToValueRequest
-      additionalProperties: false
-    policy.attributes.AssignKeyAccessServerToValueResponse:
-      type: object
-      properties:
-        valueKeyAccessServer:
-          title: value_key_access_server
-          $ref: '#/components/schemas/policy.attributes.ValueKeyAccessServer'
-      title: AssignKeyAccessServerToValueResponse
-      additionalProperties: false
-    policy.attributes.AssignPublicKeyToAttributeRequest:
-      type: object
-      properties:
-        attributeKey:
-          title: attribute_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKey'
-      title: AssignPublicKeyToAttributeRequest
-      required:
-        - attributeKey
-      additionalProperties: false
-    policy.attributes.AssignPublicKeyToAttributeResponse:
-      type: object
-      properties:
-        attributeKey:
-          title: attribute_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKey'
-      title: AssignPublicKeyToAttributeResponse
-      additionalProperties: false
-    policy.attributes.AssignPublicKeyToValueRequest:
-      type: object
-      properties:
-        valueKey:
-          title: value_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKey'
-      title: AssignPublicKeyToValueRequest
-      required:
-        - valueKey
-      additionalProperties: false
-    policy.attributes.AssignPublicKeyToValueResponse:
-      type: object
-      properties:
-        valueKey:
-          title: value_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKey'
-      title: AssignPublicKeyToValueResponse
-      additionalProperties: false
-    policy.attributes.AttributeKey:
-      type: object
-      properties:
-        attributeId:
+        obligationValueId:
           type: string
-          title: attribute_id
-          format: uuid
+          title: obligation_value_id
           description: Required
-        keyId:
+        actionId:
           type: string
-          title: key_id
-          format: uuid
-          description: Required
-      title: AttributeKey
-      required:
-        - attributeId
-        - keyId
-      additionalProperties: false
-    policy.attributes.AttributeKeyAccessServer:
-      type: object
-      properties:
-        attributeId:
+          title: action_id
+        attributeValueId:
           type: string
-          title: attribute_id
-          format: uuid
-          description: Required
-        keyAccessServerId:
-          type: string
-          title: key_access_server_id
-          format: uuid
-          description: Required
-      title: AttributeKeyAccessServer
-      additionalProperties: false
-      description: Deprecated
-    policy.attributes.CreateAttributeRequest:
-      type: object
-      properties:
-        namespaceId:
-          type: string
-          title: namespace_id
-          format: uuid
-          description: Required
-        name:
-          type: string
-          title: name
-          maxLength: 253
-          description: |+
-            Required
-            Attribute name must be an alphanumeric string, allowing hyphens and underscores but not as the first or last character. The stored attribute name will be normalized to lower case.:
-            ```
-            this.matches('^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$')
-            ```
-
-        rule:
-          title: rule
-          description: Required
-          $ref: '#/components/schemas/policy.AttributeRuleTypeEnum'
-        values:
-          type: array
-          items:
-            type: string
-            maxLength: 253
-            pattern: ^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$
-            uniqueItems: true
-          title: values
-          uniqueItems: true
-          description: |-
-            Optional
-             Attribute values (when provided) must be alphanumeric strings, allowing hyphens and underscores but not as the first or last character.
-             The stored attribute value will be normalized to lower case.
-        metadata:
-          title: metadata
-          description: Optional
-          $ref: '#/components/schemas/common.MetadataMutable'
-      title: CreateAttributeRequest
-      required:
-        - name
-        - rule
-      additionalProperties: false
-    policy.attributes.CreateAttributeResponse:
-      type: object
-      properties:
-        attribute:
-          title: attribute
-          $ref: '#/components/schemas/policy.Attribute'
-      title: CreateAttributeResponse
-      additionalProperties: false
-    policy.attributes.CreateAttributeValueRequest:
-      type: object
-      properties:
-        attributeId:
-          type: string
-          title: attribute_id
-          format: uuid
-          description: Required
-        value:
-          type: string
-          title: value
-          maxLength: 253
-          description: |+
-            Required
-            Attribute value must be an alphanumeric string, allowing hyphens and underscores but not as the first or last character. The stored attribute value will be normalized to lower case.:
-            ```
-            this.matches('^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$')
-            ```
-
+          title: attribute_value_id
         metadata:
           title: metadata
           description: |-
             Optional
              Common metadata
           $ref: '#/components/schemas/common.MetadataMutable'
-      title: CreateAttributeValueRequest
-      required:
-        - value
+      title: AddObligationTriggerRequest
       additionalProperties: false
-    policy.attributes.CreateAttributeValueResponse:
+      description: Triggers
+    policy.obligations.AddObligationTriggerResponse:
       type: object
       properties:
-        value:
-          title: value
-          $ref: '#/components/schemas/policy.Value'
-      title: CreateAttributeValueResponse
+        trigger:
+          title: trigger
+          $ref: '#/components/schemas/policy.ObligationTrigger'
+      title: AddObligationTriggerResponse
       additionalProperties: false
-    policy.attributes.DeactivateAttributeRequest:
-      type: object
-      properties:
-        id:
-          type: string
-          title: id
-          format: uuid
-          description: Required
-      title: DeactivateAttributeRequest
-      additionalProperties: false
-    policy.attributes.DeactivateAttributeResponse:
-      type: object
-      properties:
-        attribute:
-          title: attribute
-          $ref: '#/components/schemas/policy.Attribute'
-      title: DeactivateAttributeResponse
-      additionalProperties: false
-    policy.attributes.DeactivateAttributeValueRequest:
-      type: object
-      properties:
-        id:
-          type: string
-          title: id
-          format: uuid
-          description: Required
-      title: DeactivateAttributeValueRequest
-      additionalProperties: false
-    policy.attributes.DeactivateAttributeValueResponse:
-      type: object
-      properties:
-        value:
-          title: value
-          $ref: '#/components/schemas/policy.Value'
-      title: DeactivateAttributeValueResponse
-      additionalProperties: false
-    policy.attributes.GetAttributeRequest:
-      type: object
-      oneOf:
-        - properties:
-            attributeId:
-              type: string
-              title: attribute_id
-              format: uuid
-              description: 'option (buf.validate.oneof).required = true; // TODO: enable this when we remove the deprecated field'
-          title: attribute_id
-          required:
-            - attributeId
-        - properties:
-            fqn:
-              type: string
-              title: fqn
-              minLength: 1
-              format: uri
-          title: fqn
-          required:
-            - fqn
-      properties:
-        id:
-          type: string
-          title: id
-          format: uuid
-          description: Deprecated
-          deprecated: true
-      title: GetAttributeRequest
-      additionalProperties: false
-      description: |+
-        Either use deprecated 'id' field or one of 'attribute_id' or 'fqn', but not both:
-        ```
-        !(has(this.id) && (has(this.attribute_id) || has(this.fqn)))
-        ```
-
-        Either id or one of attribute_id or fqn must be set:
-        ```
-        has(this.id) || has(this.attribute_id) || has(this.fqn)
-        ```
-
-    policy.attributes.GetAttributeResponse:
-      type: object
-      properties:
-        attribute:
-          title: attribute
-          $ref: '#/components/schemas/policy.Attribute'
-      title: GetAttributeResponse
-      additionalProperties: false
-    policy.attributes.GetAttributeValueRequest:
+    policy.obligations.CreateObligationRequest:
       type: object
       oneOf:
         - properties:
             fqn:
               type: string
               title: fqn
-              minLength: 1
-              format: uri
           title: fqn
           required:
             - fqn
         - properties:
-            valueId:
+            id:
               type: string
-              title: value_id
-              format: uuid
-              description: 'option (buf.validate.oneof).required = true; // TODO: enable this when we remove the deprecated field'
-          title: value_id
-          required:
-            - valueId
-      properties:
-        id:
-          type: string
+              title: id
           title: id
-          format: uuid
-          description: Deprecated
-          deprecated: true
-      title: GetAttributeValueRequest
+          required:
+            - id
+      properties:
+        name:
+          type: string
+          title: name
+        values:
+          type: array
+          items:
+            type: string
+          title: values
+          description: Optional
+        metadata:
+          title: metadata
+          description: |-
+            Optional
+             Common metadata
+          $ref: '#/components/schemas/common.MetadataMutable'
+      title: CreateObligationRequest
       additionalProperties: false
-      description: |+
-        /
-        / Value RPC messages
-        /
-        Either use deprecated 'id' field or one of 'value_id' or 'fqn', but not both:
-        ```
-        !(has(this.id) && (has(this.value_id) || has(this.fqn)))
-        ```
-
-        Either id or one of value_id or fqn must be set:
-        ```
-        has(this.id) || has(this.value_id) || has(this.fqn)
-        ```
-
-    policy.attributes.GetAttributeValueResponse:
+    policy.obligations.CreateObligationResponse:
+      type: object
+      properties:
+        obligation:
+          title: obligation
+          $ref: '#/components/schemas/policy.Obligation'
+      title: CreateObligationResponse
+      additionalProperties: false
+    policy.obligations.CreateObligationValueRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      properties:
+        value:
+          type: string
+          title: value
+        metadata:
+          title: metadata
+          description: |-
+            Optional
+             Common metadata
+          $ref: '#/components/schemas/common.MetadataMutable'
+      title: CreateObligationValueRequest
+      additionalProperties: false
+    policy.obligations.CreateObligationValueResponse:
       type: object
       properties:
         value:
           title: value
-          $ref: '#/components/schemas/policy.Value'
-      title: GetAttributeValueResponse
+          $ref: '#/components/schemas/policy.ObligationValue'
+      title: CreateObligationValueResponse
       additionalProperties: false
-    policy.attributes.GetAttributeValuesByFqnsRequest:
+    policy.obligations.DeleteObligationRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      title: DeleteObligationRequest
+      additionalProperties: false
+    policy.obligations.DeleteObligationResponse:
+      type: object
+      properties:
+        obligation:
+          title: obligation
+          $ref: '#/components/schemas/policy.Obligation'
+      title: DeleteObligationResponse
+      additionalProperties: false
+    policy.obligations.DeleteObligationValueRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      title: DeleteObligationValueRequest
+      additionalProperties: false
+    policy.obligations.DeleteObligationValueResponse:
+      type: object
+      properties:
+        value:
+          title: value
+          $ref: '#/components/schemas/policy.ObligationValue'
+      title: DeleteObligationValueResponse
+      additionalProperties: false
+    policy.obligations.GetObligationRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      title: GetObligationRequest
+      additionalProperties: false
+      description: Definitions
+    policy.obligations.GetObligationResponse:
+      type: object
+      properties:
+        obligation:
+          title: obligation
+          $ref: '#/components/schemas/policy.Obligation'
+      title: GetObligationResponse
+      additionalProperties: false
+    policy.obligations.GetObligationValueRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      title: GetObligationValueRequest
+      additionalProperties: false
+      description: Values
+    policy.obligations.GetObligationValueResponse:
+      type: object
+      properties:
+        value:
+          title: value
+          $ref: '#/components/schemas/policy.ObligationValue'
+      title: GetObligationValueResponse
+      additionalProperties: false
+    policy.obligations.GetObligationValuesByFQNsRequest:
       type: object
       properties:
         fqns:
           type: array
           items:
             type: string
-            maxItems: 250
-            minItems: 1
           title: fqns
-          maxItems: 250
-          minItems: 1
-          description: |-
-            Required
-             Fully Qualified Names of attribute values (i.e. https://<namespace>/attr/<attribute_name>/value/<value_name>), normalized to lower case.
-        withValue:
-          title: with_value
-          description: |-
-            Optional
-             This attribute value selector is not used currently, but left here for future use.
-          $ref: '#/components/schemas/policy.AttributeValueSelector'
-      title: GetAttributeValuesByFqnsRequest
+      title: GetObligationValuesByFQNsRequest
       additionalProperties: false
-    policy.attributes.GetAttributeValuesByFqnsResponse:
+    policy.obligations.GetObligationValuesByFQNsResponse:
       type: object
       properties:
-        fqnAttributeValues:
+        fqnValueMap:
           type: object
-          title: fqn_attribute_values
+          title: fqn_value_map
           additionalProperties:
             title: value
-            $ref: '#/components/schemas/policy.attributes.GetAttributeValuesByFqnsResponse.AttributeAndValue'
-          description: map of FQNs to complete attributes and the one selected value
-      title: GetAttributeValuesByFqnsResponse
+            $ref: '#/components/schemas/policy.ObligationValue'
+      title: GetObligationValuesByFQNsResponse
       additionalProperties: false
-    policy.attributes.GetAttributeValuesByFqnsResponse.AttributeAndValue:
-      type: object
-      properties:
-        attribute:
-          title: attribute
-          $ref: '#/components/schemas/policy.Attribute'
-        value:
-          title: value
-          $ref: '#/components/schemas/policy.Value'
-      title: AttributeAndValue
-      additionalProperties: false
-    policy.attributes.GetAttributeValuesByFqnsResponse.FqnAttributeValuesEntry:
+    policy.obligations.GetObligationValuesByFQNsResponse.FqnValueMapEntry:
       type: object
       properties:
         key:
@@ -1897,234 +1521,147 @@ components:
           title: key
         value:
           title: value
-          $ref: '#/components/schemas/policy.attributes.GetAttributeValuesByFqnsResponse.AttributeAndValue'
-      title: FqnAttributeValuesEntry
+          $ref: '#/components/schemas/policy.ObligationValue'
+      title: FqnValueMapEntry
       additionalProperties: false
-    policy.attributes.ListAttributeValuesRequest:
+    policy.obligations.GetObligationsByFQNsRequest:
       type: object
       properties:
-        attributeId:
+        fqns:
+          type: array
+          items:
+            type: string
+          title: fqns
+      title: GetObligationsByFQNsRequest
+      additionalProperties: false
+    policy.obligations.GetObligationsByFQNsResponse:
+      type: object
+      properties:
+        fqnObligationMap:
+          type: object
+          title: fqn_obligation_map
+          additionalProperties:
+            title: value
+            $ref: '#/components/schemas/policy.Obligation'
+      title: GetObligationsByFQNsResponse
+      additionalProperties: false
+    policy.obligations.GetObligationsByFQNsResponse.FqnObligationMapEntry:
+      type: object
+      properties:
+        key:
           type: string
-          title: attribute_id
-          format: uuid
-          description: Required
-        state:
-          title: state
-          description: |-
-            Optional
-             ACTIVE by default when not specified
-          $ref: '#/components/schemas/common.ActiveStateEnum'
+          title: key
+        value:
+          title: value
+          $ref: '#/components/schemas/policy.Obligation'
+      title: FqnObligationMapEntry
+      additionalProperties: false
+    policy.obligations.ListObligationsRequest:
+      type: object
+      oneOf:
+        - properties:
+            fqn:
+              type: string
+              title: fqn
+          title: fqn
+          required:
+            - fqn
+        - properties:
+            id:
+              type: string
+              title: id
+          title: id
+          required:
+            - id
+      properties:
         pagination:
           title: pagination
           description: Optional
           $ref: '#/components/schemas/policy.PageRequest'
-      title: ListAttributeValuesRequest
+      title: ListObligationsRequest
       additionalProperties: false
-    policy.attributes.ListAttributeValuesResponse:
+    policy.obligations.ListObligationsResponse:
       type: object
       properties:
-        values:
+        obligations:
           type: array
           items:
-            $ref: '#/components/schemas/policy.Value'
-          title: values
+            $ref: '#/components/schemas/policy.Obligation'
+          title: obligations
         pagination:
           title: pagination
           $ref: '#/components/schemas/policy.PageResponse'
-      title: ListAttributeValuesResponse
+      title: ListObligationsResponse
       additionalProperties: false
-    policy.attributes.ListAttributesRequest:
-      type: object
-      properties:
-        state:
-          title: state
-          description: |-
-            Optional
-             ACTIVE by default when not specified
-          $ref: '#/components/schemas/common.ActiveStateEnum'
-        namespace:
-          type: string
-          title: namespace
-          description: |-
-            Optional
-             Namespace ID or name
-        pagination:
-          title: pagination
-          description: Optional
-          $ref: '#/components/schemas/policy.PageRequest'
-      title: ListAttributesRequest
-      additionalProperties: false
-    policy.attributes.ListAttributesResponse:
-      type: object
-      properties:
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/policy.Attribute'
-          title: attributes
-        pagination:
-          title: pagination
-          $ref: '#/components/schemas/policy.PageResponse'
-      title: ListAttributesResponse
-      additionalProperties: false
-    policy.attributes.RemoveKeyAccessServerFromAttributeRequest:
-      type: object
-      properties:
-        attributeKeyAccessServer:
-          title: attribute_key_access_server
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKeyAccessServer'
-      title: RemoveKeyAccessServerFromAttributeRequest
-      additionalProperties: false
-    policy.attributes.RemoveKeyAccessServerFromAttributeResponse:
-      type: object
-      properties:
-        attributeKeyAccessServer:
-          title: attribute_key_access_server
-          $ref: '#/components/schemas/policy.attributes.AttributeKeyAccessServer'
-      title: RemoveKeyAccessServerFromAttributeResponse
-      additionalProperties: false
-    policy.attributes.RemoveKeyAccessServerFromValueRequest:
-      type: object
-      properties:
-        valueKeyAccessServer:
-          title: value_key_access_server
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKeyAccessServer'
-      title: RemoveKeyAccessServerFromValueRequest
-      additionalProperties: false
-    policy.attributes.RemoveKeyAccessServerFromValueResponse:
-      type: object
-      properties:
-        valueKeyAccessServer:
-          title: value_key_access_server
-          $ref: '#/components/schemas/policy.attributes.ValueKeyAccessServer'
-      title: RemoveKeyAccessServerFromValueResponse
-      additionalProperties: false
-    policy.attributes.RemovePublicKeyFromAttributeRequest:
-      type: object
-      properties:
-        attributeKey:
-          title: attribute_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKey'
-      title: RemovePublicKeyFromAttributeRequest
-      required:
-        - attributeKey
-      additionalProperties: false
-    policy.attributes.RemovePublicKeyFromAttributeResponse:
-      type: object
-      properties:
-        attributeKey:
-          title: attribute_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.AttributeKey'
-      title: RemovePublicKeyFromAttributeResponse
-      additionalProperties: false
-    policy.attributes.RemovePublicKeyFromValueRequest:
-      type: object
-      properties:
-        valueKey:
-          title: value_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKey'
-      title: RemovePublicKeyFromValueRequest
-      required:
-        - valueKey
-      additionalProperties: false
-    policy.attributes.RemovePublicKeyFromValueResponse:
-      type: object
-      properties:
-        valueKey:
-          title: value_key
-          description: Required
-          $ref: '#/components/schemas/policy.attributes.ValueKey'
-      title: RemovePublicKeyFromValueResponse
-      additionalProperties: false
-    policy.attributes.UpdateAttributeRequest:
+    policy.obligations.RemoveObligationTriggerRequest:
       type: object
       properties:
         id:
           type: string
           title: id
-          format: uuid
-          description: Required
-        metadata:
-          title: metadata
-          description: Optional
-          $ref: '#/components/schemas/common.MetadataMutable'
-        metadataUpdateBehavior:
-          title: metadata_update_behavior
-          $ref: '#/components/schemas/common.MetadataUpdateEnum'
-      title: UpdateAttributeRequest
+      title: RemoveObligationTriggerRequest
       additionalProperties: false
-    policy.attributes.UpdateAttributeResponse:
+    policy.obligations.RemoveObligationTriggerResponse:
       type: object
       properties:
-        attribute:
-          title: attribute
-          $ref: '#/components/schemas/policy.Attribute'
-      title: UpdateAttributeResponse
+        trigger:
+          title: trigger
+          $ref: '#/components/schemas/policy.ObligationTrigger'
+      title: RemoveObligationTriggerResponse
       additionalProperties: false
-    policy.attributes.UpdateAttributeValueRequest:
+    policy.obligations.UpdateObligationRequest:
       type: object
       properties:
         id:
           type: string
           title: id
-          format: uuid
           description: Required
+        name:
+          type: string
+          title: name
+          description: Optional
         metadata:
           title: metadata
-          description: |-
-            Optional
-             Common metadata
           $ref: '#/components/schemas/common.MetadataMutable'
         metadataUpdateBehavior:
           title: metadata_update_behavior
           $ref: '#/components/schemas/common.MetadataUpdateEnum'
-      title: UpdateAttributeValueRequest
+      title: UpdateObligationRequest
       additionalProperties: false
-    policy.attributes.UpdateAttributeValueResponse:
+    policy.obligations.UpdateObligationResponse:
+      type: object
+      properties:
+        obligation:
+          title: obligation
+          $ref: '#/components/schemas/policy.Obligation'
+      title: UpdateObligationResponse
+      additionalProperties: false
+    policy.obligations.UpdateObligationValueRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: Required
+        value:
+          type: string
+          title: value
+          description: Optional
+        metadata:
+          title: metadata
+          $ref: '#/components/schemas/common.MetadataMutable'
+        metadataUpdateBehavior:
+          title: metadata_update_behavior
+          $ref: '#/components/schemas/common.MetadataUpdateEnum'
+      title: UpdateObligationValueRequest
+      additionalProperties: false
+    policy.obligations.UpdateObligationValueResponse:
       type: object
       properties:
         value:
           title: value
-          $ref: '#/components/schemas/policy.Value'
-      title: UpdateAttributeValueResponse
-      additionalProperties: false
-    policy.attributes.ValueKey:
-      type: object
-      properties:
-        valueId:
-          type: string
-          title: value_id
-          format: uuid
-          description: Required
-        keyId:
-          type: string
-          title: key_id
-          format: uuid
-          description: Required (The id listed in the AsymmetricKeys object)
-      title: ValueKey
-      required:
-        - valueId
-        - keyId
-      additionalProperties: false
-    policy.attributes.ValueKeyAccessServer:
-      type: object
-      properties:
-        valueId:
-          type: string
-          title: value_id
-          format: uuid
-          description: Required
-        keyAccessServerId:
-          type: string
-          title: key_access_server_id
-          format: uuid
-          description: Required
-      title: ValueKeyAccessServer
+          $ref: '#/components/schemas/policy.ObligationValue'
+      title: UpdateObligationValueResponse
       additionalProperties: false
     connect-protocol-version:
       type: number
@@ -2185,8 +1722,8 @@ components:
       description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
 security: []
 tags:
-  - name: policy.attributes.AttributesService
+  - name: policy.obligations.Service
     description: |-
       /
-      / Attribute Service
+      / Obligation Service
       /
