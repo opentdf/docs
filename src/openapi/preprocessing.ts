@@ -1,7 +1,5 @@
 /*
-
 When making changes to this file, consider: https://virtru.atlassian.net/browse/DSPX-1577
-
 */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -113,7 +111,126 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
             categoryLinkSource: "info",
         },
     },
-    // Add more entries here for other OpenAPI specs
+    {
+        id: "Policy Objects",
+        specPath: path.join(specsDir, 'policy/objects.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/objects.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Key Management",
+        specPath: path.join(specsDir, 'policy/keymanagement/key_management.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/keymanagement`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/keymanagement/key_management.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Resource Mapping",
+        specPath: path.join(specsDir, 'policy/resourcemapping/resource_mapping.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/resourcemapping`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/resourcemapping/resource_mapping.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Namespaces",
+        specPath: path.join(specsDir, 'policy/namespaces/namespaces.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/namespaces`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/namespaces/namespaces.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Attributes",
+        specPath: path.join(specsDir, 'policy/attributes/attributes.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/attributes`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/attributes/attributes.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Unsafe Service",
+        specPath: path.join(specsDir, 'policy/unsafe/unsafe.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/unsafe`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/unsafe/unsafe.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Actions",
+        specPath: path.join(specsDir, 'policy/actions/actions.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/actions`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/actions/actions.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Registered Resources",
+        specPath: path.join(specsDir, 'policy/registeredresources/registered_resources.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/registeredresources`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/registeredresources/registered_resources.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Subject Mapping",
+        specPath: path.join(specsDir, 'policy/subjectmapping/subject_mapping.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/subjectmapping`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/subjectmapping/subject_mapping.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy KAS Registry",
+        specPath: path.join(specsDir, 'policy/kasregistry/key_access_server_registry.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/kasregistry`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/kasregistry/key_access_server_registry.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Obligations",
+        specPath: path.join(specsDir, 'policy/obligations/obligations.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/obligations`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/obligations/obligations.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy Selectors",
+        specPath: path.join(specsDir, 'policy/selectors.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/selectors.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    }
 ];
 
 // Convert array to object keyed by id, omitting 'url' for Docusaurus config

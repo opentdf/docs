@@ -1,7 +1,5 @@
 /*
-
 When making changes to this file, consider: https://virtru.atlassian.net/browse/DSPX-1577
-
 */
 import * as fs from 'fs';
 import * as path from 'path';
