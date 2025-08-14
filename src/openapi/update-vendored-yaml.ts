@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { openApiSpecsArray } from '../preprocessing';
+import { openApiSpecsArray } from '../../preprocessing';
 
 /**
  * Downloads the latest vendored OpenAPI YAML files from the upstream GitHub repository
@@ -32,7 +32,7 @@ async function updateVendoredYaml() {
     for (const spec of openApiSpecsArray) {
         if (!spec.url) continue; // Only process specs with a URL
         // Remove leading './' for specPath if present, and resolve relative to this script
-        const specPath = spec.specPath.replace(/^\.\//, '../');
+        const specPath = spec.specPath.replace(/^\.\//, '../../');
         const absPath = path.resolve(__dirname, specPath);
         fs.mkdirSync(path.dirname(absPath), { recursive: true });
         console.log(`⬇️  Downloading ${spec.url} → ${absPath}`);
