@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { openApiSpecsArray } from '../../preprocessing';
+import { openApiSpecsArray } from './preprocessing';
 
 /**
  * Downloads the latest vendored OpenAPI YAML files from the upstream GitHub repository

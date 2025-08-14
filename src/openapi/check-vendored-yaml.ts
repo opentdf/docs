@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { openApiSpecsArray } from '../../preprocessing';
+import { openApiSpecsArray } from './preprocessing';
 
 function fileHash(filePath: string): string {
   if (!fs.existsSync(filePath)) return '';

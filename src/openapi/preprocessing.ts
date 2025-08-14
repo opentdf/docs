@@ -3,6 +3,21 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 
+// Utility to find the repo root (directory containing package.json)
+function findRepoRoot(startDir = __dirname): string {
+  let dir = startDir;
+  while (!fs.existsSync(path.join(dir, 'package.json'))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) throw new Error('Could not find package.json in parent directories');
+    dir = parent;
+  }
+  return dir;
+}
+
+const repoRoot = findRepoRoot();
+const specsDir = path.join(repoRoot, 'specs');
+const specsProcessedDir = path.join(repoRoot, 'specs-processed');
+
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
@@ -34,7 +49,7 @@ interface ApiSpecDefinition {
 let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "Well-Known Configuration",
-        specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
+        specPath: path.join(specsDir, 'wellknownconfiguration/wellknown_configuration.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/wellknownconfiguration`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/wellknownconfiguration/wellknown_configuration.openapi.yaml',
         sidebarOptions: {
@@ -44,10 +59,9 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V1 Authorization",
-        specPath: "./specs/authorization/authorization.openapi.yaml",
+        specPath: path.join(specsDir, 'authorization/authorization.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/authorization/v1`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/authorization.openapi.yaml',
-        // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -55,11 +69,10 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V2 Authorization",
-        specPath: "./specs/authorization/v2/authorization.openapi.yaml",
+        specPath: path.join(specsDir, 'authorization/v2/authorization.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/authorization/v2`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/v2/authorization.openapi.yaml',
-        // Example of custom modified path:
-        specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
+        // specPathModified: path.join(specsProcessedDir, 'authorization/v2/authorization.openapi.yaml'),
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -67,7 +80,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V1 Entity Resolution",
-        specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
+        specPath: path.join(specsDir, 'entityresolution/entity_resolution.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v1`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/entity_resolution.openapi.yaml',
         sidebarOptions: {
@@ -77,7 +90,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V2 Entity Resolution",
-        specPath: "./specs/entityresolution/v2/entity_resolution.openapi.yaml",
+        specPath: path.join(specsDir, 'entityresolution/v2/entity_resolution.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v2`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/v2/entity_resolution.openapi.yaml',
         sidebarOptions: {
@@ -87,7 +100,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "kas",
-        specPath: "./specs/kas/kas.openapi.yaml",
+        specPath: path.join(specsDir, 'kas/kas.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/kas`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/kas/kas.openapi.yaml',
         sidebarOptions: {
