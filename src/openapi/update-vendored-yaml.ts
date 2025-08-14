@@ -31,9 +31,8 @@ async function updateVendoredYaml() {
 
     for (const spec of openApiSpecsArray) {
         if (!spec.url) continue; // Only process specs with a URL
-        // Remove leading './' for specPath if present, and resolve relative to this script
-        const specPath = spec.specPath.replace(/^\.\//, '../../');
-        const absPath = path.resolve(__dirname, specPath);
+        // absPaths is the absolute path to the spec file
+        const absPath = spec.specPath;
         fs.mkdirSync(path.dirname(absPath), { recursive: true });
         console.log(`⬇️  Downloading ${spec.url} → ${absPath}`);
         try {
