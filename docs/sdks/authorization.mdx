@@ -288,6 +288,7 @@ You can limit entitlement queries to specific attribute hierarchies:
 <TabItem value="go" label="Go">
 
 ```go
+// Note: This example uses the v1 API as WithComprehensiveHierarchy is a v1-only feature
 func getEntitlementsWithScope(client *sdk.SDK) {
     entitlementReq := &authorization.GetEntitlementsRequest{
         EntityIdentifier: &authorization.EntityIdentifier{
@@ -524,11 +525,12 @@ public void getDecision(SDK sdk) throws ExecutionException, InterruptedException
         .getDecision(request)
         .get();
     
-    if (resp.getDecision().getDecision() == Decision.DECISION_PERMIT) {
+    Decision decision = resp.getDecision();
+    if (decision.getDecision() == Decision.DECISION_PERMIT) {
         System.out.println("Access granted");
         // Process any obligations
-        if (resp.getDecision().getObligationsCount() > 0) {
-            System.out.println("Obligations to fulfill: " + resp.getDecision().getObligationsList());
+        if (decision.getObligationsCount() > 0) {
+            System.out.println("Obligations to fulfill: " + decision.getObligationsList());
         }
     } else {
         System.out.println("Access denied");
@@ -1007,7 +1009,7 @@ func authorizationMiddleware(next http.Handler, sdk *sdk.SDK) http.Handler {
         // Make authorization decision
         decision := makeAuthorizationDecision(sdk, entity, "access", resourceAttrs)
         
-        if decision == authorization.Decision_DECISION_PERMIT {
+        if decision == authorization.DecisionResponse_DECISION_PERMIT {
             next.ServeHTTP(w, r)
         } else {
             http.Error(w, "Access denied", http.StatusForbidden)
@@ -1024,8 +1026,8 @@ Always implement comprehensive error handling for authorization calls:
 <TabItem value="go" label="Go">
 
 ```go
-func safeAuthorizationCall(client *sdk.SDK, req *authorization.GetDecisionRequest) {
-    decision, err := client.Authorization.GetDecision(context.Background(), req)
+func safeAuthorizationCall(client *sdk.SDK, req *authorizationv2.GetDecisionRequest) {
+    decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
     
     if err != nil {
         // Log the error for debugging
