@@ -6,6 +6,77 @@ import TabItem from '@theme/TabItem';
 <Tabs>
 <TabItem value="go" label="Go">
 
+#### V2 API (Recommended)
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+	"github.com/opentdf/platform/protocol/go/entity"
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	platformEndpoint := "http://localhost:8080"
+
+	// Create a new client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get Decision using v2 API
+	decisionReq := &authorizationv2.GetDecisionRequest{
+		EntityIdentifier: &authorizationv2.EntityIdentifier{
+			Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+				EntityChain: &entity.EntityChain{
+					Entities: []*entity.Entity{
+						{
+							EphemeralId: "entity-1",
+							EntityType: &entity.Entity_ClientId{
+								ClientId: "opentdf",
+							},
+						},
+						},
+					},
+			},
+		},
+		Action: &policy.Action{
+			Name: "decrypt",
+		},
+		Resource: &authorizationv2.Resource{
+			Resource: &authorizationv2.Resource_AttributeValues_{
+				AttributeValues: &authorizationv2.Resource_AttributeValues{
+					Fqns: []string{"https://opentdf.io/attr/role/value/developer"},
+				},
+			},
+		},
+	}
+
+	decision, err := client.AuthorizationV2.GetDecision(context.Background(), decisionReq)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	decisionResult := decision.GetDecision()
+	log.Printf("Decision: %v", decisionResult.GetDecision())
+	if decisionResult.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
+		log.Printf("✓ Access GRANTED")
+		// Note: ResourceDecision doesn't have obligations in v2 API
+	}
+}
+```
+
+#### V1 API (Legacy)
+
 ```go
 package main
 
@@ -14,13 +85,11 @@ import (
 	"log"
 
 	"github.com/opentdf/platform/protocol/go/authorization"
-	"github.com/opentdf/platform/protocol/go/entity"
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/sdk"
 )
 
 func main() {
-
 	platformEndpoint := "http://localhost:8080"
 
 	// Create a new client
@@ -28,44 +97,46 @@ func main() {
 		platformEndpoint,
 		sdk.WithClientCredentials("opentdf", "secret", nil),
 	)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Get Decision using v2 API
-	decisionReq := &authorization.GetDecisionRequest{
-		EntityIdentifier: &authorization.EntityIdentifier{
-			EntityChain: &entity.EntityChain{
-				Entities: []*entity.Entity{
-					{
-						Id: "entity-1",
-						EntityType: &entity.Entity_ClientId{
-							ClientId: "opentdf",
-						},
-					},
-				},
-			},
-		},
-		Action: &policy.Action{
+	// Get Decision using v1 API (bulk decisions)
+	decisionRequests := []*authorization.DecisionRequest{{
+		Actions: []*policy.Action{{
 			Name: "decrypt",
-		},
-		Resource: &authorization.Resource{
-			AttributeValues: &authorization.Resource_AttributeValues{
-				Fqns: []string{"https://opentdf.io/attr/role/value/developer"},
-			},
-		},
+		}},
+		EntityChains: []*authorization.EntityChain{{
+			Id: "ec1",
+			Entities: []*authorization.Entity{{
+				EntityType: &authorization.Entity_ClientId{
+					ClientId: "opentdf",
+				},
+				Category: authorization.Entity_CATEGORY_SUBJECT,
+			}},
+		}},
+		ResourceAttributes: []*authorization.ResourceAttribute{{
+			AttributeValueFqns: []string{"https://opentdf.io/attr/role/value/developer"},
+		}},
+	}}
+
+	decisionRequest := &authorization.GetDecisionsRequest{
+		DecisionRequests: decisionRequests,
 	}
 
-	decision, err := client.Authorization.GetDecision(context.Background(), decisionReq)
+	decisionResponse, err := client.Authorization.GetDecisions(context.Background(), decisionRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	decisionResult := decision.GetDecision()
-	log.Printf("Decision: %v", decisionResult.GetDecision())
-	if decisionResult.GetDecision() == authorization.Decision_DECISION_PERMIT && len(decisionResult.GetObligations()) > 0 {
-		log.Printf("Obligations: %v", decisionResult.GetObligations())
+	for _, dr := range decisionResponse.GetDecisionResponses() {
+		log.Printf("Decision for entity chain %s: %v", dr.GetEntityChainId(), dr.GetDecision())
+		if dr.GetDecision() == authorization.DecisionResponse_DECISION_PERMIT {
+			log.Printf("✓ Access GRANTED")
+			if len(dr.GetObligations()) > 0 {
+				log.Printf("Obligations: %v", dr.GetObligations())
+			}
+		}
 	}
 }
 ```
@@ -136,49 +207,63 @@ public class GetDecision {
 <TabItem value="js" label="Javascript">
 
 ```javascript
-const { AuthzClient } = require('@opentdf/client');
+import { PlatformClient } from '@opentdf/sdk/platform';
+import { AuthProviders } from '@opentdf/sdk';
+import { create } from '@bufbuild/protobuf';
+import { GetDecisionsRequestSchema, DecisionRequestSchema } from '@opentdf/sdk/platform';
 
 async function main() {
   const platformEndpoint = 'http://localhost:8080';
-  const clientId = 'opentdf';
-  const clientSecret = 'secret';
+  
+  // Assume you have an existing access token
+  const accessToken = 'your-access-token-here';
 
-  // Create a new client
-  const client = new AuthzClient({
-    endpoint: platformEndpoint,
-    auth: {
-      clientId,
-      clientSecret
-    }
+  // Create auth provider with existing token
+  const authProvider = await AuthProviders.accessTokenAuthProvider({
+    accessToken: accessToken
   });
 
-  // Get Decision using v2 API
-  const request = {
-    entityIdentifier: {
-      entityChain: {
-        entities: [{
-          id: 'entity-1',
-          clientId: 'opentdf'
+  // Create platform client
+  const platformClient = new PlatformClient({
+    platformUrl: platformEndpoint,
+    authProvider
+  });
+
+  // Get Decision using v1 API (bulk decisions)
+  const request = create(GetDecisionsRequestSchema, {
+    decisionRequests: [
+      create(DecisionRequestSchema, {
+        entityChains: [{
+          id: 'ec1',
+          entities: [{
+            id: 'entity-1',
+            entityType: {
+              case: 'clientId',
+              value: 'opentdf'
+            },
+            category: Entity_CategorySchema.SUBJECT
+          }]
+        }],
+        actions: [{
+          name: 'decrypt'
+        }],
+        resourceAttributes: [{
+          resourceAttributesId: 'resource-1',
+          attributeValueFqns: ['https://opentdf.io/attr/role/value/developer']
         }]
-      }
-    },
-    action: {
-      name: 'decrypt'
-    },
-    resource: {
-      attributeValues: {
-        fqns: ['https://opentdf.io/attr/role/value/developer']
-      }
-    }
-  };
+      })
+    ]
+  });
 
   try {
-    const response = await client.getDecision(request);
+    const response = await platformClient.v1.authorization.getDecisions(request);
     
-    console.log('Decision:', response.decision.decision);
-    if (response.decision.decision === 'DECISION_PERMIT' && response.decision.obligations?.length > 0) {
-      console.log('Obligations:', response.decision.obligations);
-    }
+    response.decisionResponses.forEach(decision => {
+      console.log('Decision:', decision.decision);
+      if (decision.decision === 'DECISION_PERMIT' && decision.obligations?.length > 0) {
+        console.log('Obligations:', decision.obligations);
+      }
+    });
   } catch (error) {
     console.error('Error:', error);
   }

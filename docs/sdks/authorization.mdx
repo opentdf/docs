@@ -38,6 +38,7 @@ import (
     "log"
     
     "github.com/opentdf/platform/protocol/go/authorization"
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
     "github.com/opentdf/platform/protocol/go/entity"
     "github.com/opentdf/platform/protocol/go/policy"
     "github.com/opentdf/platform/sdk"
@@ -92,15 +93,24 @@ public class AuthorizationSetup {
 <TabItem value="js" label="JavaScript">
 
 ```javascript
-import { SDK } from '@opentdf/client';
+import { PlatformClient } from '@opentdf/sdk/platform';
+import { AuthProviders } from '@opentdf/sdk';
 
-const sdk = new SDK({
-  platformEndpoint: 'http://localhost:8080',
-  clientId: 'opentdf',
-  clientSecret: 'secret'
+// Assume you have an existing access token
+const accessToken = 'your-access-token-here';
+
+// Create auth provider with existing token
+const authProvider = await AuthProviders.accessTokenAuthProvider({
+  accessToken: accessToken
 });
 
-// SDK is ready for authorization calls
+// Create platform client
+const platformClient = new PlatformClient({
+  platformUrl: 'http://localhost:8080',
+  authProvider
+});
+
+// Client is ready for authorization calls
 ```
 
 </TabItem>
@@ -118,17 +128,21 @@ Use `GetEntitlements` to discover what attribute values an entity can access. Th
 <Tabs>
 <TabItem value="go" label="Go">
 
+#### V2 API (Recommended)
+
 ```go
-func getEntitlements(client *sdk.SDK) {
+func getEntitlementsV2(client *sdk.SDK) {
     // Using v2 API with EntityIdentifier
-    entitlementReq := &authorization.GetEntitlementsRequest{
-        EntityIdentifier: &authorization.EntityIdentifier{
-            EntityChain: &entity.EntityChain{
-                Entities: []*entity.Entity{
-                    {
-                        Id: "user-bob",
-                        EntityType: &entity.Entity_EmailAddress{
-                            EmailAddress: "bob@OrgA.com",
+    entitlementReq := &authorizationv2.GetEntitlementsRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                EntityChain: &entity.EntityChain{
+                    Entities: []*entity.Entity{
+                        {
+                            EphemeralId: "user-bob",
+                            EntityType: &entity.Entity_EmailAddress{
+                                EmailAddress: "bob@OrgA.com",
+                            },
                         },
                     },
                 },
@@ -136,7 +150,7 @@ func getEntitlements(client *sdk.SDK) {
         },
     }
     
-    entitlements, err := client.Authorization.GetEntitlements(
+    entitlements, err := client.AuthorizationV2.GetEntitlements(
         context.Background(), 
         entitlementReq,
     )
@@ -147,7 +161,53 @@ func getEntitlements(client *sdk.SDK) {
     // Process entitlements
     for _, entitlement := range entitlements.GetEntitlements() {
         fmt.Printf("Entity has access to: %v\n", 
-            entitlement.ActionsPerAttributeValueFqn)
+            entitlement.GetActionsPerAttributeValueFqn())
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getEntitlementsV1(client *sdk.SDK) {
+    // Using v1 API - note: v1 doesn't have GetEntitlements
+    // Instead, use GetDecisions to understand entity capabilities
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "read"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "bob@OrgA.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        // Query with multiple resource attributes to understand scope
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{
+                "https://company.com/attr/classification/value/public",
+                "https://company.com/attr/classification/value/confidential",
+            },
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(), 
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Process decisions to understand entitlements
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Entity chain %s has decision: %v\n", 
+            dr.GetEntityChainId(), dr.GetDecision())
     }
 }
 ```
@@ -189,22 +249,30 @@ public void getEntitlements(SDK sdk) throws ExecutionException, InterruptedExcep
 <TabItem value="js" label="JavaScript">
 
 ```javascript
-async function getEntitlements(sdk) {
-  const request = {
-    entityIdentifier: {
-      entityChain: {
-        entities: [{
-          id: 'user-bob',
-          emailAddress: 'bob@OrgA.com'
-        }]
-      }
-    }
-  };
+import { create } from '@bufbuild/protobuf';
+import { GetEntitlementsRequestSchema, EntitySchema, Entity_CategorySchema } from '@opentdf/sdk/platform';
+
+async function getEntitlements(platformClient) {
+  // Assume we have an access token representing the user
+  const accessToken = 'user-access-token-here';
   
-  const response = await sdk.authorization.getEntitlements(request);
+  const request = create(GetEntitlementsRequestSchema, {
+    entities: [
+      create(EntitySchema, {
+        id: 'user-bob',
+        entityType: {
+          case: 'emailAddress',
+          value: 'bob@OrgA.com'
+        },
+        category: Entity_CategorySchema.SUBJECT
+      })
+    ]
+  });
+  
+  const response = await platformClient.v1.authorization.getEntitlements(request);
   
   response.entitlements.forEach(entitlement => {
-    console.log('Entitled to:', entitlement.actionsPerAttributeValueFqn);
+    console.log('Entitled to:', entitlement.attributeValueFqns);
   });
 }
 ```
@@ -316,16 +384,20 @@ Use `GetDecision` when you need to authorize access to specific resources. This 
 <Tabs>
 <TabItem value="go" label="Go">
 
+#### V2 API (Recommended)
+
 ```go
-func getDecision(client *sdk.SDK) {
-    decisionReq := &authorization.GetDecisionRequest{
-        EntityIdentifier: &authorization.EntityIdentifier{
-            EntityChain: &entity.EntityChain{
-                Entities: []*entity.Entity{
-                    {
-                        Id: "user-123",
-                        EntityType: &entity.Entity_EmailAddress{
-                            EmailAddress: "user@company.com",
+func getDecisionV2(client *sdk.SDK) {
+    decisionReq := &authorizationv2.GetDecisionRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                EntityChain: &entity.EntityChain{
+                    Entities: []*entity.Entity{
+                        {
+                            EphemeralId: "user-123",
+                            EntityType: &entity.Entity_EmailAddress{
+                                EmailAddress: "user@company.com",
+                            },
                         },
                     },
                 },
@@ -334,17 +406,19 @@ func getDecision(client *sdk.SDK) {
         Action: &policy.Action{
             Name: "decrypt",
         },
-        Resource: &authorization.Resource{
-            AttributeValues: &authorization.Resource_AttributeValues{
-                Fqns: []string{
-                    "https://company.com/attr/classification/value/confidential",
-                    "https://company.com/attr/department/value/finance",
+        Resource: &authorizationv2.Resource{
+            Resource: &authorizationv2.Resource_AttributeValues_{
+                AttributeValues: &authorizationv2.Resource_AttributeValues{
+                    Fqns: []string{
+                        "https://company.com/attr/classification/value/confidential",
+                        "https://company.com/attr/department/value/finance",
+                    },
                 },
             },
         },
     }
     
-    decision, err := client.Authorization.GetDecision(
+    decision, err := client.AuthorizationV2.GetDecision(
         context.Background(), 
         decisionReq,
     )
@@ -353,14 +427,63 @@ func getDecision(client *sdk.SDK) {
     }
     
     resDecision := decision.GetDecision()
-    if resDecision.GetDecision() == authorization.Decision_DECISION_PERMIT {
+    if resDecision.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
         fmt.Println("Access granted")
-        // Process any obligations
-        if len(resDecision.GetObligations()) > 0 {
-            fmt.Printf("Obligations to fulfill: %v\n", resDecision.GetObligations())
-        }
+        // Note: ResourceDecision doesn't have obligations in v2 API
     } else {
         fmt.Println("Access denied")
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getDecisionV1(client *sdk.SDK) {
+    // V1 API uses bulk decisions
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{
+            Name: "decrypt",
+        }},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "user@company.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{
+                "https://company.com/attr/classification/value/confidential",
+                "https://company.com/attr/department/value/finance",
+            },
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(), 
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        if dr.GetDecision() == authorization.DecisionResponse_DECISION_PERMIT {
+            fmt.Println("Access granted")
+            // Process any obligations
+            if len(dr.GetObligations()) > 0 {
+                fmt.Printf("Obligations to fulfill: %v\n", dr.GetObligations())
+            }
+        } else {
+            fmt.Println("Access denied")
+        }
     }
 }
 ```
@@ -463,35 +586,43 @@ For efficient batch processing, use bulk decision endpoints:
 <Tabs>
 <TabItem value="go" label="Go">
 
+#### V2 API (Recommended)
+
 ```go
-func getBulkDecisions(client *sdk.SDK) {
-    bulkReq := &authorization.GetDecisionBulkRequest{
-        DecisionRequests: []*authorization.GetDecisionMultiResourceRequest{
+func getBulkDecisionsV2(client *sdk.SDK) {
+    bulkReq := &authorizationv2.GetDecisionBulkRequest{
+        DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
             {
-                EntityIdentifier: &authorization.EntityIdentifier{
-                    EntityChain: &entity.EntityChain{
-                        Entities: []*entity.Entity{
-                            {
-                                Id: "user-123",
-                                EntityType: &entity.Entity_EmailAddress{
-                                    EmailAddress: "user@company.com",
+                EntityIdentifier: &authorizationv2.EntityIdentifier{
+                    Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                        EntityChain: &entity.EntityChain{
+                            Entities: []*entity.Entity{
+                                {
+                                    EphemeralId: "user-123",
+                                    EntityType: &entity.Entity_EmailAddress{
+                                        EmailAddress: "user@company.com",
+                                    },
                                 },
                             },
                         },
                     },
                 },
                 Action: &policy.Action{Name: "decrypt"},
-                Resources: []*authorization.Resource{
+                Resources: []*authorizationv2.Resource{
                     {
                         EphemeralId: "resource-1",
-                        AttributeValues: &authorization.Resource_AttributeValues{
-                            Fqns: []string{"https://company.com/attr/class/value/public"},
+                        Resource: &authorizationv2.Resource_AttributeValues_{
+                            AttributeValues: &authorizationv2.Resource_AttributeValues{
+                                Fqns: []string{"https://company.com/attr/class/value/public"},
+                            },
                         },
                     },
                     {
-                        EphemeralId: "resource-2", 
-                        AttributeValues: &authorization.Resource_AttributeValues{
-                            Fqns: []string{"https://company.com/attr/class/value/confidential"},
+                        EphemeralId: "resource-2",
+                        Resource: &authorizationv2.Resource_AttributeValues_{
+                            AttributeValues: &authorizationv2.Resource_AttributeValues{
+                                Fqns: []string{"https://company.com/attr/class/value/confidential"},
+                            },
                         },
                     },
                 },
@@ -499,7 +630,7 @@ func getBulkDecisions(client *sdk.SDK) {
         },
     }
     
-    decisions, err := client.Authorization.GetDecisionBulk(
+    decisions, err := client.AuthorizationV2.GetDecisionBulk(
         context.Background(),
         bulkReq,
     )
@@ -513,9 +644,58 @@ func getBulkDecisions(client *sdk.SDK) {
             fmt.Printf("All resources permitted: %v\n", allPermitted.GetValue())
         }
         for _, resourceDecision := range resp.GetResourceDecisions() {
-            fmt.Printf("Resource %s: %v\n", 
+            fmt.Printf("Resource %s: %v\n",
                 resourceDecision.GetEphemeralResourceId(),
                 resourceDecision.GetDecision())
+        }
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getBulkDecisionsV1(client *sdk.SDK) {
+    // V1 API uses GetDecisions for bulk processing
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "decrypt"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "user@company.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/public"},
+            },
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/confidential"},
+            },
+        },
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(),
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Entity chain %s: %v\n",
+            dr.GetEntityChainId(),
+            dr.GetDecision())
+        if len(dr.GetObligations()) > 0 {
+            fmt.Printf("Obligations: %v\n", dr.GetObligations())
         }
     }
 }
@@ -649,24 +829,30 @@ OpenTDF supports various entity types for flexible authentication:
 <Tabs>
 <TabItem value="go" label="Go">
 
+#### V2 API (Recommended)
+
 ```go
-func getDecisionWithToken(client *sdk.SDK, jwtToken string) {
-    decisionReq := &authorization.GetDecisionRequest{
-        EntityIdentifier: &authorization.EntityIdentifier{
-            Token: &entity.Token{
-                Id:  "token-1",
-                Jwt: jwtToken,
+func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
+    decisionReq := &authorizationv2.GetDecisionRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_Token{
+                Token: &entity.Token{
+                    EphemeralId: "token-1",
+                    Jwt:         jwtToken,
+                },
             },
         },
         Action: &policy.Action{Name: "decrypt"},
-        Resource: &authorization.Resource{
-            AttributeValues: &authorization.Resource_AttributeValues{
-                Fqns: []string{"https://company.com/attr/classification/value/public"},
+        Resource: &authorizationv2.Resource{
+            Resource: &authorizationv2.Resource_AttributeValues_{
+                AttributeValues: &authorizationv2.Resource_AttributeValues{
+                    Fqns: []string{"https://company.com/attr/classification/value/public"},
+                },
             },
         },
     }
     
-    decision, err := client.Authorization.GetDecision(
+    decision, err := client.AuthorizationV2.GetDecision(
         context.Background(),
         decisionReq,
     )
@@ -674,7 +860,53 @@ func getDecisionWithToken(client *sdk.SDK, jwtToken string) {
         log.Fatal(err)
     }
     
-    fmt.Printf("Token-based decision: %v\n", decision.GetDecision().GetDecision())
+    resDecision := decision.GetDecision()
+    fmt.Printf("Token-based decision: %v\n", resDecision.GetDecision())
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
+    // V1 API uses bulk decisions with token entity
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "decrypt"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "token-chain",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_Token{
+                    Token: &entity.Token{
+                        EphemeralId: "token-1",
+                        Jwt:         jwtToken,
+                    },
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{"https://company.com/attr/classification/value/public"},
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(),
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Token-based decision: %v\n", dr.GetDecision())
+        if len(dr.GetObligations()) > 0 {
+            fmt.Printf("Obligations: %v\n", dr.GetObligations())
+        }
+    }
 }
 ```
 
