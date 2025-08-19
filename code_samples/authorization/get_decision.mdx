@@ -260,7 +260,7 @@ async function main() {
     
     response.decisionResponses.forEach(decision => {
       console.log('Decision:', decision.decision);
-      if (decision.decision === 'DECISION_PERMIT' && decision.obligations?.length > 0) {
+      if (decision.decision === DecisionResponse_Decision.PERMIT && decision.obligations?.length > 0) {
         console.log('Obligations:', decision.obligations);
       }
     });
