@@ -56,7 +56,7 @@ func main() {
 	log.Println("✅ Data successfully encrypted")
 	log.Printf("📋 TDF Manifest details:\n\n%v\n\n", manifest)
 
-	// Decrypt ztdf
+	// Decrypt ZTDF
 	log.Println("🔓 Decrypting data...")
 	tdfReader, err := client.LoadTDF(bytes.NewReader(buf.Bytes()))
 	if err != nil {
@@ -79,57 +79,82 @@ func main() {
 
 ```java
 package io.opentdf.platform;
+
 import io.opentdf.platform.sdk.*;
 import java.io.ByteArrayInputStream;
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.io.FileOutputStream;
+import java.nio.file.Files;
 
-import com.nimbusds.jose.JOSEException;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 import java.nio.file.StandardOpenOption;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import org.apache.commons.codec.DecoderException;
 
 public class EncryptExample {
-    public static void main(String[] args) throws IOException, JOSEException, AutoConfigureException, InterruptedException, ExecutionException {
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:8080";
-
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-                .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
-                .build();
-
-        var kasInfo = new Config.KASInfo();
-        kasInfo.URL = "http://localhost:8080/kas";
-
-        var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo), Config.withDataAttributes("https://mynamespace.com/attr/test/value/test1"));
-
-        String str = "Hello, World!";
-        
-        var in = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
-
-        FileOutputStream fos = new FileOutputStream("my.ciphertext");
-
-        new TDF().createTDF(in, fos, tdfConfig, sdk.getServices().kas(), sdk.getServices().attributes());
-	Path path = Paths.get("my.ciphertext");
-        try (var in = FileChannel.open(path, StandardOpenOption.READ)) {
-            var reader = new TDF().loadTDF(in, sdk.getServices().kas());
-            reader.readPayload(System.out);
+    public static void main(String[] args) {
+        try {
+            System.out.println("🚀 Starting OpenTDF example...");
+            
+            String clientId = "opentdf";
+            String clientSecret = "secret";
+            String platformEndpoint = "http://localhost:8080";
+            
+            System.out.println("📡 Connecting to platform: " + platformEndpoint);
+            
+            // Create a new client
+            System.out.println("🔐 Initializing new SDK client...");
+            SDKBuilder builder = SDKBuilder.newBuilder();
+            SDK sdk = builder.platformEndpoint(platformEndpoint)
+                    .clientSecret(clientId, clientSecret)
+                    .useInsecurePlaintextConnection(true) // Set to true for http:// connections
+                    .build();
+            
+            // Encrypt TDF
+            System.out.println("📝 Preparing sensitive data for encryption...");
+            String sensitiveData = "Sensitive data!";
+            
+            var kasInfo = new Config.KASInfo();
+            kasInfo.URL = platformEndpoint + "/kas";
+            
+            var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+            
+            var inputStream = new ByteArrayInputStream(sensitiveData.getBytes(StandardCharsets.UTF_8));
+            var outputStream = new ByteArrayOutputStream();
+            
+            System.out.println("🔒 Encrypting data...");
+            sdk.createTDF(inputStream, outputStream, tdfConfig);
+            
+            System.out.println("✅ Data successfully encrypted");
+            System.out.println("📋 TDF created with " + outputStream.size() + " bytes");
+            
+            // Decrypt ZTDF
+            System.out.println("🔓 Decrypting data...");
+            var encryptedData = outputStream.toByteArray();
+            
+            // Save to temporary file for decryption
+            Path tempFile = Files.createTempFile("encrypted", ".tdf");
+            try {                
+                Files.write(tempFile, encryptedData);
+                
+                try (var fileChannel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
+                    var readerConfig = Config.newTDFReaderConfig();
+                    var reader = sdk.loadTDF(fileChannel, readerConfig);
+                    var decryptedOutput = new ByteArrayOutputStream();
+                    reader.readPayload(decryptedOutput);
+                    
+                    String decryptedContent = new String(decryptedOutput.toByteArray(), StandardCharsets.UTF_8);
+                    System.out.println("📤 Decrypted content: \n\n" + decryptedContent + "\n");
+                }
+            } catch (Exception e) {
+                // Clean up
+                Files.deleteIfExists(tempFile);
+            }
+            
+            System.out.println("✅ Example complete!");
+        } catch (IOException | AutoConfigureException e) {
+            System.err.println("❌ Error occurred: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
@@ -139,47 +164,113 @@ public class EncryptExample {
 <TabItem value="js" label="Typescript">
 
 ```typescript
-import { AuthProviders, NanoTDFClient } from '@opentdf/sdk';
+import { AuthProviders, OpenTDF, CreateZTDFOptions, DecoratedStream, ReadOptions } from '@opentdf/sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 // Configuration Options
-const kasEndpoint = "https://kas.example.com";
+const platformEndpoint = "http://localhost:8080";
+const oidcOrigin = "http://localhost:8888/realms/opentdf";
+const clientId = "opentdf";
+const clientSecret = "secret";
 
-// Authentication options (vary by middleware)
-const oidcOrigin = "https://idp.example.com";
-const clientId = "applicationNameFromIdP";
-const refreshToken = "userRefreshTokenValueFromIdP";
+async function main() {
+    try {
+        console.log("🚀 Starting OpenTDF example...");
 
-// AuthProviders are middlewares that add `Authorization` or other bearer tokens to requests.
-// These include The `refresh` provider can be handed a refresh and optional access token.
-const authProvider = await AuthProviders.refreshAuthProvider({
-  clientId,
-  exchange: 'refresh',
-  refreshToken,
-  oidcOrigin,
-});
+        // Authentication options (vary by middleware)
+        // For client credentials flow
+        console.log("🔑 Setting up authentication...");
+        const authProvider = await AuthProviders.clientSecretAuthProvider({
+            clientId,
+            clientSecret,
+            oidcOrigin,
+            exchange: 'client',
+        });
+        console.log("✅ Authentication provider created");
 
-const client = new TDF3Client({
-  authProvider,
-  kasEndpoint,
-});
+        // Create OpenTDF client
+        console.log("🔧 Creating OpenTDF client...");
+        const client = new OpenTDF({
+            authProvider: authProvider,
+            platformUrl: platformEndpoint,
+        });
+        console.log("✅ Client created");
+        // ABAC - Attribute-Based Access Control
+        // Option 1: No attributes (simplest for demonstration)
+        const attributes: string[] = []; 
+        
+        // Option 2: With attributes (requires proper attribute configuration on platform)
+        // const attributes = ["http://example.com/attr/classification/value/secret"];
 
-// ABAC
-const attributes = ["http://example.com/attr/classification/value/secret"]
+        // Create temporary files
+        const tempDir = os.tmpdir();
+        const inputFile = path.join(tempDir, 'opentdf-input.txt');
+        const encryptedFile = path.join(tempDir, 'opentdf-encrypted.tdf');
+        const decryptedFile = path.join(tempDir, 'opentdf-decrypted.txt');
 
-// encrypt
-const source = new ReadableStream({
-    pull(controller) {
-      controller.enqueue(new TextEncoder().encode(string));
-      controller.close();
-    },
-});
-const ciphertextStream = await client.encrypt({ offline: true, source, scope: {attributes} });
+        console.log(`📁 Using temp files:`);
+        console.log(`   Input: ${inputFile}`);
+        console.log(`   Encrypted: ${encryptedFile}`);
+        console.log(`   Decrypted: ${decryptedFile}`);
 
-// decrypt
-const plaintextStream = await client.decrypt({
-    source: { type: 'stream', location: ciphertextStream }
-});
-const plaintext = await plaintextStream.toString();
+        // Write input data to temporary file
+        const inputData = "This is sensitive data that will be encrypted with OpenTDF!";
+        console.log("📝 Preparing sensitive data for encryption...");
+        fs.writeFileSync(inputFile, inputData, 'utf8');
+        console.log(`✅ Input file written: ${inputData}`);
+
+        // Encrypt using OpenTDF client
+        console.log("🔒 Starting encryption...");
+        console.log("📖 Reading input file for encryption...");
+
+        // Read the file and create a Web ReadableStream
+        console.log("📡 Calling client.encrypt...");
+        let opts: CreateZTDFOptions = {
+            source: { type: 'buffer', location: new TextEncoder().encode(fs.readFileSync(inputFile).toString()) },
+        }
+        let tdf = await client.createZTDF(opts);
+
+        // Save encrypted stream to file
+        console.log(`💾 Saving encrypted data to temp file ${encryptedFile}`);
+
+        const encrypted = await new Response(tdf).bytes()
+        fs.writeFileSync(encryptedFile, encrypted);
+
+        console.log('✅ Data encrypted and saved to file!');
+
+
+        // Decrypt ZTDF
+        console.log("🔓 Decrypting data...");
+
+        const fileBuffer: Buffer = fs.readFileSync(encryptedFile);
+        const byteArray: Uint8Array = new Uint8Array(fileBuffer);
+
+        const decoratedStream: DecoratedStream = await client.read({
+            source: { type: 'buffer', location: byteArray },
+        } as ReadOptions);
+
+        const decrypted = await new Response(decoratedStream).text();
+
+        // Save decrypted stream to file
+        console.log("💾 Saving decrypted data to temp file...");
+        fs.writeFileSync(decryptedFile, decrypted);
+
+        // Read and display the decrypted content
+        const decryptedContent = fs.readFileSync(decryptedFile, 'utf8');
+        console.log('✅ Data decrypted and saved to file!');
+        console.log(`📤 Decrypted content: \n\n"${decryptedContent}"\n\n`);
+
+        process.exit(0);
+    } catch (error) {
+        console.error("❌ Error occurred:", error);
+        process.exit(1);
+    }
+}
+
+main();
+
 ```
 
 </TabItem>
