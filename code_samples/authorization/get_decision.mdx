@@ -204,68 +204,81 @@ public class GetDecision {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
-import { PlatformClient } from '@opentdf/sdk/platform';
-import { AuthProviders } from '@opentdf/sdk';
-import { create } from '@bufbuild/protobuf';
-import { GetDecisionsRequestSchema, DecisionRequestSchema, Entity_CategorySchema } from '@opentdf/sdk/platform';
+```typescript
+import {
+  DecisionResponse_Decision,
+  Entity_Category,
+  type GetDecisionsResponse,
+} from "@opentdf/sdk/platform/authorization/authorization_pb.js";
+import { platformConnect, PlatformClient } from "@opentdf/sdk/platform";
 
 async function main() {
-  const platformEndpoint = 'http://localhost:8080';
-  
+  const platformUrl = "http://localhost:8080";
+
   // Assume you have an existing access token
-  const accessToken = 'your-access-token-here';
+  const accessToken = "your-refresh-token-here";
 
-  // Create auth provider with existing token
-  const authProvider = await AuthProviders.accessTokenAuthProvider({
-    accessToken: accessToken
-  });
+  const interceptor: platformConnect.Interceptor = (next) => async (req) => {
+    req.header.set("Authorization", `Bearer ${accessToken}`);
+    return next(req);
+  };
 
-  // Create platform client
   const platformClient = new PlatformClient({
-    platformUrl: platformEndpoint,
-    authProvider
+    platformUrl: platformUrl,
+    interceptors: [interceptor],
   });
 
   // Get Decision using v1 API (bulk decisions)
-  const request = create(GetDecisionsRequestSchema, {
-    decisionRequests: [
-      create(DecisionRequestSchema, {
-        entityChains: [{
-          id: 'ec1',
-          entities: [{
-            id: 'entity-1',
-            entityType: {
-              case: 'clientId',
-              value: 'opentdf'
-            },
-            category: Entity_CategorySchema.SUBJECT
-          }]
-        }],
-        actions: [{
-          name: 'decrypt'
-        }],
-        resourceAttributes: [{
-          resourceAttributesId: 'resource-1',
-          attributeValueFqns: ['https://opentdf.io/attr/role/value/developer']
-        }]
-      })
-    ]
-  });
 
   try {
-    const response = await platformClient.v1.authorization.getDecisions(request);
-    
-    response.decisionResponses.forEach(decision => {
-      console.log('Decision:', decision.decision);
-      if (decision.decision === DecisionResponse_Decision.PERMIT && decision.obligations?.length > 0) {
-        console.log('Obligations:', decision.obligations);
+    const response = (await platformClient.v1.authorization.getDecisions({
+      decisionRequests: [
+        {
+          entityChains: [
+            {
+              id: "ec1",
+              entities: [
+                {
+                  id: "entity-1",
+                  entityType: {
+                    case: "clientId",
+                    value: "opentdf",
+                  },
+                  category: Entity_Category.SUBJECT,
+                },
+              ],
+            },
+          ],
+          actions: [
+            {
+              name: "decrypt",
+            },
+          ],
+          resourceAttributes: [
+            {
+              resourceAttributesId: "resource-1",
+              attributeValueFqns: [
+                "https://opentdf.io/attr/role/value/developer",
+              ],
+            },
+          ],
+        },
+      ],
+    })) as GetDecisionsResponse;
+
+    response.decisionResponses.forEach((decision) => {
+      console.log("Decision:", decision.decision);
+      if (
+        decision.decision === DecisionResponse_Decision.PERMIT &&
+        decision.obligations?.length > 0
+      ) {
+        console.log("Obligations:", decision.obligations);
       }
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
   }
 }
 
