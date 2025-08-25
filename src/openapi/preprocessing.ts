@@ -117,8 +117,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/objects.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -127,8 +127,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/keymanagement`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/keymanagement/key_management.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -137,8 +137,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/resourcemapping`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/resourcemapping/resource_mapping.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -147,8 +147,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/namespaces`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/namespaces/namespaces.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -157,8 +157,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/attributes`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/attributes/attributes.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -167,8 +167,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/unsafe`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/unsafe/unsafe.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -177,8 +177,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/actions`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/actions/actions.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -187,8 +187,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/registeredresources`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/registeredresources/registered_resources.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -207,8 +207,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/kasregistry`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/kasregistry/key_access_server_registry.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -217,8 +217,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy/obligations`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/obligations/obligations.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     },
     {
@@ -227,8 +227,8 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         outputDir: `${OUTPUT_PREFIX}/policy`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/selectors.openapi.yaml',
         sidebarOptions: {
-            groupPathsBy: "tag",
             categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
         },
     }
 ];
