@@ -1,13 +1,31 @@
+/*
+When making changes to this file, consider: https://virtru.atlassian.net/browse/DSPX-1577
+*/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 
+// Utility to find the repo root (directory containing package.json)
+function findRepoRoot(startDir = __dirname): string {
+  let dir = startDir;
+  while (!fs.existsSync(path.join(dir, 'package.json'))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) throw new Error('Could not find package.json in parent directories');
+    dir = parent;
+  }
+  return dir;
+}
+
+const repoRoot = findRepoRoot();
+const specsDir = path.join(repoRoot, 'specs');
+const specsProcessedDir = path.join(repoRoot, 'specs-processed');
+
 // Boolean to control whether we add '[Preprocessed on' timestamp ']' to the description
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 // The location prefix of built OpenAPI documentation
-const OUTPUT_PREFIX = 'docs/OpenAPI-clients';
+const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
 
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
 const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
@@ -34,7 +52,7 @@ interface ApiSpecDefinition {
 let openApiSpecsArray: ApiSpecDefinition[] = [
     {
         id: "Well-Known Configuration",
-        specPath: "./specs/wellknownconfiguration/wellknown_configuration.openapi.yaml",
+        specPath: path.join(specsDir, 'wellknownconfiguration/wellknown_configuration.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/wellknownconfiguration`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/wellknownconfiguration/wellknown_configuration.openapi.yaml',
         sidebarOptions: {
@@ -44,10 +62,9 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V1 Authorization",
-        specPath: "./specs/authorization/authorization.openapi.yaml",
+        specPath: path.join(specsDir, 'authorization/authorization.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/authorization/v1`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/authorization.openapi.yaml',
-        // specPathModified is auto-generated if not specified
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -55,11 +72,10 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V2 Authorization",
-        specPath: "./specs/authorization/v2/authorization.openapi.yaml",
+        specPath: path.join(specsDir, 'authorization/v2/authorization.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/authorization/v2`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/authorization/v2/authorization.openapi.yaml',
-        // Example of custom modified path:
-        specPathModified: "./specs-processed/authorization/v2/authorization.openapi.yaml",
+        // specPathModified: path.join(specsProcessedDir, 'authorization/v2/authorization.openapi.yaml'),
         sidebarOptions: {
             groupPathsBy: "tag",
             categoryLinkSource: "info",
@@ -67,7 +83,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V1 Entity Resolution",
-        specPath: "./specs/entityresolution/entity_resolution.openapi.yaml",
+        specPath: path.join(specsDir, 'entityresolution/entity_resolution.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v1`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/entity_resolution.openapi.yaml',
         sidebarOptions: {
@@ -77,7 +93,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "V2 Entity Resolution",
-        specPath: "./specs/entityresolution/v2/entity_resolution.openapi.yaml",
+        specPath: path.join(specsDir, 'entityresolution/v2/entity_resolution.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/entityresolution/v2`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/entityresolution/v2/entity_resolution.openapi.yaml',
         sidebarOptions: {
@@ -87,7 +103,7 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
     },
     {
         id: "kas",
-        specPath: "./specs/kas/kas.openapi.yaml",
+        specPath: path.join(specsDir, 'kas/kas.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/kas`,
         url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/kas/kas.openapi.yaml',
         sidebarOptions: {
@@ -95,7 +111,126 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
             categoryLinkSource: "info",
         },
     },
-    // Add more entries here for other OpenAPI specs
+    {
+        id: "Policy Objects",
+        specPath: path.join(specsDir, 'policy/objects.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/objects.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Key Management",
+        specPath: path.join(specsDir, 'policy/keymanagement/key_management.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/keymanagement`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/keymanagement/key_management.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Resource Mapping",
+        specPath: path.join(specsDir, 'policy/resourcemapping/resource_mapping.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/resourcemapping`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/resourcemapping/resource_mapping.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Namespaces",
+        specPath: path.join(specsDir, 'policy/namespaces/namespaces.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/namespaces`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/namespaces/namespaces.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Attributes",
+        specPath: path.join(specsDir, 'policy/attributes/attributes.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/attributes`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/attributes/attributes.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Unsafe Service",
+        specPath: path.join(specsDir, 'policy/unsafe/unsafe.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/unsafe`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/unsafe/unsafe.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Actions",
+        specPath: path.join(specsDir, 'policy/actions/actions.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/actions`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/actions/actions.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Registered Resources",
+        specPath: path.join(specsDir, 'policy/registeredresources/registered_resources.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/registeredresources`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/registeredresources/registered_resources.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Subject Mapping",
+        specPath: path.join(specsDir, 'policy/subjectmapping/subject_mapping.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/subjectmapping`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/subjectmapping/subject_mapping.openapi.yaml',
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "info",
+        },
+    },
+    {
+        id: "Policy KAS Registry",
+        specPath: path.join(specsDir, 'policy/kasregistry/key_access_server_registry.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/kasregistry`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/kasregistry/key_access_server_registry.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Obligations",
+        specPath: path.join(specsDir, 'policy/obligations/obligations.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/obligations`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/obligations/obligations.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
+        id: "Policy Selectors",
+        specPath: path.join(specsDir, 'policy/selectors.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/selectors.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    }
 ];
 
 // Convert array to object keyed by id, omitting 'url' for Docusaurus config
@@ -145,21 +280,21 @@ async function copySamplesToProcessedSpecs() {
   
   console.log('🔄 Ensuring sample files exist in "specs-processed" directory...');
   
-  const processedDir = path.resolve(__dirname, 'specs-processed');
-  fs.mkdirSync(processedDir, { recursive: true });
-  
+  // Use canonical processed and source directories
+  fs.mkdirSync(specsProcessedDir, { recursive: true });
+
   // Handle petstore specifically - it has a downloadUrl
-  const petstorePath = path.resolve(__dirname, 'specs-processed/petstore.yaml');
-  const petstoreSourcePath = path.resolve(__dirname, 'specs/petstore.yaml');
-  
+  const petstorePath = path.join(specsProcessedDir, 'petstore.yaml');
+  const petstoreSourcePath = path.join(specsDir, 'petstore.yaml');
+
   // Always copy from source directory, overwriting if it exists
   console.log(`Copying petstore spec from ${petstoreSourcePath}`);
   fs.copyFileSync(petstoreSourcePath, petstorePath);
-  
+
   // Handle bookstore specifically
-  const bookstorePath = path.resolve(__dirname, 'specs-processed/bookstore.yaml');
-  const bookstoreSourcePath = path.resolve(__dirname, 'specs/bookstore.yaml');
-  
+  const bookstorePath = path.join(specsProcessedDir, 'bookstore.yaml');
+  const bookstoreSourcePath = path.join(specsDir, 'bookstore.yaml');
+
   // Always copy from source directory, overwriting if it exists
   console.log(`Copying bookstore spec from ${bookstoreSourcePath}`);
   fs.copyFileSync(bookstoreSourcePath, bookstorePath);
@@ -193,14 +328,14 @@ async function preprocessOpenApiSpecs() {
 
         // Generate modified path if not specified
         if (!spec.specPathModified) {
-            // Store processed files in a 'specs-processed' directory by default
-            spec.specPathModified = path.join(
-                parsedPath.dir.replace(/^\.\/specs/, './specs-processed'),
-                parsedPath.base
-            );
+            // Extract the relative path from specsDir
+            const relativePath = path.relative(specsDir, spec.specPath);
+            
+            // Store processed files in 'specs-processed' directory while preserving the original directory structure
+            spec.specPathModified = path.join(specsProcessedDir, relativePath);
         }
 
-        const targetPath = path.resolve(__dirname, spec.specPathModified);
+        const targetPath = path.resolve(spec.specPathModified);
 
         console.log(`Processing: ${sourcePath} → ${targetPath}`);
 
@@ -300,10 +435,6 @@ Expand each section in the navigation panel to access the OpenAPI documentation 
     console.log('✨ OpenAPI preprocessing complete');
 };
 
-// Execute the preprocessing function
-preprocessOpenApiSpecs().catch(error => {
-    console.error('Failed to preprocess OpenAPI specs:', error);
-    process.exit(1);
-});
 
-export { openApiSpecs, openApiSpecsArray };
+// Export the function and data without automatically executing it
+export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs };

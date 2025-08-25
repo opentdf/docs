@@ -9,9 +9,15 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 import matter from "gray-matter";
 import listRemote from "./docusaurus-lib-list-remote";
-import { openApiSpecs } from "./preprocessing";
+import { preprocessOpenApiSpecs, openApiSpecs } from './src/openapi/preprocessing';
 import languageTabs from "./openapi-generated-clients";
 import { getSpecDocumentationPlugins } from './src/utils/spec-documentation';
+
+// Execute the preprocessing function for OpenAPI specs
+preprocessOpenApiSpecs().catch(error => {
+    console.error('Failed to preprocess OpenAPI specs:', error);
+    process.exit(1);
+});
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
