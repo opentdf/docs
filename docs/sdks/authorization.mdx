@@ -2,12 +2,1060 @@
 sidebar_position: 5
 ---
 
-import Decision from '../../code_samples/authorization/get_decision.mdx'
-import Entitlements from '../../code_samples/authorization/get_entitlements.mdx'
-
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # Making Authorization Decisions
 
-<Entitlements />
+OpenTDF's authorization system provides two primary methods for access control: **Entitlements** and **Authorization Decisions**. Understanding when and how to use each is crucial for implementing effective data security.
 
-<Decision />
+## Overview
+
+### Entitlements vs Decisions
+
+- **Entitlements**: Answer "*What can this entity access?*" - Returns all attribute values an entity is entitled to access
+- **Decisions**: Answer "*Can this entity access this specific resource?*" - Returns a permit/deny decision for specific resource access
+
+### Typical Workflow
+
+1. **During Resource Discovery**: Use `GetEntitlements` to show users what data they can access
+2. **During Resource Access**: Use `GetDecision` to enforce access controls when accessing specific resources
+3. **For Bulk Operations**: Use `GetDecisionBulk` for efficient batch authorization
+
+## Authentication Setup
+
+All authorization calls require proper authentication. Here's how to set up the SDK client:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    
+    "github.com/opentdf/platform/protocol/go/authorization"
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/entity"
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/sdk"
+    "google.golang.org/protobuf/proto"
+)
+
+func main() {
+    platformEndpoint := "http://localhost:8080"
+    
+    // Create authenticated client
+    client, err := sdk.New(
+        platformEndpoint,
+        sdk.WithClientCredentials("opentdf", "secret", nil),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Client is ready for authorization calls
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.authorization.*;
+import io.opentdf.platform.entity.*;
+import io.opentdf.platform.policy.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+public class AuthorizationSetup {
+    public static void main(String[] args) {
+        String clientId = "opentdf";
+        String clientSecret = "secret";
+        String platformEndpoint = "http://localhost:8080";
+        
+        SDKBuilder builder = new SDKBuilder();
+        SDK sdk = builder.platformEndpoint(platformEndpoint)
+            .clientSecret(clientId, clientSecret)
+            .useInsecurePlaintextConnection(true)
+            .build();
+                
+        // SDK is ready for authorization calls
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+import { PlatformClient } from '@opentdf/sdk/platform';
+import { AuthProviders } from '@opentdf/sdk';
+
+// Assume you have an existing access token
+const accessToken = 'your-access-token-here';
+
+// Create auth provider with existing token
+const authProvider = await AuthProviders.accessTokenAuthProvider({
+  accessToken: accessToken
+});
+
+// Create platform client
+const platformClient = new PlatformClient({
+  platformUrl: 'http://localhost:8080',
+  authProvider
+});
+
+// Client is ready for authorization calls
+```
+
+</TabItem>
+</Tabs>
+
+## Getting Entitlements
+
+Use `GetEntitlements` to discover what attribute values an entity can access. This is useful for:
+- Building user interfaces that show available data
+- Pre-filtering content based on user permissions
+- Understanding an entity's overall access scope
+
+### Basic Entitlements Query
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+#### V2 API (Recommended)
+
+```go
+func getEntitlementsV2(client *sdk.SDK) {
+    // Using v2 API with EntityIdentifier
+    entitlementReq := &authorizationv2.GetEntitlementsRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                EntityChain: &entity.EntityChain{
+                    Entities: []*entity.Entity{
+                        {
+                            EphemeralId: "user-bob",
+                            EntityType: &entity.Entity_EmailAddress{
+                                EmailAddress: "bob@OrgA.com",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }
+    
+    entitlements, err := client.AuthorizationV2.GetEntitlements(
+        context.Background(), 
+        entitlementReq,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Process entitlements
+    for _, entitlement := range entitlements.GetEntitlements() {
+        fmt.Printf("Entity has access to: %v\n", 
+            entitlement.GetActionsPerAttributeValueFqn())
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getEntitlementsV1(client *sdk.SDK) {
+    // Using v1 API - note: v1 doesn't have GetEntitlements
+    // Instead, use GetDecisions to understand entity capabilities
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "read"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "bob@OrgA.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        // Query with multiple resource attributes to understand scope
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{
+                "https://company.com/attr/classification/value/public",
+                "https://company.com/attr/classification/value/confidential",
+            },
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(), 
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Process decisions to understand entitlements
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Entity chain %s has decision: %v\n", 
+            dr.GetEntityChainId(), dr.GetDecision())
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getEntitlements(SDK sdk) throws ExecutionException, InterruptedException {
+    GetEntitlementsRequest request = GetEntitlementsRequest.newBuilder()
+        .setEntityIdentifier(
+            EntityIdentifier.newBuilder()
+                .setEntityChain(
+                    EntityChain.newBuilder()
+                        .addEntities(
+                            Entity.newBuilder()
+                                .setId("user-bob")
+                                .setEmailAddress("bob@OrgA.com")
+                        )
+                )
+        )
+        .build();
+    
+    GetEntitlementsResponse resp = sdk.getServices()
+        .authorization()
+        .getEntitlements(request)
+        .get();
+    
+    List<EntityEntitlements> entitlements = resp.getEntitlementsList();
+    
+    for (EntityEntitlements entitlement : entitlements) {
+        System.out.println("Entitled to: " + 
+            entitlement.getActionsPerAttributeValueFqnMap());
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+import { create } from '@bufbuild/protobuf';
+import { GetEntitlementsRequestSchema, EntitySchema, Entity_CategorySchema } from '@opentdf/sdk/platform';
+
+async function getEntitlements(platformClient) {
+  // Assume we have an access token representing the user
+  const accessToken = 'user-access-token-here';
+  
+  const request = create(GetEntitlementsRequestSchema, {
+    entities: [
+      create(EntitySchema, {
+        id: 'user-bob',
+        entityType: {
+          case: 'emailAddress',
+          value: 'bob@OrgA.com'
+        },
+        category: Entity_CategorySchema.SUBJECT
+      })
+    ]
+  });
+  
+  const response = await platformClient.v1.authorization.getEntitlements(request);
+  
+  response.entitlements.forEach(entitlement => {
+    console.log('Entitled to:', entitlement.attributeValueFqns);
+  });
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Entitlements with Scope
+
+You can limit entitlement queries to specific attribute hierarchies:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+// Note: This example uses the v1 API as WithComprehensiveHierarchy is a v1-only feature
+func getEntitlementsWithScope(client *sdk.SDK) {
+    entitlementReq := &authorization.GetEntitlementsRequest{
+        EntityIdentifier: &authorization.EntityIdentifier{
+            EntityChain: &entity.EntityChain{
+                Entities: []*entity.Entity{
+                    {
+                        Id: "user-123",
+                        EntityType: &entity.Entity_EmailAddress{
+                            EmailAddress: "user@company.com",
+                        },
+                    },
+                },
+            },
+        },
+        // When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value
+        WithComprehensiveHierarchy: proto.Bool(true),
+    }
+    
+    entitlements, err := client.Authorization.GetEntitlements(
+        context.Background(), 
+        entitlementReq,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Printf("Scoped entitlements: %v", entitlements.GetEntitlements())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getEntitlementsWithScope(SDK sdk) throws ExecutionException, InterruptedException {
+    GetEntitlementsRequest request = GetEntitlementsRequest.newBuilder()
+        .setEntityIdentifier(
+            EntityIdentifier.newBuilder()
+                .setEntityChain(
+                    EntityChain.newBuilder()
+                        .addEntities(
+                            Entity.newBuilder()
+                                .setId("user-123")
+                                .setEmailAddress("user@company.com")
+                        )
+                )
+        )
+        // When true, returns all entitled values for attributes with hierarchy rules
+        .setWithComprehensiveHierarchy(true)
+        .build();
+    
+    GetEntitlementsResponse resp = sdk.getServices()
+        .authorization()
+        .getEntitlements(request)
+        .get();
+    
+    System.out.println("Scoped entitlements: " + resp.getEntitlementsList());
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getEntitlementsWithScope(sdk) {
+  const request = {
+    entityIdentifier: {
+      entityChain: {
+        entities: [{
+          id: 'user-123',
+          emailAddress: 'user@company.com'
+        }]
+      }
+    },
+    // When true, returns all entitled values for attributes with hierarchy rules
+    withComprehensiveHierarchy: true
+  };
+  
+  const response = await sdk.authorization.getEntitlements(request);
+  
+  console.log('Scoped entitlements:', response.entitlements);
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Making Authorization Decisions
+
+Use `GetDecision` when you need to authorize access to specific resources. This is the enforcement point in your application.
+
+### Single Resource Decision
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+#### V2 API (Recommended)
+
+```go
+func getDecisionV2(client *sdk.SDK) {
+    decisionReq := &authorizationv2.GetDecisionRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                EntityChain: &entity.EntityChain{
+                    Entities: []*entity.Entity{
+                        {
+                            EphemeralId: "user-123",
+                            EntityType: &entity.Entity_EmailAddress{
+                                EmailAddress: "user@company.com",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        Action: &policy.Action{
+            Name: "decrypt",
+        },
+        Resource: &authorizationv2.Resource{
+            Resource: &authorizationv2.Resource_AttributeValues_{
+                AttributeValues: &authorizationv2.Resource_AttributeValues{
+                    Fqns: []string{
+                        "https://company.com/attr/classification/value/confidential",
+                        "https://company.com/attr/department/value/finance",
+                    },
+                },
+            },
+        },
+    }
+    
+    decision, err := client.AuthorizationV2.GetDecision(
+        context.Background(), 
+        decisionReq,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    resDecision := decision.GetDecision()
+    if resDecision.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
+        fmt.Println("Access granted")
+        // Note: ResourceDecision doesn't have obligations in v2 API
+    } else {
+        fmt.Println("Access denied")
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getDecisionV1(client *sdk.SDK) {
+    // V1 API uses bulk decisions
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{
+            Name: "decrypt",
+        }},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "user@company.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{
+                "https://company.com/attr/classification/value/confidential",
+                "https://company.com/attr/department/value/finance",
+            },
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(), 
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        if dr.GetDecision() == authorization.DecisionResponse_DECISION_PERMIT {
+            fmt.Println("Access granted")
+            // Process any obligations
+            if len(dr.GetObligations()) > 0 {
+                fmt.Printf("Obligations to fulfill: %v\n", dr.GetObligations())
+            }
+        } else {
+            fmt.Println("Access denied")
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getDecision(SDK sdk) throws ExecutionException, InterruptedException {
+    GetDecisionRequest request = GetDecisionRequest.newBuilder()
+        .setEntityIdentifier(
+            EntityIdentifier.newBuilder()
+                .setEntityChain(
+                    EntityChain.newBuilder()
+                        .addEntities(
+                            Entity.newBuilder()
+                                .setId("user-123")
+                                .setEmailAddress("user@company.com")
+                        )
+                )
+        )
+        .setAction(
+            Action.newBuilder()
+                .setName("decrypt")
+        )
+        .setResource(
+            Resource.newBuilder()
+                .setAttributeValues(
+                    Resource.AttributeValues.newBuilder()
+                        .addFqns("https://company.com/attr/classification/value/confidential")
+                        .addFqns("https://company.com/attr/department/value/finance")
+                )
+        )
+        .build();
+    
+    GetDecisionResponse resp = sdk.getServices()
+        .authorization()
+        .getDecision(request)
+        .get();
+    
+    Decision decision = resp.getDecision();
+    if (decision.getDecision() == Decision.DECISION_PERMIT) {
+        System.out.println("Access granted");
+        // Process any obligations
+        if (decision.getObligationsCount() > 0) {
+            System.out.println("Obligations to fulfill: " + decision.getObligationsList());
+        }
+    } else {
+        System.out.println("Access denied");
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getDecision(sdk) {
+  const request = {
+    entityIdentifier: {
+      entityChain: {
+        entities: [{
+          id: 'user-123',
+          emailAddress: 'user@company.com'
+        }]
+      }
+    },
+    action: {
+      name: 'decrypt'
+    },
+    resource: {
+      attributeValues: {
+        fqns: [
+          'https://company.com/attr/classification/value/confidential',
+          'https://company.com/attr/department/value/finance'
+        ]
+      }
+    }
+  };
+  
+  const response = await sdk.authorization.getDecision(request);
+  
+  if (response.decision.decision === 'DECISION_PERMIT') {
+    console.log('Access granted');
+    if (response.decision.obligations?.length > 0) {
+      console.log('Obligations:', response.decision.obligations);
+    }
+  } else {
+    console.log('Access denied');
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Bulk Authorization Decisions
+
+For efficient batch processing, use bulk decision endpoints:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+#### V2 API (Recommended)
+
+```go
+func getBulkDecisionsV2(client *sdk.SDK) {
+    bulkReq := &authorizationv2.GetDecisionBulkRequest{
+        DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
+            {
+                EntityIdentifier: &authorizationv2.EntityIdentifier{
+                    Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+                        EntityChain: &entity.EntityChain{
+                            Entities: []*entity.Entity{
+                                {
+                                    EphemeralId: "user-123",
+                                    EntityType: &entity.Entity_EmailAddress{
+                                        EmailAddress: "user@company.com",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                Action: &policy.Action{Name: "decrypt"},
+                Resources: []*authorizationv2.Resource{
+                    {
+                        EphemeralId: "resource-1",
+                        Resource: &authorizationv2.Resource_AttributeValues_{
+                            AttributeValues: &authorizationv2.Resource_AttributeValues{
+                                Fqns: []string{"https://company.com/attr/class/value/public"},
+                            },
+                        },
+                    },
+                    {
+                        EphemeralId: "resource-2",
+                        Resource: &authorizationv2.Resource_AttributeValues_{
+                            AttributeValues: &authorizationv2.Resource_AttributeValues{
+                                Fqns: []string{"https://company.com/attr/class/value/confidential"},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }
+    
+    decisions, err := client.AuthorizationV2.GetDecisionBulk(
+        context.Background(),
+        bulkReq,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, resp := range decisions.GetDecisionResponses() {
+        allPermitted := resp.GetAllPermitted()
+        if allPermitted != nil {
+            fmt.Printf("All resources permitted: %v\n", allPermitted.GetValue())
+        }
+        for _, resourceDecision := range resp.GetResourceDecisions() {
+            fmt.Printf("Resource %s: %v\n",
+                resourceDecision.GetEphemeralResourceId(),
+                resourceDecision.GetDecision())
+        }
+    }
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getBulkDecisionsV1(client *sdk.SDK) {
+    // V1 API uses GetDecisions for bulk processing
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "decrypt"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "ec1",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_EmailAddress{
+                    EmailAddress: "user@company.com",
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/public"},
+            },
+            {
+                AttributeValueFqns: []string{"https://company.com/attr/class/value/confidential"},
+            },
+        },
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(),
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Entity chain %s: %v\n",
+            dr.GetEntityChainId(),
+            dr.GetDecision())
+        if len(dr.GetObligations()) > 0 {
+            fmt.Printf("Obligations: %v\n", dr.GetObligations())
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedException {
+    GetDecisionBulkRequest request = GetDecisionBulkRequest.newBuilder()
+        .addDecisionRequests(
+            GetDecisionMultiResourceRequest.newBuilder()
+                .setEntityIdentifier(
+                    EntityIdentifier.newBuilder()
+                        .setEntityChain(
+                            EntityChain.newBuilder()
+                                .addEntities(
+                                    Entity.newBuilder()
+                                        .setId("user-123")
+                                        .setEmailAddress("user@company.com")
+                                )
+                        )
+                )
+                .setAction(
+                    Action.newBuilder()
+                        .setName("decrypt")
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-1")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/public")
+                        )
+                )
+                .addResources(
+                    Resource.newBuilder()
+                        .setEphemeralId("resource-2")
+                        .setAttributeValues(
+                            Resource.AttributeValues.newBuilder()
+                                .addFqns("https://company.com/attr/class/value/confidential")
+                        )
+                )
+        )
+        .build();
+    
+    GetDecisionBulkResponse resp = sdk.getServices()
+        .authorization()
+        .getDecisionBulk(request)
+        .get();
+    
+    for (GetDecisionMultiResourceResponse response : resp.getDecisionResponsesList()) {
+        if (response.hasAllPermitted()) {
+            System.out.println("All resources permitted: " + response.getAllPermitted().getValue());
+        }
+        for (ResourceDecision resourceDecision : response.getResourceDecisionsList()) {
+            System.out.println("Resource " + resourceDecision.getEphemeralResourceId() + 
+                ": " + resourceDecision.getDecision());
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getBulkDecisions(sdk) {
+  const request = {
+    decisionRequests: [{
+      entityIdentifier: {
+        entityChain: {
+          entities: [{
+            id: 'user-123',
+            emailAddress: 'user@company.com'
+          }]
+        }
+      },
+      action: {
+        name: 'decrypt'
+      },
+      resources: [
+        {
+          ephemeralId: 'resource-1',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/public']
+          }
+        },
+        {
+          ephemeralId: 'resource-2',
+          attributeValues: {
+            fqns: ['https://company.com/attr/class/value/confidential']
+          }
+        }
+      ]
+    }]
+  };
+  
+  const response = await sdk.authorization.getDecisionBulk(request);
+  
+  response.decisionResponses.forEach(resp => {
+    if (resp.allPermitted !== undefined) {
+      console.log('All resources permitted:', resp.allPermitted.value);
+    }
+    resp.resourceDecisions.forEach(resourceDecision => {
+      console.log(`Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`);
+    });
+  });
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Entity Types and Authentication
+
+OpenTDF supports various entity types for flexible authentication:
+
+### Supported Entity Types
+
+- **ClientId**: Service-to-service authentication
+- **EmailAddress**: User identification via email
+- **UserName**: User identification via username  
+- **UUID**: Direct entity UUID reference
+- **Token**: JWT-based authentication
+- **Claims**: Custom claims-based entities
+
+### Token-Based Authentication Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+#### V2 API (Recommended)
+
+```go
+func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
+    decisionReq := &authorizationv2.GetDecisionRequest{
+        EntityIdentifier: &authorizationv2.EntityIdentifier{
+            Identifier: &authorizationv2.EntityIdentifier_Token{
+                Token: &entity.Token{
+                    EphemeralId: "token-1",
+                    Jwt:         jwtToken,
+                },
+            },
+        },
+        Action: &policy.Action{Name: "decrypt"},
+        Resource: &authorizationv2.Resource{
+            Resource: &authorizationv2.Resource_AttributeValues_{
+                AttributeValues: &authorizationv2.Resource_AttributeValues{
+                    Fqns: []string{"https://company.com/attr/classification/value/public"},
+                },
+            },
+        },
+    }
+    
+    decision, err := client.AuthorizationV2.GetDecision(
+        context.Background(),
+        decisionReq,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    resDecision := decision.GetDecision()
+    fmt.Printf("Token-based decision: %v\n", resDecision.GetDecision())
+}
+```
+
+#### V1 API (Legacy)
+
+```go
+func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
+    // V1 API uses bulk decisions with token entity
+    decisionRequests := []*authorization.DecisionRequest{{
+        Actions: []*policy.Action{{Name: "decrypt"}},
+        EntityChains: []*authorization.EntityChain{{
+            Id: "token-chain",
+            Entities: []*authorization.Entity{{
+                EntityType: &authorization.Entity_Token{
+                    Token: &entity.Token{
+                        EphemeralId: "token-1",
+                        Jwt:         jwtToken,
+                    },
+                },
+                Category: authorization.Entity_CATEGORY_SUBJECT,
+            }},
+        }},
+        ResourceAttributes: []*authorization.ResourceAttribute{{
+            AttributeValueFqns: []string{"https://company.com/attr/classification/value/public"},
+        }},
+    }}
+    
+    decisionRequest := &authorization.GetDecisionsRequest{
+        DecisionRequests: decisionRequests,
+    }
+    
+    decisionResponse, err := client.Authorization.GetDecisions(
+        context.Background(),
+        decisionRequest,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, dr := range decisionResponse.GetDecisionResponses() {
+        fmt.Printf("Token-based decision: %v\n", dr.GetDecision())
+        if len(dr.GetObligations()) > 0 {
+            fmt.Printf("Obligations: %v\n", dr.GetObligations())
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public void getDecisionWithToken(SDK sdk, String jwtToken) throws ExecutionException, InterruptedException {
+    GetDecisionRequest request = GetDecisionRequest.newBuilder()
+        .setEntityIdentifier(
+            EntityIdentifier.newBuilder()
+                .setToken(
+                    Token.newBuilder()
+                        .setId("token-1")
+                        .setJwt(jwtToken)
+                )
+        )
+        .setAction(
+            Action.newBuilder()
+                .setName("decrypt")
+        )
+        .setResource(
+            Resource.newBuilder()
+                .setAttributeValues(
+                    Resource.AttributeValues.newBuilder()
+                        .addFqns("https://company.com/attr/classification/value/public")
+                )
+        )
+        .build();
+    
+    GetDecisionResponse resp = sdk.getServices()
+        .authorization()
+        .getDecision(request)
+        .get();
+    
+    System.out.println("Token-based decision: " + resp.getDecision().getDecision());
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```javascript
+async function getDecisionWithToken(sdk, jwtToken) {
+  const request = {
+    entityIdentifier: {
+      token: {
+        id: 'token-1',
+        jwt: jwtToken
+      }
+    },
+    action: {
+      name: 'decrypt'
+    },
+    resource: {
+      attributeValues: {
+        fqns: ['https://company.com/attr/classification/value/public']
+      }
+    }
+  };
+  
+  const response = await sdk.authorization.getDecision(request);
+  
+  console.log('Token-based decision:', response.decision.decision);
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Best Practices
+
+### Performance Optimization
+
+1. **Batch Operations**: Use bulk endpoints for multiple authorization checks
+2. **Caching**: Cache entitlement results when appropriate (consider TTL)
+3. **Scope Limiting**: Use scoped entitlement queries to reduce response size
+
+### Security Considerations
+
+1. **Least Privilege**: Request only the minimum necessary permissions
+2. **Token Validation**: Ensure JWT tokens are properly validated before use
+3. **Obligation Handling**: Always process and fulfill returned obligations
+4. **Error Handling**: Implement proper error handling and fallback policies
+
+### Integration Patterns
+
+```go
+// Example: Authorization middleware
+func authorizationMiddleware(next http.Handler, sdk *sdk.SDK) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Extract entity from request (JWT, session, etc.)
+        entity := extractEntityFromRequest(r)
+        
+        // Extract resource attributes from the requested resource
+        resourceAttrs := extractResourceAttributes(r.URL.Path)
+        
+        // Make authorization decision
+        decision := makeAuthorizationDecision(sdk, entity, "access", resourceAttrs)
+        
+        if decision == authorization.DecisionResponse_DECISION_PERMIT {
+            next.ServeHTTP(w, r)
+        } else {
+            http.Error(w, "Access denied", http.StatusForbidden)
+        }
+    })
+}
+```
+
+## Error Handling
+
+Always implement comprehensive error handling for authorization calls:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func safeAuthorizationCall(client *sdk.SDK, req *authorizationv2.GetDecisionRequest) {
+    decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
+    
+    if err != nil {
+        // Log the error for debugging
+        log.Printf("Authorization error: %v", err)
+        
+        // Implement your fallback policy. Choose one of the options below.
+        
+        // Option 1: Deny by default (more secure)
+        handleAccessDenied()
+        return
+        
+        /*
+        // Option 2: Allow by default (less secure, only for non-critical resources)
+        handleAccessAllowed()
+        return
+        */
+        
+        /*
+        // Option 3: Retry with exponential backoff
+        retryWithBackoff(client, req)
+        return
+        */
+    }
+    
+    // Process successful response
+    handleDecisionResponse(decision)
+}
+```
+
+</TabItem>
+</Tabs>
