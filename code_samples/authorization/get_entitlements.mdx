@@ -14,12 +14,13 @@ import (
 	"log"
 
 	"github.com/opentdf/platform/protocol/go/authorization"
+	"github.com/opentdf/platform/protocol/go/entity"
 	"github.com/opentdf/platform/sdk"
 )
 
 func main() {
 
-	platformEndpoint := "http://localhost:9002"
+	platformEndpoint := "http://localhost:8080"
 
 	// Create a new client
 	client, err := sdk.New(
@@ -31,14 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get Entitlements
-
+	// Get Entitlements using v2 API
 	entitlementReq := &authorization.GetEntitlementsRequest{
-		Entities: []*authorization.Entity{
-			{
-				Id: "entity-1",
-				EntityType: &authorization.Entity_ClientId{
-					ClientId: "opentdf",
+		EntityIdentifier: &authorization.EntityIdentifier{
+			EntityChain: &entity.EntityChain{
+				Entities: []*entity.Entity{
+					{
+						Id: "entity-1",
+						EntityType: &entity.Entity_ClientId{
+							ClientId: "opentdf",
+						},
+					},
 				},
 			},
 		},
@@ -63,6 +67,7 @@ import io.opentdf.platform.sdk.*;
 import java.util.concurrent.ExecutionException;
 
 import io.opentdf.platform.authorization.*;
+import io.opentdf.platform.entity.*;
 
 import java.util.List;
 
@@ -71,22 +76,35 @@ public class GetEntitlements {
 
         String clientId = "opentdf";
         String clientSecret = "secret";
-        String platformEndpoint = "localhost:8080";
+        String platformEndpoint = "http://localhost:8080";
 
         SDKBuilder builder = new SDKBuilder();
         SDK sdk = builder.platformEndpoint(platformEndpoint)
                 .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
                 .build();
     
+        // Get Entitlements using v2 API
         GetEntitlementsRequest request = GetEntitlementsRequest.newBuilder()
-        .addEntities(Entity.newBuilder().setId("entity-1").setClientId("opentdf"))
-        .build();
+            .setEntityIdentifier(
+                EntityIdentifier.newBuilder()
+                    .setEntityChain(
+                        EntityChain.newBuilder()
+                            .addEntities(
+                                Entity.newBuilder()
+                                    .setId("entity-1")
+                                    .setClientId("opentdf")
+                            )
+                    )
+            )
+            .build();
 
         GetEntitlementsResponse resp = sdk.getServices().authorization().getEntitlements(request).get();
 
         List<EntityEntitlements> entitlements = resp.getEntitlementsList();
 
-        System.out.println(entitlements.get(0).getAttributeValueFqnsList());
+        for (EntityEntitlements entitlement : entitlements) {
+            System.out.println("Entitled to: " + entitlement.getActionsPerAttributeValueFqnMap());
+        }
     }
 }
 ```

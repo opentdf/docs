@@ -19,7 +19,7 @@ import (
 
 func main() {
 
-	platformEndpoint := "http://localhost:9002"
+	platformEndpoint := "http://localhost:8080"
 
 	// Create a new client
 	client, err := sdk.New(
@@ -59,7 +59,7 @@ public class ListNamespaces {
 
         String clientId = "opentdf";
         String clientSecret = "secret";
-        String platformEndpoint = "localhost:8080";
+        String platformEndpoint = "http://localhost:8080";
 
         SDKBuilder builder = new SDKBuilder();
         SDK sdk = builder.platformEndpoint(platformEndpoint)

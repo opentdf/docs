@@ -38,3 +38,6 @@ node_modules
 .github/vale-styles/*
 # Except for the config directory where we keep the vocab
 !.github/vale-styles/config/
+
+# Ignore manual test scripts
+manual_tests/
