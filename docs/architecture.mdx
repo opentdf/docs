@@ -4,71 +4,81 @@ sidebar_position: 3
 
 # Architecture
 
-## Overview
+OpenTDF is built on a flexible, service-oriented architecture designed for robust and fine-grained access control. The platform consists of four core components that work together to protect data throughout its lifecycle. This architecture aligns with the well-established National Institute of Standards and Technology (NIST) model for Attribute-Based Access Control (ABAC), ensuring a standards-based and interoperable approach.
 
-The OpenTDF platform is made up of 4 main components:
+## Core Platform Components
 
-- **[Policy](components/policy/)** - Manages attribute-based access control (ABAC) policies, including namespaces, attributes, values, and their relationships
-- **[Authorization](components/authorization)** - Handles entitlement decisions based on policy evaluation and entity context
-- **[Key Access Server (KAS)](components/key_access)** - Manages cryptographic keys and provides secure key access for TDF encryption/decryption
-- **[Entity Resolution Service](components/entity_resolution)** - Interfaces with Identity Providers (IdPs) to resolve entity information for authorization decisions
-
-## High-Level Architecture
+The four main services of the OpenTDF platform are the Policy Service, Authorization Service, Entity Resolution Service, and the Key Access Server.
 
 ```mermaid
 graph TD
-    %% External Systems
-    CLIENT["🖥️ Client Application"] 
-    IDP["🔐 Identity Provider<br/>(Keycloak, Auth0, etc.)"] 
-    
-    %% OpenTDF Platform Components
     subgraph "OpenTDF Platform"
-        POLICY["📋 Policy Service<br/>• Attribute Management<br/>• Subject Mappings<br/>• Resource Mappings<br/>• Key Access Grants"]
+        direction LR
         
-        AUTHZ["⚖️ Authorization Service<br/>• Entitlement Decisions<br/>• Policy Evaluation<br/>• ABAC Enforcement"]
-        
-        ERS["👥 Entity Resolution<br/>• JWT Token Parsing<br/>• Entity Chain Creation<br/>• IdP Integration"]
-        
-        KAS["🔑 Key Access Server<br/>• Key Management<br/>• TDF Encrypt/Decrypt<br/>• Access Control"]
+        subgraph "Policy & Decision"
+            direction TB
+            POLICY["🏢 Policy Service<br/><i>(Implements NIST PAP)</i>"]
+            AUTHZ["🧠 Authorization Service<br/><i>(Implements NIST PDP)</i>"]
+        end
+
+        subgraph "Attribute & Enforcement"
+            direction TB
+            ERS["ℹ️ Entity Resolution Service<br/><i>(Implements NIST PIP)</i>"]
+            KAS["🛡️ Key Access Server<br/><i>(Implements NIST PEP)</i>"]
+        end
     end
     
-    %% TDF Operations
-    TDF_ENC["📦 TDF Creation<br/>(Encrypt)"]
-    TDF_DEC["📂 TDF Access<br/>(Decrypt)"]
+    subgraph "External Systems"
+        direction TB
+        ATTR_SOURCES["📚 Optional Attribute Sources<br/>(LDAP, SQL, etc.)"]
+        IDP["🔐 Identity Provider"]
+    end
+
+    CLIENT["🖥️ Client Application"]
+
+    CLIENT -->|1. Authenticates| IDP
+    CLIENT -->|2. Access Request| KAS
     
-    %% Flow connections
-    CLIENT -->|"1. Authenticate"| IDP
-    CLIENT -->|"2. Create TDF"| TDF_ENC
-    CLIENT -->|"3. Access TDF"| TDF_DEC
+    KAS -->|3. Decision Request| AUTHZ
+    AUTHZ -->|4. Get Attributes| ERS
+    AUTHZ -->|5. Get Policies| POLICY
+    ERS -->|6. Optionally Query Attributes| ATTR_SOURCES
     
-    TDF_ENC -->|"Get Policy & Keys"| POLICY
-    TDF_ENC -->|"Encrypt with Keys"| KAS
-    
-    TDF_DEC -->|"Rewrap Request<br/>+ Access Token"| KAS
-    KAS -->|"Parse Token<br/>Extract Entities"| ERS
-    ERS -->|"Query Entity Data"| IDP
-    KAS -->|"Authorization Request<br/>+ Entity Chain"| AUTHZ
-    AUTHZ -->|"Get Policies<br/>& Mappings"| POLICY
-    AUTHZ -->|"Decision"| KAS
-    KAS -->|"Unwrapped Key<br/>(if authorized)"| TDF_DEC
-    
-    %% Styling
-    classDef platformService fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    AUTHZ -->|7. Decision| KAS
+    KAS -->|8. Grant/Deny Access| CLIENT
+
+    classDef opentdfService fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef externalSystem fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef tdfOperation fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     
-    class POLICY,AUTHZ,ERS,KAS platformService
-    class CLIENT,IDP externalSystem
-    class TDF_ENC,TDF_DEC tdfOperation
+    class POLICY,AUTHZ,ERS,KAS opentdfService
+    class ATTR_SOURCES,IDP,CLIENT externalSystem
 ```
 
-## Component Interactions
+### Policy Service
 
-The OpenTDF platform components work together to provide secure, policy-based access to encrypted data:
+The **Policy Service** is where all access control policies are defined and managed. It provides the tools and APIs to create a rich set of policies that govern data access. This includes not only attributes and their values, but also the definitions of **actions, obligations, and key access mappings**. This rich policy information allows for fine-grained access control that goes beyond a simple PERMIT/DENY decision.
 
-1. **Policy Service** defines the rules and attributes that govern access
-2. **Entity Resolution Service** translates authentication tokens into entity representations
-3. **Authorization Service** evaluates policies against entity context to make access decisions
-4. **Key Access Server** enforces those decisions by providing or denying access to decryption keys
+In the context of the NIST ABAC model, the Policy Service functions as the **Policy Administration Point (PAP)**.
 
-This architecture enables fine-grained, attribute-based access control while maintaining the security and integrity of encrypted data throughout its lifecycle.
+### Authorization Service
+
+The **Authorization Service** is the core decision-making engine of the platform. It is responsible for evaluating the rich policies from the Policy Service against a set of attributes to render an authorization decision.
+
+In the context of the NIST ABAC model, the Authorization Service functions as the **Policy Decision Point (PDP)**.
+
+### Entity Resolution Service (ERS)
+
+The **Entity Resolution Service** is responsible for gathering the attributes about a subject that are needed to make an access control decision. By default, the ERS can derive these attributes directly from the claims present in an authentication token (e.g., a JWT) after the subject has been authenticated by an Identity Provider. For more advanced use cases, the ERS can be **optionally configured** to connect to external attribute sources, like LDAP directories or SQL databases, to "hydrate" the entity with additional attributes.
+
+In the context of the NIST ABAC model, the ERS functions as the **Policy Information Point (PIP)**.
+
+### Key Access Server (KAS)
+
+The **Key Access Server (KAS)** is responsible for enforcing access control decisions. Its role, however, is more extensive than that of a typical enforcement point:
+
+-   **Cryptographic Enforcement:** Instead of just allowing or denying an action, the KAS enforces decisions by granting or withholding the cryptographic keys required to decrypt a TDF object. This provides a powerful, cryptographically-secure method of enforcement.
+-   **Encryption Enablement:** The KAS is a crucial part of the data protection lifecycle. It manages key exchanges and enables the various modes of TDF encryption (e.g., NanoTDF).
+
+In the context of the NIST ABAC model, the KAS functions as the **Policy Enforcement Point (PEP)**.
+
+Furthermore, the OpenTDF platform is designed for flexibility. Developers can **build and integrate their own custom PEPs**. These custom enforcement points can leverage the platform's robust Authorization (PDP) and Policy (PAP) services while implementing enforcement logic tailored to specific applications. These custom PEPs can also optionally interface with the KAS to take advantage of its powerful cryptographic capabilities.
