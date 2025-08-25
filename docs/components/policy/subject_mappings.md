@@ -18,7 +18,7 @@ e-->f(Attribute Value);
 
 A Subject Mapping consists of:
 
-1. A mapped [Attribute Value](./attributes#values)
+1. A mapped [Attribute Value](./attributes)
 2. A mapped Subject Condition Set
 3. One or more policy [Actions](./actions)
 
@@ -31,7 +31,7 @@ B(Subject Mapping)<--> C(Subject Condition Set);
 
 ## Actions on Attribute Value
 
-Subject Mappings link entities to one or more Actions they are allowed to take on Attribute Values, known as entitlements. 
+Subject Mappings link entities to one or more Actions they are allowed to take on Attribute Values, known as entitlements.
 
 For more information, see the [Attribute Value](./attributes) and the [Actions](./actions.md) documentation.
 
@@ -41,11 +41,12 @@ A Subject Condition Set is a logical structure to resolve a representation of th
 
 ### Examples
 
-#### Subject Mapping for Executives:
+#### Subject Mapping for Executives
 
-Consider a flow where users with the idP role `vice_president` should be allowed to `read` data tagged `https://example.org/attr/role_level/value/vice_president`. 
+Consider a flow where users with the idP role `vice_president` should be allowed to `read` data tagged `https://example.org/attr/role_level/value/vice_president`.
 
 The Subject Mapping would contain:
+
 1. Action: `read`
 2. Attribute Value: `https://example.org/attr/role_level/value/vice_president`
 3. A Subject Condition Set with this matching logic:
@@ -66,11 +67,12 @@ If the entity representation contains a field `role: vice_president`, the Subjec
 
 The inverse also applies, where an entity representation containing `role: <anything else>`, or lacking the `role` field completely will resolve `false`, and the Subject Mapping would not apply (no entitlement).
 
-#### Subject Mapping for Contributors:
+#### Subject Mapping for Contributors
 
 Consider a flow where engineers with titles like `staff`, `senior`, `junior`, or `intern` should be able to `create` data tagged as `https://example.org/attr/department_level/value/contributor`.
 
 The Subject Mapping would contain:
+
 1. Action: `create`
 2. Attribute Value: `https://example.org/attr/department_level/value/contributor`
 3. A Subject Condition Set with this matching logic:
@@ -95,4 +97,3 @@ subject_sets:
 ```
 
 In plain language: If an entity's access token from the IdP or Entity Resolution Service (ERS) includes a `title` field with a value `staff`, `senior`, `junior`, or `intern` AND a `department` field with value `engineering`, then the Subject Mapping will apply to them, granting entitlement for the contained Action `create` on the Attribute Value of `contributor`.
-

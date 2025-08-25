@@ -1,75 +1,322 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 slug: /components/policy/keymanagement/key_mappings
 ---
 
-# Key mappings
+# Key Mappings
 
-:::important
-Before leveraging Key Mappings make sure to [migrate](../key_access_grants.md#migration-to-key-mappings) your existing KAS Grants.
+:::important Grants Deprecated
+**KAS Grants have been deprecated** as of platform v0.7.0 and replaced by direct key mappings.
+
+Key mappings provide a more flexible and direct way to associate encryption keys with policy objects (namespaces, attributes, and attribute values) without the intermediate KeyAccessServer layer.
 :::
 
-:::important
-v0.5.0 of the SDK will prefer key mappings over
-grants. Meaning if a key mapping shows up for an attribute
-the SDK will use the mapping and not the grant.
-You **should** migrate all grants over to mappings in one
-sitting
+Key mappings establish direct relationships between individual keys and policy objects. This replaces the legacy grant system that required intermediate KeyAccessServer associations.
+
+## Mapping Structures
+
+The system supports three types of key mappings:
+
+### NamespaceKey
+
+```protobuf
+message NamespaceKey {
+  string namespace_id = 1;  // UUID of the namespace
+  string key_id = 2;        // UUID of the asymmetric key
+}
+```
+
+### AttributeKey
+
+```protobuf
+message AttributeKey {
+  string attribute_id = 1;  // UUID of the attribute definition
+  string key_id = 2;        // UUID of the asymmetric key  
+}
+```
+
+### ValueKey
+
+```protobuf
+message ValueKey {
+  string value_id = 1;      // UUID of the attribute value
+  string key_id = 2;        // UUID of the asymmetric key
+}
+```
+
+## Key Mapping Storage
+
+Key mappings are managed internally by the OpenTDF platform and accessible through the API:
+
+- **Namespace Mappings** - Keys associated with entire namespaces
+- **Attribute Mappings** - Keys associated with specific attribute definitions
+- **Value Mappings** - Keys associated with specific attribute values
+
+The platform automatically manages the relationships and provides efficient lookup mechanisms for key resolution during TDF operations.
+
+## Managing Key Mappings
+
+### Assign Keys to Policy Objects
+
+**Namespace Assignment:**
+
+```bash
+# Assign key to namespace
+otdfctl policy namespaces key assign \
+  --namespace-id "550e8400-e29b-41d4-a716-446655440001" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+```
+
+**Attribute Assignment:**
+
+```bash
+# Assign key to attribute definition
+otdfctl policy attributes key assign \
+  --attribute-id "550e8400-e29b-41d4-a716-446655440003" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+```
+
+**Value Assignment:**
+
+```bash
+# Assign key to attribute value
+otdfctl policy attributes value key assign \
+  --value-id "550e8400-e29b-41d4-a716-446655440004" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+```
+
+### Remove Key Mappings
+
+```bash
+# Remove key from namespace
+otdfctl policy namespaces key remove \
+  --namespace-id "550e8400-e29b-41d4-a716-446655440001" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+
+# Remove key from attribute
+otdfctl policy attributes key remove \
+  --attribute-id "550e8400-e29b-41d4-a716-446655440003" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+
+# Remove key from value
+otdfctl policy attributes value key remove \
+  --value-id "550e8400-e29b-41d4-a716-446655440004" \
+  --key-id "550e8400-e29b-41d4-a716-446655440002"
+```
+
+### List Key Mappings
+
+```bash
+# List all key mappings
+otdfctl policy kas-registry key mappings list
+
+# List mappings for a specific key
+otdfctl policy kas-registry key mappings list --key-id "550e8400-e29b-41d4-a716-446655440002"
+
+# List mappings by KAS name
+otdfctl policy kas-registry key mappings list --kas-name "production-kas"
+```
+
+## Complete Workflow Example
+
+Here's a complete example of setting up key mappings:
+
+### 1. Register a Key Access Server
+
+```bash
+# Create the KAS registration
+otdfctl policy kas-registry create \
+  --uri "https://kas.example.com" \
+  --name "production-kas"
+```
+
+### 2. Create an Asymmetric Key
+
+**Local Key (CONFIG_ROOT_KEY mode):**
+
+```bash
+otdfctl policy kas-registry key create \
+  --kas-id "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --key-id "prod-rsa-2024" \
+  --algorithm "ALGORITHM_RSA_2048" \
+  --key-mode "KEY_MODE_CONFIG_ROOT_KEY" \
+  --public-key-pem "$(cat public_key.pem)" \
+  --wrapping-key-id "root-kek-001" \
+  --wrapped-key "$(base64 < wrapped_private_key.bin)"
+```
+
+**External Provider Key (PROVIDER_ROOT_KEY mode):**
+
+```bash
+# First create a provider configuration
+otdfctl policy keymanagement provider-config create \
+  --name "aws-kms-prod" \
+  --config-json '{"region":"us-east-1","kms_key_id":"arn:aws:kms:..."}
+
+# Then create key that references the provider
+otdfctl policy kas-registry key create \
+  --kas-id "a1b2c3d4-e5f6-7890-abcd-ef1234567890" \
+  --key-id "prod-aws-kms-2024" \
+  --algorithm "ALGORITHM_EC_P256" \
+  --key-mode "KEY_MODE_PROVIDER_ROOT_KEY" \
+  --public-key-pem "$(cat ec_public_key.pem)" \
+  --provider-config-id "b2c3d4e5-f6a7-8901-bcde-f23456789012" \
+  --wrapped-key "$(base64 < kms_wrapped_key.bin)"
+```
+
+### 3. Create Policy Objects
+
+```bash
+# Create namespace
+NAMESPACE_ID=$(otdfctl policy namespaces create --name "example.com" --output json | jq -r '.namespace.id')
+
+# Create attribute definition
+ATTRIBUTE_ID=$(otdfctl policy attributes create \
+  --namespace "$NAMESPACE_ID" \
+  --name "classification" \
+  --rule "ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF" \
+  --output json | jq -r '.attribute.id')
+
+# Create attribute value
+VALUE_ID=$(otdfctl policy attributes values create \
+  --attribute "$ATTRIBUTE_ID" \
+  --value "confidential" \
+  --output json | jq -r '.value.id')
+```
+
+### 4. Assign Key to Policy Objects
+
+```bash
+# Get the key ID from creation response or list command
+KEY_ID="c3d4e5f6-a7b8-9012-cdef-456789012345"
+
+# Assign key to namespace (affects all attributes in namespace)
+otdfctl policy namespaces key assign \
+  --namespace-id "$NAMESPACE_ID" \
+  --key-id "$KEY_ID"
+
+# Assign key to specific attribute (overrides namespace mapping)
+otdfctl policy attributes key assign \
+  --attribute-id "$ATTRIBUTE_ID" \
+  --key-id "$KEY_ID"
+
+# Assign key to specific value (most specific, overrides attribute mapping)
+otdfctl policy attributes value key assign \
+  --value-id "$VALUE_ID" \
+  --key-id "$KEY_ID"
+```
+
+## Key Mapping Behavior
+
+### Precedence Order
+
+When the SDK looks up keys for attributes, it follows this precedence:
+
+1. **Attribute Value** mappings (most specific)
+2. **Attribute Definition** mappings
+3. **Namespace** mappings (least specific)
+4. **Base Key** (fallback)
+
+### Multiple Keys per Policy Object
+
+- Policy objects can have multiple keys mapped to them
+- The SDK will use the first active key found
+- Key rotation automatically updates mappings to maintain continuity
+
+### Automatic Mapping Management
+
+**Key Status Tracking:**
+
+- The `was_mapped` flag tracks whether a key has ever been assigned to a policy object
+- This flag is set automatically when the first mapping is created
+- Used for lifecycle management and cleanup
+
+**Rotation Mapping Copy:**
+
+- When keys are rotated, all mappings are automatically copied to the new key
+- The old key status changes to `KEY_STATUS_ROTATED`
+- The new key becomes `KEY_STATUS_ACTIVE` and inherits all mappings
+
+## Migration from Grants
+
+:::warning Legacy Migration Required
+**KAS Grants are no longer supported** in platform v0.7.0+. Existing grants must be migrated to key mappings.
+
+**Legacy Grant Structure (Deprecated):**
+
+```text
+Namespace → KeyAccessServer → [remote|cached] key
+Attribute → KeyAccessServer → [remote|cached] key  
+Value     → KeyAccessServer → [remote|cached] key
+```
+
+**New Mapping Structure:**
+
+```text
+Namespace → AsymmetricKey (with KAS association)
+Attribute → AsymmetricKey (with KAS association)
+Value     → AsymmetricKey (with KAS association)
+```
+
 :::
 
-:::important
-As of v0.7.0 of the OpenTDF platform,
-grants can no longer be assigned.
-:::
+### Migration Steps
 
-Key mappings are now the replacement for key access server grants. The idea for mapping a key to an attribute definition/value/namespace is the same as grants, except now we separate the keys from key access servers. Previously an admin was expected to add a key directly to the KeyAccessServer object, as either **remote** or **cached**, and then assign a key access server to an attribute. That process is known as a grant. Now users should create a key, and assign that key to an attribute.
+1. **Audit existing grants** using deprecated `ListKeyAccessServerGrants` API
+2. **Create keys** for each unique key material in your grants
+3. **Create mappings** using the new `AssignPublicKeyTo*` RPCs
+4. **Test functionality** with SDKs to ensure proper key resolution
+5. **Remove legacy** grant configurations
 
-## How do I create a key mapping
-
-:::note
-The following example only shows how to create a mapping for
-attribute definitions, you can also create mappings for namespaces
-and attribute values.
-:::
-
-1. First you will need to [create a key access server](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L630)
-
-OpenTDF CLI
+### Migration CLI Commands
 
 ```bash
-otdfctl policy kas-registry create --uri http://example.com/kas --name example-kas
+# List existing grants (deprecated API)
+otdfctl policy kas-registry grants list --output json
+
+# For each grant, create corresponding key and mapping
+# (Repeat for each grant found)
+otdfctl policy kas-registry key create ...
+otdfctl policy attributes key assign ...
 ```
 
-2. Next, you will need to [create a key](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L644)
+## Troubleshooting
 
-OpenTDF CLI
+### Common Issues
+
+**Key Not Found During TDF Operations:**
+
+- Verify key is in `KEY_STATUS_ACTIVE` state
+- Check that mappings exist for the target policy objects
+- Ensure the key's KAS is accessible from the requesting client
+
+**Multiple Keys Mapped:**
+
+- Review mapping precedence order
+- Use `list key mappings` to see all associations
+- Consider consolidating to a single key per policy object
+
+**Provider Configuration Errors:**
+
+- Validate provider config JSON syntax and values
+- Ensure external KMS/HSM is accessible from KAS
+- Check key manager plugin is loaded and registered
+
+### Debugging Commands
 
 ```bash
-otdfctl key create --key-id "rsa-key-1" --algorithm "rsa:2048" --mode "local" --kas "891cfe85-b381-4f85-9699-5f7dbfe2a9ab" --wrapping-key-id "virtru-stored-key" --wrapping-key "a8c4824daafcfa38ed0d13002e92b08720e6c4fcee67d52e954c1a6e045907d1"
+# Check key status and details
+otdfctl policy kas-registry key get --id "key-uuid"
+
+# View all mappings for troubleshooting
+otdfctl policy kas-registry key mappings list
+
+# View mappings for a specific namespace
+otdfctl policy namespaces get --namespace-id "namespace-uuid" --output json | jq '.namespace.kas_keys'
+
+# View mappings for a specific attribute
+otdfctl policy attributes get --attribute-id "attribute-uuid" --output json | jq '.attribute.kas_keys'
+
+# View mappings for a specific value
+otdfctl policy attributes values get --value-id "value-uuid" --output json | jq '.value.kas_keys'
 ```
-
-3. [create a namespace](https://github.com/opentdf/platform/blob/main/service/policy/namespaces/namespaces.proto#L180)
-
-OpenTDF CLI
-
-```bash
-otdfctl policy attributes namespaces create --name opentdf.io
-```
-
-4. [create an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L415)
-
-OpenTDF CLI
-
-```bash
-otdfctl policy attributes create --namespace 3d25d33e-2469-4990-a9ed-fdd13ce74436 --name myattribute --rule ANY_OF
-```
-
-5. [assign a key to an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L457)
-
-OpenTDF CLI
-
-```bash
-otdfctl policy attributes key assign --attribute 3d25d33e-2469-4990-a9ed-fdd13ce74436 --key-id 8f7e6d5c-4b3a-2d1e-9f8d-7c6b5a432f1d
-```
-
-Now you have successfully created a key mapping.

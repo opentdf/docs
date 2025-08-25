@@ -1,0 +1,9 @@
+MD024: # no-duplicate-heading
+  siblings_only: true
+MD033: # no-inline-html
+  allowed_elements:
+    - br
+    - summary
+    - details
+    - strong
+MD013: false # Line length
