@@ -109,7 +109,7 @@ const config: Config = {
           label: "Docs",
         },
         {
-          href: "https://github.com/opentdf/docs",
+          href: "https://github.com/opentdf",
           label: "GitHub",
           position: "right",
         },
