@@ -21,6 +21,16 @@ Find all the information you need to get started with OpenTDF.
   walk you through some of the basic concepts within the OpenTDF platform.
 </Callout>
 
+<Callout
+  title="Architecture"
+  callToAction={{
+    label: "Learn more",
+    link: "/architecture",
+  }}
+>
+  Learn about the core components of the OpenTDF platform and how they work together in a standards-based architecture.
+</Callout>
+
 <Cards
   height={300}
   columns={3}
@@ -34,18 +44,23 @@ Find all the information you need to get started with OpenTDF.
     },
     {
       name: "Policy",
-      description: `The OpenTDF Policy engine enables creation, enforcement, and subscription to policies. By
-      using attribute-based access control (ABAC) policies, the OpenTDF Policy engine can enforce flexible,
-      fine-grained access control based on entity entitlements.`,
+      description: `The OpenTDF Policy engine enables creation, enforcement, and subscription to policies using attribute-based access control (ABAC) to enforce flexible, fine-grained access control.`,
       url: "/components/policy",
     },
     {
       name: "Authorization",
-      description: `The OpenTDF Authorization service enables policy driven, access based decisions using
-      attribute-based access control (ABAC) based on entity entitlements. These decisions are used to enforce
-      both data privacy and application security, ensuring consistent policy enforcement across all policy
-      enforcement points.`,
+      description: `The Authorization service enables policy driven, access based decisions using entity entitlements to enforce consistent data privacy and application security.`,
       url: "/components/authorization",
+    },
+    {
+      name: "Key Access",
+      description: "The Key Access service manages the cryptographic keys required for TDF encryption and decryption, enforcing access control decisions by granting or denying key requests.",
+      url: "/components/key_access",
+    },
+    {
+      name: "Entity Resolution",
+      description: "The Entity Resolution service gathers and resolves entity attributes from various sources, providing the context needed for the Authorization service to make decisions.",
+      url: "/components/entity_resolution",
     },
   ]}
 />
