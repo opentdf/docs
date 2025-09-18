@@ -5,6 +5,12 @@ In v0.7.0 of the platform creating grants is now deprecated in favor of
 [key mappings](./keymanagement/key_mappings.md). Version 0.7.0 of the platform
 will error when attempting to assign key access servers to attributes.
 :::
+
+If you currently have Key Access Grants defined, it is recommended to follow the [migration steps](./key_access_grants.md#migration-to-key-mappings).
+
+:::warning
+All migration steps should be completed in one go. As soon as a new key map is created, kas-grants are no longer used; this might result in TDFs being generated without the correct keys being used if the migration is not completed.
+:::
 Key Access Grants (KAS Grants) are associations between a registered Key Access Server (KAS) and an Attribute. These grants can be applied at the namespace, definition, or value level of an attribute.
 
 KAS Grants enable key split behaviors on TDFs with attributes, facilitating various collaboration scenarios around shared policies. Grants follow the specificity matrix below, which determines the KAS public keys used for encryption in various KAS grant scenarios:

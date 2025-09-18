@@ -69,6 +69,18 @@ style C fill:#0697e4f5,stroke:#333,stroke-width:1px,color:black
 
 These attributes will now be used to drive access decisions based on policies in the platform.
 
+## Attribute Rules
+
+Attribute definitions have a rule that determines how the values of the attribute are evaluated. The following rules are available:
+
+- **ALL_OF**: All of the values in the attribute must be present in the entity's entitlements.
+- **ANY_OF**: Any of the values in the attribute must be present in the entity's entitlements.
+- **HIERARCHY**: The values of the attribute are ordered, and the entity must have an entitlement that is greater than or equal to the value in the policy.
+
+## Key Association
+
+Keys can be associated with attributes and values. This allows for more granular access control. For example, you can require that an entity has a specific key in addition to the required attributes.
+
 ## Unsafe Actions
 
 Certain actions on policy attributes are considered "unsafe" because they may inadvertently affect access control, potentially granting or removing access unintentionally. Deactivating a Namespace, for example, cascades to deactivate its Definitions and their Values. Similarly, deactivating a Definition deactivates its Values.

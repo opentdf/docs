@@ -9,6 +9,10 @@ A Resource Mapping contains:
 
 The primary consumer of a Resource Mapping is a Policy Decision Point (PDP), which processes data, applies logic using the known terms, and relies on them to map the data to Attribute Values. By mapping a set of terms to a given attribute value, a Policy Enforcement Point (PEP) can properly apply the TDF to the resource data using the appropriate attribute values.
 
+## Resource Mapping Groups
+
+Resource Mapping Groups allow you to group resource mappings together. This can be useful for organizing and managing your resource mappings.
+
 # Examples
 
 Alice is a system administrator. She defines an Attribute definition called color with values like red, green, blue, purple, etc. For the Attribute Value `https://demo.com/attr/color/value/purple'`, she would define a Resource Mapping for processing data that may involve terms like `indigo`, `lilac`, `plum`, or `lavender`.
