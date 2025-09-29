@@ -90,32 +90,23 @@ For example:
 
 ### Multi-Factor Authentication (MFA)
 Require additional authentication for sensitive data access:
-```
-Obligation: https://example.com/obl/auth/value/mfa
-Applied to: TOP SECRET classified documents
-Condition: Subject entity must complete MFA before READ access
-```
+- **Obligation**: `https://example.com/obl/auth/value/mfa`
+- **Applied to**: TOP SECRET classified documents
+- **Condition**: Subject entity must complete MFA before READ access
 
 ### Geographic Restrictions
-Control access based on location:
-```
-Obligation: https://example.com/obl/location/value/usa
-Applied to: Classified documents
-Condition: Environment entity must be within approved geographic boundaries
-```
+- **Obligation**: `https://example.com/obl/location/value/usa`
+- **Applied to**: Classified documents
+- **Condition**: Environment entity must be within approved geographic boundaries
 
 ### Time-Based Access (Burn After Reading)
 Implement expiration policies:
-```
-Obligation: https://example.com/obl/expiration/value/24hr
-Applied to: Project-specific documents
-Condition: Access expires 24 hours after first READ action
-```
+- **Obligation**: `https://example.com/obl/expiration/value/24hr`
+- **Applied to**: Project-specific documents
+- **Condition**: Access expires 24 hours after first READ action
 
 ### Document Watermarking
 Ensure document traceability:
-```
-Obligation: https://example.com/obl/drm/value/user-watermark
-Applied to: Sensitive documents
-Condition: Environment must apply user identification watermark on READ
-```
+- **Obligation**: `https://example.com/obl/drm/value/watermarking`
+- **Applied to**: Sensitive documents
+- **Condition**: Environment must apply user identification watermark on READ
