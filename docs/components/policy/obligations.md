@@ -43,7 +43,7 @@ Ensure document traceability:
 
 #### Prevent Download
 Prevent download of plaintext content:
-- **Obligation**: `https://example.com/obl/drm/value/pfp`
+- **Obligation**: `https://example.com/obl/drm/value/no-download`
 - **Applied to**: sensitive documents
 - **Condition**: PEP must not allow download
 
