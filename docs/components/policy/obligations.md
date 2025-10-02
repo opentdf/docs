@@ -42,7 +42,7 @@ Ensure document traceability:
 - **Condition**: PEP must apply watermark
 
 #### Prevent Download
-Ensure persistent file protection (PFP):
+Prevent download of plaintext content:
 - **Obligation**: `https://example.com/obl/drm/value/pfp`
 - **Applied to**: sensitive documents
 - **Condition**: PEP must not allow download
