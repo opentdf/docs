@@ -4,23 +4,47 @@ Obligations are policy constructs that enable Policy Decision Point(PDP) - to - 
 If the PEP cannot or will not enforce an obligation, it should decline to grant access.
 ## Composition
 
-An obligation consists of three parts:
+An obligation consists of:
 
 1. A Namespace
 2. A Definition
-3. A Value
+3. Values
+4. Triggers
 
-Platform Policy Obligations can contain multiple Namespaces, each with multiple Definitions, and each Definition can have multiple Values.
+Platform Policy Obligations can contain multiple Namespaces, each with multiple Definitions, and each Definition can have multiple Values. Each Value can have multiple Triggers. Each trigger can have an Action, Attribute Value, and PEP identifier.
 
 ```mermaid
 graph LR;
-Namespace_A-->Definition_A;
-Definition_A-->Value_A;
-Definition_A-->Value_B;
+%% Every definition is namespaced.
+Namespace_A-->ObligationDefinition_A;
 
-Namespace_A-->Definition_B;
-Definition_B-->Value_C;
-Definition_B-->Value_D;
+%% Define definition and value A.
+ObligationDefinition_A-->ObligationValue_A;
+
+%% Define triggers.
+ObligationValue_A-->Trigger_A1
+Trigger_A1-->Action_A1
+Trigger_A1-->AttributeValue_A1
+Trigger_A1-->PEP_A1
+
+ObligationValue_A-->Trigger_A2
+Trigger_A2-->Action_A2
+Trigger_A2-->AttributeValue_A2
+Trigger_A2-->PEP_A2
+
+%% Define definition and value B.
+ObligationDefinition_A-->ObligationValue_B;
+
+%% Define triggers.
+ObligationValue_B-->Trigger_B1
+Trigger_B1-->Action_B1
+Trigger_B1-->AttributeValue_B1
+Trigger_B1-->PEP_B1
+
+ObligationValue_B-->Trigger_B2
+Trigger_B2-->Action_B2
+Trigger_B2-->AttributeValue_B2
+Trigger_B2-->PEP_B2
 ```
 
 ## Standard Obligations
