@@ -1,6 +1,6 @@
 # Obligations
 
-Obligations are policy constructs that enable conditional access enforcement at the Policy Enforcement Point (PEP) level. They define additional restrictions and requirements beyond basic attribute-based access control (ABAC), allowing security administrators to enforce conditions such as multi-factor authentication (MFA), watermarking, encryption, or time-based access controls.
+Obligations are policy constructs that enable Policy Decision Point(PDP) - to - Policy Enforcement Point (PEP) directives that accompany a decision. They express additional controls the PEP should enforce—such as requiring MFA, applying watermarking, encrypting content, or limiting access by time. In effect, the PDP is saying “permit, provided these controls are enforced.” The PDP cannot compel or verify enforcement; it relies on the PEP to honor the obligations. 
 
 ## Composition
 
