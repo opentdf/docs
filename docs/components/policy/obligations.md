@@ -52,7 +52,6 @@ Trigger_B2-->PEP_B2
 Standard Obligations are enforced by the Access PDP (Policy Decision Point) when validating whether an Entity of a specified Category can perform an Action on a given Resource. These obligations must be satisfied for access to be granted.
 
 A Standard Obligation includes:
-- **Entity Category**: The type of entity (SUBJECT or ENVIRONMENT) that must satisfy this obligation
 - **Action**: The specific action being performed (READ, STORE, CREATE, UPDATE, DELETE)
 - **Resource Attribute Value**: The data attribute for which this obligation is scoped
 - **Obligation Value**: The required obligation value that must be satisfied
