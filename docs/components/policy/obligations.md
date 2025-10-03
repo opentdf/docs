@@ -11,7 +11,7 @@ An obligation consists of:
 3. Values
 4. Triggers
 
-Platform Policy Obligations can contain multiple Namespaces, each with multiple Definitions, and each Definition can have multiple Values. Each Value can have multiple Triggers. Each trigger can have an Action, Attribute Value, and PEP identifier.
+Platform Policy Obligations can contain multiple Namespaces, each with multiple Definitions, and each Definition can have multiple Values. Each Value can have multiple Triggers. Each trigger can have an Action, Attribute Value, and PEP identifier (optional). Not specifying a PEP results in a global obligation that applies across *all* PEPs.
 
 ```mermaid
 graph LR;
@@ -25,12 +25,11 @@ ObligationDefinition_A-->ObligationValue_A;
 ObligationValue_A-->Trigger_A1
 Trigger_A1-->Action_A1
 Trigger_A1-->AttributeValue_A1
-Trigger_A1-->PEP_A1
+Trigger_A1-->PEP_A
 
 ObligationValue_A-->Trigger_A2
 Trigger_A2-->Action_A2
 Trigger_A2-->AttributeValue_A2
-Trigger_A2-->PEP_A2
 
 %% Define definition and value B.
 ObligationDefinition_A-->ObligationValue_B;
@@ -39,12 +38,11 @@ ObligationDefinition_A-->ObligationValue_B;
 ObligationValue_B-->Trigger_B1
 Trigger_B1-->Action_B1
 Trigger_B1-->AttributeValue_B1
-Trigger_B1-->PEP_B1
 
 ObligationValue_B-->Trigger_B2
 Trigger_B2-->Action_B2
 Trigger_B2-->AttributeValue_B2
-Trigger_B2-->PEP_B2
+Trigger_B2-->PEP_B
 ```
 
 ## Standard Obligations
