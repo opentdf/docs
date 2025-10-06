@@ -11,8 +11,11 @@ docs/SDK-Samples/
 # Generated files
 .docusaurus
 .cache-loader
+docs/.index.json
 # Ignore all generated _category_.json files in docs/spec
 /docs/spec/**/_category_.json
+# Backup files
+*.backup
 
 # Misc
 .DS_Store
@@ -30,6 +33,9 @@ node_modules
 /docs/spec/index.md
 /docs/spec/**/*.md
 /docs/components/cli/
+/docs/reference/cli/
+/docs/reference/api/
+/docs/reference/specifications/
 /docs/getting-started/configuration.md
 
 /.idea/

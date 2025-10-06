@@ -1,0 +1,8 @@
+{
+  "label": "Your First TDF",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn OpenTDF by creating your first Trusted Data Format file. This tutorial walks you through setting up the platform, creating policies, and encrypting data."
+  }
+}

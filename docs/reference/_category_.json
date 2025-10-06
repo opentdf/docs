@@ -1,0 +1,10 @@
+{
+  "label": "Reference",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Comprehensive reference material including API documentation, specifications, CLI commands, SDK references, and configuration details."
+  },
+  "collapsible": true,
+  "collapsed": true
+}

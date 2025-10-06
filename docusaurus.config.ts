@@ -111,7 +111,7 @@ const config: Config = {
         {
           type: "doc",
           position: "left",
-          docId: "introduction",
+          docId: "index",
           label: "Docs",
         },
         {
@@ -146,12 +146,12 @@ const config: Config = {
           title: "Support",
           items: [
             {
-              label: "Getting Started",
-              to: "/getting-started/configuration",
+              label: "Tutorials",
+              to: "/tutorials",
             },
             {
               label: "Documentation",
-              to: "/introduction",
+              to: "/",
             },
             {
               label: "GitHub Discussions",

@@ -1,0 +1,51 @@
+---
+sidebar_position: 1
+---
+
+import Cards from "@site/src/components/Cards";
+
+# Reference Documentation
+
+Complete API documentation, specifications, CLI commands, SDK references, and configuration details. This section provides comprehensive technical information for developers and system administrators.
+
+## API Documentation
+
+<Cards
+  height={280}
+  columns={2}
+  items={[
+    {
+      name: "Platform APIs",
+      description: "Complete REST API reference for all OpenTDF platform services including policy management, authorization, and key access.",
+      url: "/reference/api",
+    },
+    {
+      name: "Specifications",
+      description: "Technical specifications for the OpenTDF format, protocol, and schemas. Essential for implementers and integrators.",
+      url: "/reference/specifications",
+    },
+  ]}
+/>
+
+## Available References
+
+### Platform APIs
+- **Policy Service**: Manage attributes, namespaces, and access policies  
+- **Authorization Service**: Handle access decisions and entitlements
+- **Key Access Service**: Control cryptographic key distribution
+- **Entity Resolution**: Map entities to attributes for authorization
+
+### Specifications
+- **TDF Format**: Technical specification for Trusted Data Format files
+- **Protocol**: Communication protocols between platform services  
+- **Schema**: JSON schemas and data structure definitions
+- **Concepts**: Detailed explanations of core platform concepts
+
+### CLI Tools
+- **otdfctl**: Command-line interface documentation and examples
+
+## Need Different Information?
+
+- **Learning the concepts?** Start with our [explanation section](/explanation)
+- **Following a tutorial?** Check our [step-by-step tutorials](/tutorials) 
+- **Looking for practical examples?** Visit our [how-to guides](/how-to)
