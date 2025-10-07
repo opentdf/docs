@@ -26,6 +26,7 @@ graph LR
 ```
 
 **Problems with this approach:**
+
 - **Data leaves the perimeter**: Once data is shared, copied, or moved, control is lost
 - **Insider threats**: Users inside the perimeter have broad access
 - **Breach consequences**: If perimeter is breached, all internal data is at risk
@@ -59,6 +60,7 @@ graph TD
 ```
 
 **Benefits of this approach:**
+
 - **Policy travels with data**: Controls remain effective regardless of location
 - **Fine-grained access**: Decisions based on user, context, and data sensitivity
 - **Zero-trust ready**: No assumptions about network security or user location
@@ -79,6 +81,7 @@ OpenTDF uses the **Trusted Data Format (TDF)** to implement data-centric securit
 Consider a confidential financial report:
 
 **Traditional Security:**
+
 - File stored on secure file server
 - Access controlled by network permissions
 - If shared via email → no control
@@ -86,6 +89,7 @@ Consider a confidential financial report:
 - If partner accesses → no control
 
 **Data-Centric Security with OpenTDF:**
+
 - File encrypted as TDF with policy: "Only Finance team members can access"
 - Policy travels with the file everywhere
 - Authorization checked every time someone tries to open it
@@ -104,6 +108,6 @@ Data-centric security is a cornerstone of **zero-trust architecture**:
 ## Next Steps
 
 - Learn about the [Trusted Data Format](/explanation/trusted-data-format) that makes this possible
-- Understand [how OpenTDF fits into Zero-Trust architecture](/explanation/data-centric-security/zero-trust-architecture) 
+- Understand [how OpenTDF fits into Zero-Trust architecture](/explanation/data-centric-security/zero-trust-architecture)
 - See the [benefits compared to traditional approaches](/explanation/data-centric-security/traditional-vs-data-centric)
 - Explore [real-world use cases](/explanation/data-centric-security/use-cases)

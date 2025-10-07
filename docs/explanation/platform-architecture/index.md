@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Architecture
+# Platform Architecture
 
 OpenTDF is built on a flexible, service-oriented architecture designed for robust and fine-grained access control. The platform consists of four core components that work together to protect data throughout its lifecycle. This architecture aligns with the well-established [National Institute of Standards and Technology (NIST)](https://www.nist.gov) model for [Attribute-Based Access Control (ABAC)](https://csrc.nist.gov/projects/attribute-based-access-control), ensuring a standards-based and interoperable approach.
 
@@ -46,36 +46,36 @@ graph TD
     class POLICY,AUTHZ,ERS,KAS opentdfService
     class ATTR_SOURCES,IDP,CLIENT externalSystem
 
-    click POLICY "components/policy/" "Go to Policy Service docs"
-    click AUTHZ "components/authorization" "Go to Authorization Service docs"
-    click ERS "components/entity_resolution" "Go to Entity Resolution Service docs"
-    click KAS "components/key_access" "Go to Key Access Server docs"
+    click POLICY "./components/policy/" "Go to Policy Service docs"
+    click AUTHZ "./components/authorization" "Go to Authorization Service docs"
+    click ERS "./components/entity_resolution" "Go to Entity Resolution Service docs"
+    click KAS "./components/key_access" "Go to Key Access Server docs"
 ```
 
-### [Policy Service](components/policy/)
+### [Policy Service](./components/policy/)
 
 The **Policy Service** is where all access control policies are defined and managed. It provides the tools and APIs to create a rich set of policies that govern data access. This includes not only attributes and their values, but also the definitions of **actions, obligations, and key access mappings**.
 
 In the context of the NIST ABAC model, the Policy Service functions as the **Policy Administration Point (PAP)**.
 
-### [Authorization Service](components/authorization)
+### [Authorization Service](./components/authorization)
 
 The **Authorization Service** is the core decision-making engine of the platform. It is responsible for evaluating the rich policies from the Policy Service against a set of attributes to render an authorization decision.
 
 In the context of the NIST ABAC model, it functions as the **Policy Decision Point (PDP)**.
 
-### [Entity Resolution Service (ERS)](components/entity_resolution)
+### [Entity Resolution Service (ERS)](./components/entity_resolution)
 
 The **Entity Resolution Service** is responsible for gathering the attributes about a subject needed for a decision. By default, it can derive attributes from claims in an authentication token. Optionally, it can be configured to connect to external attribute sources (LDAP, SQL) to "hydrate" the entity with more attributes.
 
 In the context of the NIST ABAC model, the ERS functions as the **Policy Information Point (PIP)**.
 
-### [Key Access Server (KAS)](components/key_access)
+### [Key Access Server (KAS)](./components/key_access)
 
 The **Key Access Server (KAS)** enforces access control decisions. Its role is more extensive than a typical enforcement point:
 
--   **Cryptographic Enforcement:** It enforces decisions by granting or withholding cryptographic keys for TDF decryption.
--   **Encryption Enablement:** It manages key exchanges and enables various TDF encryption modes.
+- **Cryptographic Enforcement:** It enforces decisions by granting or withholding cryptographic keys for TDF decryption.
+- **Encryption Enablement:** It manages key exchanges and enables various TDF encryption modes.
 
 In the context of the NIST ABAC model, the KAS functions as the **Policy Enforcement Point (PEP)**.
 

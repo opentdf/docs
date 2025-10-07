@@ -7,6 +7,9 @@ function createCategoryJsonFiles(outDir: string) {
   const fs = require('fs');
   const path = require('path');
   
+  // Calculate the relative doc ID based on outDir
+  const docIdBase = outDir.replace('docs/', '').replace(/\/$/, '');
+  
   const categories = [
     {
       path: `${outDir}/_category_.json`,
@@ -15,7 +18,7 @@ function createCategoryJsonFiles(outDir: string) {
         position: 10,
         link: {
           type: "doc",
-          id: "spec/index"
+          id: `${docIdBase}/index`
         }
       }
     },
@@ -43,7 +46,7 @@ function createCategoryJsonFiles(outDir: string) {
         position: 2,
         link: {
           type: "doc",
-          id: "spec/schema/index"
+          id: `${docIdBase}/schema/index`
         }
       }
     },
@@ -54,7 +57,7 @@ function createCategoryJsonFiles(outDir: string) {
         position: 1,
         link: {
           type: "doc",
-          id: "spec/schema/opentdf/index"
+          id: `${docIdBase}/schema/opentdf/index`
         }
       }
     }
@@ -92,7 +95,7 @@ function createCategoryJsonFiles(outDir: string) {
  * - {outDir}/schema
  * - {outDir}/index.md
  */
-export function getSpecDocumentationPlugins(outDir: string = "docs/spec"): PluginConfig[] {
+export function getSpecDocumentationPlugins(outDir: string = "docs/reference/trusted-data-format/specifications"): PluginConfig[] {
 
   createCategoryJsonFiles(outDir);
 
@@ -110,7 +113,7 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/spec"): Plugi
           if (filename === "README.md") {
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../../static/img/"
+              "../../../../../static/img/"
             );
             updatedContent = updatedContent.replaceAll(
               "# nanotdf - a compact binary TDF format",
@@ -175,7 +178,7 @@ ${updatedContent}`,
           // Always apply the diagram path replacement first
           let updatedContent = content.replaceAll(
             "../../diagrams/",
-            "../../../../static/img/"
+            "../../../../../../static/img/"
           );
 
           // Configuration map for file-specific frontmatter and processing
@@ -310,7 +313,7 @@ ${finalContent ? finalContent : ""}`;
           if (filename === "README.md") {
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../../../static/img/"
+              "../../../../../../static/img/"
             );
             // Fix segment link to point to integrity_information.md
             updatedContent = updatedContent.replaceAll(
@@ -344,7 +347,7 @@ ${updatedContent}`,
             
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../static/img/"
+              "../../../static/img/"
             );
             updatedContent = updatedContent.replaceAll(
               "protocol/protocol.md",
@@ -396,7 +399,7 @@ ${updatedContent}`,
           if (filename === "README.md") {
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../static/img/"
+              "../../../../static/img/"
             );
             // Replace all case-insensitive references to OpenTDF/README.md and nanotdf/README.md with ./opentdf and ./nanotdf
             updatedContent = updatedContent.replace(
@@ -435,7 +438,7 @@ ${updatedContent}`,
             
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../static/img/"
+              "../../../../static/img/"
             );
             // Fix broken markdown links with dynamic outDir name
             updatedContent = updatedContent.replaceAll(
@@ -469,7 +472,7 @@ ${updatedContent}`,
             
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../static/img/"
+              "../../../../static/img/"
             );
             // Fix broken markdown links with dynamic outDir name
             updatedContent = updatedContent.replaceAll(
@@ -505,7 +508,7 @@ ${updatedContent}`,
           if (filename === "protocol.md") {
             let updatedContent = content.replaceAll(
               "../../diagrams/",
-              "../../static/img/"
+              "../../../../static/img/"
             );
             // Fix broken markdown links as specified
             updatedContent = updatedContent.replaceAll(

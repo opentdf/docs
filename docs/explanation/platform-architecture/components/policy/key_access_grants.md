@@ -6,7 +6,7 @@ In v0.7.0 of the platform creating grants is now deprecated in favor of
 will error when attempting to assign key access servers to attributes.
 :::
 
-If you currently have Key Access Grants defined, it is recommended to follow the [migration steps](./key_access_grants.md#migration-to-key-mappings).
+If you currently have Key Access Grants defined, it is recommended to follow the [migration steps](#migration-to-key-mappings).
 
 :::warning
 All migration steps should be completed in one go. As soon as a new key map is created, kas-grants are no longer used; this might result in TDFs being generated without the correct keys being used if the migration is not completed.

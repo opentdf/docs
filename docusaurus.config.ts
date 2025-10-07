@@ -224,7 +224,7 @@ const config: Config = {
       {
         name: "otdfctl",
         id: "otdfctl",
-        outDir: "docs/components/cli",
+        outDir: "docs/explanation/platform-architecture/components/cli",
         sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
         documents: listRemote.listDocuments(otdfctl, ["docs/man/**/*.md"], []),
         modifyContent: (filename, content) => {
@@ -293,7 +293,7 @@ ${rawContent}
         name: "platform-configuration", // used by CLI, must be path safe
         sourceBaseUrl:
           "https://raw.githubusercontent.com/opentdf/platform/main/docs/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: "docs/getting-started", // the base directory to output to.
+        outDir: "docs/how-to/getting-started", // the base directory to output to.
         documents: ["Configuring.md"], // the file names to download
         modifyContent: (filename, content) => {
           let updatedContent = content;

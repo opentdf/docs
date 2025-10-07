@@ -1,8 +1,0 @@
-{
-  "label": "Platform Architecture",
-  "position": 4,
-  "link": {
-    "type": "generated-index",
-    "description": "Understand how OpenTDF's core services work together to implement data-centric security using the NIST ABAC model."
-  }
-}

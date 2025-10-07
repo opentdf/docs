@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-slug: /components/policy/keymanagement
+slug: /explanation/platform-architecture/components/policy/keymanagement
 ---
 
 # Key Management

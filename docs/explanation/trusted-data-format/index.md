@@ -58,23 +58,30 @@ sequenceDiagram
 ## Key Benefits of TDF
 
 ### 1. **Policy Travels with Data**
+
 Unlike traditional access controls that exist separately from data, TDF embeds the policy directly in the file. The policy goes wherever the data goes - shared folders, email attachments, cloud storage, partner networks.
 
 ### 2. **Fine-Grained Access Control**
+
 TDF policies use **Attribute-Based Access Control (ABAC)** to make nuanced decisions based on:
+
 - User attributes (role, clearance, department)
 - Environmental context (location, time, device)
 - Data classifications (sensitivity, project, compliance requirements)
 
 ### 3. **Real-Time Policy Updates**
+
 Even after a TDF is created and shared, policies can be updated in real-time:
+
 - Revoke access immediately if needed
 - Add new authorized users
 - Change access conditions (e.g., restrict to business hours)
 - Add obligations (e.g., watermarking requirements)
 
 ### 4. **Complete Audit Trail**
+
 Every access attempt is logged, providing:
+
 - Who tried to access what data
 - When and from where
 - Whether access was granted or denied
@@ -97,12 +104,14 @@ OpenTDF supports two format variants:
 Consider a medical research document:
 
 **Without TDF (Traditional):**
+
 - File encrypted with password or certificate
 - Access rules stored separately in system permissions
 - If shared outside system → no access control
 - No audit trail for external access
 
 **With TDF:**
+
 - File packaged as TDF with policy: "Only researchers with IRB approval can access"
 - Policy includes obligations: "Must watermark with user ID"
 - File can be safely shared with external partners
@@ -112,6 +121,7 @@ Consider a medical research document:
 ## Standards and Interoperability
 
 TDF is built on open standards:
+
 - **JSON-based manifest** for policy definition
 - **Standard encryption algorithms** (AES, RSA, ECC)
 - **NIST ABAC model** for access control
