@@ -46,31 +46,31 @@ graph TD
     class POLICY,AUTHZ,ERS,KAS opentdfService
     class ATTR_SOURCES,IDP,CLIENT externalSystem
 
-    click POLICY "./components/policy/" "Go to Policy Service docs"
-    click AUTHZ "./components/authorization" "Go to Authorization Service docs"
-    click ERS "./components/entity_resolution" "Go to Entity Resolution Service docs"
-    click KAS "./components/key_access" "Go to Key Access Server docs"
+    click POLICY "/explanation/platform-architecture/components/policy/" "Go to Policy Service docs"
+    click AUTHZ "/explanation/platform-architecture/components/authorization" "Go to Authorization Service docs"
+    click ERS "/explanation/platform-architecture/components/entity_resolution" "Go to Entity Resolution Service docs"
+    click KAS "/explanation/platform-architecture/components/key_access" "Go to Key Access Server docs"
 ```
 
-### [Policy Service](./components/policy/)
+### [Policy Service](/explanation/platform-architecture/components/policy/)
 
 The **Policy Service** is where all access control policies are defined and managed. It provides the tools and APIs to create a rich set of policies that govern data access. This includes not only attributes and their values, but also the definitions of **actions, obligations, and key access mappings**.
 
 In the context of the NIST ABAC model, the Policy Service functions as the **Policy Administration Point (PAP)**.
 
-### [Authorization Service](./components/authorization)
+### [Authorization Service](/explanation/platform-architecture/components/authorization)
 
 The **Authorization Service** is the core decision-making engine of the platform. It is responsible for evaluating the rich policies from the Policy Service against a set of attributes to render an authorization decision.
 
 In the context of the NIST ABAC model, it functions as the **Policy Decision Point (PDP)**.
 
-### [Entity Resolution Service (ERS)](./components/entity_resolution)
+### [Entity Resolution Service (ERS)](/explanation/platform-architecture/components/entity_resolution)
 
 The **Entity Resolution Service** is responsible for gathering the attributes about a subject needed for a decision. By default, it can derive attributes from claims in an authentication token. Optionally, it can be configured to connect to external attribute sources (LDAP, SQL) to "hydrate" the entity with more attributes.
 
 In the context of the NIST ABAC model, the ERS functions as the **Policy Information Point (PIP)**.
 
-### [Key Access Server (KAS)](./components/key_access)
+### [Key Access Server (KAS)](/explanation/platform-architecture/components/key_access)
 
 The **Key Access Server (KAS)** enforces access control decisions. Its role is more extensive than a typical enforcement point:
 
