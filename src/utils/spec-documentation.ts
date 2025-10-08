@@ -359,7 +359,7 @@ ${updatedContent}`,
             );
             updatedContent = updatedContent.replaceAll(
               "(concepts/)",
-              "(category/concepts)"
+              "(/reference/trusted-data-format/specifications/concepts/access_control)"
             );
             updatedContent = updatedContent.replaceAll(
               "(protocol/)",
