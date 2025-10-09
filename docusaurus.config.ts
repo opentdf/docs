@@ -109,10 +109,14 @@ const config: Config = {
       },
       items: [
         {
-          type: "doc",
+          to: "/documentation",
           position: "left",
-          docId: "index",
-          label: "Docs",
+          label: "Documentation",
+        },
+        {
+          href: "https://www.virtru.com/partners/",
+          label: "Partners",
+          position: "left",
         },
         {
           href: "https://github.com/opentdf",

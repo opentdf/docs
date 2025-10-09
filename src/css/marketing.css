@@ -1,0 +1,228 @@
+/* Marketing Homepage Styles */
+
+.marketing-hero {
+  padding: 4rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.marketing-hero--primary {
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-primary-dark) 100%);
+  color: white;
+}
+
+.marketing-hero--secondary {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: var(--ifm-color-gray-900);
+}
+
+.marketing-hero--dark {
+  background: linear-gradient(135deg, var(--ifm-color-gray-900) 0%, var(--ifm-color-gray-800) 100%);
+  color: white;
+}
+
+.marketing-hero--accent {
+  background: linear-gradient(135deg, var(--ifm-color-success) 0%, var(--ifm-color-success-dark) 100%);
+  color: white;
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  min-height: 400px;
+}
+
+.hero-content--reverse {
+  flex-direction: row-reverse;
+}
+
+.hero-text {
+  flex: 1;
+}
+
+.hero-visual {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-icon {
+  font-size: 8rem;
+  opacity: 0.9;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-button {
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hero-button--primary {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.hero-button--primary:hover {
+  background: rgba(255,255,255,0.3);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.hero-button--secondary {
+  background: transparent;
+  color: inherit;
+  border: 2px solid currentColor;
+}
+
+.hero-button--secondary:hover {
+  background: currentColor;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.hero-button--solid {
+  background: var(--ifm-color-primary);
+  color: white;
+  border: 2px solid var(--ifm-color-primary);
+}
+
+.hero-button--solid:hover {
+  background: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 2rem;
+    min-height: 300px;
+  }
+  
+  .hero-content--reverse {
+    flex-direction: column !important;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .hero-icon {
+    font-size: 5rem;
+  }
+  
+  .hero-actions {
+    justify-content: center;
+  }
+}
+
+/* Navigation Enhancement */
+.navbar {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 1s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 1s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Visual enhancements */
+.hero-icon-container {
+  position: relative;
+}
+
+.hero-icon-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
+}
