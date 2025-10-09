@@ -1,0 +1,10 @@
+{
+  "label": "How-to Guides",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Practical guides for specific problems and tasks. Find recipes for deployment, integration, troubleshooting, and common use cases."
+  },
+  "collapsible": true,
+  "collapsed": true
+}

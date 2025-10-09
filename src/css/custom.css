@@ -4,6 +4,9 @@
  * work well for content-centric websites.
  */
 
+/* Import marketing styles for homepage */
+@import './marketing.css';
+
 /* You can override the default Infima variables here. */
 /* :root {
   --ifm-color-primary: #2e8555;
@@ -237,6 +240,54 @@ Breakpoints:
 
   --vds-homepage-body-font-size: var(--vds-homepage-font-size-xs);
   --vds-homepage-body-line-height: 1.5;
+}
+
+/* Hero section styling for homepage */
+.hero {
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-primary-dark) 100%);
+  color: white;
+  padding: 4rem 0;
+  margin-bottom: 0;
+}
+
+.hero__title {
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.hero__subtitle {
+  font-size: 1.25rem;
+  font-weight: 300;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  opacity: 0.95;
+}
+
+.hero__cta {
+  margin-top: 2rem;
+}
+
+.hero__cta .button {
+  font-size: 1.125rem;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 3rem 0;
+  }
+  
+  .hero__title {
+    font-size: 2rem;
+  }
+  
+  .hero__subtitle {
+    font-size: 1.125rem;
+  }
 }
 
 .homepage p {

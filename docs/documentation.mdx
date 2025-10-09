@@ -1,0 +1,184 @@
+---
+title: Documentation
+description: Complete OpenTDF documentation - tutorials, guides, concepts, and reference materials.
+keywords:
+  - data-centric security
+  - zero trust
+  - trusted data format
+  - TDF
+  - ABAC
+  - attribute-based access control
+  - OpenTDF
+  - documentation
+sidebar_position: 1
+---
+
+import React from "react";
+import Callout from "@site/src/components/Callout";
+import Cards from "@site/src/components/Cards";
+
+<div className="hero hero--primary">
+  <div className="container">
+    <div className="row">
+      <div className="col col--8 col--offset-2">
+        <h1 className="hero__title">OpenTDF Documentation</h1>
+        <p className="hero__subtitle">
+          Complete documentation for <strong>OpenTDF</strong> - an open source system for implementing data-centric security. 
+          Whether you're just getting started or building advanced integrations, find everything you need 
+          to understand, implement, and deploy OpenTDF's zero-trust data protection.
+        </p>
+        <p className="hero__subtitle">
+          OpenTDF builds upon <strong>a decade of experience at Virtru</strong> 
+          protecting data objects at scale using the Trusted Data Format 
+          for organizations of all sizes and across all industries.
+        </p>
+        <div className="hero__cta">
+          <a className="button button--secondary button--lg" href="/tutorials/your-first-tdf">
+            Get Started
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style={{padding: '4rem 0'}}>
+
+## Find What You Need
+
+<Cards
+  height={320}
+  columns={2}
+  items={[
+    {
+      name: "📚 Understanding",
+      description: "Learn the core concepts behind OpenTDF, data-centric security, and how the platform implements zero-trust data protection.",
+      url: "/explanation",
+      accentColor: "primary"
+    },
+    {
+      name: "🎯 Learn Step-by-Step", 
+      description: "Hands-on tutorials that teach you to use OpenTDF progressively, from your first TDF to building secure applications.",
+      url: "/tutorials",
+      accentColor: "secondary"
+    },
+    {
+      name: "🔧 Solve Problems",
+      description: "Practical guides for specific tasks like deployment, integration, troubleshooting, and common use cases.",
+      url: "/how-to",
+      accentColor: "success"
+    },
+    {
+      name: "📖 Reference",
+      description: "Complete API documentation, specifications, CLI commands, SDK references, and configuration details.",
+      url: "/reference", 
+      accentColor: "info"
+    },
+  ]}
+/>
+
+## Quick Start Paths
+
+<Callout
+  title="New to Data-Centric Security?"
+  callToAction={{
+    label: "Start with Concepts",
+    link: "/explanation",
+  }}
+>
+  Begin by understanding what makes OpenTDF unique and how it solves data protection challenges that traditional security models can't address.
+</Callout>
+
+<Callout
+  title="Ready to Try OpenTDF?"
+  callToAction={{
+    label: "Start Your First Tutorial",
+    link: "/tutorials/your-first-tdf",
+  }}
+>
+  Jump into a hands-on tutorial that walks you through setting up OpenTDF locally and creating your first protected data file.
+</Callout>
+
+<Callout
+  title="Need to Solve a Specific Problem?"
+  callToAction={{
+    label: "Browse How-to Guides",
+    link: "/how-to",
+  }}
+>
+  Find practical recipes for deployment, integration, policy management, and troubleshooting common issues.
+</Callout>
+
+## Why Zero Trust and OpenTDF?
+
+Today's cybersecurity landscape is increasingly adopting and requiring **Zero Trust models and frameworks**. Zero Trust operates on the principle of "never trust, always verify," ensuring that every access request is authenticated, authorized, and encrypted, regardless of its origin. 
+
+**OpenTDF implements this model** by providing an open-source framework, specification, and set of services that prioritizes the protection and integrity of data at every stage. By integrating OpenTDF's data security features with a Zero Trust architecture, organizations can:
+
+- **Enforce strict access controls** with attribute-based policies
+- **Ensure data is continuously monitored** throughout its lifecycle
+- **Maintain comprehensive visibility** into data interactions
+- **Minimize the risk of data breaches** through cryptographic binding
+- **Foster a secure environment** where data can be shared and utilized with confidence
+
+Together, Zero Trust and OpenTDF empower businesses to uphold the highest standards of data security in an interconnected world.
+
+## Project Overview and Current State
+
+In 2023, the OpenTDF team undertook a **significant re-architecture** of the OpenTDF platform to enhance its extensibility and interoperability, responding to the evolving needs of our diverse user base and the dynamic cybersecurity landscape. See our [GitHub Organization Page](https://github.com/opentdf/) to navigate the new repositories.
+
+This comprehensive overhaul involved:
+- **Simplifying core service components** for better maintainability
+- **Adopting standardized policy schemas** for interoperability  
+- **Improving platform APIs and SDKs** in both developer experience and capability
+- **Focusing on extensibility** to enable customization for specific use cases
+
+Through the sponsorship of **Virtru** and its partners, the OpenTDF project has been meeting the needs of customers across industries and use cases. Check out [Virtru Data Security Platform](https://www.virtru.com/data-security-platform) for more.
+
+## What Makes OpenTDF Different
+
+- **Policy Travels with Data**: Unlike traditional access controls, TDF policies are cryptographically bound to the data itself
+- **Zero-Trust by Design**: Data remains protected regardless of network boundaries or storage location  
+- **Fine-Grained Control**: Attribute-based access control enables precise, contextual authorization decisions
+- **Standards-Based**: Built on the proven NIST ABAC model for interoperability and compliance
+- **Developer-Friendly**: SDKs for Go, Java, and JavaScript make integration straightforward
+
+## OpenTDF in Action
+
+Ideas for leveraging OpenTDF in your own applications:
+
+<Cards
+  height={280}
+  columns={2}
+  items={[
+    {
+      name: "🔒 Secure IoT Sensor Data",
+      description: "From full-motion video to biometric devices, attach access controls and preserve data integrity to guard against data spoofing.",
+      url: "/explanation",
+      accentColor: "primary"
+    },
+    {
+      name: "🤝 Secure Data Sharing",
+      description: "Securely share data with partners, customers, and suppliers, and maintain control over who can access it.",
+      url: "/explanation",
+      accentColor: "secondary"
+    },
+  ]}
+/>
+
+## Join Our Community
+
+Virtru, the sponsor of the OpenTDF developer community, would love to hear from you! We're developers, too, and as we mature the project, we're curious what you're building, and what kind of problems you may be encountering or are trying to solve.
+
+You can provide anonymous feedback or share your contact information for access to curated resources, updates, and responses to your questions.
+
+- **🗣️ [GitHub Discussions](https://github.com/orgs/opentdf/discussions)** - Join conversations with the community
+- **📝 [Share Feedback](https://www.virtru.com/feedback)** - Help us improve OpenTDF
+- **🚀 [Showcase](https://github.com/orgs/opentdf/discussions/categories/show-and-tell)** - Show what you're building
+- **🗺️ [Roadmap](https://github.com/orgs/opentdf/discussions/1806)** - See what's coming next
+
+---
+
+**Ready to protect your data?** Choose your path above and start building with OpenTDF.
+
+</div>

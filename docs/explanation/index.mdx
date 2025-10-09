@@ -1,0 +1,54 @@
+---
+sidebar_position: 1
+---
+
+import Cards from "@site/src/components/Cards";
+
+# Understanding OpenTDF
+
+OpenTDF is a comprehensive platform for implementing **data-centric security** using **zero-trust principles**. This section explains the fundamental concepts that make OpenTDF unique and powerful for protecting sensitive data throughout its lifecycle.
+
+## Core Concepts
+
+<Cards
+  height={280}
+  columns={2}
+  items={[
+    {
+      name: "Data-Centric Security",
+      description: "Learn how OpenTDF shifts security from perimeter-based to data-focused protection, where policies travel with the data wherever it goes.",
+      url: "/explanation/data-centric-security",
+    },
+    {
+      name: "Trusted Data Format (TDF)",
+      description: "Understand how TDF cryptographically binds access control policies to data objects, creating self-protecting data.",
+      url: "/explanation/trusted-data-format",
+    },
+    {
+      name: "Attribute-Based Access Control",
+      description: "Explore how ABAC enables fine-grained, flexible access control using attributes, policies, and entitlements.",
+      url: "/reference/trusted-data-format/specifications/concepts/access_control",
+    },
+    {
+      name: "Platform Architecture",
+      description: "Discover how OpenTDF's four core services work together to implement the NIST ABAC model for data protection.",
+      url: "/explanation/platform-architecture",
+    },
+  ]}
+/>
+
+## Why OpenTDF Matters
+
+In traditional security models, once data leaves a secure perimeter, control is often lost. OpenTDF changes this by:
+
+- **Binding policy to data**: Access controls are cryptographically attached to data objects
+- **Enabling zero-trust data**: Data remains protected regardless of where it travels
+- **Providing granular control**: Fine-tuned access decisions based on context and attributes
+- **Maintaining compliance**: Comprehensive audit trails and policy enforcement
+
+## Next Steps
+
+1. **New to data-centric security?** Start with [Data-Centric Security](/explanation/data-centric-security)
+2. **Want to understand TDF?** Read about the [Trusted Data Format](/explanation/trusted-data-format)  
+3. **Ready to try it?** Jump to our [first tutorial](/tutorials/your-first-tdf)
+4. **Need specific help?** Check our [how-to guides](/how-to)

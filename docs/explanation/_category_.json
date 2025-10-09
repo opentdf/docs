@@ -1,0 +1,10 @@
+{
+  "label": "Understanding OpenTDF",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn the core concepts behind OpenTDF, data-centric security, and how the platform implements zero-trust data protection through the Trusted Data Format."
+  },
+  "collapsible": true,
+  "collapsed": false
+}
