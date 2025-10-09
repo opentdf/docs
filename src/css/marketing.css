@@ -106,8 +106,8 @@
 }
 
 .hero-button--secondary:hover {
-  background: currentColor;
-  color: white;
+  background: rgba(255,255,255,0.6);
+  color: gray;
   text-decoration: none;
   transform: translateY(-2px);
 }
