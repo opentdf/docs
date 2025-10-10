@@ -1,6 +1,7 @@
 # Generated content from OpenAPI specs
+specs/
 specs-processed/
-docs/OpenAPI-clients/
+docs/reference/OpenAPI-clients/
 
 # Generated content (legacy - can be removed if no longer used)
 docs/SDK-Samples/
