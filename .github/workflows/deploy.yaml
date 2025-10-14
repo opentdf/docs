@@ -23,6 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+      - name: Download latest OpenAPI specs
+        run: npm run update-vendored-yaml
       - name: Build website
         run: npm run build
 

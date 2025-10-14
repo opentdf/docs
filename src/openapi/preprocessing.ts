@@ -25,7 +25,7 @@ const specsProcessedDir = path.join(repoRoot, 'specs-processed');
 const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 
 // The location prefix of built OpenAPI documentation
-const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
+const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'reference', 'OpenAPI-clients');
 
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
 const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
