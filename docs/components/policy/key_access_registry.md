@@ -5,8 +5,8 @@ The Key Access Server (KAS) Registry within the platform policy is a store of kn
 Within platform policy, a registered KAS instance has the following key attributes:
 
 1. **URI**: The location where the KAS is accessible. This must be unique among all KAS instances registered in the platform.
-2. **Source Type** Whether the KAS is managed by the organization or if the kas information was imported from an external party. (Defaults to unspecified)
-3. **Name** Friendly name for the registered KAS (Optional)
+2. **Source Type**: Indicates whether the KAS is managed by the organization or imported from an external party. (Defaults to unspecified)
+3. **Name**: A friendly name for the registered KAS. (Optional)
 
 :::important
 **PublicKey** is deprecated and not useful as of `v0.7.0` of service. Instead import public keys with [key management](./keymanagement/quickstart.md).
