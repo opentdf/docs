@@ -9,7 +9,7 @@ Within platform policy, a registered KAS instance has the following key attribut
 3. **Name**: A friendly name for the registered KAS. (Optional)
 
 :::important
-**PublicKey** is deprecated and not useful as of `v0.7.0` of service. Instead import public keys with [key management](./keymanagement/quickstart.md).
+**PublicKey** is deprecated and no longer used as of `v0.7.0` of service. Instead, import public keys with [key management](./keymanagement/quickstart.md).
 The ability to assign grants was deprecated in [v0.7.0 of service](https://github.com/opentdf/platform/releases/tag/service%2Fv0.7.0),
 in favor of [key mappings](./keymanagement/key_mappings.md).
 :::
