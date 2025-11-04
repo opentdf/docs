@@ -13,11 +13,17 @@ A key manager is essentially a client that is used for either performing cryptog
 
 ## How do I register a key manager?
 
-If you have written your own key manager, you can register it with KAS by providing its factory method with a [server option](https://github.com/opentdf/platform/blob/main/service/pkg/server/options.go#L131) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
+If you have written your own key manager, you can register it with KAS by providing its factory method with a [server option](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/pkg/server/options.go#L141-L164) (.so), during server startup. By providing a way to instantiate an object of your key manager type we will then use it when necessary. You will also need to configure KAS to use the new key manager. This is done through provider configuration file (.cfg).
+
+:::important
+As of [Service v0.10.0](https://github.com/opentdf/platform/releases/tag/service%2Fv0.10.0) the use of the `name` field is not used for mapping a key to an implementation of that manager. Instead,
+the new [manager](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/keymanagement/key_management.proto#L22) field is used for this purpose. The `name` should
+now be treated as a friendly name.
+:::
 
 ### Provider configurations
 
-Provider configurations are a way of entangling a key to a specific manager. The [key management proto](https://github.com/opentdf/platform/blob/main/service/policy/keymanagement/key_management.proto#L76) provides specifics on what RPCs are available as well as what is expected within each call. One of the most important parts of the provider configuration is the **name** field. The **name** field is what KAS will look for when trying to instantiate a specific manager. If no manager with that name is found, KAS will attempt to use the default manager.
+Provider configurations are a way of entangling a key to a specific manager. The [key management proto](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/keymanagement/key_management.proto) provides specifics on what RPCs are available as well as what is expected within each call. One of the most important parts of the provider configuration is the **manager** field. The **manager** field is what KAS will look for when trying to instantiate a specific manager. If no manager with that name is found, KAS will attempt to use the default manager.
 
 The basic flow is as follows:
 :::note
@@ -33,13 +39,13 @@ sequenceDiagram
     KAS->>+Platform: Retrieve key (key id=r1)
     Platform->>+KAS: Returns key
     KAS->>+KAS: Get name of provider config from key
-    KAS->>+KAS: Instantiate key manager from provider name
+    KAS->>+KAS: Instantiate key manager from provider's manager field
     KAS->>+Key Manager: Decrypt data encryption key
     Key Manager->>+KAS: Return decrypted key
     KAS->>+SDK: Return rewrapped data encryption key
 ```
 
-When registering your provider configuration and your key manager the name must match. For example, the [basic manager name](https://github.com/opentdf/platform/blob/main/service/internal/security/basic_manager.go#L23) is **opentdf.io/basic**. For example, if you create a manager with name **opentdf.io/aws**, you would need to create a provider configuration with the same name and tie it to a key when creating the key. In addition, when registering the manager you need to pass in the same name as what the provider configuration expects.
+When creating your provider configuration and registering your key manager the [name](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/trust/key_manager.go#L50) given in the manager factory, must match the [manager](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/keymanagement/key_management.proto#L22) field given to the provider configuration. For example, if you register a manager with name **opentdf.io/aws** you would need to create a provider configuration with **opentdf.io/aws** as the `manager` field and tie it to a key when creating the key.
 
 :::important
 If private keys are meant to be stored within the platform database,
@@ -55,6 +61,6 @@ You cannot delete provider configurations that are tied to keys.
 
 ## Helpful links
 
-- [key manager interface](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L33).
-- [NamedKeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/key_manager.go#L62)
-- [KeyManagerFactory](https://github.com/opentdf/platform/blob/main/service/trust/delegating_key_service.go#L21)
+- [key manager interface](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/trust/key_manager.go#L19).
+- [NamedKeyManagerFactory](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/trust/key_manager.go#L49-L58)
+- [KeyManagerFactory](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/trust/delegating_key_service.go#L39-L44)
