@@ -1,8 +1,8 @@
 {
-  "label": "SDK",
-  "position": 6,
+  "label": "SDKs",
+  "position": 4,
   "link": {
     "type": "generated-index",
-    "description": "The OpenTDF platform provides Software Development Kits in the Go, Java, and JavaScript languages. The SDKs include guides and working examples for managing policy, creating Trusted Data Format (TDF) protected objects, and making authorization decisions within an application."
+    "description": "Documentation for official OpenTDF SDK guidelines and implementations"
   }
 }
