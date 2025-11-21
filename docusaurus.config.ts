@@ -21,6 +21,8 @@ preprocessOpenApiSpecs().catch(error => {
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
+const javaSdkVersion = "0.10.0";
+
 const config: Config = {
   title: "OpenTDF",
   tagline: "Enabling secure data sharing through open, data-centric security",
@@ -32,6 +34,10 @@ const config: Config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
   trailingSlash: false,
+  customFields: {
+    javaSdkVersion,
+  },
+
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "opentdf", // Usually your GitHub org/user name.
@@ -311,11 +317,50 @@ ${updatedContent}`,
       },
     ],
     [
+      "docusaurus-plugin-remote-content",
+      {
+        name: "java-sdk-examples",
+        id: "java-sdk-examples",
+        sourceBaseUrl: `https://raw.githubusercontent.com/opentdf/java-sdk/refs/tags/v${javaSdkVersion}/`,
+        documents: [
+          "examples/src/main/java/io/opentdf/platform/CreateAttribute.java",
+          "examples/src/main/java/io/opentdf/platform/CreateNamespace.java",
+          "examples/src/main/java/io/opentdf/platform/CreateSubjectConditionSet.java",
+          "examples/src/main/java/io/opentdf/platform/CreateSubjectMapping.java",
+          "examples/src/main/java/io/opentdf/platform/DecryptCollectionExample.java",
+          "examples/src/main/java/io/opentdf/platform/DecryptExample.java",
+          "examples/src/main/java/io/opentdf/platform/EncryptCollectionExample.java",
+          "examples/src/main/java/io/opentdf/platform/EncryptExample.java",
+          "examples/src/main/java/io/opentdf/platform/GetDecisions.java",
+          "examples/src/main/java/io/opentdf/platform/GetEntitlements.java",
+          "examples/src/main/java/io/opentdf/platform/GetManifestInformation.java",
+          "examples/src/main/java/io/opentdf/platform/ListAttributes.java",
+          "examples/src/main/java/io/opentdf/platform/ListNamespaces.java",
+          "examples/src/main/java/io/opentdf/platform/ListSubjectMappings.java"
+        ],
+        outDir: "code_samples/java",
+        modifyContent: (filename, content) => {
+          const baseName =
+            filename.split("/").pop()?.replace(".java", "") || "default";
+          const kebabCaseName =
+            baseName[0].toLowerCase() +
+            baseName
+              .slice(1)
+              .replaceAll(/([A-Z])/g, "-$1")
+              .toLowerCase();
+          return {
+            content: `\`\`\`java\n${content}\n\`\`\``,
+            filename: `${kebabCaseName}.mdx`,
+          };
+        },
+      },
+    ],
+    [
       "docusaurus-plugin-openapi-docs",
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: openApiSpecs 
+        config: openApiSpecs
       },
     ],
     require.resolve("docusaurus-lunr-search"),
