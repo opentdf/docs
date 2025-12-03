@@ -34,7 +34,7 @@ func main() {
 
 	// Create Subject Condition Set
 
-	coditionset := &subjectmapping.CreateSubjectConditionSetRequest{
+	conditionset := &subjectmapping.CreateSubjectConditionSetRequest{
 		SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
 			SubjectSets: []*policy.SubjectSet{
 				{
@@ -55,7 +55,7 @@ func main() {
 		},
 	}
 
-	log, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(), coditionset)
+	resp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(), conditionset)
 	if err != nil {
 		log.Fatal(err)
 	}
