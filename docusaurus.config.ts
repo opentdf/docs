@@ -21,7 +21,7 @@ preprocessOpenApiSpecs().catch(error => {
 
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
-const javaSdkVersion = "0.10.0";
+const javaSdkVersion = "0.11.1";
 
 const config: Config = {
   title: "OpenTDF",
