@@ -1,39 +1,149 @@
 ```java
 package io.opentdf.platform;
+
 import com.connectrpc.ResponseMessageKt;
 import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.Attribute;
+import io.opentdf.platform.policy.Condition;
+import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
+import io.opentdf.platform.policy.ConditionGroup;
+import io.opentdf.platform.policy.Namespace;
+import io.opentdf.platform.policy.SubjectConditionSet;
 import io.opentdf.platform.policy.SubjectMapping;
+import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.SubjectSet;
+import io.opentdf.platform.policy.attributes.GetAttributeRequest;
+import io.opentdf.platform.policy.namespaces.GetNamespaceRequest;
+import io.opentdf.platform.policy.subjectmapping.CreateSubjectConditionSetRequest;
+import io.opentdf.platform.policy.subjectmapping.CreateSubjectConditionSetResponse;
 import io.opentdf.platform.policy.subjectmapping.CreateSubjectMappingRequest;
 import io.opentdf.platform.policy.subjectmapping.CreateSubjectMappingResponse;
-import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.subjectmapping.SubjectConditionSetCreate;
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
+import java.util.Objects;
 
 public class CreateSubjectMapping {
-    public static void main(String[] args) {
 
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "localhost:8080";
+  private static final Logger logger = LogManager.getLogger(CreateSubjectMapping.class);
 
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-                .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
-                .build();
+  public static void main(String[] args) {
+    String clientId = "opentdf";
+    String clientSecret = "secret";
+    String platformEndpoint = "localhost:8080";
+    String namespaceName = "opentdf.io";
+    String attributeName = "test-attribute";
 
-        CreateSubjectMappingRequest request = CreateSubjectMappingRequest.newBuilder()
-        .setAttributeValueId("33c47777-f3b6-492d-bcd2-5329e0aab642")
-        .addActions(Action.newBuilder().setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT))
-        .setExistingSubjectConditionSetId("9009fde8-d22b-4dfb-a456-f9ce6943244a")
-        .build();
+    SDKBuilder builder = new SDKBuilder();
+    try (SDK sdk =
+        builder
+            .platformEndpoint(platformEndpoint)
+            .clientSecret(clientId, clientSecret)
+            .useInsecurePlaintextConnection(true)
+            .build()) {
 
-        CreateSubjectMappingResponse resp = ResponseMessageKt.getOrThrow(sdk.getServices().subjectMappings().createSubjectMappingBlocking(request, Collections.emptyMap()).execute());
+      Namespace namespace;
 
-        SubjectMapping sm = resp.getSubjectMapping();
+      try {
+        namespace =
+            ResponseMessageKt.getOrThrow(
+                    sdk.getServices()
+                        .namespaces()
+                        .getNamespaceBlocking(
+                            GetNamespaceRequest.newBuilder()
+                                .setFqn("https://" + namespaceName)
+                                .build(),
+                            Collections.emptyMap())
+                        .execute())
+                .getNamespace();
+      } catch (Exception e) {
+        if (Objects.equals(e.getMessage(), "resource not found")) {
+          logger.error("Namespace '{}' not found", namespaceName, e);
+        } else {
+          logger.error("Failed to retrieve namespace '{}'", namespaceName, e);
+        }
+        return;
+      }
 
-        System.out.println(sm.getId());
+      Attribute attribute;
+      String attributeFqn = namespace.getFqn() + "/attr/" + attributeName;
+
+      try {
+        GetAttributeRequest getAttributeRequest =
+            GetAttributeRequest.newBuilder().setFqn(attributeFqn).build();
+
+        attribute =
+            ResponseMessageKt.getOrThrow(
+                    sdk.getServices()
+                        .attributes()
+                        .getAttributeBlocking(getAttributeRequest, Collections.emptyMap())
+                        .execute())
+                .getAttribute();
+
+      } catch (Exception e) {
+        if (Objects.equals(e.getMessage(), "resource not found")) {
+          logger.error("Attribute '{}' not found", attributeFqn, e);
+        } else {
+          logger.error("Failed to retrieve attribute '{}'", attributeFqn, e);
+        }
+        return;
+      }
+
+      CreateSubjectConditionSetRequest subjectConditionSetRequest =
+          CreateSubjectConditionSetRequest.newBuilder()
+              .setSubjectConditionSet(
+                  SubjectConditionSetCreate.newBuilder()
+                      .addSubjectSets(
+                          SubjectSet.newBuilder()
+                              .addConditionGroups(
+                                  ConditionGroup.newBuilder()
+                                      .setBooleanOperator(
+                                          ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+                                      .addConditions(
+                                          Condition.newBuilder()
+                                              .setSubjectExternalSelectorValue(".myfield")
+                                              .setOperator(
+                                                  SubjectMappingOperatorEnum
+                                                      .SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+                                              .addSubjectExternalValues("myvalue")))))
+              .build();
+
+      CreateSubjectConditionSetResponse subjectConditionSetResponse =
+          ResponseMessageKt.getOrThrow(
+              sdk.getServices()
+                  .subjectMappings()
+                  .createSubjectConditionSetBlocking(
+                      subjectConditionSetRequest, Collections.emptyMap())
+                  .execute());
+
+      SubjectConditionSet subjectConditionSet =
+          subjectConditionSetResponse.getSubjectConditionSet();
+
+      CreateSubjectMappingRequest request =
+          CreateSubjectMappingRequest.newBuilder()
+              .setAttributeValueId(attribute.getValues(0).getId())
+              .addActions(Action.newBuilder().setName("read"))
+              .setExistingSubjectConditionSetId(subjectConditionSet.getId())
+              .build();
+
+      CreateSubjectMappingResponse resp =
+          ResponseMessageKt.getOrThrow(
+              sdk.getServices()
+                  .subjectMappings()
+                  .createSubjectMappingBlocking(request, Collections.emptyMap())
+                  .execute());
+
+      SubjectMapping subjectMapping = resp.getSubjectMapping();
+
+      logger.info("Successfully created subject mapping with ID: {}", subjectMapping.getId());
+    } catch (Exception e) {
+      logger.error("Failed to create subject mapping", e);
     }
+  }
 }
 
 ```
