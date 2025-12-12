@@ -1,0 +1,8 @@
+{
+  "label": "Java SDK",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Documentation for the Java SDK implementation of OpenTDF"
+  }
+}
