@@ -1,0 +1,199 @@
+name: Test Getting Started Guide
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docs/getting-started/index.mdx'
+      - 'scripts/extract-code-resources.js'
+      - '.github/workflows/test-getting-started.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/getting-started/index.mdx'
+      - 'scripts/extract-code-resources.js'
+      - '.github/workflows/test-getting-started.yml'
+
+jobs:
+  test-getting-started:
+    name: Test Getting Started Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Install otdfctl
+        run: |
+          go install github.com/opentdf/otdfctl@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+          otdfctl version || echo "otdfctl installed successfully"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract code resources
+        run: npm run extract-code
+
+      - name: Verify extracted files
+        run: |
+          echo "Checking extracted code resources..."
+          ls -lh extracted-code/
+          echo ""
+          echo "Content of code-resource-003.sh (hosts update):"
+          cat extracted-code/code-resource-003.sh
+          echo ""
+          echo "First 10 lines of docker-compose.yaml:"
+          head -10 extracted-code/code-resource-002.yaml
+
+      - name: Update /etc/hosts
+        run: |
+          echo "Updating /etc/hosts file..."
+          sudo bash extracted-code/code-resource-003.sh
+          echo ""
+          echo "Verifying /etc/hosts entries:"
+          grep "opentdf.local" /etc/hosts || echo "Warning: opentdf.local entries not found"
+
+      - name: Prepare Docker Compose directory
+        run: |
+          mkdir -p opentdf-platform
+          cp extracted-code/code-resource-002.yaml opentdf-platform/docker-compose.yaml
+          echo "Docker Compose file ready:"
+          ls -lh opentdf-platform/
+
+      - name: Start OpenTDF Platform
+        run: |
+          cd opentdf-platform
+          echo "Starting OpenTDF platform services..."
+          docker-compose up -d
+          echo ""
+          echo "Waiting for services to initialize..."
+          sleep 30
+          echo ""
+          echo "Docker containers:"
+          docker-compose ps
+
+      - name: Wait for services to be healthy
+        run: |
+          cd opentdf-platform
+          echo "Waiting for services to become healthy..."
+          
+          # Wait up to 5 minutes for services to be healthy
+          timeout=300
+          elapsed=0
+          
+          while [ $elapsed -lt $timeout ]; do
+            unhealthy=$(docker-compose ps --format json | jq -r 'select(.Health != "healthy" and .Health != "") | .Name' | wc -l)
+            
+            if [ "$unhealthy" -eq 0 ]; then
+              echo "✓ All services are healthy!"
+              docker-compose ps
+              exit 0
+            fi
+            
+            echo "Waiting for services... ($elapsed seconds elapsed)"
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+          
+          echo "⚠ Timeout waiting for services to become healthy"
+          docker-compose ps
+          docker-compose logs --tail=50
+          exit 1
+
+      - name: Create certificate directory
+        run: |
+          echo "Creating certificate directory..."
+          bash extracted-code/code-resource-004.sh
+          ls -lh opentdf-certs/ || echo "Directory created"
+
+      - name: Extract Keycloak certificate
+        run: |
+          echo "Extracting Keycloak certificate..."
+          cd opentdf-platform
+          bash ../extracted-code/code-resource-005.sh
+          echo ""
+          echo "Certificate extracted:"
+          ls -lh ../opentdf-certs/keycloak.opentdf.local.crt || echo "Certificate not found"
+
+      - name: Extract Platform certificate
+        run: |
+          echo "Extracting Platform certificate..."
+          cd opentdf-platform
+          bash ../extracted-code/code-resource-006.sh
+          echo ""
+          echo "Certificates extracted:"
+          ls -lh ../opentdf-certs/
+
+      - name: Verify certificates
+        run: |
+          echo "Verifying certificate files..."
+          if [ -f "opentdf-certs/keycloak.opentdf.local.crt" ]; then
+            echo "✓ Keycloak certificate found"
+            openssl x509 -in opentdf-certs/keycloak.opentdf.local.crt -noout -subject -dates
+          else
+            echo "✗ Keycloak certificate missing"
+            exit 1
+          fi
+          
+          echo ""
+          
+          if [ -f "opentdf-certs/platform.opentdf.local.crt" ]; then
+            echo "✓ Platform certificate found"
+            openssl x509 -in opentdf-certs/platform.opentdf.local.crt -noout -subject -dates
+          else
+            echo "✗ Platform certificate missing"
+            exit 1
+          fi
+
+      - name: Test platform connectivity
+        run: |
+          echo "Testing platform connectivity..."
+          
+          # Test Keycloak
+          echo "Testing Keycloak (https://keycloak.opentdf.local:9443)..."
+          curl -k -f -s -o /dev/null -w "%{http_code}\n" https://keycloak.opentdf.local:9443 || echo "Keycloak not responding"
+          
+          # Test Platform
+          echo "Testing Platform (https://platform.opentdf.local:8443)..."
+          curl -k -f -s -o /dev/null -w "%{http_code}\n" https://platform.opentdf.local:8443 || echo "Platform not responding"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          cd opentdf-platform
+          echo "=== Docker Compose Services ==="
+          docker-compose ps
+          echo ""
+          echo "=== Docker Compose Logs ==="
+          docker-compose logs --tail=100
+          echo ""
+          echo "=== Docker System Info ==="
+          docker system df
+          docker images
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd opentdf-platform || exit 0
+          echo "Stopping and removing containers..."
+          docker-compose down -v || true
+          cd ..
+          rm -rf opentdf-platform opentdf-certs extracted-code || true
