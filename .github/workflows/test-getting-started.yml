@@ -82,13 +82,13 @@ jobs:
         run: |
           cd opentdf-platform
           echo "Starting OpenTDF platform services..."
-          docker-compose up -d
+          docker compose up -d
           echo ""
           echo "Waiting for services to initialize..."
           sleep 30
           echo ""
           echo "Docker containers:"
-          docker-compose ps
+          docker compose ps
 
       - name: Wait for services to be healthy
         run: |
@@ -100,11 +100,11 @@ jobs:
           elapsed=0
           
           while [ $elapsed -lt $timeout ]; do
-            unhealthy=$(docker-compose ps --format json | jq -r 'select(.Health != "healthy" and .Health != "") | .Name' | wc -l)
+            unhealthy=$(docker compose ps --format json | jq -r 'select(.Health != "healthy" and .Health != "") | .Name' | wc -l)
             
             if [ "$unhealthy" -eq 0 ]; then
               echo "✓ All services are healthy!"
-              docker-compose ps
+              docker compose ps
               exit 0
             fi
             
@@ -114,8 +114,8 @@ jobs:
           done
           
           echo "⚠ Timeout waiting for services to become healthy"
-          docker-compose ps
-          docker-compose logs --tail=50
+          docker compose ps
+          docker compose logs --tail=50
           exit 1
 
       - name: Create certificate directory
@@ -180,10 +180,10 @@ jobs:
         run: |
           cd opentdf-platform
           echo "=== Docker Compose Services ==="
-          docker-compose ps
+          docker compose ps
           echo ""
           echo "=== Docker Compose Logs ==="
-          docker-compose logs --tail=100
+          docker compose logs --tail=100
           echo ""
           echo "=== Docker System Info ==="
           docker system df
@@ -194,6 +194,6 @@ jobs:
         run: |
           cd opentdf-platform || exit 0
           echo "Stopping and removing containers..."
-          docker-compose down -v || true
+          docker compose down -v || true
           cd ..
           rm -rf opentdf-platform opentdf-certs extracted-code || true
