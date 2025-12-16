@@ -41,3 +41,6 @@ node_modules
 
 # Ignore manual test scripts
 manual_tests/
+
+# Ignore extracted code resources
+/extracted-code/
