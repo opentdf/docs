@@ -20,9 +20,11 @@ The first step is to get the platform running locally. You can use the following
 
 > **Note for Apple M4 chip users:**  
 > If you are running on an Apple M4 chip, set the Java environment variable before running any commands:
+> <!-- Code Resource 001 Start -->
 > ```sh
 > export JAVA_OPTS_APPEND="-XX:UseSVE=0"
 > ```
+> <!-- Code Resource 001 End -->
 > This resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
 
 :::warning
@@ -31,6 +33,7 @@ Not for production use.
 
 <details>
 <summary>Docker Compose</summary>
+<!-- Code Resource 002 Start -->
 ```yaml
 name: opentdf
 volumes:
@@ -314,16 +317,18 @@ services:
       retries: 10
 
 ```
-
+<!-- Code Resource 002 End -->
 </details>
 
 ## Update /etc/hosts
 
 In order for the services to communicate correctly you will need to update your `/etc/hosts` file.
 
+<!-- Code Resource 003 Start -->
 ```shell
 echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
 ```
+<!-- Code Resource 003 End -->
 
 ## Trust Self Signed Certificates
 
@@ -331,17 +336,25 @@ During the bootstrapping process `caddy` will generate self signed certificates.
 
 Example of extracting the certificate from the container.
 
+<!-- Code Resource 004 Start -->
 ```shell
 mkdir -p ./opentdf-certs
 ```
+<!-- Code Resource 004 End -->
+<!-- Code Resource 004 End -->
 
+<!-- Code Resource 005 Start -->
 ```shell
 docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
 ```
+<!-- Code Resource 005 End -->
+<!-- Code Resource 005 End -->
 
+<!-- Code Resource 006 Start -->
 ```shell
 docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
+<!-- Code Resource 006 End -->
 
 ### Import and Trust Certificates by Operating System
 
