@@ -15,7 +15,8 @@
     "gen-api-docs-all": "docusaurus gen-api-docs all --all-versions",
     "gen-api-docs-clean": "docusaurus clean-api-docs all",
     "check-vendored-yaml": "tsx src/openapi/check-vendored-yaml.ts",
-    "update-vendored-yaml": "tsx src/openapi/update-vendored-yaml.ts"
+    "update-vendored-yaml": "tsx src/openapi/update-vendored-yaml.ts",
+    "extract-code": "bash scripts/extract-code.sh"
   },
   "dependencies": {
     "@docusaurus/core": "^3.6.3",
