@@ -27,7 +27,7 @@ configs:
 
 services:
   caddy:
-    image: caddy:alpine
+    image: caddy:2.8.4-alpine
     command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
     configs:
       - source: caddy_config
