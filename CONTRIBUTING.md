@@ -10,7 +10,7 @@ The information below is meant for documentation contributors.
 
 ## Check spelling and grammar for your changes
 
-Install the required vale packages
+Install the required vale packages:
 ```shell
 vale sync
 ```
