@@ -36,6 +36,7 @@
     "octokit": "^4.0.2",
     "plugin-image-zoom": "^1.2.0",
     "prism-react-renderer": "^2.4.0",
+    "raw-loader": "^4.0.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-error-boundary": "^4.1.2",

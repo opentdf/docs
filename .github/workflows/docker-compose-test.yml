@@ -1,0 +1,96 @@
+name: Docker Compose Stack Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Add hosts entries
+        run: |
+          echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Setup Docker's apt repository
+        run: | 
+            # Add Docker's official GPG key:
+            sudo apt update
+            sudo apt install ca-certificates curl
+            sudo install -m 0755 -d /etc/apt/keyrings
+            sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+            sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+            # Add the repository to Apt sources:
+            sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+            Types: deb
+            URIs: https://download.docker.com/linux/ubuntu
+            Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+            Components: stable
+            Signed-By: /etc/apt/keyrings/docker.asc
+            EOF
+
+            sudo apt update
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+          docker compose version
+      
+      - name: Start Docker Compose stack
+        working-directory: docs/getting-started
+        run: |
+          docker compose up -d
+      
+      - name: Wait for platform health check
+        run: |
+          echo "Waiting for platform to be ready..."
+          timeout=300  # 5 minutes in seconds
+          elapsed=0
+          interval=15
+          
+          while [ $elapsed -lt $timeout ]; do
+            echo "Checking health endpoint (${elapsed}s elapsed)..."
+            
+            # Use -k to allow insecure connections (self-signed cert)
+            # Use -s for silent mode, -w for response code
+            response=$(curl -k -s -w "\n%{http_code}" https://platform.opentdf.local:8443/healthz 2>/dev/null || echo "")
+            
+            if [ -n "$response" ]; then
+              http_code=$(echo "$response" | tail -n1)
+              body=$(echo "$response" | head -n1)
+              
+              echo "HTTP Code: $http_code"
+              echo "Response Body: $body"
+              
+              if [ "$http_code" = "200" ] && echo "$body" | grep -q '"status":"SERVING"'; then
+                echo "✓ Platform is ready!"
+                exit 0
+              fi
+            fi
+            
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+          
+          echo "✗ Timeout waiting for platform to become ready"
+          exit 1
+      
+      - name: Show container logs on failure
+        if: failure()
+        working-directory: docs/getting-started
+        run: |
+          docker compose ps
+          docker compose logs
