@@ -71,7 +71,7 @@ services:
     restart: "no"
 
   ensure-permissions:
-    image: alpine
+    image: alpine:3.23
     command:
     - 'sh'
     - '-c'
@@ -212,7 +212,7 @@ services:
       - "keycloak.opentdf.local:host-gateway"
   # Prepare fixtures directory structure - create symlink to expected location
   prepare-fixtures:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
@@ -248,7 +248,7 @@ services:
 
   # Prepare CA certificates bundle with Caddy cert
   prepare-ca-certs:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - type: volume
         source: caddy_data
@@ -301,7 +301,7 @@ services:
 
   # Initialize volume permissions
   init-volumes:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
       - keys:/keys
@@ -316,7 +316,7 @@ services:
 
   # Fix keys permissions after generation
   fix-keys-permissions:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - keys:/keys
     depends_on:
@@ -343,7 +343,7 @@ services:
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
   patch-platform-config:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
@@ -467,7 +467,7 @@ services:
 
   # Generate keys without Docker dependency
   generate-keys:
-    image: alpine:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
       - keys:/keys
