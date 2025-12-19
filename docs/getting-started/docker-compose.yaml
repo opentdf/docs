@@ -332,13 +332,13 @@ services:
 
   # Download platform configuration file
   download-platform-config:
-    image: curlimages/curl:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['-o', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-example.yaml']
+    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-example.yaml']
     restart: "no"
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
@@ -360,7 +360,7 @@ services:
 
   # Download Keycloak provisioning data
   download-keycloak-data:
-    image: curlimages/curl:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
@@ -377,7 +377,7 @@ services:
         for i in $$(seq 1 $$MAX_ATTEMPTS); do
           echo "Attempt $$i of $$MAX_ATTEMPTS: Downloading keycloak_data.yaml..."
           
-          if curl -f -o "$$OUTPUT" "$$URL"; then
+          if wget -O "$$OUTPUT" "$$URL"; then
             echo "Download successful"
             
             # Validate the downloaded file
@@ -408,18 +408,18 @@ services:
 
   # Download fixtures data
   download-fixtures:
-    image: curlimages/curl:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['-o', '/configs/service/internal/fixtures/policy_fixtures.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/internal/fixtures/policy_fixtures.yaml']
+    command: ['wget', '-O', '/configs/service/internal/fixtures/policy_fixtures.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/internal/fixtures/policy_fixtures.yaml']
     restart: "no"
 
   # Download init-temp-keys script
   download-init-script:
-    image: curlimages/curl:latest
+    image: alpine:3.23
     volumes:
       - configs:/configs
     depends_on:
@@ -436,7 +436,7 @@ services:
         for i in $$(seq 1 $$MAX_ATTEMPTS); do
           echo "Attempt $$i of $$MAX_ATTEMPTS: Downloading init-temp-keys.sh..."
           
-          if curl -f -o "$$OUTPUT" "$$URL"; then
+          if wget -O "$$OUTPUT" "$$URL"; then
             echo "Download successful"
             
             # Validate the downloaded file
