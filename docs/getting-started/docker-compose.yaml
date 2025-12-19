@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
 
   check-certs:
-    image: bash:latest
+    image: alpine:3.23
     volumes:
       - type: volume
         source: caddy_data
@@ -57,7 +57,7 @@ services:
         volume:
           subpath: caddy/certificates/local/keycloak.opentdf.local/
     command:
-      - bash
+      - sh
       - -c
       - |
         echo "Checking certificates"
