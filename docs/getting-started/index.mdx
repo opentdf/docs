@@ -18,28 +18,6 @@ This guide will walk you through setting up a new platform locally and walk you 
   - [Podman](https://podman.io/)
   - [Docker Compose](https://docs.docker.com/compose/)
 
-## Getting the Platform Running
-
-The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
-
-> **Note for Apple M4 chip users:**  
-> If you are running on an Apple M4 chip, set the Java environment variable before running any commands:
-> ```sh
-> export JAVA_OPTS_APPEND="-XX:UseSVE=0"
-> ```
-> This resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
-
-:::warning
-Not for production use.
-:::
-
-<details>
-<summary>Docker Compose</summary>
-
-<CodeBlock language="yaml">{dockerComposeContent}</CodeBlock>
-
-</details>
-
 ## Update /etc/hosts
 
 In order for the services to communicate correctly you will need to update your `/etc/hosts` file.
@@ -48,11 +26,47 @@ In order for the services to communicate correctly you will need to update your 
 echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
 ```
 
+## Getting the Platform Running
+
+The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
+
+:::warning
+Not for production use.
+:::
+
+<a href="/quickstart/docker-compose.yaml" download="docker-compose.yaml" style={{display: 'inline-block', padding: '8px 16px', backgroundColor: '#0066cc', color: 'white', textDecoration: 'none', borderRadius: '4px', marginBottom: '16px'}}>Download docker-compose.yaml</a>
+
+<details>
+<summary>Docker Compose</summary>
+
+<CodeBlock language="yaml">{dockerComposeContent}</CodeBlock>
+
+</details>
+
+### Save the Docker Compose File
+
+Click the **download** button above to save the `docker-compose.yaml` file to your local machine. If you prefer to copy the content manually, save it as `docker-compose.yaml`.
+
+### Start the Platform
+
+Once you have the `docker-compose.yaml` file saved, start the platform using the following command:
+
+```shell
+# If running on Apple M4 chip
+JAVA_OPTS_APPEND="-XX:UseSVE=0" docker compose --file docker-compose.yaml up -d
+
+# Or on other architectures
+docker compose --file docker-compose.yaml up -d
+```
+
+> **Note for Apple M4 chip users:**  
+> The `JAVA_OPTS_APPEND="-XX:UseSVE=0"` environment variable resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
+
 ## Trust Self Signed Certificates
 
-During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
+After starting the platform, `caddy` will generate self-signed certificates during the bootstrapping process. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
 
-Example of extracting the certificate from the container.
+First, extract the certificates from the container:
 
 ```shell
 mkdir -p ./opentdf-certs
