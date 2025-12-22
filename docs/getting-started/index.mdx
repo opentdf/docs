@@ -73,11 +73,11 @@ mkdir -p ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
 ### Import and Trust Certificates by Operating System
