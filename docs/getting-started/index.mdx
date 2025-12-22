@@ -5,6 +5,28 @@ slug: /getting-started
 import dockerComposeContent from '!!raw-loader!./docker-compose.yaml';
 import CodeBlock from '@theme/CodeBlock';
 
+<style>
+{`
+.download-button {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #0066cc;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.download-button:hover {
+  background-color: #0052a3;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+`}
+</style>
+
 # Getting Started
 
 This guide will walk you through setting up a new platform locally and walk you through some of the basic concepts within the OpenTDF platform.
@@ -34,7 +56,7 @@ The first step is to get the platform running locally. You can use the following
 Not for production use.
 :::
 
-<a href="/quickstart/docker-compose.yaml" download="docker-compose.yaml" style={{display: 'inline-block', padding: '8px 16px', backgroundColor: '#0066cc', color: 'white', textDecoration: 'none', borderRadius: '4px', marginBottom: '16px'}}>Download docker-compose.yaml</a>
+<a href="/quickstart/docker-compose.yaml" download="docker-compose.yaml" className="download-button">Download docker-compose.yaml</a>
 
 <details>
 <summary>Docker Compose</summary>
@@ -73,11 +95,11 @@ mkdir -p ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
 ### Import and Trust Certificates by Operating System
