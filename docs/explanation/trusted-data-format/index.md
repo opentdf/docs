@@ -129,8 +129,11 @@ TDF is built on open standards:
 
 This ensures that TDF files can be processed by different implementations and integrated into existing security infrastructure.
 
+OpenTDF is part of a broader family of TDF specifications including IC-TDF, BASE-TDF, and ZTDF (ACP-240). Learn more about [TDF format variants and standards](/explanation/trusted-data-format/format-variants-and-standards).
+
 ## Next Steps
 
+- Explore [TDF format variants and standards](/explanation/trusted-data-format/format-variants-and-standards) (IC-TDF, BASE-TDF, ZTDF/ACP-240)
 - Learn about [cryptographic binding](/explanation/trusted-data-format/cryptographic-binding) in detail
 - Understand the [TDF vs NanoTDF comparison](/explanation/trusted-data-format/tdf-vs-nanotdf)
 - See the complete [TDF lifecycle](/explanation/trusted-data-format/tdf-lifecycle) from creation to consumption
