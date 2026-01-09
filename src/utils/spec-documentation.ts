@@ -100,41 +100,43 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/reference/tru
   createCategoryJsonFiles(outDir);
 
   return [
-    [
-      "docusaurus-plugin-remote-content",
-      {
-        // options here
-        name: "nanotdf", // used by CLI, must be path safe
-        sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-        outDir: `${outDir}/schema/`, // the base directory to output to.
-        documents: ["README.md"], // the file names to download
-        modifyContent: (filename, content) => {
-          if (filename === "README.md") {
-            let updatedContent = content.replaceAll(
-              "../../diagrams/",
-              "../../../../../static/img/"
-            );
-            updatedContent = updatedContent.replaceAll(
-              "# nanotdf - a compact binary TDF format",
-              "# nanoTDF - a compact binary TDF format"
-            );
-            return {
-              content: `---
-id: nanotdf
-sidebar_position: 2
-title: NanoTDF
----
-
-${updatedContent}`,
-              filename: "nanotdf.md",
-            };
-          }
-          // If it's not a README.md or no changes are needed, return the content as is
-          return { content: content };
-        },
-      },
-    ],
+    // Commented out: nanotdf directory no longer exists in opentdf/spec repository
+    // The nanoTDF documentation is maintained locally in the docs
+    // [
+    //   "docusaurus-plugin-remote-content",
+    //   {
+    //     // options here
+    //     name: "nanotdf", // used by CLI, must be path safe
+    //     sourceBaseUrl:
+    //       "https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+    //     outDir: `${outDir}/schema/`, // the base directory to output to.
+    //     documents: ["README.md"], // the file names to download
+    //     modifyContent: (filename, content) => {
+    //       if (filename === "README.md") {
+    //         let updatedContent = content.replaceAll(
+    //           "../../diagrams/",
+    //           "../../../../../static/img/"
+    //         );
+    //         updatedContent = updatedContent.replaceAll(
+    //           "# nanotdf - a compact binary TDF format",
+    //           "# nanoTDF - a compact binary TDF format"
+    //         );
+    //         return {
+    //           content: `---
+// id: nanotdf
+// sidebar_position: 2
+// title: NanoTDF
+// ---
+//
+// ${updatedContent}`,
+    //           filename: "nanotdf.md",
+    //         };
+    //       }
+    //       // If it's not a README.md or no changes are needed, return the content as is
+    //       return { content: content };
+    //     },
+    //   },
+    // ],
     [
       "docusaurus-plugin-remote-content",
       {
