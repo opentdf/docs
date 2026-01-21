@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import CookieConsent from 'react-cookie-consent';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { useLocation } from '@docusaurus/router';
 
 export default function Root({ children }: { children: React.ReactNode }) {
   const { siteConfig } = useDocusaurusContext();
   const { googleGtagId } = siteConfig.customFields as { googleGtagId?: string };
+  const location = useLocation();
 
   const initializeGoogleAnalytics = () => {
     if (typeof window !== 'undefined' && googleGtagId) {
@@ -41,6 +43,17 @@ export default function Root({ children }: { children: React.ReactNode }) {
       }
     }
   }, [googleGtagId]);
+
+  // Track page views on route changes (SPA navigation)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.gtag && googleGtagId) {
+      // Send page view event to Google Analytics
+      window.gtag('config', googleGtagId, {
+        page_path: location.pathname + location.search + location.hash,
+        anonymize_ip: true,
+      });
+    }
+  }, [location, googleGtagId]);
 
   const handleAcceptCookie = () => {
     initializeGoogleAnalytics();
