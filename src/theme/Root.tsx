@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import CookieConsent from 'react-cookie-consent';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import { useLocation } from '@docusaurus/router';
+import React, { useEffect } from "react";
+import CookieConsent from "react-cookie-consent";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import { useLocation } from "@docusaurus/router";
 
 export default function Root({ children }: { children: React.ReactNode }) {
   const { siteConfig } = useDocusaurusContext();
@@ -9,46 +9,45 @@ export default function Root({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const initializeGoogleAnalytics = () => {
-    if (typeof window !== 'undefined' && googleGtagId) {
-      // Check if GA is already loaded
-      if (window.gtag) {
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${googleGtagId}`;
-      script.async = true;
-      document.head.appendChild(script);
-
-      window.dataLayer = window.dataLayer || [];
-      function gtag(...args: any[]) {
-        window.dataLayer.push(args);
-      }
-      gtag('js', new Date());
-      gtag('config', googleGtagId, { anonymize_ip: true });
-      (window as any).gtag = gtag;
+    if (typeof window === "undefined" || !googleGtagId || window.gtag) {
+      return;
     }
+
+    const script = document.createElement("script");
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${googleGtagId}`;
+    script.async = true;
+    document.head.appendChild(script);
+
+    // Stub function to queue gtag commands before the script loads
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() {
+      window.dataLayer.push(arguments);
+    };
+    window.gtag("js", new Date());
+    window.gtag("config", googleGtagId, { anonymize_ip: true });
   };
 
-  // Check if user has already accepted cookies on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('opentdf-cookie-consent='))
-        ?.split('=')[1];
-
-      if (cookieValue === 'true') {
-        initializeGoogleAnalytics();
-      }
+    if (typeof window === "undefined" || !googleGtagId) {
+      return;
     }
-  }, [googleGtagId]);
 
-  // Track page views on route changes (SPA navigation)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.gtag && googleGtagId) {
-      // Send page view event to Google Analytics
-      window.gtag('config', googleGtagId, {
+    // Check if user has already accepted cookies
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("opentdf-cookie-consent="))
+      ?.split("=")[1];
+
+    const hasConsent = cookieValue === "true";
+
+    // Initialize Google Analytics if consent is given and not already loaded
+    if (hasConsent) {
+      initializeGoogleAnalytics();
+    }
+
+    // Track page views on route changes (SPA navigation)
+    if (hasConsent && window.gtag) {
+      window.gtag("config", googleGtagId, {
         page_path: location.pathname + location.search + location.hash,
         anonymize_ip: true,
       });
@@ -74,12 +73,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
         enableDeclineButton
         onAccept={handleAcceptCookie}
       >
-        This website uses cookies to improve user experience and analyze website traffic.
-        By clicking "Accept", you consent to our use of cookies. See our{' '}
-        <a href="/privacy-policy">Privacy Policy</a>
-        {' '}and{' '}
-        <a href="/cookie-policy">Cookie Policy</a>
-        {' '}for more information.
+        This website uses cookies to improve user experience and analyze website
+        traffic. By clicking "Accept", you consent to our use of cookies. See
+        our <a href="/privacy-policy">Privacy Policy</a> and{" "}
+        <a href="/cookie-policy">Cookie Policy</a> for more information.
       </CookieConsent>
     </>
   );
