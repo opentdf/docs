@@ -23,8 +23,6 @@ When using the [kas-registry proto](https://github.com/opentdf/platform/blob/522
    1. The passed in kas information list
    2. The key algorithm
 2. If a base key is not present, the SDK will fallback to using the passed in kas information list and key algorithm.
-3. If the base key is not of type ECC, it **cannot** be used with NanoTDF.
-   1. If the registered base key is not of type ECC, the SDK will fallback to using the passed in kas url and key type.
 
 :::note
 In upcoming versions of the SDK, post v0.5.0, the SDK will prefer to error when no base key is set; instead of falling back.

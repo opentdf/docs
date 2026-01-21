@@ -544,18 +544,12 @@ Now that we have a few basic resources in place we can show you how to control a
 
 ### Encrypt Data Without Attributes
 
-Within the `otdfctl` CLI there is basic functionality to interact with `zTDF` and `nanoTDF`.
+Within the `otdfctl` CLI there is basic functionality to interact with `zTDF`.
 
 #### Example zTDF encryption
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
-```
-
-#### Example nanoTDF encryption
-
-```shell
-echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano
 ```
 
 ### Decrypt Data Without Attributes
@@ -571,33 +565,18 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 my first encrypted tdf
 ```
 
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-# Output
-my first encrypted nano tdf
-```
-
 ### Encrypt Data With Attributes
 
 In this example we will encrypt the data with the attribute `https://opentdf.io/attr/role/value/guest`. First cleanup any existing tdf files from before.
 
 ```shell
-rm example.tdf example.nano.tdf
+rm example.tdf
 ```
 
 #### Example zTDF encryption with attributes
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
-```
-
-#### Example nanoTDF encryption with attributes
-
-```shell
-echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
 ```
 
 ### Decrypt Data With Attributes
@@ -613,17 +592,6 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```shell
 # Output
 ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap splitKey.rewrap failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
-            rpc error: code = PermissionDenied desc = forbidden
-```
-
-#### Example nanoTDF failed decryption
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-ERROR    Failed to decrypt file: readSeeker.Seek failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
             rpc error: code = PermissionDenied desc = forbidden
 ```
 
@@ -663,17 +631,6 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```shell
 # Output
 my first encrypted tdf
-```
-
-#### Example nanoTDF successful decryption
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-# Output
-my first encrypted nano tdf
 ```
 
 ## Takeaways and Next Steps
