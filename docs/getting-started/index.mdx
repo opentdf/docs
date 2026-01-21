@@ -32,220 +32,175 @@ import CodeBlock from '@theme/CodeBlock';
 
 # Getting Started
 
-This guide will walk you through setting up a new platform locally and walk you through some of the basic concepts within the OpenTDF platform.
+This guide will walk you through encrypting and decrypting data using OpenTDF tools. We'll help you set up a sandbox [OpenTDF platform](/architecture) locally with attribute based access controls (ABAC) to demonstrate the basic concepts of OpenTDF.
+
+## The Scenario
+
+Let's follow a real-world example: Jen Moneybanks, CFO at a company, creates a highly sensitive financial strategy document for next year. Preston Price (an accountant) and Jack Vascript (an engineer) both try to access it, but are denied.
+
+Recognizing the need for wider collaboration, Jen creates a derivative version that removes executive-only details but keeps relevant financial information. Now Preston can access the derivative document, while Jack remains locked out.
+
+We'll use OpenTDF to implement this exact scenario with:
+- **Departments**: `finance`, `engineering`
+- **Clearance levels**: `executive`, `standard`
+- **Two documents**: Executive strategy (requires executive clearance) and derivative report (requires finance department access)
 
 ## Pre-requisites
-
-- A copy of the `otdfctl` CLI.
-  - [Download the latest release](https://github.com/opentdf/otdfctl/releases)
-  
-- A tool to run the compose file.
-  - [Podman](https://podman.io/)
-  - [Docker Compose](https://docs.docker.com/compose/)
-
-## Update /etc/hosts
-
-In order for the services to communicate correctly you will need to update your `/etc/hosts` file.
-
-```shell
-echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
-```
+- macOS, Linux, or Windows (WSL2)
+- [Docker Desktop](https://docs.docker.com/desktop/) or Docker Engine installed and running
+- 4GB+ RAM available
+- 10GB+ free disk space
 
 ## Getting the Platform Running
 
-The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
+The OpenTDF Platform is the core service that enforces attribute-based access control for encrypted data. It handles:
+- Defining and managing attributes (like department, clearance level)
+- Enforcing access policies when data is encrypted or decrypted
+- Managing cryptographic keys through the Key Access Server (KAS)
+- Validating user entitlements before granting access to data
+
+We'll run a local instance using Docker. This includes the [Platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/) (for user authentication), and [PostgreSQL](https://www.postgresql.org/) (for storing attributes and policies).
 
 :::warning
 Not for production use.
 :::
 
-<a href="/quickstart/docker-compose.yaml" download="docker-compose.yaml" className="download-button">Download docker-compose.yaml</a>
+### Run Pre-flight Check (Optional)
 
-<details>
-<summary>Docker Compose</summary>
-
-<CodeBlock language="yaml">{dockerComposeContent}</CodeBlock>
-
-</details>
-
-### Save the Docker Compose File
-
-Click the **download** button above to save the `docker-compose.yaml` file to your local machine. If you prefer to copy the content manually, save it as `docker-compose.yaml`.
-
-### Start the Platform
-
-Once you have the `docker-compose.yaml` file saved, start the platform using the following command:
+Verify your system meets the requirements:
 
 ```shell
-# If running on Apple M4 chip
-JAVA_OPTS_APPEND="-XX:UseSVE=0" docker compose --file docker-compose.yaml up -d
-
-# Or on other architectures
-docker compose --file docker-compose.yaml up -d
+curl -fsSL https://opentdf.io/check.sh | bash
 ```
 
-> **Note for Apple M4 chip users:**  
-> The `JAVA_OPTS_APPEND="-XX:UseSVE=0"` environment variable resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
+Or download and run locally:
+```shell
+curl -fsSL https://docs.opentdf.io/quickstart/check.sh -o check.sh
+chmod +x check.sh
+./check.sh
+```
 
-## Trust Self Signed Certificates
+### Install OpenTDF
 
-After starting the platform, `caddy` will generate self-signed certificates during the bootstrapping process. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
-
-First, extract the certificates from the container:
+Run the automated installer:
 
 ```shell
-mkdir -p ./opentdf-certs
+curl -fsSL https://opentdf.io/install.sh | bash
 ```
+
+Or download and run locally:
+```shell
+curl -fsSL https://docs.opentdf.io/quickstart/install.sh -o install.sh
+chmod +x install.sh
+./install.sh
+```
+
+What this does:
+- Downloads and installs the otdfctl CLI
+- Verifies Docker is running
+- Adds entries to /etc/hosts (requires sudo)
+- Downloads and starts all services (Platform, Keycloak, PostgreSQL, Caddy)
+- Imports SSL certificates (requires sudo)
+- Takes 3-5 minutes on first run
+
+You'll be prompted for your password twice:
+1. To add entries to /etc/hosts
+2. To import the SSL certificate
+
+### Add otdfctl to Your PATH (Optional)
+
+Choose one option:
+
+Option A: Add to shell profile (recommended)
+```shell
+echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Or for zsh:
+```shell
+echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Option B: Create system-wide symlink
+```shell
+sudo ln -sf ~/.opentdf/bin/otdfctl /usr/local/bin/otdfctl
+```
+
+Option C: Use full path (no setup needed)
+```shell
+~/.opentdf/bin/otdfctl --version
+```
+
+### Verify Installation
 
 ```shell
-docker compose cp caddy:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
+otdfctl --version
 ```
 
-```shell
-docker compose cp caddy:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
-```
+Should display: otdfctl version 0.28.0 ...
 
-### Import and Trust Certificates by Operating System
+You can verify that the platform and keycloak are running at the following locations
+- https://platform.opentdf.local:8443/healthz
+- https://keycloak.opentdf.local:9443/ 
 
-<details>
-<summary><strong>macOS</strong></summary>
+### Create an otdfctl Profile
 
-1. **Import certificates to Keychain:**
-   ```shell
-   # Import both certificates to the System keychain
-   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/keycloak.opentdf.local.crt
-   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./opentdf-certs/platform.opentdf.local.crt
-   ```
-
-2. **Alternative: Using Keychain Access GUI:**
-   - Open **Keychain Access** (Applications → Utilities → Keychain Access)
-   - Drag and drop both `.crt` files into the **System** keychain
-   - Double-click each certificate and set **Trust** → **When using this certificate** to **Always Trust**
-   - Enter your admin password when prompted
-
-3. **Verify certificates are trusted:**
-   ```shell
-   security verify-cert -c ./opentdf-certs/keycloak.opentdf.local.crt
-   security verify-cert -c ./opentdf-certs/platform.opentdf.local.crt
-   ```
-
-**References:**
-- [Add certificates to a keychain](https://support.apple.com/guide/keychain-access/add-certificates-to-a-keychain-kyca2431/mac)
-- [Change trust settings of a certificate](https://support.apple.com/guide/keychain-access/change-the-trust-settings-of-a-certificate-kyca11871/mac)
-
-</details>
-
-<details>
-<summary><strong>Windows</strong></summary>
-
-1. **Import certificates using PowerShell (Run as Administrator):**
-   ```powershell
-   # Import to Trusted Root Certification Authorities
-   Import-Certificate -FilePath ".\opentdf-certs\keycloak.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
-   Import-Certificate -FilePath ".\opentdf-certs\platform.opentdf.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
-   ```
-
-2. **Alternative: Using Certificate Manager GUI:**
-   - Press `Win + R`, type `certmgr.msc`, and press Enter
-   - Navigate to **Trusted Root Certification Authorities** → **Certificates**
-   - Right-click and select **All Tasks** → **Import**
-   - Follow the wizard to import both `.crt` files
-   - Choose **Place all certificates in the following store** → **Trusted Root Certification Authorities**
-
-3. **Alternative: Using MMC (Microsoft Management Console):**
-   - Press `Win + R`, type `mmc`, and press Enter
-   - Go to **File** → **Add/Remove Snap-in**
-   - Add **Certificates** snap-in for **Local Computer**
-   - Navigate to **Certificates (Local Computer)** → **Trusted Root Certification Authorities** → **Certificates**
-   - Right-click and import both certificates
-
-</details>
-
-<details>
-<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
-
-1. **Copy certificates to system certificate directory:**
-   ```shell
-   # Copy certificates to the ca-certificates directory
-   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /usr/local/share/ca-certificates/
-   sudo cp ./opentdf-certs/platform.opentdf.local.crt /usr/local/share/ca-certificates/
-   
-   # Update the certificate store
-   sudo update-ca-certificates
-   ```
-
-2. **Verify certificates are installed:**
-   ```shell
-   # Check if certificates are in the trusted store
-   awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt | grep opentdf
-   ```
-
-</details>
-
-<details>
-<summary><strong>Linux (RHEL/CentOS/Fedora)</strong></summary>
-
-1. **Copy certificates to system certificate directory:**
-   ```shell
-   # Copy certificates to the ca-trust directory
-   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
-   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/pki/ca-trust/source/anchors/
-   
-   # Update the certificate store
-   sudo update-ca-trust
-   ```
-
-2. **Verify certificates are installed:**
-   ```shell
-   # Check if certificates are trusted
-   trust list | grep "opentdf.local"
-   ```
-
-</details>
-
-<details>
-<summary><strong>Linux (Arch Linux)</strong></summary>
-
-1. **Copy certificates to system certificate directory:**
-   ```shell
-   # Copy certificates to the ca-certificates directory
-   sudo cp ./opentdf-certs/keycloak.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
-   sudo cp ./opentdf-certs/platform.opentdf.local.crt /etc/ca-certificates/trust-source/anchors/
-   
-   # Update the certificate store
-   sudo trust extract-compat
-   ```
-
-</details>
-
-:::tip Browser-specific Certificate Installation
-Some browsers (like Firefox) maintain their own certificate stores. If you continue to see certificate warnings in your browser after following the OS-specific steps above, you may need to import the certificates directly into your browser's certificate store.
-:::
-
-:::warning Certificate Validity
-These self-signed certificates are only valid for local development. Never use self-signed certificates in production environments.
-:::
-
-## Create a Profile
-Creating a profile allows us to store the host we want to connect to and then to tie our credentials to it when we login.
+A profile stores your platform connection details TODO: WHAT IS THIS PROFILE? DO WE NEED ONE PER PERSON?:
 
 ```shell
 otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
 ```
 
-## Login to the Platform
+### Authenticate
 
-During the provisioning of the platform, a few test clients were created in **Keycloak**. You can use the following credentials to login to the platform. This will cache those credentials locally for the `otdfctl` CLI. You can also pass in the flags `--with-client-creds` and `--with-client-creds-file` on every command to authenticate with the platform.
+Login using the pre-configured test credentials:
 
 ```shell
 otdfctl --profile platform-otdf-local auth client-credentials opentdf secret
 ```
 
+Credentials:
+- Client ID: opentdf
+- Client Secret: secret
+
+These are test credentials provisioned automatically during installation.
+
+To verify authentication, list namespaces to confirm you're connected:
+
+```shell
+otdfctl --profile platform-otdf-local policy attributes namespaces list
+```
+
+Should return an empty list [] (no namespaces created yet).
+
+## Encrypt and Decrypt with the CLI
+
+Let's start with a simple encryption example:
+
+```shell
+echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf
+```
+
+This creates an encrypted file called `example.tdf`. Now decrypt it:
+
+```shell
+otdfctl decrypt --profile platform-otdf-local example.tdf
+```
+
+```shell
+# Output
+my first encrypted tdf
+```
+
+That's it! You're encrypting and decrypting data. But encryption alone isn't very useful without access controls, so let's get into the details of our scenario.
+
 ## Create A Namespace
 
-In this first step you are going to create a new `namespace`. A namespace is a way to organize your `attributes` within the platform.
+A `namespace` is how you organize your `attributes` within the platform. Think of it as your organization's domain - for our scenario, this will be the company where Jen, Preston, and Jack work.
 
-You will see an empty list of namespaces when you first start the platform.
+Let's check if there are any existing namespaces:
 
 ```shell
 otdfctl --profile platform-otdf-local policy attributes namespaces list
@@ -262,6 +217,8 @@ NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 
 ### Create a new namespace
 
+We'll create a namespace representing our company domain:
+
 ```shell
 otdfctl --profile platform-otdf-local policy attributes namespaces create --name opentdf.io
 ```
@@ -271,12 +228,12 @@ SUCCESS   Created namespaces: 7650f02a-be00-4faa-a1d1-37cded5e23dc
 ┌────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Property                                                                    │Value                                                                                                │
 ├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│Name                                                                        │opentdf.io                                                                                           │
+│Name                                                                        │opentdf.io                                                                                          │
 │Id                                                                          │7650f02a-be00-4faa-a1d1-37cded5e23dc                                                                 │
 │Created At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 │Updated At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 └────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
-NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to see all properties
+NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cced5e23dc --json' to see all properties
 ```
 
 ### List the namespaces
@@ -292,7 +249,7 @@ SUCCESS   Found namespaces list
 ┌──────────────────────────────────────────────┬────────────────────┬────────────────┬────────────────┬──────────────────────────────────────┬─────────────────────────────────────┐
 │Id                                            │Name                │Active          │Labels          │Created At                            │Updated At                           │
 ├──────────────────────────────────────────────┼────────────────────┼────────────────┼────────────────┼──────────────────────────────────────┼─────────────────────────────────────┤
-│7650f02a-be00-4faa-a1d1-37cded5e23dc          │opentdf.io          │true            │[]              │Mon Jun 24 11:02:00 UTC 2024          │Mon Jun 24 11:02:00 UTC 2024         │
+│7650f02a-be00-4faa-a1d1-37cded5e23dc          │opentdf.io         │true            │[]              │Mon Jun 24 11:02:00 UTC 2024          │Mon Jun 24 11:02:00 UTC 2024         │
 └──────────────────────────────────────────────┴────────────────────┴────────────────┴────────────────┴──────────────────────────────────────┴─────────────────────────────────────┘
 NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 ```
@@ -315,42 +272,39 @@ SUCCESS   Found namespaces: 7650f02a-be00-4faa-a1d1-37cded5e23dc
 │Property                                                                    │Value                                                                                                │
 ├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                                                                          │7650f02a-be00-4faa-a1d1-37cded5e23dc                                                                 │
-│Name                                                                        │opentdf.io                                                                                           │
+│Name                                                                        │opentdf.io                                                                                          │
 │Created At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 │Updated At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 └────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to see all properties
 ```
 
-## Create an Attribute
+## Create Attributes
 
-Now that we have a namespace we can create a new attribute. An attribute is a way to define a classification for your data.
+An `attribute` defines how to classify data. For our scenario, we need two types of attributes:
 
-It consists of two main parts:
+1. **Department** - Which department can access the data (finance, engineering)
+2. **Clearance** - What clearance level is required (executive, standard)
 
-1. A `definition` which describes how an entities entitlements and resource attributes are compared.
-    1. **ANY_OF**: The entity must have at least one of the values in the list. This is your typical `OR` operation.
-    2. **ALL_OF**: The entity must have all of the values in the list. This is your typical `AND` operation.
-    3. **HIERARCHY**: This is an ordered list of values. The entity must have an equal or greater value in the list.
+Each attribute has:
 
-2. A list of `values`
+1. **A definition** - Describes how entitlements and resource attributes are compared:
+   - **ANY_OF**: Entity needs at least one value (OR operation) - perfect for departments
+   - **ALL_OF**: Entity needs all values (AND operation) - useful for combined requirements
+   - **HIERARCHY**: Ordered list where higher values grant lower access - perfect for clearance levels
 
-:::warning
-
-Attribute name and values are case insensitive. This means `ROLE` is equal to `role`.
-
-:::
+2. **A list of values** - The specific options (e.g., finance, engineering, executive, standard)
 
 :::tip
-
-You can also create values at the same time when creating the definition. This is useful when you know the values you want to use. (e.g. --value admin --value developer --value guest)
-
+You can create values when creating the definition: `--value finance --value engineering`
 :::
 
-### Create attribute definition
+### Create Department Attribute
+
+First, let's create an attribute for departments. We'll use `ANY_OF` since a person typically belongs to one department:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes create --name role  -s $NAMESPACE_ID  -r ANY_OF
+otdfctl --profile platform-otdf-local policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF
 ```
 
 ```shell
@@ -358,27 +312,29 @@ SUCCESS   Created attributes: bd02d7ab-564d-4b6c-95c4-3d4a8a259000
 ┌────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Property                                                                        │Value                                                                                            │
 ├────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│Name                                                                            │role                                                                                             │
+│Name                                                                            │department                                                                                       │
 │Rule                                                                            │ANY_OF                                                                                           │
 │Values                                                                          │[]                                                                                               │
-│Namespace                                                                       │opentdf.io                                                                                       │
+│Namespace                                                                       │opentdf.io                                                                                      │
 │Created At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
 │Updated At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
 └────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to see all properties
 ```
 
-Let's export the attribute id for later use.
+Save the department attribute ID:
 
 ```shell
-export ATTRIBUTE_ID=<id>
+export DEPT_ATTRIBUTE_ID=<id>
 ```
 
-### Create attribute values
+### Add Department Values
+
+Now add the specific departments. Preston works in finance, and Jack works in engineering:
 
 ```shell
-# Create admin value
-otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value admin
+# Finance department (Preston's department)
+otdfctl --profile platform-otdf-local policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
 ```
 
 ```shell
@@ -387,23 +343,23 @@ SUCCESS   Created values: 0fe7e8d0-a3ff-485f-ac24-a54d85904712
 │Property                                                                  │Value                                                                                                  │
 ├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                                                                        │0fe7e8d0-a3ff-485f-ac24-a54d85904712                                                                   │
-│FQN                                                                       │https://opentdf.io/attr/role/value/admin                                                               │
-│Value                                                                     │admin                                                                                                  │
+│FQN                                                                       │https://opentdf.io/attr/department/value/finance                                                      │
+│Value                                                                     │finance                                                                                                │
 │Created At                                                                │Mon Jun 24 11:11:15 UTC 2024                                                                           │
 │Updated At                                                                │Mon Jun 24 11:11:15 UTC 2024                                                                           │
 └──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'values get --id=0fe7e8d0-a3ff-485f-ac24-a54d85904712 --json' to see all properties
 ```
 
-Export the admin value id for later use.
+Save the finance value ID:
 
 ```shell
-export ADMIN_VALUE_ID=<id>
+export FINANCE_VALUE_ID=<id>
 ```
 
 ```shell
-# Create developer value
-otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value developer
+# Engineering department (Jack's department)
+otdfctl --profile platform-otdf-local policy attributes values create -a $DEPT_ATTRIBUTE_ID --value engineering
 ```
 
 ```shell
@@ -412,23 +368,56 @@ SUCCESS   Created values: dbfcbe15-7392-4e35-9e1d-3d06918472be
 │Property                                                                │Value                                                                                                    │
 ├────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                                                                      │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                     │
-│FQN                                                                     │https://opentdf.io/attr/role/value/developer                                                             │
-│Value                                                                   │developer                                                                                                │
+│FQN                                                                     │https://opentdf.io/attr/department/value/engineering                                                    │
+│Value                                                                   │engineering                                                                                              │
 │Created At                                                              │Mon Jun 24 11:12:45 UTC 2024                                                                             │
 │Updated At                                                              │Mon Jun 24 11:12:45 UTC 2024                                                                             │
 └────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'values get --id=dbfcbe15-7392-4e35-9e1d-3d06918472be --json' to see all properties
 ```
 
-Export the developer value id for later use.
+Save the engineering value ID:
 
 ```shell
-export DEVELOPER_VALUE_ID=<id>
+export ENGINEERING_VALUE_ID=<id>
+```
+
+### Create Clearance Attribute
+
+Now create a clearance attribute using `HIERARCHY` rule. This means someone with executive clearance automatically has standard clearance too:
+
+```shell
+otdfctl --profile platform-otdf-local policy attributes create --name clearance -s $NAMESPACE_ID -r HIERARCHY
 ```
 
 ```shell
-# Create guest value
-otdfctl --profile platform-otdf-local policy attributes values create -a $ATTRIBUTE_ID --value guest
+SUCCESS   Created attributes: af23c7bd-987d-4c6b-85f4-2a8d4a127abc
+┌────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                        │Value                                                                                            │
+├────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Name                                                                            │clearance                                                                                        │
+│Rule                                                                            │HIERARCHY                                                                                        │
+│Values                                                                          │[]                                                                                               │
+│Namespace                                                                       │opentdf.io                                                                                      │
+│Created At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
+│Updated At                                                                      │Mon Jun 24 11:09:39 UTC 2024                                                                     │
+└────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'attributes get --id=af23c7bd-987d-4c6b-85f4-2a8d4a127abc --json' to see all properties
+```
+
+Save the clearance attribute ID:
+
+```shell
+export CLEARANCE_ATTRIBUTE_ID=<id>
+```
+
+### Add Clearance Values
+
+Add clearance levels. Order matters for HIERARCHY - list them from highest to lowest:
+
+```shell
+# Executive clearance (Jen has this - highest level)
+otdfctl --profile platform-otdf-local policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
 ```
 
 ```shell
@@ -437,26 +426,51 @@ SUCCESS   Created values: 654f0877-2c0b-4a62-a9c3-87ed42bf77ac
 │Property                                                                  │Value                                                                                                  │
 ├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                                                                        │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                   │
-│FQN                                                                       │https://opentdf.io/attr/role/value/guest                                                               │
-│Value                                                                     │guest                                                                                                  │
+│FQN                                                                       │https://opentdf.io/attr/clearance/value/executive                                                     │
+│Value                                                                     │executive                                                                                              │
 │Created At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
 │Updated At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
 └──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'values get --id=654f0877-2c0b-4a62-a9c3-87ed42bf77ac --json' to see all properties
 ```
 
-Export the guest value id for later use.
+Save the executive clearance value ID:
 
 ```shell
-export GUEST_VALUE_ID=<id>
+export EXECUTIVE_VALUE_ID=<id>
 ```
 
-### Get the attribute details
-
-Now that we have listed values for the attribute, we can get the details of the attribute. You should see the added values in the list now.
+```shell
+# Standard clearance (Preston and Jack have this)
+otdfctl --profile platform-otdf-local policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value standard
+```
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes get --id=$ATTRIBUTE_ID
+SUCCESS   Created values: 789a1234-3c0b-4a62-b8d4-98fe53cg88bd
+┌──────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                                                                  │Value                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                                                                        │789a1234-3c0b-4a62-b8d4-98fe53cg88bd                                                                   │
+│FQN                                                                       │https://opentdf.io/attr/clearance/value/standard                                                      │
+│Value                                                                     │standard                                                                                               │
+│Created At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
+│Updated At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
+└──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+NOTE   Use 'values get --id=789a1234-3c0b-4a62-b8d4-98fe53cg88bd --json' to see all properties
+```
+
+Save the standard clearance value ID:
+
+```shell
+export STANDARD_VALUE_ID=<id>
+```
+
+### Review Your Attributes
+
+Now you have two attributes with values. Let's verify the department attribute:
+
+```shell
+otdfctl --profile platform-otdf-local policy attributes get --id=$DEPT_ATTRIBUTE_ID
 ```
 
 ```shell
@@ -465,30 +479,33 @@ SUCCESS   Found attributes: bd02d7ab-564d-4b6c-95c4-3d4a8a259000
 │Property                                                                    │Value                                                                                                │
 ├────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                                                                          │bd02d7ab-564d-4b6c-95c4-3d4a8a259000                                                                 │
-│Name                                                                        │role                                                                                                 │
+│Name                                                                        │department                                                                                           │
 │Rule                                                                        │ANY_OF                                                                                               │
-│Values                                                                      │[admin, developer, guest]                                                                            │
-│Namespace                                                                   │opentdf.io                                                                                           │
+│Values                                                                      │[finance, engineering]                                                                               │
+│Namespace                                                                   │opentdf.io                                                                                          │
 │Created At                                                                  │Mon Jun 24 11:09:39 UTC 2024                                                                         │
 │Updated At                                                                  │Mon Jun 24 11:14:22 UTC 2024                                                                         │
 └────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to see all properties
 ```
 
-## Create a Subject Mapping
+## Create Subject Mappings
 
-A `subject mapping` is a way to define how a user or entity is mapped to an attribute in the **OpenTDF Platform**.
+A `subject mapping` connects users to attributes, granting them entitlements. This is where we define:
+- **Jen** gets `clearance/executive` (which also grants `clearance/standard` due to hierarchy)
+- **Preston** gets `department/finance` and `clearance/standard`
+- **Jack** gets `department/engineering` and `clearance/standard`
 
-An attribute that is mapped to an entity is considered an `entitlement`. An `entitlement` is a way to define what tdf resources an entity can access.
+First, we need a `subject condition set` - this defines WHO qualifies for the entitlement based on their identity properties (like client ID, email, or group membership).
 
-With `subject mappings` there is a sub-resource  called `subject condition sets`. These are a set of conditions that must be met for the `subject mapping` to be applied.
+### Create Subject Condition Sets
 
-### Create a Subject Condition Set
+For this tutorial, we'll simulate our three users by creating condition sets that match different criteria. Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set as a template.
 
-Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set. You can use this file to create a new condition set.
+In a real deployment, you'd match users by email, group membership, or other identity properties from your identity provider (like Keycloak). For now, we'll use the default client ID.
 
 ```shell
- otdfctl --profile platform-otdf-local policy subject-condition-sets create -j <path to file>/subject_condition_set.json
+otdfctl --profile platform-otdf-local policy subject-condition-sets create -j <path to file>/subject_condition_set.json
 ```
 
 ```shell
@@ -504,18 +521,46 @@ SUCCESS   Created subject-condition-sets: 74bf521f-5a79-48fe-acb8-b4b63ee7950b
 NOTE   Use 'subject-condition-sets get --id=74bf521f-5a79-48fe-acb8-b4b63ee7950b --json' to see all properties
 ```
 
-Let's export the subject condition set id for later use.
+Save the condition set ID - we'll use this to represent all three users in our demo:
 
 ```shell
 export SUBJECT_CONDITION_SET_ID=<id>
 ```
 
-### Create a Subject Mapping
+## Encrypt Jen's Executive Document
 
-With the condition set created we can now create a new subject mapping that is tied to the subject condition set.
+Before granting any permissions, let's create Jen's executive strategy document and see what happens when someone without proper clearance tries to access it.
+
+### Create the Executive Strategy Document
+
+Jen creates her highly sensitive executive strategy document. This requires executive clearance:
 
 ```shell
-otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $DEVELOPER_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+echo 'Executive Financial Strategy 2026: Confidential merger plans and Board-level decisions' | otdfctl encrypt --profile platform-otdf-local -o executive-strategy.tdf --attr https://opentdf.io/attr/clearance/value/executive
+```
+
+### Try to Decrypt Without Permission (Will Fail)
+
+Right now, we haven't granted ourselves any permissions. Let's try to decrypt this executive document:
+
+```shell
+otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
+```
+
+You'll see an error like this:
+
+```shell
+Error: rpc error: code = PermissionDenied desc = Access denied: insufficient permissions
+```
+
+This is access control working! The platform checked our entitlements, found that we don't have the `clearance/executive` attribute, and denied access.
+
+### Grant Jen Executive Clearance
+
+Now let's grant executive clearance to represent Jen's access level:
+
+```shell
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -524,118 +569,101 @@ SUCCESS   Created subject-mappings: 751054f8-14da-44c0-9341-5dab36b8256d
 │Property                 │Value                                                                                                                                                   │
 ├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │Id                       │751054f8-14da-44c0-9341-5dab36b8256d                                                                                                                    │
-│Subject AttrVal: Id      │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                                                                    │
+│Subject AttrVal: Id      │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
 │Actions                  │[{"Value":{"Standard":1}}]                                                                                                                              │
 │Subject Condition Set: I…│74bf521f-5a79-48fe-acb8-b4b63ee7950b                                                                                                                    │
 │Subject Condition Set    │[{"condition_groups":[{"conditions":[{"subject_external_selector_value":".clientId","operator":1,"subject_external_values":["opentdf"]}],"boolean_opera…│
-│Attribute Value Id       │dbfcbe15-7392-4e35-9e1d-3d06918472be                                                                                                                    │
+│Attribute Value Id       │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
 │Created At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
 │Updated At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
 └─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 NOTE   Use 'subject-mappings get --id=751054f8-14da-44c0-9341-5dab36b8256d --json' to see all properties
 ```
 
-Let's export the subject mapping id for later use.
+Because we're using HIERARCHY for clearance, this executive clearance automatically grants standard clearance too. This means Jen can access both executive-level documents and standard documents.
+
+### Decrypt Now That We Have Permission
+
+Now that we've been granted executive clearance, try decrypting the executive document again:
 
 ```shell
-export SUBJECT_MAPPING_ID=<id>
-```
-
-## Encrypt Some Data With TDF
-
-Now that we have a few basic resources in place we can show you how to control access to data using the **OpenTDF Platform**.
-
-### Encrypt Data Without Attributes
-
-Within the `otdfctl` CLI there is basic functionality to interact with `zTDF`.
-
-#### Example zTDF encryption
-
-```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
-```
-
-### Decrypt Data Without Attributes
-
-Because we didn't add any attributes to the data we encrypted, we should be able to decrypt the data without any issues.
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+Executive Financial Strategy 2026: Confidential merger plans and Board-level decisions
 ```
 
-### Encrypt Data With Attributes
+Success! With the proper clearance, Jen can now access her executive document. The same file that was locked before is now accessible.
 
-In this example we will encrypt the data with the attribute `https://opentdf.io/attr/role/value/guest`. First cleanup any existing tdf files from before.
+## Create the Derivative Finance Report
+
+Now Jen creates a derivative version for the finance team. This one requires finance department access but only standard clearance:
 
 ```shell
-rm example.tdf
+echo 'Finance Department Report 2026: Budget allocations and quarterly targets (no executive details)' | otdfctl encrypt --profile platform-otdf-local -o finance-report.tdf --attr https://opentdf.io/attr/department/value/finance --attr https://opentdf.io/attr/clearance/value/standard
 ```
 
-#### Example zTDF encryption with attributes
+Notice this document has TWO attributes - it requires BOTH finance department membership AND standard clearance.
+
+### Grant Finance Department Access
+
+To simulate Preston's access, let's grant ourselves the finance department attribute:
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
+otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
-### Decrypt Data With Attributes
+### Decrypt the Finance Report
 
-In this first example we will try to decrypt the data but it will fail because we shouldn't be assigned the entitlement of `https://opentdf.io/attr/role/value/guest` at this point.
-
-#### Example zTDF failed decryption
+Now we can access the derivative document (since we have executive clearance which includes standard, plus we just added finance department):
 
 ```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
-```
-
-```shell
-# Output
-ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap splitKey.rewrap failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
-            rpc error: code = PermissionDenied desc = forbidden
-```
-
-What we have to do now is assign the entitlement of `https://opentdf.io/attr/role/value/guest` to the entity by creating a new subject mapping for the condition set we created earlier.
-
-#### Create a new subject mapping
-
-```shell
-otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $GUEST_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
-```
-
-```shell
-SUCCESS   Created subject-mappings: f6bf9fc7-e23b-4276-9dfc-7a61f359edfd
-┌─────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Property                 │Value                                                                                                                                                   │
-├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│Id                       │f6bf9fc7-e23b-4276-9dfc-7a61f359edfd                                                                                                                    │
-│Subject AttrVal: Id      │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
-│Actions                  │[{"Value":{"Standard":1}}]                                                                                                                              │
-│Subject Condition Set: I…│74bf521f-5a79-48fe-acb8-b4b63ee7950b                                                                                                                    │
-│Subject Condition Set    │[{"condition_groups":[{"conditions":[{"subject_external_selector_value":".clientId","operator":1,"subject_external_values":["opentdf"]}],"boolean_opera…│
-│Attribute Value Id       │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                                                                                                                    │
-│Created At               │Mon Jun 24 13:28:22 UTC 2024                                                                                                                            │
-│Updated At               │Mon Jun 24 13:28:22 UTC 2024                                                                                                                            │
-└─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-NOTE   Use 'subject-mappings get --id=f6bf9fc7-e23b-4276-9dfc-7a61f359edfd --json' to see all properties
-```
-
-Now that we have the subject mapping in place we should be able to decrypt the data.
-
-#### Example zTDF successful decryption
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
+otdfctl decrypt --profile platform-otdf-local finance-report.tdf
 ```
 
 ```shell
 # Output
-my first encrypted tdf
+Finance Department Report 2026: Budget allocations and quarterly targets (no executive details)
 ```
+
+Success! Both Jen and Preston can now access this finance-specific document.
+
+### What About Jack?
+
+Jack (engineering department) cannot access either document because:
+1. **Executive strategy**: Requires `clearance/executive` (Jack only has standard)
+2. **Finance report**: Requires `department/finance` (Jack is in engineering)
+
+This demonstrates attribute-based access control - the same encrypted files behave differently depending on WHO is trying to decrypt them.
 
 ## Takeaways and Next Steps
 
-In this document you have learned how to create a namespace, attribute, subject mapping, and encrypt/decrypt data with the **OpenTDF Platform**.
+You've successfully implemented Jen, Preston, and Jack's scenario! Here's what you learned:
+
+### Key Concepts
+
+1. **Namespaces** organize attributes for your organization
+2. **Attributes** classify data (department, clearance level, classification, etc.)
+3. **Attribute Rules**:
+   - `ANY_OF`: Need at least one value (departments)
+   - `HIERARCHY`: Higher values include lower ones (clearance levels)
+   - `ALL_OF`: Need all values (not used in this example)
+4. **Subject Mappings** grant users entitlements to decrypt data with specific attributes
+5. **Multiple Attributes** can be combined on a single document for fine-grained control
+
+### Real-World Applications
+
+In production, you would:
+- Create unique users in Keycloak for Jen, Preston, and Jack
+- Use subject condition sets that match by email, group membership, or custom claims
+- Integrate with your existing identity provider
+- Set up roles and groups in your IdP that map to attributes
+
+### What's Next?
+
+- Explore [SDK integration](/sdk) to encrypt/decrypt in your applications
+- Learn about [Key Access Servers (KAS)](/kas) for policy enforcement
+- Understand [rewrap operations](/rewrap) for access revocation
+- Build [attribute hierarchies](/attributes/hierarchy) for complex organizational structures
