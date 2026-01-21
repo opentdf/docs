@@ -1,0 +1,24 @@
+---
+title: otdfctl auth logout
+---
+
+import React from 'react';
+import CommandLineDocs from '@site/src/components/CommandLineDocs';
+
+<CommandLineDocs {...JSON.parse("{\"title\":\"Clear credentials from profile\",\"command\":{\"name\":\"logout\"},\"fullCommand\":\"otdfctl auth logout\"}")}>
+
+
+> [!NOTE]
+> Requires experimental profiles feature.
+>
+> | OS | Keychain | State |
+> | --- | --- | --- |
+> | MacOS | Keychain | Stable |
+> | Windows | Credential Manager | Alpha |
+> | Linux | Secret Service | Not yet supported |
+
+Removes any auth credentials (Client Credentials or an Access Token from a login)
+from the current profile.
+
+</CommandLineDocs>
+          

@@ -1,0 +1,19 @@
+---
+title: otdfctl policy key-management provider list
+---
+
+import React from 'react';
+import CommandLineDocs from '@site/src/components/CommandLineDocs';
+
+<CommandLineDocs {...JSON.parse("{\"title\":\"List Provider Configs\",\"command\":{\"name\":\"list\",\"aliases\":[\"l\"],\"flags\":[{\"name\":\"limit\",\"shorthand\":\"l\",\"description\":\"Maximum number of results to return\",\"required\":true},{\"name\":\"offset\",\"shorthand\":\"o\",\"description\":\"Offset for pagination\",\"required\":true}]},\"fullCommand\":\"otdfctl policy key-management provider list\"}")}>
+
+Lists all provider configs with pagination support.
+
+## Examples
+
+```shell
+otdfctl keymanagement provider list --limit 10 --offset 0
+```
+
+</CommandLineDocs>
+          

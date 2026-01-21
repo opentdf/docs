@@ -121,7 +121,7 @@ export default function Documentation() {
                     <ul>
                       <li><strong><a href="/tutorials/your-first-tdf">Your First TDF</a></strong> - Get hands-on experience creating your first protected data file</li>
                       <li><strong><a href="/tutorials">Complete Tutorial Series</a></strong> - Step-by-step guides for learning OpenTDF</li>
-                      <li><strong><a href="/getting-started/configuration">Platform Configuration</a></strong> - Set up OpenTDF services</li>
+                      <li><strong><a href="/how-to/getting-started/configuration">Platform Configuration</a></strong> - Set up OpenTDF services</li>
                     </ul>
                   </div>
                 </div>
@@ -187,8 +187,8 @@ export default function Documentation() {
                   <div className="card__body">
                     <p>Technical descriptions of the machinery and how to operate it.</p>
                     <ul>
-                      <li><strong><a href="/reference/api">Platform APIs</a></strong> - Complete REST API reference for all services</li>
-                      <li><strong><a href="/reference/specifications">Technical Specifications</a></strong> - TDF format, protocols, and schemas</li>
+                      <li><strong><a href="/reference/OpenAPI-clients">Platform APIs</a></strong> - Complete REST API reference for all services</li>
+                      <li><strong><a href="/reference/trusted-data-format/specifications">Technical Specifications</a></strong> - TDF format, protocols, and schemas</li>
                       <li><strong><a href="/how-to/sdk-recipes">SDK Examples</a></strong> - Code examples and integration patterns</li>
                     </ul>
                   </div>
