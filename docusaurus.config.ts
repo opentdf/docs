@@ -234,7 +234,6 @@ const config: Config = {
     languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
-    // Google Analytics is loaded conditionally via cookie consent banner in src/theme/Root.tsx
     [
       "@docusaurus/plugin-ideal-image",
       {
