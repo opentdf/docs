@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import CookieConsent from 'react-cookie-consent';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
@@ -6,8 +6,13 @@ export default function Root({ children }: { children: React.ReactNode }) {
   const { siteConfig } = useDocusaurusContext();
   const { googleGtagId } = siteConfig.customFields as { googleGtagId?: string };
 
-  const handleAcceptCookie = () => {
+  const initializeGoogleAnalytics = () => {
     if (typeof window !== 'undefined' && googleGtagId) {
+      // Check if GA is already loaded
+      if (window.gtag) {
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = `https://www.googletagmanager.com/gtag/js?id=${googleGtagId}`;
       script.async = true;
@@ -21,6 +26,24 @@ export default function Root({ children }: { children: React.ReactNode }) {
       gtag('config', googleGtagId, { anonymize_ip: true });
       (window as any).gtag = gtag;
     }
+  };
+
+  // Check if user has already accepted cookies on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('opentdf-cookie-consent='))
+        ?.split('=')[1];
+
+      if (cookieValue === 'true') {
+        initializeGoogleAnalytics();
+      }
+    }
+  }, [googleGtagId]);
+
+  const handleAcceptCookie = () => {
+    initializeGoogleAnalytics();
   };
 
   return (
