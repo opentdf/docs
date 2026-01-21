@@ -201,6 +201,54 @@ a[class*="embed_documentation_footer-"] {
 }
 
 /**************
+** COOKIE CONSENT BANNER
+***************/
+
+.cookie-consent-banner {
+  background: #1c1e21;
+  align-items: center;
+  padding: 1rem;
+}
+
+.cookie-consent-banner a {
+  color: var(--ifm-color-primary);
+  text-decoration: underline;
+}
+
+.cookie-consent-banner a:hover {
+  color: var(--ifm-color-primary-light);
+}
+
+.cookie-consent-accept-button {
+  background: var(--ifm-color-primary);
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.cookie-consent-accept-button:hover {
+  background: var(--ifm-color-primary-dark);
+}
+
+.cookie-consent-decline-button {
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: 4px;
+  border: 1px solid #fff;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.cookie-consent-decline-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/**************
 ** HOMEPAGE
 
 Breakpoints:
