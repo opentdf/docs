@@ -36,6 +36,7 @@ const config: Config = {
   trailingSlash: false,
   customFields: {
     javaSdkVersion,
+    googleGtagId: 'G-JH0PNJK88L',
   },
 
   // GitHub pages deployment config.
