@@ -182,6 +182,23 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: "Legal",
+          items: [
+            {
+              label: "Privacy Policy",
+              to: "/privacy-policy",
+            },
+            {
+              label: "Cookie Policy",
+              to: "/cookie-policy",
+            },
+            {
+              label: "Terms of Service",
+              to: "/terms-of-service",
+            },
+          ],
+        },
       ],
       copyright: `
           <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
@@ -216,6 +233,7 @@ const config: Config = {
     languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
+    // Google Analytics is loaded conditionally via cookie consent banner in src/theme/Root.tsx
     [
       "@docusaurus/plugin-ideal-image",
       {
