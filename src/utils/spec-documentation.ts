@@ -100,43 +100,6 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/reference/tru
   createCategoryJsonFiles(outDir);
 
   return [
-    // Commented out: nanotdf directory no longer exists in opentdf/spec repository
-    // The nanoTDF documentation is maintained locally in the docs
-    // [
-    //   "docusaurus-plugin-remote-content",
-    //   {
-    //     // options here
-    //     name: "nanotdf", // used by CLI, must be path safe
-    //     sourceBaseUrl:
-    //       "https://raw.githubusercontent.com/opentdf/spec/main/schema/nanotdf/", // the base url for the markdown (gets prepended to all of the documents when fetching)
-    //     outDir: `${outDir}/schema/`, // the base directory to output to.
-    //     documents: ["README.md"], // the file names to download
-    //     modifyContent: (filename, content) => {
-    //       if (filename === "README.md") {
-    //         let updatedContent = content.replaceAll(
-    //           "../../diagrams/",
-    //           "../../../../../static/img/"
-    //         );
-    //         updatedContent = updatedContent.replaceAll(
-    //           "# nanotdf - a compact binary TDF format",
-    //           "# nanoTDF - a compact binary TDF format"
-    //         );
-    //         return {
-    //           content: `---
-// id: nanotdf
-// sidebar_position: 2
-// title: NanoTDF
-// ---
-//
-// ${updatedContent}`,
-    //           filename: "nanotdf.md",
-    //         };
-    //       }
-    //       // If it's not a README.md or no changes are needed, return the content as is
-    //       return { content: content };
-    //     },
-    //   },
-    // ],
     [
       "docusaurus-plugin-remote-content",
       {
@@ -146,9 +109,6 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/reference/tru
           "https://raw.githubusercontent.com/opentdf/spec/main/diagrams/", // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: "static/img/", // the base directory to output to.
         documents: [
-          "ecc_and_binding.svg",
-          "nanotdf.svg",
-          "symmetric_and_payload.svg",
           "filecontents.svg",
         ], // the file names to download
         requestConfig: { responseType: "arraybuffer" },
@@ -367,15 +327,6 @@ ${updatedContent}`,
               "(protocol/)",
               `(${dirName}/protocol)`
             );
-            updatedContent = updatedContent.replaceAll(
-              "schema/nanotdf/README.md",
-              "schema/nanotdf.md"
-            );
-            updatedContent = updatedContent.replaceAll(
-              "../schema/nanotdf.md",
-              "schema/nanotdf.md"
-            );
-
             return {
               content: `---
 sidebar_position: 1
@@ -403,14 +354,10 @@ ${updatedContent}`,
               "../../diagrams/",
               "../../../../static/img/"
             );
-            // Replace all case-insensitive references to OpenTDF/README.md and nanotdf/README.md with ./opentdf and ./nanotdf
+            // Replace all case-insensitive references to OpenTDF/README.md with ./opentdf
             updatedContent = updatedContent.replace(
               /opentdf\/README\.md/gi,
               "./schema/opentdf"
-            );
-            updatedContent = updatedContent.replace(
-              /nanotdf\/README\.md/gi,
-              "./schema/nanotdf"
             );
             return {
               content: `---
