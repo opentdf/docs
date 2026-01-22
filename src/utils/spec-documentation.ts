@@ -87,15 +87,21 @@ function createCategoryJsonFiles(outDir: string) {
 /**
  * Returns an array of plugin configurations that fetch and process OpenTDF specification
  * documentation from GitHub repositories and organize them into the ${outDir} directory.
- * 
+ *
  * This function contains several steps, which create the directory structure under the provided outDir,
  * including:
  * - {outDir}/concepts
  * - {outDir}/protocol
  * - {outDir}/schema
  * - {outDir}/index.md
+ *
+ * @param outDir - The output directory for the documentation (default: "docs/reference/trusted-data-format/specifications")
+ * @param branch - The git branch to fetch from (default: "main")
  */
-export function getSpecDocumentationPlugins(outDir: string = "docs/reference/trusted-data-format/specifications"): PluginConfig[] {
+export function getSpecDocumentationPlugins(
+  outDir: string = "docs/reference/trusted-data-format/specifications",
+  branch: string = "main"
+): PluginConfig[] {
 
   createCategoryJsonFiles(outDir);
 
@@ -106,7 +112,7 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/reference/tru
         // options here
         name: "images-content", // used by CLI, must be path safe
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/diagrams/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/diagrams/`, // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: "static/img/", // the base directory to output to.
         documents: [
           "filecontents.svg",
@@ -120,7 +126,7 @@ export function getSpecDocumentationPlugins(outDir: string = "docs/reference/tru
         // options here
         name: "tdf", // used by CLI, must be path safe
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/schema/OpenTDF/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/schema/OpenTDF/`, // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: `${outDir}/schema/opentdf/`, // the base directory to output to.
         documents: [
           "manifest.md",
@@ -268,7 +274,7 @@ ${finalContent ? finalContent : ""}`;
       {
         name: "opentdf-index",
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/schema/OpenTDF/",
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/schema/OpenTDF/`,
         outDir: `${outDir}/schema/opentdf/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
@@ -299,7 +305,7 @@ ${updatedContent}`,
       "docusaurus-plugin-remote-content",
       {
         name: "spec-index",
-        sourceBaseUrl: "https://raw.githubusercontent.com/opentdf/spec/main/",
+        sourceBaseUrl: `https://raw.githubusercontent.com/opentdf/spec/${branch}/`,
         outDir: `${outDir}/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
@@ -345,7 +351,7 @@ ${updatedContent}`,
       {
         name: "schema-index",
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/schema/",
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/schema/`,
         outDir: `${outDir}/schema/`,
         documents: ["README.md"],
         modifyContent: (filename: string, content: string) => {
@@ -377,7 +383,7 @@ ${updatedContent}`,
       {
         name: "spec-concept",
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/concepts/",
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/concepts/`,
         outDir: `${outDir}/concepts/`,
         documents: ["access_control.md", "security.md"],
         modifyContent: (filename: string, content: string) => {
@@ -450,7 +456,7 @@ ${updatedContent}`,
       {
         name: "spec-protocol",
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/spec/main/protocol/",
+          `https://raw.githubusercontent.com/opentdf/spec/${branch}/protocol/`,
         outDir: `${outDir}/protocol/`,
         documents: ["protocol.md"],
         modifyContent: (filename: string, content: string) => {

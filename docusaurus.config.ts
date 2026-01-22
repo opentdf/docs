@@ -19,7 +19,18 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
+// Allow overriding upstream branches via environment variables
+// Each repo can be independently configured, defaults to 'main' if not set
+const platformBranch = process.env.PLATFORM_BRANCH || 'main';
+const specBranch = process.env.SPEC_BRANCH || 'main';
+const otdfctlBranch = process.env.OTDFCTL_BRANCH || 'main';
+
+console.log(`Using upstream branches:`);
+console.log(`  - platform: ${platformBranch}`);
+console.log(`  - spec: ${specBranch}`);
+console.log(`  - otdfctl: ${otdfctlBranch}`);
+
+const otdfctl = listRemote.createRepo("opentdf", "otdfctl", otdfctlBranch);
 
 const javaSdkVersion = "0.11.1";
 
@@ -246,7 +257,7 @@ const config: Config = {
     ],
     "plugin-image-zoom",
 
-    ...getSpecDocumentationPlugins(),
+    ...getSpecDocumentationPlugins(undefined, specBranch),
     [
       "docusaurus-plugin-remote-content",
       {
@@ -320,7 +331,7 @@ ${rawContent}
         // options here
         name: "platform-configuration", // used by CLI, must be path safe
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/platform/main/docs/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+          `https://raw.githubusercontent.com/opentdf/platform/${platformBranch}/docs/`, // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: "docs/how-to/getting-started", // the base directory to output to.
         documents: ["Configuring.md"], // the file names to download
         modifyContent: (filename, content) => {
