@@ -117,7 +117,11 @@ function RenderCLICommand({ children, fullCommand, title, command }) {
       </div>
       <div>
         <h2>Description</h2>
-        {children}
+        {typeof children === 'string' ? (
+          <ReactMarkdown remarkPlugins={[gfm]}>{children}</ReactMarkdown>
+        ) : (
+          children
+        )}
       </div>
       {renderFlags(flags)}
       {renderAliases(aliases)}
