@@ -152,8 +152,8 @@ check_port() {
 }
 
 check_port 8080
-check_port 5432
-check_port 65432
+check_port 8443
+check_port 9443
 echo ""
 
 # Check for sudo access (needed for /etc/hosts)

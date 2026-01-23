@@ -147,7 +147,7 @@ You can verify that the platform and keycloak are running at the following locat
 
 ### Create an otdfctl Profile
 
-A profile stores your platform connection details TODO: WHAT IS THIS PROFILE? DO WE NEED ONE PER PERSON?:
+A profile stores your platform connection details:
 
 ```shell
 otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
@@ -233,7 +233,7 @@ SUCCESS   Created namespaces: 7650f02a-be00-4faa-a1d1-37cded5e23dc
 │Created At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 │Updated At                                                                  │Mon Jun 24 11:02:00 UTC 2024                                                                         │
 └────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
-NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cced5e23dc --json' to see all properties
+NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to see all properties
 ```
 
 ### List the namespaces
@@ -249,7 +249,7 @@ SUCCESS   Found namespaces list
 ┌──────────────────────────────────────────────┬────────────────────┬────────────────┬────────────────┬──────────────────────────────────────┬─────────────────────────────────────┐
 │Id                                            │Name                │Active          │Labels          │Created At                            │Updated At                           │
 ├──────────────────────────────────────────────┼────────────────────┼────────────────┼────────────────┼──────────────────────────────────────┼─────────────────────────────────────┤
-│7650f02a-be00-4faa-a1d1-37cded5e23dc          │opentdf.io         │true            │[]              │Mon Jun 24 11:02:00 UTC 2024          │Mon Jun 24 11:02:00 UTC 2024         │
+│7650f02a-be00-4faa-a1d1-37cded5e23dc          │opentdf.io          │true            │[]              │Mon Jun 24 11:02:00 UTC 2024          │Mon Jun 24 11:02:00 UTC 2024         │
 └──────────────────────────────────────────────┴────────────────────┴────────────────┴────────────────┴──────────────────────────────────────┴─────────────────────────────────────┘
 NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 ```
@@ -446,17 +446,17 @@ otdfctl --profile platform-otdf-local policy attributes values create -a $CLEARA
 ```
 
 ```shell
-SUCCESS   Created values: 789a1234-3c0b-4a62-b8d4-98fe53cg88bd
+SUCCESS   Created values: 789a1234-3c0b-4a62-b8d4-98fe53cf88bd
 ┌──────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Property                                                                  │Value                                                                                                  │
 ├──────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│Id                                                                        │789a1234-3c0b-4a62-b8d4-98fe53cg88bd                                                                   │
+│Id                                                                        │789a1234-3c0b-4a62-b8d4-98fe53cf88bd                                                                   │
 │FQN                                                                       │https://opentdf.io/attr/clearance/value/standard                                                      │
 │Value                                                                     │standard                                                                                               │
 │Created At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
 │Updated At                                                                │Mon Jun 24 11:14:22 UTC 2024                                                                           │
 └──────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
-NOTE   Use 'values get --id=789a1234-3c0b-4a62-b8d4-98fe53cg88bd --json' to see all properties
+NOTE   Use 'values get --id=789a1234-3c0b-4a62-b8d4-98fe53cf88bd --json' to see all properties
 ```
 
 Save the standard clearance value ID:

@@ -300,7 +300,7 @@ import_certificates() {
     local MAX_WAIT=30
     local WAIT_TIME=0
     while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-        if docker exec platform-caddy-1 ls /data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt &>/dev/null; then
+        if $COMPOSE_CMD exec -T caddy ls /data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt &>/dev/null; then
             break
         fi
         sleep 2
@@ -310,7 +310,7 @@ import_certificates() {
     # Extract root CA certificate from Docker volume
     # We only need to trust the root CA, which automatically trusts all site certificates
     local TEMP_CERT_DIR=$(mktemp -d)
-    if docker exec platform-caddy-1 cat /data/caddy/pki/authorities/local/root.crt > "$TEMP_CERT_DIR/caddy-root.crt" 2>/dev/null; then
+    if $COMPOSE_CMD exec -T caddy cat /data/caddy/pki/authorities/local/root.crt > "$TEMP_CERT_DIR/caddy-root.crt" 2>/dev/null; then
 
         if [[ "$OS" == "darwin" ]]; then
             # macOS - use security command
