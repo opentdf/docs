@@ -305,6 +305,23 @@ const config: Config = {
             return { content: "", filename: "" };
           }
 
+          // For selector generate and test files, link to selectors index page's flattening syntax section
+          // instead of including it inline
+          let modifiedContent = rawContent;
+          if (filename.includes('selectors/generate.md') || filename.includes('selectors/test.md')) {
+            // Fix inline references to flattening-syntax to point to selectors index page
+            // Use ./ to reference the current directory's index page
+            modifiedContent = modifiedContent.replace(
+              /\(#flattening-syntax\)/g,
+              '(./#flattening-syntax)'
+            );
+            // Remove the h1 Flattening Syntax section
+            modifiedContent = modifiedContent.replace(
+              /\n# Flattening Syntax[\s\S]*$/,
+              ''
+            );
+          }
+
           // Wrap the content in CommandLineDocs component
           const nextContent = `---
 title: ${commandTitle}
@@ -314,7 +331,7 @@ import React from 'react';
 import CommandLineDocs from '@site/src/components/CommandLineDocs';
 
 <CommandLineDocs {...JSON.parse("${dataJSON}")}>
-${rawContent}
+${modifiedContent}
 </CommandLineDocs>
           `;
 
