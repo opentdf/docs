@@ -101,7 +101,8 @@ install_otdfctl() {
     DOWNLOAD_URL="https://github.com/opentdf/otdfctl/releases/download/${VERSION}/${ARCHIVE_NAME}"
 
     # Download and extract
-    local TEMP_DIR=$(mktemp -d)
+    local TEMP_DIR
+    TEMP_DIR=$(mktemp -d)
     if curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/$ARCHIVE_NAME"; then
         cd "$TEMP_DIR"
         if [[ "$EXTENSION" == "tar.gz" ]]; then
@@ -309,7 +310,8 @@ import_certificates() {
 
     # Extract root CA certificate from Docker volume
     # We only need to trust the root CA, which automatically trusts all site certificates
-    local TEMP_CERT_DIR=$(mktemp -d)
+    local TEMP_CERT_DIR
+    TEMP_CERT_DIR=$(mktemp -d)
     if $COMPOSE_CMD exec -T caddy cat /data/caddy/pki/authorities/local/root.crt > "$TEMP_CERT_DIR/caddy-root.crt" 2>/dev/null; then
 
         if [[ "$OS" == "darwin" ]]; then

@@ -15,7 +15,7 @@ WARNINGS=0
 
 # Function to print status
 print_status() {
-    if [ $1 -eq 0 ]; then
+    if [ "$1" -eq 0 ]; then
         echo -e "${GREEN}✓${NC} $2"
     else
         echo -e "${RED}✗${NC} $2"
@@ -138,7 +138,7 @@ echo ""
 echo "Checking port availability..."
 check_port() {
     if [[ "$OS" == "macos" ]] || [[ "$OS" == "linux" ]]; then
-        if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+        if lsof -Pi :"$1" -sTCP:LISTEN -t >/dev/null 2>&1 ; then
             print_warning "Port $1 is already in use"
             return 1
         else

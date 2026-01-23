@@ -15,7 +15,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      - name: Shellcheck quickstart scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck static/quickstart/check.sh
+          shellcheck static/quickstart/install.sh
+
       - name: Add hosts entries
         run: |
           echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
