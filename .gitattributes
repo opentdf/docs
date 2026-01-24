@@ -1,1 +1,5 @@
 code_samples/java/** linguist-generated=true
+
+# Ensure shell scripts always use Unix line endings (LF)
+*.sh text eol=lf
+*.bats text eol=lf
