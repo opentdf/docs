@@ -32,7 +32,7 @@ const config: Config = {
   url: "https://docs.opentdf.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.BASE_URL || "/",
+  baseUrl: "/",
   trailingSlash: false,
   customFields: {
     javaSdkVersion,
