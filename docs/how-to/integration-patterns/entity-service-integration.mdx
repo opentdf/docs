@@ -1,0 +1,1162 @@
+# How to Integrate an External Entity Resolution Service
+
+## Overview
+
+The Entity Resolution (ER) service is responsible for resolving subject attributes at access time. This guide shows you how to connect your existing identity and directory services (LDAP, SCIM, databases, etc.) to OpenTDF for dynamic attribute resolution.
+
+## What is Entity Resolution?
+
+Entity Resolution answers the question: "What attributes does this subject have?"
+
+When a user requests access to protected data:
+
+1. **User authenticates** → receives JWT with identity claims
+2. **User requests data** → presents JWT to PEP
+3. **PEP calls KAS** → KAS calls Authorization Service
+4. **Authorization Service calls ER** → "What attributes does user@example.com have?"
+5. **ER resolves attributes** → queries LDAP/database/API and returns attributes
+6. **Authorization Service evaluates** → compares user attributes to data attributes
+7. **KAS grants or denies** → based on evaluation result
+
+Without ER, authorization can only use claims embedded in the JWT. ER enables dynamic attribute resolution from external authoritative sources.
+
+---
+
+## Integration Patterns
+
+There are three main patterns for integrating entity resolution:
+
+### Pattern 1: Built-in ER Service with Custom Plugin
+
+**How it works**: Extend OpenTDF's built-in Entity Resolution service with a custom plugin that queries your identity source.
+
+**Best for**:
+- Standard identity sources (LDAP, SCIM, databases)
+- Organizations running OpenTDF on their infrastructure
+- Need for caching and performance optimization
+- Centralized attribute resolution logic
+
+### Pattern 2: External Resolution via API Callbacks
+
+**How it works**: Configure ER service to call your external API endpoint for attribute resolution.
+
+**Best for**:
+- Custom attribute logic in external systems
+- Microservices architecture
+- Existing attribute resolution services
+- Need for external policy enforcement
+
+### Pattern 3: Pre-Computed Attributes in Tokens
+
+**How it works**: Embed attributes directly in JWT claims at authentication time; ER reads from token.
+
+**Best for**:
+- Simple attribute models
+- Performance-critical scenarios (no external lookups)
+- Trusted IdP with attribute capabilities
+- Offline/disconnected scenarios
+
+---
+
+## Pattern 1: Custom ER Plugin (Recommended)
+
+This is the recommended approach for most organizations.
+
+### Architecture
+
+```mermaid
+graph LR
+    AuthZ[Authorization Service]
+    ER[Entity Resolution Service]
+    Plugin[Your Custom Plugin]
+    LDAP[LDAP/AD]
+    DB[Database]
+    API[External API]
+
+    AuthZ -->|Resolve attributes| ER
+    ER -->|Load plugin| Plugin
+    Plugin -->|Query| LDAP
+    Plugin -->|Query| DB
+    Plugin -->|Query| API
+    Plugin -->|Return attributes| ER
+    ER -->|Attributes| AuthZ
+```
+
+### Step 1: Understand the ER Plugin Interface
+
+OpenTDF's ER service defines a plugin interface for custom attribute resolvers.
+
+#### Go Plugin Interface
+
+```go
+package entityresolution
+
+import "context"
+
+// AttributeResolver is the interface for custom entity resolution plugins
+type AttributeResolver interface {
+    // ResolveAttributes resolves attributes for a given subject
+    ResolveAttributes(ctx context.Context, req *ResolveRequest) (*ResolveResponse, error)
+
+    // Health checks plugin health
+    Health(ctx context.Context) error
+}
+
+// ResolveRequest contains subject information
+type ResolveRequest struct {
+    Subject    *Subject
+    EntityID   string
+    SubjectClaims map[string]interface{}
+}
+
+// ResolveResponse contains resolved attributes
+type ResolveResponse struct {
+    Attributes []string  // Attribute FQNs: "example.com/attr/department/value/engineering"
+}
+
+// Subject contains subject identifier information
+type Subject struct {
+    Email     string
+    Username  string
+    ID        string
+}
+```
+
+### Step 2: Implement Your Custom Resolver
+
+#### Example: LDAP Attribute Resolver
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/go-ldap/ldap/v3"
+    "github.com/opentdf/platform/service/entityresolution"
+)
+
+type LDAPResolver struct {
+    ldapURL      string
+    bindDN       string
+    bindPassword string
+    baseDN       string
+}
+
+func NewLDAPResolver(url, bindDN, bindPassword, baseDN string) *LDAPResolver {
+    return &LDAPResolver{
+        ldapURL:      url,
+        bindDN:       bindDN,
+        bindPassword: bindPassword,
+        baseDN:       baseDN,
+    }
+}
+
+func (r *LDAPResolver) ResolveAttributes(ctx context.Context, req *entityresolution.ResolveRequest) (*entityresolution.ResolveResponse, error) {
+    // Connect to LDAP
+    conn, err := ldap.DialURL(r.ldapURL)
+    if err != nil {
+        return nil, fmt.Errorf("failed to connect to LDAP: %w", err)
+    }
+    defer conn.Close()
+
+    // Bind with service account
+    err = conn.Bind(r.bindDN, r.bindPassword)
+    if err != nil {
+        return nil, fmt.Errorf("LDAP bind failed: %w", err)
+    }
+
+    // Search for user
+    searchRequest := ldap.NewSearchRequest(
+        r.baseDN,
+        ldap.ScopeWholeSubtree,
+        ldap.NeverDerefAliases,
+        0, 0, false,
+        fmt.Sprintf("(mail=%s)", req.Subject.Email),
+        []string{"department", "title", "clearance", "employeeType"},
+        nil,
+    )
+
+    result, err := conn.Search(searchRequest)
+    if err != nil {
+        return nil, fmt.Errorf("LDAP search failed: %w", err)
+    }
+
+    if len(result.Entries) == 0 {
+        return &entityresolution.ResolveResponse{Attributes: []string{}}, nil
+    }
+
+    entry := result.Entries[0]
+
+    // Map LDAP attributes to OpenTDF attributes
+    attributes := r.mapLDAPAttributesToOpenTDF(entry)
+
+    return &entityresolution.ResolveResponse{Attributes: attributes}, nil
+}
+
+func (r *LDAPResolver) mapLDAPAttributesToOpenTDF(entry *ldap.Entry) []string {
+    var attributes []string
+
+    // Map department
+    if dept := entry.GetAttributeValue("department"); dept != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/department/value/%s", dept))
+    }
+
+    // Map clearance level
+    if clearance := entry.GetAttributeValue("clearance"); clearance != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/clearance/value/%s", clearance))
+    }
+
+    // Map employee type
+    if empType := entry.GetAttributeValue("employeeType"); empType != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/employee-type/value/%s", empType))
+    }
+
+    return attributes
+}
+
+func (r *LDAPResolver) Health(ctx context.Context) error {
+    conn, err := ldap.DialURL(r.ldapURL)
+    if err != nil {
+        return err
+    }
+    defer conn.Close()
+    return conn.Bind(r.bindDN, r.bindPassword)
+}
+```
+
+#### Example: Database Attribute Resolver
+
+```go
+package main
+
+import (
+    "context"
+    "database/sql"
+    "fmt"
+
+    _ "github.com/lib/pq"
+    "github.com/opentdf/platform/service/entityresolution"
+)
+
+type DatabaseResolver struct {
+    db *sql.DB
+}
+
+func NewDatabaseResolver(connString string) (*DatabaseResolver, error) {
+    db, err := sql.Open("postgres", connString)
+    if err != nil {
+        return nil, err
+    }
+
+    return &DatabaseResolver{db: db}, nil
+}
+
+func (r *DatabaseResolver) ResolveAttributes(ctx context.Context, req *entityresolution.ResolveRequest) (*entityresolution.ResolveResponse, error) {
+    // Query user attributes from database
+    query := `
+        SELECT a.namespace, a.name, av.value
+        FROM user_attributes ua
+        JOIN attributes a ON ua.attribute_id = a.id
+        JOIN attribute_values av ON ua.value_id = av.id
+        WHERE ua.user_email = $1
+    `
+
+    rows, err := r.db.QueryContext(ctx, query, req.Subject.Email)
+    if err != nil {
+        return nil, fmt.Errorf("database query failed: %w", err)
+    }
+    defer rows.Close()
+
+    var attributes []string
+    for rows.Next() {
+        var namespace, name, value string
+        if err := rows.Scan(&namespace, &name, &value); err != nil {
+            return nil, err
+        }
+
+        // Build attribute FQN
+        attrFQN := fmt.Sprintf("%s/%s/value/%s", namespace, name, value)
+        attributes = append(attributes, attrFQN)
+    }
+
+    return &entityresolution.ResolveResponse{Attributes: attributes}, nil
+}
+
+func (r *DatabaseResolver) Health(ctx context.Context) error {
+    return r.db.PingContext(ctx)
+}
+```
+
+#### Example: SCIM Attribute Resolver
+
+```go
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "net/http"
+
+    "github.com/opentdf/platform/service/entityresolution"
+)
+
+type SCIMResolver struct {
+    scimEndpoint string
+    accessToken  string
+}
+
+func NewSCIMResolver(endpoint, token string) *SCIMResolver {
+    return &SCIMResolver{
+        scimEndpoint: endpoint,
+        accessToken:  token,
+    }
+}
+
+func (r *SCIMResolver) ResolveAttributes(ctx context.Context, req *entityresolution.ResolveRequest) (*entityresolution.ResolveResponse, error) {
+    // Query SCIM endpoint for user
+    url := fmt.Sprintf("%s/Users?filter=userName eq \"%s\"", r.scimEndpoint, req.Subject.Email)
+
+    httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    httpReq.Header.Set("Authorization", "Bearer "+r.accessToken)
+    httpReq.Header.Set("Content-Type", "application/scim+json")
+
+    client := &http.Client{}
+    resp, err := client.Do(httpReq)
+    if err != nil {
+        return nil, fmt.Errorf("SCIM request failed: %w", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("SCIM returned status %d", resp.StatusCode)
+    }
+
+    // Parse SCIM response
+    var scimResp SCIMListResponse
+    if err := json.NewDecoder(resp.Body).Decode(&scimResp); err != nil {
+        return nil, err
+    }
+
+    if len(scimResp.Resources) == 0 {
+        return &entityresolution.ResolveResponse{Attributes: []string{}}, nil
+    }
+
+    user := scimResp.Resources[0]
+
+    // Map SCIM attributes to OpenTDF
+    attributes := r.mapSCIMAttributesToOpenTDF(user)
+
+    return &entityresolution.ResolveResponse{Attributes: attributes}, nil
+}
+
+func (r *SCIMResolver) mapSCIMAttributesToOpenTDF(user SCIMUser) []string {
+    var attributes []string
+
+    // Map department from organization
+    if user.Department != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/department/value/%s", user.Department))
+    }
+
+    // Map roles
+    for _, role := range user.Roles {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/role/value/%s", role.Value))
+    }
+
+    // Map groups
+    for _, group := range user.Groups {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/group/value/%s", group.Value))
+    }
+
+    return attributes
+}
+
+func (r *SCIMResolver) Health(ctx context.Context) error {
+    // Ping SCIM service provider config
+    req, err := http.NewRequestWithContext(ctx, "GET", r.scimEndpoint+"/ServiceProviderConfig", nil)
+    if err != nil {
+        return err
+    }
+    req.Header.Set("Authorization", "Bearer "+r.accessToken)
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("SCIM health check failed: %d", resp.StatusCode)
+    }
+
+    return nil
+}
+
+// SCIM schema types
+type SCIMListResponse struct {
+    Resources []SCIMUser `json:"Resources"`
+}
+
+type SCIMUser struct {
+    UserName   string      `json:"userName"`
+    Department string      `json:"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department"`
+    Roles      []SCIMValue `json:"roles"`
+    Groups     []SCIMValue `json:"groups"`
+}
+
+type SCIMValue struct {
+    Value string `json:"value"`
+}
+```
+
+### Step 3: Configure ER Service
+
+Configure the Entity Resolution service to load your custom plugin.
+
+#### Configuration File (config.yaml)
+
+```yaml
+entityresolution:
+  # Plugin configuration
+  plugin:
+    type: custom
+    path: /plugins/custom-resolver.so  # Path to compiled plugin
+    config:
+      # LDAP example
+      ldap:
+        url: ldap://ldap.example.com:389
+        bind_dn: cn=service,dc=example,dc=com
+        bind_password: ${LDAP_PASSWORD}
+        base_dn: ou=users,dc=example,dc=com
+
+      # Or database example
+      database:
+        connection_string: postgresql://user:pass@db.example.com:5432/attributes
+
+      # Or SCIM example
+      scim:
+        endpoint: https://scim.example.com/scim/v2
+        access_token: ${SCIM_TOKEN}
+
+  # Caching configuration
+  cache:
+    enabled: true
+    ttl: 300s  # Cache for 5 minutes
+    max_size: 10000
+
+  # Attribute mapping (transform external attributes)
+  attribute_mappings:
+    - external: ldap.department
+      internal: example.com/attr/department
+    - external: ldap.clearance
+      internal: example.com/attr/clearance
+```
+
+### Step 4: Build and Deploy Plugin
+
+#### Build Plugin as Shared Library
+
+```bash
+# Build Go plugin as shared library
+go build -buildmode=plugin -o custom-resolver.so ./resolver.go
+
+# Copy to plugin directory
+cp custom-resolver.so /opt/opentdf/plugins/
+```
+
+#### Or: Compile into ER Service Binary
+
+Alternatively, compile your resolver directly into the ER service:
+
+```go
+// In ER service main.go
+package main
+
+import (
+    "github.com/opentdf/platform/service/entityresolution"
+    "your-org/custom-resolver"
+)
+
+func main() {
+    // Register custom resolver
+    resolver := customresolver.NewLDAPResolver(
+        config.LDAP.URL,
+        config.LDAP.BindDN,
+        config.LDAP.BindPassword,
+        config.LDAP.BaseDN,
+    )
+
+    // Start ER service with custom resolver
+    entityresolution.Run(resolver)
+}
+```
+
+### Step 5: Test Resolution
+
+Test attribute resolution using the ER service API or CLI.
+
+#### Using otdfctl CLI
+
+```bash
+# Resolve attributes for a user
+otdfctl entity resolve --subject user@example.com
+
+# Output:
+# Resolved attributes for user@example.com:
+#   - example.com/attr/department/value/engineering
+#   - example.com/attr/clearance/value/confidential
+#   - example.com/attr/employee-type/value/fulltime
+```
+
+#### Using API
+
+```bash
+curl -X POST https://opentdf.example.com/api/entityresolution/resolve \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "subject": {
+      "email": "user@example.com"
+    }
+  }'
+
+# Response:
+# {
+#   "attributes": [
+#     "example.com/attr/department/value/engineering",
+#     "example.com/attr/clearance/value/confidential"
+#   ]
+# }
+```
+
+---
+
+## Pattern 2: External Resolution via API Callback
+
+In this pattern, the ER service calls your external API endpoint to resolve attributes.
+
+### Architecture
+
+```mermaid
+graph LR
+    AuthZ[Authorization Service]
+    ER[Entity Resolution Service]
+    YourAPI[Your API Endpoint]
+    Backend[Your Backend<br/>LDAP/DB/etc]
+
+    AuthZ -->|Resolve| ER
+    ER -->|HTTP POST| YourAPI
+    YourAPI -->|Query| Backend
+    YourAPI -->|Attributes| ER
+    ER -->|Attributes| AuthZ
+```
+
+### Step 1: Implement External API Endpoint
+
+Create an API endpoint that implements the ER resolution interface.
+
+#### API Contract
+
+**Request**:
+```json
+POST /api/resolve-attributes
+Content-Type: application/json
+
+{
+  "subject": {
+    "email": "user@example.com",
+    "username": "user",
+    "id": "user-id-123"
+  },
+  "context": {
+    "ip_address": "192.168.1.1",
+    "timestamp": "2025-01-21T10:00:00Z"
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "attributes": [
+    "example.com/attr/department/value/engineering",
+    "example.com/attr/clearance/value/confidential"
+  ]
+}
+```
+
+#### Example Implementation (Python/FastAPI)
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import ldap
+
+app = FastAPI()
+
+class Subject(BaseModel):
+    email: str
+    username: str = None
+    id: str = None
+
+class ResolveRequest(BaseModel):
+    subject: Subject
+    context: dict = {}
+
+class ResolveResponse(BaseModel):
+    attributes: list[str]
+
+@app.post("/api/resolve-attributes", response_model=ResolveResponse)
+async def resolve_attributes(request: ResolveRequest):
+    try:
+        # Query your backend (LDAP, database, etc.)
+        attributes = query_ldap_for_attributes(request.subject.email)
+
+        return ResolveResponse(attributes=attributes)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def query_ldap_for_attributes(email: str) -> list[str]:
+    # Connect to LDAP
+    conn = ldap.initialize("ldap://ldap.example.com")
+    conn.simple_bind_s("cn=service,dc=example,dc=com", "password")
+
+    # Search for user
+    result = conn.search_s(
+        "ou=users,dc=example,dc=com",
+        ldap.SCOPE_SUBTREE,
+        f"(mail={email})",
+        ["department", "clearance"]
+    )
+
+    if not result:
+        return []
+
+    entry = result[0][1]
+
+    # Map LDAP attributes to OpenTDF
+    attributes = []
+
+    if b"department" in entry:
+        dept = entry[b"department"][0].decode()
+        attributes.append(f"example.com/attr/department/value/{dept}")
+
+    if b"clearance" in entry:
+        clearance = entry[b"clearance"][0].decode()
+        attributes.append(f"example.com/attr/clearance/value/{clearance}")
+
+    return attributes
+```
+
+### Step 2: Configure ER Service
+
+Configure the ER service to call your external API.
+
+```yaml
+entityresolution:
+  external_resolver:
+    enabled: true
+    endpoint: https://your-api.example.com/api/resolve-attributes
+    auth:
+      type: bearer_token
+      token: ${API_TOKEN}
+    timeout: 5s
+    retry:
+      max_attempts: 3
+      backoff: exponential
+
+  cache:
+    enabled: true
+    ttl: 300s
+```
+
+### Step 3: Secure the Integration
+
+**Authentication Options**:
+
+1. **Bearer Token**:
+```yaml
+auth:
+  type: bearer_token
+  token: ${API_TOKEN}
+```
+
+2. **mTLS**:
+```yaml
+auth:
+  type: mtls
+  client_cert: /path/to/client-cert.pem
+  client_key: /path/to/client-key.pem
+  ca_cert: /path/to/ca-cert.pem
+```
+
+3. **HMAC Signature**:
+```yaml
+auth:
+  type: hmac
+  secret: ${HMAC_SECRET}
+```
+
+---
+
+## Pattern 3: Pre-Computed Attributes in Tokens
+
+Embed attributes directly in JWT claims at authentication time.
+
+### Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant IdP as Identity Provider
+    participant App as Application
+    participant AuthZ as Authorization Service
+    participant ER as Entity Resolution
+
+    Note over User,IdP: Authentication Phase
+    User->>IdP: 1. Login
+    IdP->>IdP: 2. Query user attributes<br/>(from IdP's directory)
+    IdP->>IdP: 3. Embed attributes in JWT
+    IdP-->>User: 4. Return JWT with attributes
+
+    Note over User,ER: Access Request Phase
+    User->>App: 5. Request access (JWT)
+    App->>AuthZ: 6. Authorize (JWT + resource)
+    AuthZ->>ER: 7. Resolve attributes
+    ER->>ER: 8. Extract from JWT claims<br/>(no external lookup)
+    ER-->>AuthZ: 9. Return attributes
+    AuthZ-->>App: PERMIT/DENY
+```
+
+### Step 1: Configure IdP to Include Attributes
+
+Configure your identity provider to include attributes as custom claims.
+
+#### Example: Keycloak Mapper
+
+In Keycloak, create protocol mappers that add user attributes as JWT claims:
+
+1. Navigate to **Client → your-client → Mappers**
+2. Create mapper:
+   - **Name**: Department Attribute
+   - **Mapper Type**: User Attribute
+   - **User Attribute**: department
+   - **Token Claim Name**: attributes.department
+   - **Claim JSON Type**: String
+
+Resulting JWT:
+```json
+{
+  "sub": "user@example.com",
+  "email": "user@example.com",
+  "attributes": {
+    "department": "engineering",
+    "clearance": "confidential"
+  }
+}
+```
+
+### Step 2: Configure ER to Read from Token
+
+```yaml
+entityresolution:
+  token_claims:
+    enabled: true
+    claim_mappings:
+      - claim_path: attributes.department
+        attribute: example.com/attr/department/value/{value}
+      - claim_path: attributes.clearance
+        attribute: example.com/attr/clearance/value/{value}
+```
+
+### Advantages and Disadvantages
+
+**Advantages**:
+- ✅ No external lookups (fast)
+- ✅ Works offline
+- ✅ Simple implementation
+
+**Disadvantages**:
+- ❌ Attributes static until token refresh
+- ❌ Token size increases
+- ❌ Less flexible than dynamic resolution
+
+---
+
+## Attribute Mapping and Transformation
+
+### Mapping External Attributes to OpenTDF Namespaces
+
+External attribute systems often use different naming conventions than OpenTDF. Use attribute mapping to translate.
+
+#### Configuration
+
+```yaml
+entityresolution:
+  attribute_mappings:
+    # Map LDAP 'ou' to OpenTDF department
+    - external: ldap.ou
+      namespace: example.com/attr/department
+      transform: lowercase
+
+    # Map custom claim 'security_clearance' to clearance attribute
+    - external: jwt.security_clearance
+      namespace: example.com/attr/clearance
+      transform: lowercase
+
+    # Map Active Directory groups to roles
+    - external: ad.memberOf
+      namespace: example.com/attr/role
+      transform: extract_cn  # Extract CN from DN
+```
+
+### Transformation Functions
+
+Common transformation functions:
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `lowercase` | Convert to lowercase | `Engineering` → `engineering` |
+| `uppercase` | Convert to uppercase | `secret` → `SECRET` |
+| `extract_cn` | Extract CN from LDAP DN | `CN=Admins,OU=Groups` → `admins` |
+| `regex_replace` | Regex find/replace | `user@example.com` → `user` |
+| `prefix` | Add prefix | `engineering` → `dept-engineering` |
+| `suffix` | Add suffix | `user` → `user-external` |
+
+### Default Values
+
+Specify default attribute values if resolution fails or attribute is missing:
+
+```yaml
+entityresolution:
+  attribute_mappings:
+    - external: ldap.clearance
+      namespace: example.com/attr/clearance
+      default: public  # Default to 'public' if no clearance found
+```
+
+---
+
+## Caching and Performance
+
+### Resolution Caching
+
+Cache attribute resolution results to reduce load on external systems.
+
+```yaml
+entityresolution:
+  cache:
+    enabled: true
+    backend: redis  # Options: memory, redis, memcached
+    ttl: 300s       # Cache for 5 minutes
+    max_size: 10000 # Max cached entries
+
+  redis:
+    address: redis.example.com:6379
+    password: ${REDIS_PASSWORD}
+    db: 0
+```
+
+### Cache Invalidation Strategies
+
+**Time-Based (TTL)**:
+- Simplest approach
+- Attributes expire after TTL
+- Good for attributes that change infrequently
+
+**Event-Based**:
+- Invalidate cache when attributes change
+- Requires integration with identity system events
+- Best for real-time accuracy
+
+**Hybrid**:
+- TTL with manual invalidation API
+- Balance performance and accuracy
+
+### Refresh Intervals
+
+Consider how frequently attributes change:
+
+| Attribute Type | Typical Change Frequency | Recommended TTL |
+|----------------|-------------------------|-----------------|
+| Department | Infrequent (weeks/months) | 1 hour - 1 day |
+| Role | Occasional (days/weeks) | 5-30 minutes |
+| Group Membership | Frequent (hours/days) | 1-10 minutes |
+| Security Clearance | Rare (months/years) | 1 day - 1 week |
+| Device Posture | Very frequent (minutes) | 30s - 5 minutes or no cache |
+
+### Fallback Behavior
+
+Define behavior when external resolution fails:
+
+```yaml
+entityresolution:
+  fallback:
+    mode: cached  # Options: cached, default, deny
+    default_attributes:
+      - example.com/attr/access/value/basic
+```
+
+**Modes**:
+- `cached`: Use last cached value (may be stale)
+- `default`: Use configured default attributes
+- `deny`: Fail authorization (most secure)
+
+---
+
+## Security Considerations
+
+### Credential Management
+
+**Never hardcode credentials**:
+
+```yaml
+# Bad ❌
+ldap:
+  bind_password: "plaintext-password"
+
+# Good ✅
+ldap:
+  bind_password: ${LDAP_PASSWORD}  # Environment variable
+```
+
+Use secrets management tools:
+- HashiCorp Vault
+- AWS Secrets Manager
+- Azure Key Vault
+- Kubernetes Secrets
+
+### TLS/mTLS Configuration
+
+Always use encrypted connections to external services:
+
+```yaml
+entityresolution:
+  ldap:
+    url: ldaps://ldap.example.com:636  # LDAPS, not LDAP
+    tls:
+      ca_cert: /path/to/ca.pem
+      verify: true
+
+  external_resolver:
+    endpoint: https://api.example.com  # HTTPS, not HTTP
+    tls:
+      client_cert: /path/to/cert.pem
+      client_key: /path/to/key.pem
+```
+
+### Rate Limiting
+
+Protect external systems from abuse:
+
+```yaml
+entityresolution:
+  rate_limiting:
+    enabled: true
+    max_requests_per_second: 100
+    burst: 50
+```
+
+### Audit Logging
+
+Log all resolution attempts for security monitoring:
+
+```yaml
+entityresolution:
+  audit_log:
+    enabled: true
+    log_level: info
+    include_attributes: true  # Be careful with sensitive attributes
+    destinations:
+      - type: file
+        path: /var/log/opentdf/er-audit.log
+      - type: syslog
+        endpoint: syslog.example.com:514
+```
+
+---
+
+## Provider-Specific Examples
+
+### Azure Active Directory (Azure AD)
+
+Use Microsoft Graph API to resolve attributes:
+
+```go
+func (r *AzureADResolver) ResolveAttributes(ctx context.Context, req *entityresolution.ResolveRequest) (*entityresolution.ResolveResponse, error) {
+    // Get access token for Microsoft Graph
+    token, err := r.getGraphToken()
+    if err != nil {
+        return nil, err
+    }
+
+    // Query Microsoft Graph for user
+    url := fmt.Sprintf("https://graph.microsoft.com/v1.0/users/%s?$select=department,jobTitle,companyName", req.Subject.Email)
+
+    httpReq, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+    httpReq.Header.Set("Authorization", "Bearer "+token)
+
+    resp, err := r.httpClient.Do(httpReq)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    var user MicrosoftGraphUser
+    json.NewDecoder(resp.Body).Decode(&user)
+
+    // Map to OpenTDF attributes
+    var attributes []string
+    if user.Department != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/department/value/%s", user.Department))
+    }
+    if user.JobTitle != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/title/value/%s", user.JobTitle))
+    }
+
+    return &entityresolution.ResolveResponse{Attributes: attributes}, nil
+}
+```
+
+### Okta
+
+Use Okta API to resolve groups and custom attributes:
+
+```python
+def resolve_okta_attributes(email: str) -> list[str]:
+    # Find user by email
+    response = requests.get(
+        f"https://your-org.okta.com/api/v1/users/{email}",
+        headers={"Authorization": f"SSWS {okta_api_token}"}
+    )
+    user = response.json()
+
+    # Get user's groups
+    groups_response = requests.get(
+        f"https://your-org.okta.com/api/v1/users/{user['id']}/groups",
+        headers={"Authorization": f"SSWS {okta_api_token}"}
+    )
+    groups = groups_response.json()
+
+    # Map to OpenTDF attributes
+    attributes = []
+
+    # Add department from profile
+    if "department" in user["profile"]:
+        attributes.append(f"example.com/attr/department/value/{user['profile']['department']}")
+
+    # Add groups
+    for group in groups:
+        attributes.append(f"example.com/attr/group/value/{group['profile']['name']}")
+
+    return attributes
+```
+
+### Google Workspace
+
+Use Google Directory API:
+
+```go
+func (r *GoogleWorkspaceResolver) ResolveAttributes(ctx context.Context, req *entityresolution.ResolveRequest) (*entityresolution.ResolveResponse, error) {
+    // Initialize Directory API client
+    srv, err := admin.NewService(ctx, option.WithCredentialsFile("credentials.json"))
+    if err != nil {
+        return nil, err
+    }
+
+    // Get user
+    user, err := srv.Users.Get(req.Subject.Email).Do()
+    if err != nil {
+        return nil, err
+    }
+
+    // Map to OpenTDF attributes
+    var attributes []string
+
+    if user.OrgUnitPath != "" {
+        attributes = append(attributes, fmt.Sprintf("example.com/attr/org-unit/value/%s", user.OrgUnitPath))
+    }
+
+    if customSchemas, ok := user.CustomSchemas["EmployeeData"]; ok {
+        if dept, ok := customSchemas["department"].(string); ok {
+            attributes = append(attributes, fmt.Sprintf("example.com/attr/department/value/%s", dept))
+        }
+    }
+
+    return &entityresolution.ResolveResponse{Attributes: attributes}, nil
+}
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Failures
+
+**Symptom**: ER service cannot connect to LDAP/API
+
+**Solutions**:
+- Verify network connectivity (firewall rules, security groups)
+- Check endpoint URLs and ports
+- Verify TLS certificates
+- Test connection with curl/ldapsearch
+
+#### Attribute Mapping Errors
+
+**Symptom**: Attributes not resolving correctly
+
+**Solutions**:
+- Enable debug logging to see raw resolution results
+- Verify attribute namespace format
+- Check attribute value case sensitivity
+- Validate attribute mapping configuration
+
+#### Performance Problems
+
+**Symptom**: Slow authorization decisions
+
+**Solutions**:
+- Enable caching with appropriate TTL
+- Optimize external queries (add indexes, reduce returned fields)
+- Use connection pooling
+- Consider pre-computed attributes in tokens
+
+#### Cache Staleness
+
+**Symptom**: Attributes not updating after changes
+
+**Solutions**:
+- Reduce cache TTL
+- Implement event-based cache invalidation
+- Add manual cache refresh API
+- Monitor attribute change frequency
+
+---
+
+## Related Guides
+
+- **[Identity Provider Integration](./identity-provider-integration.mdx)**: Set up authentication
+- **[Implementing a PEP](./implementing-a-pep.mdx)**: Enforce policies in applications
+- **[ABAC and Policy](../../explanation/abac-and-policy/index.md)**: Understanding attributes
+
+## Reference
+
+- **[Entity Resolution API](../../reference/OpenAPI-clients/entityresolution/v2/entityresolution-v-2/)**: API documentation
+- **[Platform Architecture](../../explanation/platform-architecture/index.md)**: Service interactions
+
+---
+
+## Need Help?
+
+- [GitHub Discussions](https://github.com/opentdf/community/discussions)
+- [Code Samples](../../reference/code-samples/index.mdx)
+- [Slack Community](https://opentdf.io/slack)
