@@ -344,6 +344,16 @@ You can also create values at the same time when creating the definition. This i
 
 :::
 
+:::info Learn More About Attribute Rules
+
+We're using the `ANY_OF` rule in this example, which means users need at least one of the attribute values to access data. OpenTDF also supports:
+- **ALL_OF**: Require multiple attribute values simultaneously (e.g., multiple certifications)
+- **HIERARCHY**: Create ordered levels like membership tiers (platinum > gold > silver)
+
+For detailed explanations with examples and guidance on choosing the right rule, see [ABAC: Attribute Rules](/explanation/abac-and-policy/#attribute-rules).
+
+:::
+
 ### Create attribute definition
 
 ```shell

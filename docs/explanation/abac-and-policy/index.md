@@ -295,23 +295,131 @@ Attributes are properties defined within namespaces. Each attribute has:
 
 #### Attribute Rules
 
-**ANY_OF**: Subject must have at least one matching value.
+Attribute definitions include a **rule** that determines how the attribute's values are evaluated during authorization. The rule controls the entitlement logic: how a subject's attributes are matched against the attributes on encrypted TDF data to determine access.
 
-- Data encrypted with `[department=engineering]`
-- Subject with `department=engineering` → Access granted
-- Subject with `department=sales` → Access denied
+##### ANY_OF
 
-**ALL_OF**: Subject must have all required values.
+**Logic**: An entity who is mapped to **any** of the associated values of the attribute on TDF'd resource data will be entitled to take the actions in the mapping.
 
-- Data encrypted with `[project=alpha, project=beta]`
-- Subject with `[project=alpha, project=beta]` → Access granted
-- Subject with `[project=alpha]` → Access denied
+**Use Case**: When a subject needs only one of several possible attribute values to access data.
 
-**HIERARCHY**: Values are ordered; higher values grant access to lower.
+**Example**:
+```
+Attribute Definition:
+- Name: team
+- Rule: ANY_OF
+- Values: [red-team, blue-team, green-team]
 
-- Data encrypted with `[clearance=confidential]`
-- Subject with `clearance=secret` → Access granted (secret > confidential)
-- Subject with `clearance=public` → Access denied (public < confidential)
+TDF Encrypted With: [team=blue-team]
+
+Authorization Results:
+✓ Subject with team=blue-team → Access GRANTED
+✓ Subject with team=red-team AND team=blue-team → Access GRANTED
+✗ Subject with team=red-team → Access DENIED
+✗ Subject with no team attribute → Access DENIED
+```
+
+**When to Use**:
+- Access based on membership in one of multiple groups
+- "Either/or" access requirements
+- Attribute represents independent, non-hierarchical categories
+
+##### ALL_OF
+
+**Logic**: An entity must be mapped to **all** of the associated values of the attribute on TDF'd resource data to be entitled to take the actions in the mapping.
+
+**Use Case**: When data requires multiple attribute values simultaneously for access (intersection of requirements).
+
+**Example**:
+```
+Attribute Definition:
+- Name: certification
+- Rule: ALL_OF
+- Values: [safety-trained, equipment-certified, background-checked]
+
+TDF Encrypted With: [certification=safety-trained, certification=equipment-certified]
+
+Authorization Results:
+✓ Subject with [safety-trained, equipment-certified] → Access GRANTED
+✓ Subject with [safety-trained, equipment-certified, background-checked] → Access GRANTED
+✗ Subject with [safety-trained] only → Access DENIED
+✗ Subject with [equipment-certified] only → Access DENIED
+✗ Subject with [background-checked] only → Access DENIED
+```
+
+**When to Use**:
+- Access requires multiple qualifications simultaneously
+- "And" logic for compound requirements
+- Data needs approval from multiple domains
+- Cross-functional access control
+
+##### HIERARCHY
+
+**Logic**: An entity must be mapped to the **same level value or a level above** in hierarchy compared to a given value on TDF'd resource data.
+
+**Key Concepts**:
+- Hierarchical values are ordered by index, with **index 0 being the highest** level and the last index being the lowest
+- **Actions propagate down through the hierarchy**: A subject with a higher-level value can access data encrypted with any lower-level value
+- Think of it like a membership tier: higher tiers grant access to all lower tier benefits
+
+**Use Case**: When attributes represent hierarchical levels, organizational tiers, or graduated access.
+
+**Example**:
+```
+Attribute Definition:
+- Name: access-level
+- Rule: HIERARCHY
+- Values (ordered by index):
+  - [0] platinum    (highest)
+  - [1] gold
+  - [2] silver
+  - [3] bronze
+  - [4] standard    (lowest)
+
+TDF Encrypted With: [access-level=silver]  (index 2)
+
+Authorization Results:
+✓ Subject with access-level=platinum (index 0) → Access GRANTED (0 < 2)
+✓ Subject with access-level=gold (index 1) → Access GRANTED (1 < 2)
+✓ Subject with access-level=silver (index 2) → Access GRANTED (2 = 2)
+✗ Subject with access-level=bronze (index 3) → Access DENIED (3 > 2)
+✗ Subject with access-level=standard (index 4) → Access DENIED (4 > 2)
+```
+
+**Action Propagation**:
+If you grant a `read` action at `access-level=platinum` (highest level), that permission propagates down to all lower levels. A user with `platinum` access can read:
+- platinum content
+- gold content
+- silver content
+- bronze content
+- standard content
+
+**When to Use**:
+- Membership or subscription tiers
+- Organizational hierarchy (executive → manager → employee)
+- Content access levels (premium → pro → basic)
+- Geographic scope (global → regional → local)
+- Support tiers (priority → standard → community)
+
+**Important**: The order of values in the attribute definition matters! Reordering values changes the hierarchy and can inadvertently grant or revoke access.
+
+##### Choosing the Right Rule
+
+| Scenario | Recommended Rule | Reason |
+|----------|------------------|--------|
+| User belongs to one of several teams | ANY_OF | Only one team membership needed |
+| Document requires both legal AND finance approval | ALL_OF | Must have both attributes |
+| Subscription tiers (premium, standard, basic) | HIERARCHY | Higher tier = access to lower tier content |
+| Geographic regions (independent) | ANY_OF | Regions don't have inherent ordering |
+| Job levels (manager → employee → intern) | HIERARCHY | Natural hierarchical progression |
+| Multiple independent projects | ANY_OF | Project memberships are separate |
+
+##### Related Documentation
+
+For practical examples of creating attributes with rules:
+- [CLI Reference: Creating Attributes](/explanation/platform-architecture/components/cli/policy/attributes/create) - Command-line examples
+- [Tutorial: Your First TDF](/tutorials/your-first-tdf/) - Hands-on attribute creation walkthrough
+- [Attributes Deep Dive](/explanation/platform-architecture/components/policy/attributes) - Technical architecture details
 
 ### Attribute Values
 
