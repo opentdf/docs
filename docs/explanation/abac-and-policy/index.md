@@ -264,10 +264,12 @@ Namespaces organize attributes by domain or authority. They prevent naming confl
 - `company.org/attr/access-level`
 - `healthcare.org/attr/patient-consent`
 
-Namespaces support hierarchies, allowing sub-namespaces:
+**Naming Conventions**: Namespaces can follow hierarchical naming patterns for organizational clarity, though each namespace is independent:
 - `example.com/attr/location/country`
 - `example.com/attr/location/region`
 - `example.com/attr/location/city`
+
+These path-like names help humans understand relationships, but there's no parent-child functionality in the system—each namespace operates independently.
 
 ### Attributes
 
@@ -278,19 +280,41 @@ Attributes are properties defined within namespaces. Each attribute has:
 - **Values**: Enumerated possible values
 - **Metadata**: Description, tags, etc.
 
-**Attribute Definition Example**:
+**Attribute Structure**:
 
-```json
-{
-  "namespace": "example.com/attr/department",
-  "name": "department",
-  "rule": "ANY_OF",
-  "values": [
-    {"value": "engineering"},
-    {"value": "sales"},
-    {"value": "hr"}
-  ]
-}
+```mermaid
+graph TD
+    NS[Namespace<br/>example.com/attr/department]
+
+    NS --> ATTR[Attribute Definition<br/>name: department<br/>rule: ANY_OF]
+
+    ATTR --> V1[Value: engineering]
+    ATTR --> V2[Value: sales]
+    ATTR --> V3[Value: hr]
+
+    ATTR --> META[Metadata<br/>labels, description]
+
+    style NS fill:#e1f5ff
+    style ATTR fill:#fff4e1
+    style V1 fill:#f0ffe1
+    style V2 fill:#f0ffe1
+    style V3 fill:#f0ffe1
+    style META fill:#ffe1f5
+```
+
+**Creating Attributes**: Use the CLI to create attributes within a namespace:
+
+```bash
+# Create attribute with rule
+otdfctl policy attributes create \
+  --namespace <namespace-id> \
+  --name department \
+  --rule ANY_OF
+
+# Add values to the attribute
+otdfctl policy attributes values create \
+  --attribute <attribute-id> \
+  --value engineering
 ```
 
 #### Attribute Rules
@@ -426,27 +450,52 @@ For practical examples of creating attributes with rules:
 Each attribute has a set of defined values. Values have:
 
 - **Value**: The actual value string
-- **Order** (for HIERARCHY): Numeric order (higher = more privileged)
+- **Index Position** (for HIERARCHY): Order in the list determines privilege level (index 0 = highest)
 - **Metadata**: Display name, color, description
 
 **Hierarchy Example**:
 
-```json
-{
-  "namespace": "example.com/attr/access-level",
-  "name": "access-level",
-  "rule": "HIERARCHY",
-  "values": [
-    {"value": "public", "order": 1},
-    {"value": "internal", "order": 2},
-    {"value": "restricted", "order": 3},
-    {"value": "private", "order": 4},
-    {"value": "executive", "order": 5}
-  ]
-}
+```mermaid
+graph TD
+    ATTR[Attribute: access-level<br/>Rule: HIERARCHY]
+
+    ATTR --> V0["Value [0]: executive<br/>(highest privilege)"]
+    ATTR --> V1["Value [1]: private"]
+    ATTR --> V2["Value [2]: restricted"]
+    ATTR --> V3["Value [3]: internal"]
+    ATTR --> V4["Value [4]: public<br/>(lowest privilege)"]
+
+    V0 -.-> |can access| V1
+    V1 -.-> |can access| V2
+    V2 -.-> |can access| V3
+    V3 -.-> |can access| V4
+
+    style ATTR fill:#fff4e1
+    style V0 fill:#DC143C
+    style V1 fill:#FF6347
+    style V2 fill:#FFA500
+    style V3 fill:#FFD700
+    style V4 fill:#90EE90
 ```
 
-A subject with `access-level=private` (order 4) can access data encrypted with `restricted` (order 3), `internal` (order 2), or `public` (order 1).
+**Creating Hierarchical Attributes**: The order you add values determines their hierarchy:
+
+```bash
+# Create attribute with HIERARCHY rule
+otdfctl policy attributes create \
+  --namespace <namespace-id> \
+  --name access-level \
+  --rule HIERARCHY
+
+# Add values in order: first = highest privilege
+otdfctl policy attributes values create --attribute <attr-id> --value executive
+otdfctl policy attributes values create --attribute <attr-id> --value private
+otdfctl policy attributes values create --attribute <attr-id> --value restricted
+otdfctl policy attributes values create --attribute <attr-id> --value internal
+otdfctl policy attributes values create --attribute <attr-id> --value public
+```
+
+A subject with `access-level=private` (index 1) can access data encrypted with `restricted` (index 2), `internal` (index 3), or `public` (index 4).
 
 ### Subject Mappings
 
