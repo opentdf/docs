@@ -32,18 +32,37 @@ import CodeBlock from '@theme/CodeBlock';
 
 # Getting Started
 
-This guide will walk you through encrypting and decrypting data using OpenTDF tools. We'll help you set up a sandbox [OpenTDF platform](/architecture) locally with attribute based access controls (ABAC) to demonstrate the basic concepts of OpenTDF.
+This guide will walk you through the process of securing data using OpenTDF tools. We'll help you set up a sandbox [OpenTDF platform](/architecture) locally with **attribute based access controls (ABAC)** to demonstrate the basic concepts of OpenTDF.
 
 ## The Scenario
 
-Let's follow a real-world example: Jen Moneybanks, CFO at a company, creates a highly sensitive financial strategy document for next year. Preston Price (an accountant) and Jack Vascript (an engineer) both try to access it, but are denied.
+OpenTDF's access control works through two fundamental concepts:
 
-Recognizing the need for wider collaboration, Jen creates a derivative version that removes executive-only details but keeps relevant financial information. Now Preston can access the derivative document, while Jack remains locked out.
+- **Entitlements**: Answer "*What can this entity access?*" - The attribute values a user is entitled to based on their identity (role, department, clearance level, etc.)
+- **Decisions**: Answer "*Can this entity access this specific resource?*" - A permit/deny decision made by comparing user entitlements against the attributes protecting a resource
 
-We'll use OpenTDF to implement this exact scenario with:
-- **Departments**: `finance`, `engineering`
-- **Clearance levels**: `executive`, `standard`
-- **Two documents**: Executive strategy (requires executive clearance) and derivative report (requires finance department access)
+Let's see this in action with a real-world example:
+
+**The Story**: Jen Moneybanks (CFO) creates a highly sensitive financial strategy document. Preston Price (accountant) and Jack Vascript (engineer) both try to access it, but the platform checks their entitlements, compares them to the document's attributes, and makes a decision: access denied.
+
+Later, Jen creates a derivative version for the finance team. When Preston tries to access it, the platform checks his entitlements again - this time he has the right attributes, so the decision is: access granted. Jack still can't access it because his entitlements don't match.
+
+**The Implementation**: We'll set up attributes and entitlements, then watch OpenTDF make authorization decisions:
+
+- **Attributes** (how we classify data):
+  - `department`: `finance`, `engineering`
+  - `clearance`: `executive`, `standard`
+
+- **Entitlements** (what each person has access to):
+  - **Jen**: `clearance/executive` (which includes `clearance/standard` via hierarchy)
+  - **Preston**: `department/finance` + `clearance/standard`
+  - **Jack**: `department/engineering` + `clearance/standard`
+
+- **Resources** (protected documents):
+  - Executive strategy → requires `clearance/executive`
+  - Finance report → requires `department/finance` + `clearance/standard`
+
+When someone tries to decrypt a document, OpenTDF compares their entitlements against the document's attributes and returns a decision: permit or deny.
 
 ## Pre-requisites
 - macOS, Linux, or Windows (WSL2)
@@ -281,19 +300,21 @@ NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to 
 
 ## Create Attributes
 
-An `attribute` defines how to classify data. For our scenario, we need two types of attributes:
+An `attribute` defines how to classify data and forms the basis for authorization **decisions**. When someone tries to access a resource, the platform compares their **entitlements** (the attribute values they possess) against the **resource attributes** (the values required by the resource).
+
+For our scenario, we need two types of attributes:
 
 1. **Department** - Which department can access the data (finance, engineering)
 2. **Clearance** - What clearance level is required (executive, standard)
 
 Each attribute has:
 
-1. **A definition** - Describes how entitlements and resource attributes are compared:
+1. **A definition** - Describes how entitlements and resource attributes are compared during a decision:
    - **ANY_OF**: Entity needs at least one value (OR operation) - perfect for departments
    - **ALL_OF**: Entity needs all values (AND operation) - useful for combined requirements
    - **HIERARCHY**: Ordered list where higher values grant lower access - perfect for clearance levels
 
-2. **A list of values** - The specific options (e.g., finance, engineering, executive, standard)
+2. **A list of values** - The specific options that can be granted as entitlements or required on resources (e.g., finance, engineering, executive, standard)
 
 :::tip
 You can create values when creating the definition: `--value finance --value engineering`
@@ -491,7 +512,11 @@ NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to 
 
 ## Create Subject Mappings
 
-A `subject mapping` connects users to attributes, granting them entitlements. This is where we define:
+A `subject mapping` connects users to attributes, **granting them entitlements**. This is the "What can this entity access?" part of our authorization system.
+
+**Entitlements** are the attribute values a user possesses. When a user tries to decrypt a document, the platform will check their entitlements and make an authorization **decision** by comparing them to the document's required attributes.
+
+For our scenario, we'll grant these entitlements:
 - **Jen** gets `clearance/executive` (which also grants `clearance/standard` due to hierarchy)
 - **Preston** gets `department/finance` and `clearance/standard`
 - **Jack** gets `department/engineering` and `clearance/standard`
@@ -541,7 +566,7 @@ echo 'Executive Financial Strategy 2026: Confidential merger plans and Board-lev
 
 ### Try to Decrypt Without Permission (Will Fail)
 
-Right now, we haven't granted ourselves any permissions. Let's try to decrypt this executive document:
+Right now, we haven't granted ourselves any entitlements. Let's try to decrypt this executive document and see the authorization **decision**:
 
 ```shell
 otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
@@ -553,11 +578,15 @@ You'll see an error like this:
 Error: rpc error: code = PermissionDenied desc = Access denied: insufficient permissions
 ```
 
-This is access control working! The platform checked our entitlements, found that we don't have the `clearance/executive` attribute, and denied access.
+This is an authorization **decision** in action! Here's what happened:
+1. You requested access to a resource requiring `clearance/executive`
+2. The platform checked your **entitlements** (what you can access)
+3. You have no entitlements yet
+4. The platform made a **decision**: DENY
 
 ### Grant Jen Executive Clearance
 
-Now let's grant executive clearance to represent Jen's access level:
+Now let's grant an **entitlement** to represent Jen's access level. This changes what attribute values we're entitled to:
 
 ```shell
 otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
@@ -584,7 +613,7 @@ Because we're using HIERARCHY for clearance, this executive clearance automatica
 
 ### Decrypt Now That We Have Permission
 
-Now that we've been granted executive clearance, try decrypting the executive document again:
+Now that we've been granted an **entitlement** for executive clearance, try decrypting the executive document again:
 
 ```shell
 otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
@@ -595,7 +624,13 @@ otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
 Executive Financial Strategy 2026: Confidential merger plans and Board-level decisions
 ```
 
-Success! With the proper clearance, Jen can now access her executive document. The same file that was locked before is now accessible.
+Success! The authorization **decision** is now PERMIT. Here's what changed:
+1. You requested access to a resource requiring `clearance/executive`
+2. The platform checked your **entitlements** - you now have `clearance/executive`
+3. Your entitlements match the resource's required attributes
+4. The platform made a **decision**: PERMIT
+
+The same file that was locked before is now accessible because your entitlements changed.
 
 ## Create the Derivative Finance Report
 
@@ -609,7 +644,7 @@ Notice this document has TWO attributes - it requires BOTH finance department me
 
 ### Grant Finance Department Access
 
-To simulate Preston's access, let's grant ourselves the finance department attribute:
+To simulate Preston's access, let's grant ourselves an additional **entitlement** for the finance department:
 
 ```shell
 otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
@@ -632,11 +667,19 @@ Success! Both Jen and Preston can now access this finance-specific document.
 
 ### What About Jack?
 
-Jack (engineering department) cannot access either document because:
-1. **Executive strategy**: Requires `clearance/executive` (Jack only has standard)
-2. **Finance report**: Requires `department/finance` (Jack is in engineering)
+Jack (engineering department) cannot access either document. Let's look at the **decisions** that would be made:
 
-This demonstrates attribute-based access control - the same encrypted files behave differently depending on WHO is trying to decrypt them.
+1. **Executive strategy decision**:
+   - Resource requires: `clearance/executive`
+   - Jack's entitlements: `clearance/standard`, `department/engineering`
+   - Decision: DENY (missing executive clearance)
+
+2. **Finance report decision**:
+   - Resource requires: `department/finance` AND `clearance/standard`
+   - Jack's entitlements: `clearance/standard`, `department/engineering`
+   - Decision: DENY (has clearance but wrong department)
+
+This demonstrates how authorization **decisions** work - the platform compares **entitlements** (what Jack has) against resource attributes (what's required) and returns PERMIT or DENY.
 
 ## Takeaways and Next Steps
 
@@ -644,14 +687,16 @@ You've successfully implemented Jen, Preston, and Jack's scenario! Here's what y
 
 ### Key Concepts
 
-1. **Namespaces** organize attributes for your organization
-2. **Attributes** classify data (department, clearance level, classification, etc.)
-3. **Attribute Rules**:
+1. **Entitlements**: The attribute values a user possesses, defined by subject mappings. Answers "What can this entity access?"
+2. **Decisions**: Permit/deny determinations made by comparing user entitlements against resource attributes. Answers "Can this entity access this specific resource?"
+3. **Namespaces**: Organize attributes for your organization
+4. **Attributes**: Classify data and define comparison rules (department, clearance level, classification, etc.)
+5. **Attribute Rules**:
    - `ANY_OF`: Need at least one value (departments)
    - `HIERARCHY`: Higher values include lower ones (clearance levels)
    - `ALL_OF`: Need all values (not used in this example)
-4. **Subject Mappings** grant users entitlements to decrypt data with specific attributes
-5. **Multiple Attributes** can be combined on a single document for fine-grained control
+6. **Subject Mappings**: Grant users entitlements by connecting them to attribute values
+7. **Multiple Attributes**: Can be combined on a single document for fine-grained authorization decisions
 
 ### Real-World Applications
 
