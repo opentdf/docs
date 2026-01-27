@@ -6,13 +6,13 @@ Attribute-Based Access Control (ABAC) is a flexible authorization model that mak
 
 ### Core Principles
 
-**Attributes are Key-Value Pairs**: Access decisions are based on attributes like `department=engineering`, `clearance=secret`, or `location=US`.
+**Attributes are Key-Value Pairs**: Access decisions are based on attributes like `department=engineering`, `subscription=premium`, or `location=US`.
 
 **Policy-Based Decisions**: Policies define which combinations of attributes grant access to which resources.
 
 **Dynamic Evaluation**: Access is evaluated at request time based on current attribute values, enabling real-time enforcement of changing policies.
 
-**Fine-Grained Control**: Policies can express nuanced requirements like "users with clearance level 'top-secret' AND department 'intelligence' can access this document."
+**Fine-Grained Control**: Policies can express nuanced requirements like "users with subscription tier 'premium' AND department 'sales' can access this document."
 
 ### Why ABAC for Data-Centric Security?
 
@@ -96,7 +96,7 @@ Subjects have attributes describing their properties and context:
 
 - **Identity attributes**: `email`, `username`, `employee_id`
 - **Organizational attributes**: `department`, `role`, `title`, `cost_center`
-- **Security attributes**: `clearance_level`, `need_to_know`, `citizenship`
+- **Subscription attributes**: `tier`, `plan_type`, `feature_access`
 - **Contextual attributes**: `ip_address`, `device_type`, `authentication_method`
 
 #### Subject Mappings
@@ -126,34 +126,34 @@ When data is encrypted with OpenTDF, it is tagged with attribute values that exp
 ```
 Data Encrypted With: [
   "example.com/attr/department/value/engineering",
-  "example.com/attr/classification/value/confidential"
+  "example.com/attr/sensitivity/value/restricted"
 ]
 ```
 
 These attributes define "who can access this data."
 
-#### Classification Schemes
+#### Content Access Schemes
 
-Organizations can define hierarchical classification schemes:
+Organizations can define hierarchical content access schemes:
 
 ```mermaid
 graph LR
     Public[public<br/>order: 1]
     Internal[internal<br/>order: 2]
-    Confidential[confidential<br/>order: 3]
-    Secret[secret<br/>order: 4]
-    TopSecret[top-secret<br/>order: 5]
+    Restricted[restricted<br/>order: 3]
+    Private[private<br/>order: 4]
+    Executive[executive<br/>order: 5]
 
-    Public --> Internal --> Confidential --> Secret --> TopSecret
+    Public --> Internal --> Restricted --> Private --> Executive
 
     style Public fill:#90EE90
     style Internal fill:#FFD700
-    style Confidential fill:#FFA500
-    style Secret fill:#FF6347
-    style TopSecret fill:#DC143C
+    style Restricted fill:#FFA500
+    style Private fill:#FF6347
+    style Executive fill:#DC143C
 ```
 
-With hierarchy rules, a user with `clearance=secret` (order 4) can also access `confidential` (order 3), `internal` (order 2), and `public` (order 1) data.
+With hierarchy rules, a user with `access-level=private` (order 4) can also access `restricted` (order 3), `internal` (order 2), and `public` (order 1) content.
 
 ---
 
@@ -165,7 +165,7 @@ Actions represent what the subject wants to do with the resource. In OpenTDF, th
 - **ENCRYPT**: Create a new TDF with specific attributes
 - **REWRAP**: Request key access for an encrypted TDF
 
-Action-based policies can enable scenarios like "users can encrypt with 'confidential' but only decrypt 'internal' or lower."
+Action-based policies can enable scenarios like "users can encrypt with 'restricted' but only decrypt 'internal' or lower."
 
 ---
 
@@ -222,7 +222,7 @@ The Entity Resolution Service resolves subject attributes at access time:
 3. Applies subject mappings and condition sets
 4. Returns attribute list for the subject
 
-Example: Given `user@example.com`, returns `[department=engineering, clearance=confidential]`.
+Example: Given `user@example.com`, returns `[department=engineering, access-level=restricted]`.
 
 ### Authorization Service (PDP - Policy Decision Point)
 
@@ -261,7 +261,7 @@ Namespaces organize attributes by domain or authority. They prevent naming confl
 
 **Examples**:
 - `example.com/attr/department`
-- `gov.mil/attr/clearance`
+- `company.org/attr/access-level`
 - `healthcare.org/attr/patient-consent`
 
 Namespaces support hierarchies, allowing sub-namespaces:
@@ -273,7 +273,7 @@ Namespaces support hierarchies, allowing sub-namespaces:
 
 Attributes are properties defined within namespaces. Each attribute has:
 
-- **Name**: Identifier (e.g., `department`, `clearance`)
+- **Name**: Identifier (e.g., `department`, `access-level`)
 - **Rule**: How values are evaluated (ANY_OF, ALL_OF, HIERARCHY)
 - **Values**: Enumerated possible values
 - **Metadata**: Description, tags, etc.
@@ -433,20 +433,20 @@ Each attribute has a set of defined values. Values have:
 
 ```json
 {
-  "namespace": "example.com/attr/clearance",
-  "name": "clearance",
+  "namespace": "example.com/attr/access-level",
+  "name": "access-level",
   "rule": "HIERARCHY",
   "values": [
     {"value": "public", "order": 1},
     {"value": "internal", "order": 2},
-    {"value": "confidential", "order": 3},
-    {"value": "secret", "order": 4},
-    {"value": "top-secret", "order": 5}
+    {"value": "restricted", "order": 3},
+    {"value": "private", "order": 4},
+    {"value": "executive", "order": 5}
   ]
 }
 ```
 
-A subject with `clearance=secret` (order 4) can access data encrypted with `confidential` (order 3), `internal` (order 2), or `public` (order 1).
+A subject with `access-level=private` (order 4) can access data encrypted with `restricted` (order 3), `internal` (order 2), or `public` (order 1).
 
 ### Subject Mappings
 
@@ -498,10 +498,10 @@ Subject Condition Sets use boolean operators to combine conditions:
 
 **Complex Example**:
 
-Assign `clearance=secret` to users who:
-- Are in the `intelligence` group, AND
-- Have `citizenship=US`, AND
-- Have `background_check=complete`
+Assign `access-level=executive` to users who:
+- Are in the `executives` group, AND
+- Have `employment_status=full-time`, AND
+- Have `onboarding_complete=true`
 
 ```json
 {
@@ -509,9 +509,9 @@ Assign `clearance=secret` to users who:
     {
       "booleanOperator": "AND",
       "conditions": [
-        {"subjectSets": [{"conditionOperator": "IN", "subjectClaim": "groups", "subjectValues": ["intelligence"]}]},
-        {"subjectSets": [{"conditionOperator": "EQUALS", "subjectClaim": "citizenship", "subjectValues": ["US"]}]},
-        {"subjectSets": [{"conditionOperator": "EQUALS", "subjectClaim": "background_check", "subjectValues": ["complete"]}]}
+        {"subjectSets": [{"conditionOperator": "IN", "subjectClaim": "groups", "subjectValues": ["executives"]}]},
+        {"subjectSets": [{"conditionOperator": "EQUALS", "subjectClaim": "employment_status", "subjectValues": ["full-time"]}]},
+        {"subjectSets": [{"conditionOperator": "EQUALS", "subjectClaim": "onboarding_complete", "subjectValues": ["true"]}]}
       ]
     }
   ]
@@ -691,7 +691,7 @@ If granted, client receives the key and decrypts the TDF content.
 **Balanced**: Use namespaces and hierarchies to organize attributes logically. Examples:
 - Department-level: `department=engineering`
 - Project-level: `project=alpha`
-- Classification-level: `clearance=confidential`
+- Access-level: `access-level=restricted`
 
 ### Performance Implications
 
@@ -742,30 +742,30 @@ If granted, client receives the key and decrypts the TDF content.
 
 ### Example 2: Intermediate Policy (Multiple Namespaces, Hierarchies)
 
-**Scenario**: Government agency with classification levels and need-to-know projects.
+**Scenario**: Multi-division company with content access levels and project-based access.
 
 **Namespaces**:
-- `gov.agency/attr/clearance`
-- `gov.agency/attr/project`
+- `company.com/attr/access-level`
+- `company.com/attr/project`
 
 **Attributes**:
 
-1. `clearance` (HIERARCHY):
+1. `access-level` (HIERARCHY):
    - `public` (order: 1)
    - `internal` (order: 2)
-   - `confidential` (order: 3)
-   - `secret` (order: 4)
+   - `restricted` (order: 3)
+   - `private` (order: 4)
 
 2. `project` (ANY_OF):
    - `alpha`, `beta`, `gamma`
 
 **Subject Mapping**:
-- Background check results in `clearance=secret`
+- Role assignment results in `access-level=private`
 - Project assignment adds `project=alpha`
 
 **Usage**:
-- Encrypt document: `attributes=["gov.agency/attr/clearance/value/confidential", "gov.agency/attr/project/value/alpha"]`
-- User must have `clearance >= confidential` AND `project=alpha`
+- Encrypt document: `attributes=["company.com/attr/access-level/value/restricted", "company.com/attr/project/value/alpha"]`
+- User must have `access-level >= restricted` AND `project=alpha`
 
 ---
 
