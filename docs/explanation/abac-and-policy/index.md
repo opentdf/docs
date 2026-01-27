@@ -255,14 +255,69 @@ OpenTDF policies are composed of several interrelated primitives that work toget
 
 ### Namespaces
 
-Namespaces organize attributes by domain or authority. They prevent naming conflicts and establish ownership.
+Namespaces partition the attribute space by authority or context, enabling multiple divisions or organizations to apply their own attribute schemes to the same data without conflicts.
+
+**Why Namespaces Matter**: The same data can have attributes from multiple namespaces simultaneously, each representing a different stakeholder's perspective or governance requirements.
+
+**Real-World Example: Multi-Division Status Tracking**
+
+A product development proposal might be encrypted with multiple "status" attributes from different divisions:
+- `engineering.company.com/attr/status/value/in-development` - Engineering tracks technical development status
+- `legal.company.com/attr/status/value/under-review` - Legal tracks compliance review status
+- `finance.company.com/attr/status/value/budget-approved` - Finance tracks funding status
+
+Without namespaces, you couldn't have three different "status" attributes—there would be a naming conflict. With namespaces, each division maintains its own independent "status" attribute with its own values and rules.
+
+```mermaid
+graph TD
+    DATA[Encrypted Document:<br/>Product Development Proposal]
+
+    DATA --> NS1[engineering.company.com/attr/status]
+    DATA --> NS2[legal.company.com/attr/status]
+    DATA --> NS3[finance.company.com/attr/status]
+
+    NS1 --> V1[value: in-development]
+    NS2 --> V2[value: under-review]
+    NS3 --> V3[value: budget-approved]
+
+    V1 --> P1[Engineering Policy:<br/>Requires project team membership]
+    V2 --> P2[Legal Policy:<br/>Requires legal review completion]
+    V3 --> P3[Finance Policy:<br/>Requires budget approval]
+
+    P1 --> ACCESS{Access Granted<br/>if ALL policies pass}
+    P2 --> ACCESS
+    P3 --> ACCESS
+
+    style DATA fill:#e1f5ff
+    style NS1 fill:#fff4e1
+    style NS2 fill:#fff4e1
+    style NS3 fill:#fff4e1
+    style V1 fill:#f0ffe1
+    style V2 fill:#f0ffe1
+    style V3 fill:#f0ffe1
+    style ACCESS fill:#d4edda
+```
+
+When someone requests access:
+- Engineering's policy checks: "Is the technical work complete enough for access?"
+- Legal's policy checks: "Has the necessary legal review happened?"
+- Finance's policy checks: "Is the funding status appropriate for this access?"
+
+Each division maintains authority over their own namespace without interfering with others.
 
 **Format**: `<authority>/<path>`
 
-**Examples**:
-- `example.com/attr/department`
-- `company.org/attr/access-level`
-- `healthcare.org/attr/patient-consent`
+**Common Patterns**:
+- `engineering.company.com/attr/status` - Engineering division's status tracking
+- `legal.company.com/attr/status` - Legal division's status tracking (different rules, same attribute name)
+- `finance.company.com/attr/status` - Finance division's status tracking
+- `sales.company.com/attr/region` - Sales division's regional organization
+
+**Key Properties**:
+- **Independent Authority**: Each division controls their own namespace
+- **No Naming Conflicts**: `engineering.company.com/attr/status` and `legal.company.com/attr/status` are completely separate attributes
+- **Multi-Stakeholder Governance**: Data can satisfy multiple policies from different divisions simultaneously
+- **Parallel Workflows**: Different divisions can track the same data through their own processes independently
 
 **Naming Conventions**: Namespaces can follow hierarchical naming patterns for organizational clarity, though each namespace is independent:
 - `example.com/attr/location/country`
