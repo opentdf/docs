@@ -428,7 +428,7 @@ show_completion() {
     echo "   Keycloak: https://keycloak.opentdf.local:9443"
     echo ""
     echo "📚 Next steps:"
-    echo "   Getting Started: https://opentdf.io/getting-started"
+    echo "   Quickstart Guide: https://opentdf.io/quickstart"
     echo "   Documentation: https://opentdf.io/introduction"
     echo ""
     echo "🛠️  Management commands:"
