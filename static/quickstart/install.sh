@@ -8,11 +8,29 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Semantic version pattern: 1.2.3 or v1.2.3, with optional pre-release suffix
+SEMVER_REGEX='^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'
+
+validate_semver() {
+    local version="$1"
+    local context="$2"
+    if [[ ! "$version" =~ $SEMVER_REGEX ]]; then
+        echo -e "${RED}✗ Invalid version format: $version${NC}"
+        [[ -n "$context" ]] && echo "  $context"
+        exit 1
+    fi
+}
+
 # Configuration
 OPENTDF_VERSION="${OPENTDF_VERSION:-latest}"
 INSTALL_DIR="${HOME}/.opentdf"
 OPENTDF_DIR="${INSTALL_DIR}/platform"
 OTDFCTL_BIN="${INSTALL_DIR}/bin"
+
+# Validate OPENTDF_VERSION from environment
+if [[ "$OPENTDF_VERSION" != "latest" ]]; then
+    validate_semver "$OPENTDF_VERSION" "Expected format: 'latest', '1.2.3', or 'v1.2.3'"
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -21,9 +39,18 @@ echo "   For evaluation and development only"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Detect OS
-OS="unknown"
+# Detect OS and architecture
 ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64|amd64|arm64|aarch64)
+        ;;
+    *)
+        echo -e "${RED}✗ Unsupported architecture: $ARCH${NC}"
+        echo "  Supported: x86_64, amd64, arm64, aarch64"
+        exit 1
+        ;;
+esac
+
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     OS="linux"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -67,6 +94,7 @@ install_otdfctl() {
             echo -e "${RED}✗ Could not determine latest otdfctl version${NC}"
             exit 1
         fi
+        validate_semver "$VERSION" "This may indicate a compromised API response."
     else
         VERSION="$OPENTDF_VERSION"
     fi
