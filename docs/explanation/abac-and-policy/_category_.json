@@ -1,0 +1,8 @@
+{
+  "label": "ABAC & Policy",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn how OpenTDF implements Attribute-Based Access Control (ABAC) for fine-grained, cryptographically enforced data protection."
+  }
+}
