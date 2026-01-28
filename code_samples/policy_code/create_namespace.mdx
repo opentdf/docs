@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Create Namesapce
+	// Create Namespace
 	namespace := &namespaces.CreateNamespaceRequest{
 		Name: "opentdf.io",
 	}
@@ -46,35 +46,9 @@ func main() {
 </TabItem>
 <TabItem value="java" label="Java">
 
-```java
-package io.opentdf.platform;
-import io.opentdf.platform.sdk.*;
+import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx';
 
-import java.util.concurrent.ExecutionException;
-
-import io.opentdf.platform.policy.namespaces.*;
-
-public class CreateNamespace {
-    public static void main(String[] args) throws ExecutionException, InterruptedException{
-
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:8080";
-
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-                .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
-                .build();
-
-        CreateNamespaceRequest request = CreateNamespaceRequest.newBuilder().setName("mynamespace.com").build();
-
-        CreateNamespaceResponse resp = sdk.getServices().namespaces().createNamespace(request).get();
-
-        System.out.println(resp.getNamespace().getName());
-        
-    }
-}
-```
+<CreateNamespaceExample />
 
 </TabItem>
 <TabItem value="js" label="Javascript">

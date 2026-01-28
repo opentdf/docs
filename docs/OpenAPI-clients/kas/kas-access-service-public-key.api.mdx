@@ -1,0 +1,71 @@
+---
+id: kas-access-service-public-key
+title: "PublicKey"
+description: "PublicKey"
+sidebar_label: "PublicKey"
+hide_title: true
+hide_table_of_contents: true
+api: eJytVlFv4zYM/isC9+pLbn3004quNwwbsMO191QEASPRtq6y5EmU2yzwfx8oJ23StN0dsCcnIvmR/EiR2gFjm6C+g3tMsKogDBSRbfC/G6jlcHGpNaV0Q3G0mhaf88ZZ/QdtoYIBI/bEFAVgBx57ghrQtSFa7nqowHqo4e9MUdST7qhHqHfA20E0E0frW6iALbtT02mqngCbnn8cSoyOQcYfhxhhmlYVREpD8ImS6F58/CgfQ0lHOwhPUMNNLhRBBTp4Js+igsPgrC5ULr8l0dud+wybb6QluyEK8WxnL8MTye+ENyut72kLUwX31rynLOJpev7/VMYv++ygAjTGSrjoPh9F06BLNE1ibKjB7PicgOsYQ/z/0tfB0GvJ0CP2g6PSrj7wugnZG2la8rmXQ41ekyMDFWR/78ODL1Uf0VmzxtjmXqKTRNA462lNj5rIFINnwArQRUKzXdOjTSx1HSj2NiUb/NqQt8UgUgo5agHpMCcuhw1aR2Y9RNLBz3QK3ibEWR4yr0OzjuhbKlFayUjCKmLrmaJHV0Q4onW4caJokHHtQmmy7DFzR56FXyoEnJbjtiOVGDknJVRW6qGzulOpC9kZtSGFXgllakSXSYVG3bUhtI4WcdCLq2BodXawkCbrKSVsX63NaQSXytBITor6oUFtfatIekTtEc5Dsl5d+9bZ1C3Upd+qnN4wPbJxQaOz/5BR6I1K5FlguKOTfG4KEwtDjNal1Tsi1VhyplIhHkFvtgVRO0ueCwuz+n+38Sx9SdVUQaH9NRKbEHtkqGFjPcbt7GyT29d8vX5bOWaSq/q29GWproJntD5JU2DcWI4YtypRtHsCDryjC75VD5Y7heoXCUdxh6xmuA2lwlM5D035fQ6yOBpJ+zoMMXDY5GZx6bcnI+oqeE+a1WG4fH9KxWKOJBLn6Ocy7gFr1TEPqV4u9XwgnaBDvzRBp2UblqXd0vInUfsQaYgkrVVGGUyHSXjs73gn9sRdkNXZUukI5A5qWN5jWo4X8lkfze0KEsXxsD9zdFDDbnDI0gjX3gzBep7Obtf1PAfVXwP5218/qYOF+vrlz0qlrDuF6SnLg3RReroLSeIaMVoZLfO6eeFxHvD7WX8uncpaTKRztLyF+m4lg6sJpUsP+wbTWdjilmKa/4w/S3cPIXGPZTns9/QxlyfmTzeA6ZElKesFoZC22/N8t/c7XkAFL7heVVByr+9gt9tgoq/RTZMczy8CqYCxSUgx+61XgRievmj2dxdA3hZv6M8Plu/RHE/0Vs91EVanCjpCQ7HENhvIY2w4Rj/bs4Ly1IS/Xd/CNP0LBCp3ww==
+sidebar_class_name: "get api-method"
+info_path: kas
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PublicKey"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/kas/v2/kas_public_key"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+PublicKey
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"algorithm","in":"query","schema":{"type":"string","title":"algorithm"}},{"name":"fmt","in":"query","schema":{"type":"string","title":"fmt"}},{"name":"v","in":"query","schema":{"type":"string","title":"v"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={undefined}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Success","content":{"application/json":{"schema":{"type":"object","properties":{"publicKey":{"type":"string","title":"public_key"},"kid":{"type":"string","title":"kid"}},"title":"PublicKeyResponse","additionalProperties":false}}}},"default":{"description":"Error","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"string","examples":["not_found"],"enum":["canceled","unknown","invalid_argument","deadline_exceeded","not_found","already_exists","permission_denied","resource_exhausted","failed_precondition","aborted","out_of_range","unimplemented","internal","unavailable","data_loss","unauthenticated"],"description":"The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code]."},"message":{"type":"string","description":"A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client."},"detail":{"type":"object","properties":{"type":{"type":"string"},"value":{"type":"string","format":"binary"},"debug":{"type":"object","additionalProperties":true}},"additionalProperties":true,"description":"Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.","title":"google.protobuf.Any"}},"title":"Connect Error","additionalProperties":true,"description":"Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

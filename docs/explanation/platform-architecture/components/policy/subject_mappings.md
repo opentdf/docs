@@ -18,7 +18,7 @@ e-->f(Attribute Value);
 
 A Subject Mapping consists of:
 
-1. A mapped [Attribute Value](./attributes#values)
+1. A mapped [Attribute Value](./attributes)
 2. A mapped Subject Condition Set
 3. One or more policy [Actions](./actions)
 

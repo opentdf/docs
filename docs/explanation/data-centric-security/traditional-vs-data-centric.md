@@ -7,6 +7,7 @@ Understanding the fundamental differences between traditional perimeter-based se
 Traditional security models are built around the concept of **trusted networks** and **secure perimeters**:
 
 ### Core Assumptions
+
 - **Network perimeter is secure**: Firewalls and network controls protect internal resources
 - **Inside is trusted**: Users and systems inside the network are generally trusted
 - **Outside is untrusted**: External networks and users require special access procedures
@@ -43,6 +44,7 @@ graph TD
 ### Limitations of Traditional Approaches
 
 #### **1. Perimeter Erosion**
+
 Modern work patterns have fundamentally broken the perimeter model:
 
 | **Traditional Assumption** | **Modern Reality** |
@@ -54,6 +56,7 @@ Modern work patterns have fundamentally broken the perimeter model:
 | Static infrastructure | Containerized, ephemeral services |
 
 #### **2. Data Mobility Problems**
+
 When data moves beyond the secure perimeter:
 
 - **Email attachments**: No control once sent
@@ -63,6 +66,7 @@ When data moves beyond the secure perimeter:
 - **Offline access**: No way to revoke access to downloaded files
 
 #### **3. Insider Threat Blindness**
+
 Traditional models provide little protection against:
 
 - **Privileged users** with excessive access
@@ -75,6 +79,7 @@ Traditional models provide little protection against:
 Data-centric security inverts the traditional model by making **data self-protecting**:
 
 ### Core Principles
+
 - **Data is inherently protected**: Security travels with the data
 - **Zero trust**: No assumptions about network, location, or user
 - **Context-aware access**: Decisions based on real-time attributes
@@ -85,7 +90,7 @@ Data-centric security inverts the traditional model by making **data self-protec
 ```mermaid
 graph TD
     subgraph "Data-Centric Security Model"
-        TDF[🔒 Protected Data (TDF)]
+        TDF[🔒 Protected Data &lpar;TDF&rpar;]
         POLICY[📋 Cryptographic Policies]
         
         subgraph "OpenTDF Platform"
@@ -168,6 +173,7 @@ Let's trace how a confidential financial report would be handled in each model:
 ## Migration Strategies
 
 ### **Hybrid Approach**
+
 Most organizations transition gradually:
 
 1. **Start with high-value data**: Protect most sensitive documents first
@@ -176,6 +182,7 @@ Most organizations transition gradually:
 4. **Expand coverage**: Gradually increase percentage of protected data
 
 ### **Integration Points**
+
 Data-centric security integrates with traditional infrastructure:
 
 - **Identity providers**: Leverage existing LDAP, Active Directory, SAML
@@ -186,12 +193,14 @@ Data-centric security integrates with traditional infrastructure:
 ## When to Choose Each Approach
 
 ### **Traditional Security Still Appropriate For:**
+
 - **Network infrastructure** protection
 - **System administration** access
 - **Development environments** with low-sensitivity data
 - **Legacy applications** that cannot be modified
 
 ### **Data-Centric Security Essential For:**
+
 - **Sensitive data sharing** with external parties
 - **Remote and mobile access** scenarios
 - **Cloud and multi-cloud** deployments

@@ -13,7 +13,7 @@ A base key, or default key, is a key that will be used when no grants or key map
 You must have admin permission to use any key operations.
 :::
 
-When using the [kas-registry proto](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L659-L662) and an active connection to the platform you can use the above base key rpcs to set and retrieve the base key.
+When using the [kas-registry proto](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/kasregistry/key_access_server_registry.proto#L692-L696) and an active connection to the platform you can use the above base key rpcs to set and retrieve the base key.
 
 [otdfctl base key](https://github.com/opentdf/otdfctl/tree/main/docs/man/policy/kas-registry/key/base) provides documentation on how to set / get base keys with the OpenTDF CLI.
 
@@ -23,8 +23,6 @@ When using the [kas-registry proto](https://github.com/opentdf/platform/blob/mai
    1. The passed in kas information list
    2. The key algorithm
 2. If a base key is not present, the SDK will fallback to using the passed in kas information list and key algorithm.
-3. If the base key is not of type ECC, it **cannot** be used with NanoTDF.
-   1. If the registered base key is not of type ECC, the SDK will fallback to using the passed in kas url and key type.
 
 :::note
 In upcoming versions of the SDK, post v0.5.0, the SDK will prefer to error when no base key is set; instead of falling back.

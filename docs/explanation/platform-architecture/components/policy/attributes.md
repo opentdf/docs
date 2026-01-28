@@ -71,11 +71,37 @@ These attributes will now be used to drive access decisions based on policies in
 
 ## Attribute Rules
 
-Attribute definitions have a rule that determines how the values of the attribute are evaluated. The following rules are available:
+Attribute definitions include a **rule** that determines how the attribute's values are evaluated during authorization decisions. The rule controls the entitlement logic when matching subject attributes against TDF data attributes.
 
-- **ALL_OF**: All of the values in the attribute must be present in the entity's entitlements.
-- **ANY_OF**: Any of the values in the attribute must be present in the entity's entitlements.
-- **HIERARCHY**: The values of the attribute are ordered, and the entity must have an entitlement that is greater than or equal to the value in the policy.
+### Available Rules
+
+- **ANY_OF**: Subject needs at least one matching attribute value to access data
+  - Use for: Independent categories, "either/or" requirements
+  - Example: Team membership, color preferences
+
+- **ALL_OF**: Subject must have all attribute values required by the data
+  - Use for: Compound requirements, "and" logic
+  - Example: Multi-certification requirements, cross-functional access
+
+- **HIERARCHY**: Subject needs the same level or higher in an ordered hierarchy
+  - Use for: Membership tiers, organizational levels, graduated access
+  - Index 0 = highest level; actions propagate down the hierarchy
+  - Example: Subscription tiers, job levels, access tiers
+
+### Detailed Explanation
+
+For comprehensive explanations with examples and use-case guidance, see:
+- **[ABAC & Policy: Attribute Rules](/explanation/abac-and-policy/#attribute-rules)** - Conceptual deep dive with detailed examples
+- **[CLI Reference: Creating Attributes](/explanation/platform-architecture/components/cli/policy/attributes/create)** - Command-line usage and syntax
+
+### Rule Selection Impact
+
+Choosing the wrong rule can have security implications:
+- Changing from `ANY_OF` to `ALL_OF` may inadvertently deny access to legitimate users
+- Changing from `HIERARCHY` to `ANY_OF` may grant unintended access across organizational levels
+- Reordering hierarchical values changes the access ladder
+
+See [Unsafe Actions](#unsafe-actions) below for more on modifying rules.
 
 ## Key Association
 

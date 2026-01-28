@@ -1,0 +1,71 @@
+---
+id: policy-namespaces-namespace-service-deactivate-namespace
+title: "DeactivateNamespace"
+description: "DeactivateNamespace"
+sidebar_label: "DeactivateNamespace"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVl1v2zYU/SvE3csGyHbTrummp2VtBwzY1iBJ9xIYxhV5ZbGlSJUfTjxD/324lOzYtZsEW14ckZeHh+d+biDiMkB5C5fOaLkWf2FLoUNJAeYFuI48Ru3s7wpK6LLJ1O5Mpjvra/IrLWn6jlBGvcJIuy0ooEOPLUXyfNMGGABKeOusJRknl95FJ52Z/E0+aGehAG2hhIZQkYcCPH1J2pOCMvpEBQTZUItQbiCuO0ayqa2yZdTRPAFNNrVQ3p7NC1AUpNcdvw9KeEe1tiRiQ2I1WAtX588RTXQjGhQgnQ0RyrO+L47ec6NbcilO/gxHL3k+8wOQbxKNg1UhtBVtgL6fD2pRiL86teaLpLORbOR/seuMltmfs0+BsTbHjFz1iWRkp3n2ftQUeFerPZsQvbbLPdZaQQG18y1GKCGl/H3I+mrrxL5/OHciXK4G+lAAKqX5MJrLPSo1mkA9gxyGRV4InbNhIPzyxQv+OSRxnaSkEAYH/jdZHqU+3P8k957FqTGZeEzxvffO/x+Ch36TTtEpz9E9tp2hnPrWxUXtklWc8mN+gEQryRA7MtnP1t0NeblCo9UC/TK1zI4fgspoSwu6l0QqH3gALACNJ1TrBd3rEFn5jnyrA+fXQpHV+YCn4JKXDNJgCjEv1qgNqUXnSTo7yMl4lfPDvktx4eqFR7ukzFLzi5hW3tY2krdo8hauUBusDBsqjLgwLodBsphiQzayvpQFOHTHTUMiRIwpCJayEHeNlo0IjUtGiYoEWsGSiRWaRFwxbpfOLQ1NfSenb52i+dHCFPoCWgoBlyd9c8jgQihakWGnTmqU2i4FcYyIEeGYkrbivV0aHZqpuLBrkcI3ju6dMU6i0f+QEmiVCGQjw3CN2ad/nZWYKoqoTZg/siVqTUYVwvk96GqdEaXRZGNWYTB/OoyH3a+l6gvIsp8ScVeNKm3Rr4fLqrQ8ddfpbM1VpX9s92tXvXU2oraBgwJ9paNHvxaBvB4F2OqOxtmluNOxESh+YToiNhjFAFdRGKo7r4896BhkuleMRj/kBlWlenph1wd1dtvBtsXl+U/KJwYmnmLydnDjCFiKJsYulLOZHBY4EqRrZ8rJMFu6WQ63MPuOzSaeOk8cWrmUQb+thIfN7dQA0VJs3DCC5NbQYWyghNnTE8nsNGAgv9qOI8kbKGHTGYwcNO+t6py2sT/KxPdDzRQfOrI3734T2xPi49UfhQhJNgLDTpHt7jTHfzMQX6HXXIZyUH9949AMxr5wvNvn9h5IJq/jGsrbeQHcDq4eGv7IcNuw4VWNP72uz3+cvH5z9mby4+vzl5PqVS0nL+XP56/q83Os8ZwzQ9va5cQY4+VI1yMt+C3jTFXC6oxB2Dct5u40TkSntT8A2iVjpPvImmnLWNknm9HPt8+YPKE4edu8gKx8eQubTYWBPnrT97z8JZEfRdw6hb/6YjutcWgoHXhDja37iPuuScP32/nmB8F5eepNn2n9+Gg61jIAHiqff/Xz7jsYKA9u2tkx3uSGoR4sjmaPhxMXUlIXH7Wd76Xu5YfrGyigGufSNg8m4PGO+z/eDQ9x+X05O/LaBgzaZcqNEgZM/vsXmhB8gQ==
+sidebar_class_name: "post api-method"
+info_path: policy-namespaces
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"DeactivateNamespace"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/policy.namespaces.NamespaceService/DeactivateNamespace"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+DeactivateNamespace
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={[{"name":"Connect-Protocol-Version","in":"header","required":true,"schema":{"type":"number","title":"Connect-Protocol-Version","enum":[1],"description":"Define the version of the Connect protocol","const":1}},{"name":"Connect-Timeout-Ms","in":"header","schema":{"type":"number","title":"Connect-Timeout-Ms","description":"Define the timeout, in ms"}}]}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"content":{"application/json":{"schema":{"type":"object","properties":{"id":{"type":"string","title":"id","format":"uuid","description":"Required"}},"title":"DeactivateNamespaceRequest","additionalProperties":false}}},"required":true}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"Success","content":{"application/json":{"schema":{"type":"object","title":"DeactivateNamespaceResponse","additionalProperties":false}}}},"default":{"description":"Error","content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"string","examples":["not_found"],"enum":["canceled","unknown","invalid_argument","deadline_exceeded","not_found","already_exists","permission_denied","resource_exhausted","failed_precondition","aborted","out_of_range","unimplemented","internal","unavailable","data_loss","unauthenticated"],"description":"The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code]."},"message":{"type":"string","description":"A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client."},"detail":{"type":"object","properties":{"type":{"type":"string"},"value":{"type":"string","format":"binary"},"debug":{"type":"object","additionalProperties":true}},"additionalProperties":true,"description":"Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.","title":"google.protobuf.Any"}},"title":"Connect Error","additionalProperties":true,"description":"Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

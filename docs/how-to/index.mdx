@@ -8,6 +8,37 @@ import Cards from "@site/src/components/Cards";
 
 Practical guides for specific tasks like deployment, integration, troubleshooting, and common use cases. These goal-oriented guides assume you understand the basic concepts and provide step-by-step instructions to solve real problems.
 
+## Integration Patterns
+
+Learn how to integrate OpenTDF with your existing systems.
+
+<Cards
+  height={300}
+  columns={2}
+  items={[
+    {
+      name: "Implementing a Policy Enforcement Point (PEP)",
+      description: "Build a custom PEP that enforces OpenTDF policies in your application. Includes code examples in Java, Go, Python, and JavaScript.",
+      url: "/how-to/integration-patterns/implementing-a-pep",
+    },
+    {
+      name: "Entity Service Integration",
+      description: "Connect your existing identity and directory services (LDAP, SCIM, custom databases) to OpenTDF for dynamic attribute resolution.",
+      url: "/how-to/integration-patterns/entity-service-integration",
+    },
+    {
+      name: "Identity Provider Integration",
+      description: "Configure OpenTDF to authenticate users via external identity providers using OIDC, SAML, or OAuth 2.0. Includes provider-specific guides for Keycloak, Okta, Azure AD, and more.",
+      url: "/how-to/integration-patterns/identity-provider-integration",
+    },
+    {
+      name: "Integration Patterns Overview",
+      description: "Browse all integration patterns and common scenarios: enterprise SaaS, government systems, healthcare data exchange, and file sharing.",
+      url: "/how-to/integration-patterns",
+    },
+  ]}
+/>
+
 ## SDK Integration
 
 <Cards
@@ -22,14 +53,27 @@ Practical guides for specific tasks like deployment, integration, troubleshootin
   ]}
 />
 
-## Coming Soon
+## Additional Guides
 
-More how-to guides covering:
+More how-to guides are available:
 
-- **Deployment**: Setting up OpenTDF in production environments
-- **Configuration**: Configuring services for different use cases
-- **Troubleshooting**: Solving common issues and debugging problems
-- **Integration**: Connecting OpenTDF with existing systems
+### Getting Started
+
+- **[Your First TDF](../tutorials/your-first-tdf/)**: Step-by-step tutorial to set up OpenTDF and create your first protected data object
+
+### Code Samples
+
+- **[Code Samples Reference](../reference/code-samples/)**: Browse working examples in multiple languages for common operations
+
+### Coming Soon
+
+Additional how-to guides in development:
+
+- **Deployment**: Setting up OpenTDF in production environments (Kubernetes, Docker Swarm)
+- **Advanced Configuration**: Performance tuning, high availability, multi-region setups
+- **Troubleshooting**: Debugging authorization failures, performance issues, and common errors
+- **Policy Management**: Best practices for designing and managing attribute hierarchies
+- **Monitoring and Observability**: Setting up metrics, logging, and alerting
 
 ## Need Different Information?
 

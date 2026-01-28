@@ -125,3 +125,38 @@ This command starts a local development server and opens up a browser window. Mo
    ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
+
+### Testing with Feature Branches
+
+The documentation site pulls content from multiple upstream repositories using Docusaurus remote content plugins. By default, content is fetched from the `main` branch of each repository. You can override this behavior using environment variables to test documentation changes from feature branches before they're merged.
+
+**Available Environment Variables:**
+
+- `PLATFORM_BRANCH` - Controls which branch to fetch from `opentdf/platform` (default: `main`)
+- `SPEC_BRANCH` - Controls which branch to fetch from `opentdf/spec` (default: `main`)
+- `OTDFCTL_BRANCH` - Controls which branch to fetch from `opentdf/otdfctl` (default: `main`)
+
+**Examples:**
+
+Test with all feature branches:
+```bash
+PLATFORM_BRANCH=jps-updates SPEC_BRANCH=jps-updates OTDFCTL_BRANCH=jps-updates npm run build
+```
+
+Test with a single feature branch:
+```bash
+SPEC_BRANCH=feature-branch-name npm run build
+```
+
+Test in development mode with feature branches:
+```bash
+PLATFORM_BRANCH=my-feature npm run start
+```
+
+**Use Cases:**
+
+- **Before merging PRs**: Test how documentation changes from upstream repos will look when integrated
+- **Cross-repo changes**: When making coordinated changes across multiple repositories, test the full integration locally
+- **Debugging**: Investigate issues with specific branches without affecting your local main branch
+
+**Note**: The branches must exist in the respective GitHub repositories and be accessible (public or you have access).

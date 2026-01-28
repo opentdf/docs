@@ -77,36 +77,81 @@ import Cards from "@site/src/components/Cards";
   ]}
 />
 
+## Learning Paths by Role
+
+Choose a curated learning path based on your role:
+
+<Cards
+  height={300}
+  columns={2}
+  items={[
+    {
+      name: "👨‍💻 Developers",
+      description: "Integrate OpenTDF into your applications. Learn to implement PEPs, connect identity providers, and enforce attribute-based policies.",
+      url: "/learning-paths#developer-path-integrating-opentdf",
+      accentColor: "primary"
+    },
+    {
+      name: "🏛️ Architects",
+      description: "Design secure systems with OpenTDF. Understand policy models, integration patterns, and architectural trade-offs.",
+      url: "/learning-paths#architect-path-designing-opentdf-systems",
+      accentColor: "secondary"
+    },
+    {
+      name: "⚙️ Operators",
+      description: "Deploy and manage OpenTDF in production. Configure services, set up monitoring, and handle operational tasks.",
+      url: "/learning-paths#operator-path-deploying-and-managing-opentdf",
+      accentColor: "success"
+    },
+    {
+      name: "🚀 Beginners",
+      description: "New to OpenTDF? Start here to understand core concepts and create your first protected data object.",
+      url: "/learning-paths#beginner-path-new-to-opentdf",
+      accentColor: "info"
+    },
+  ]}
+/>
+
 ## Quick Start Paths
 
 <Callout
-  title="New to Data-Centric Security?"
+  title="New to OpenTDF?"
   callToAction={{
-    label: "Start with Concepts",
+    label: "Understanding OpenTDF",
     link: "/explanation",
   }}
 >
-  Begin by understanding what makes OpenTDF unique and how it solves data protection challenges that traditional security models can't address.
+  Start with our comprehensive overview: what OpenTDF is, how it works, and why data-centric security matters.
 </Callout>
 
 <Callout
   title="Ready to Try OpenTDF?"
   callToAction={{
-    label: "Start Your First Tutorial",
+    label: "Your First TDF Tutorial",
     link: "/tutorials/your-first-tdf",
   }}
 >
-  Jump into a hands-on tutorial that walks you through setting up OpenTDF locally and creating your first protected data file.
+  Get hands-on in 30 minutes: set up OpenTDF locally, create policies, and encrypt your first data object.
 </Callout>
 
 <Callout
-  title="Need to Solve a Specific Problem?"
+  title="Integrating OpenTDF?"
   callToAction={{
-    label: "Browse How-to Guides",
-    link: "/how-to",
+    label: "Integration Patterns",
+    link: "/how-to/integration-patterns",
   }}
 >
-  Find practical recipes for deployment, integration, policy management, and troubleshooting common issues.
+  Learn how to implement PEPs, connect identity providers, and integrate attribute resolution from your directory services.
+</Callout>
+
+<Callout
+  title="Need Code Examples?"
+  callToAction={{
+    label: "Browse Code Samples",
+    link: "/reference/code-samples",
+  }}
+>
+  Explore working examples in Java, Go, Python, and JavaScript for common OpenTDF operations.
 </Callout>
 
 ## Why Zero Trust and OpenTDF?
