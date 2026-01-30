@@ -32,7 +32,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 # Getting Started
 
-This guide will walk you through the process of securing data using OpenTDF tools. We'll help you set up a sandbox [OpenTDF platform](/architecture) locally with **attribute based access controls (ABAC)** to demonstrate the basic concepts of OpenTDF.
+This guide will walk you through **encrypting and decrypting data** using OpenTDF tools. You'll learn how to secure sensitive information through encryption and control access using **attribute-based access controls (ABAC)**. We'll set up a sandbox [OpenTDF platform](/architecture) locally to demonstrate these core concepts.
 
 ## The Scenario
 
@@ -47,6 +47,42 @@ Let's see this in action with a real-world example:
 
 Later, Jen creates a derivative version for the finance team. When Preston tries to access it, the platform checks his entitlements again - this time he has the right attributes, so the decision is: access granted. Jack still can't access it because his entitlements don't match.
 
+```mermaid
+flowchart TD
+    A[Executive Strategy<br/>Requires: clearance/executive] --> A1{Jen tries to access}
+    A --> B{Preston tries to access}
+    A --> C{Jack tries to access}
+
+    A1 --> A2[Check Jen's entitlements:<br/>executive + finance]
+    A2 --> A3[✅ PERMIT<br/>Has executive clearance]
+
+    B --> B1[Check Preston's entitlements:<br/>finance + standard]
+    B1 --> B2[❌ DENY<br/>Missing: executive clearance]
+
+    C --> C1[Check Jack's entitlements:<br/>engineering + standard]
+    C1 --> C2[❌ DENY<br/>Missing: executive clearance]
+
+    D[Finance Report<br/>Requires: finance + standard] --> D1{Jen tries to access}
+    D --> E{Preston tries to access}
+    D --> F{Jack tries to access}
+
+    D1 --> D2[Check Jen's entitlements:<br/>executive + finance]
+    D2 --> D3[✅ PERMIT<br/>Has standard via hierarchy + finance]
+
+    E --> E1[Check Preston's entitlements:<br/>finance + standard]
+    E1 --> E2[✅ PERMIT<br/>Has all required attributes]
+
+    F --> F1[Check Jack's entitlements:<br/>engineering + standard]
+    F1 --> F2[❌ DENY<br/>Missing: finance department]
+
+    style A3 fill:#ccffcc
+    style B2 fill:#ffcccc
+    style C2 fill:#ffcccc
+    style D3 fill:#ccffcc
+    style E2 fill:#ccffcc
+    style F2 fill:#ffcccc
+```
+
 **The Implementation**: We'll set up attributes and entitlements, then watch OpenTDF make authorization decisions:
 
 - **Attributes** (how we classify data):
@@ -54,7 +90,7 @@ Later, Jen creates a derivative version for the finance team. When Preston tries
   - `clearance`: `executive`, `standard`
 
 - **Entitlements** (what each person has access to):
-  - **Jen**: `clearance/executive` (which includes `clearance/standard` via hierarchy)
+  - **Jen**: `clearance/executive` (which includes `clearance/standard` via hierarchy) + `department/finance`
   - **Preston**: `department/finance` + `clearance/standard`
   - **Jack**: `department/engineering` + `clearance/standard`
 
@@ -64,11 +100,6 @@ Later, Jen creates a derivative version for the finance team. When Preston tries
 
 When someone tries to decrypt a document, OpenTDF compares their entitlements against the document's attributes and returns a decision: permit or deny.
 
-## Pre-requisites
-- macOS, Linux, or Windows (WSL2)
-- [Docker Desktop](https://docs.docker.com/desktop/) or Docker Engine installed and running
-- 4GB+ RAM available
-- 10GB+ free disk space
 
 ## Getting the Platform Running
 
@@ -78,13 +109,24 @@ The OpenTDF Platform is the core service that enforces attribute-based access co
 - Managing cryptographic keys through the Key Access Server (KAS)
 - Validating user entitlements before granting access to data
 
+### Pre-requisites
+
+- macOS, Linux, or Windows (WSL2)
+- [Docker Desktop](https://docs.docker.com/desktop/) or Docker Engine installed and running
+- 4GB+ RAM available
+- 10GB+ free disk space
+- Command line/terminal access
+- Sudo/administrator access
+
+### Installation
+
 We'll run a local instance using Docker. This includes the [Platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/) (for user authentication), and [PostgreSQL](https://www.postgresql.org/) (for storing attributes and policies).
 
 :::warning
 Not for production use.
 :::
 
-### Run Pre-flight Check (Optional)
+#### Step 1: Run Pre-flight Check (Optional)
 
 Verify your system meets the requirements:
 
@@ -99,7 +141,50 @@ chmod +x check.sh
 ./check.sh
 ```
 
-### Install OpenTDF
+<details>
+<summary>Expected output</summary>
+
+```shell
+🔍 OpenTDF Pre-flight Check
+
+Checking operating system...
+✓ macOS detected
+
+Checking container runtime...
+✓ Docker found and running
+
+Checking docker-compose...
+✓ docker compose plugin found (Docker Compose version v2.x.x-desktop.x)
+
+Checking required tools...
+✓ curl found
+
+Checking system resources...
+✓ Memory: 16GB available
+
+Checking disk space...
+✓ Disk space: 100GB available
+
+Checking port availability...
+✓ Port 8080 is available
+✓ Port 8443 is available
+✓ Port 9443 is available
+
+Checking permissions...
+✓ sudo access available (will prompt for password)
+✓ /etc/hosts is writable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ All checks passed!
+
+Ready to install OpenTDF:
+  curl -fsSL https://opentdf.io/install.sh | bash
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+</details>
+
+#### Step 2: Install OpenTDF
 
 Run the automated installer:
 
@@ -114,8 +199,97 @@ chmod +x install.sh
 ./install.sh
 ```
 
+<details>
+<summary>Expected output</summary>
+
+```shell
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   OpenTDF Quick Start Installer
+   For evaluation and development only
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ Detected OS: darwin (arm64)
+
+→ Installing otdfctl CLI...
+  Downloading otdfctl v0.28.0...
+✓ otdfctl v0.28.0 installed to /Users/username/.opentdf/bin/otdfctl
+
+→ Checking Docker...
+✓ Docker is running
+✓ Using: docker compose
+
+→ Configuring /etc/hosts...
+This requires sudo access.
+Password: [you'll be prompted for your password]
+✓ Hosts entries added
+
+→ Setting up OpenTDF platform...
+→ Downloading docker-compose configuration...
+✓ Platform configuration ready
+
+→ Starting OpenTDF services...
+   This may take 2-3 minutes on first run...
+
+→ Waiting for services to become healthy...
+✓ Services are starting up
+
+→ Waiting for platform to be fully ready...
+✓ Services started
+
+→ Configuring SSL certificates...
+  Waiting for Caddy to generate certificates...
+  Importing Caddy root CA to macOS keychain...
+Password: [you'll be prompted for your password again]
+✓ Caddy root CA imported to System keychain
+  Note: You may need to restart your browser
+
+→ Running connectivity test...
+✓ Platform is responding
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ OpenTDF installation complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 Installation directory: /Users/username/.opentdf
+
+🚀 Getting started:
+
+  1. Add otdfctl to your PATH:
+     export PATH="/Users/username/.opentdf/bin:$PATH"
+
+  2. Or create a symlink:
+     sudo ln -sf /Users/username/.opentdf/bin/otdfctl /usr/local/bin/otdfctl
+
+  3. Test the installation:
+     /Users/username/.opentdf/bin/otdfctl --version
+
+  4. Create an otdfctl profile:
+     /Users/username/.opentdf/bin/otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
+
+🌐 Access points:
+   Platform: https://platform.opentdf.local:8443
+   Keycloak: https://keycloak.opentdf.local:9443
+
+📚 Next steps:
+   Quickstart Guide: https://opentdf.io/quickstart
+   Documentation: https://opentdf.io/introduction
+
+🛠️  Management commands:
+   Stop:    cd /Users/username/.opentdf/platform && docker compose down
+   Start:   cd /Users/username/.opentdf/platform && docker compose up -d
+   Logs:    cd /Users/username/.opentdf/platform && docker compose logs -f
+   Status:  cd /Users/username/.opentdf/platform && docker compose ps
+
+⚠️  Note: This setup is for evaluation only.
+   For production deployment guidance, visit: https://opentdf.io
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+</details>
+
 What this does:
-- Downloads and installs the otdfctl CLI
+- Downloads and installs the [otdfctl CLI](https://github.com/opentdf/otdfctl)
 - Verifies Docker is running
 - Adds entries to /etc/hosts (requires sudo)
 - Downloads and starts all services (Platform, Keycloak, PostgreSQL, Caddy)
@@ -126,7 +300,7 @@ You'll be prompted for your password twice:
 1. To add entries to /etc/hosts
 2. To import the SSL certificate
 
-### Add otdfctl to Your PATH (Optional)
+#### Step 3: Add otdfctl to Your PATH (Optional)
 
 Choose one option:
 
@@ -152,32 +326,82 @@ Option C: Use full path (no setup needed)
 ~/.opentdf/bin/otdfctl --version
 ```
 
-### Verify Installation
+Expected output:
+```shell
+otdfctl version 0.x.x (2026-XX-XXT00:00:00Z) <commit-hash>
+```
+
+#### Step 4: Verify Installation
 
 ```shell
 otdfctl --version
 ```
 
-Should display: otdfctl version 0.28.0 ...
+Expected output:
+```shell
+otdfctl version 0.x.x (2026-XX-XXT00:00:00Z) <commit-hash>
+```
 
-You can verify that the platform and keycloak are running at the following locations
+You can verify that the platform and keycloak are running at the following locations:
 - https://platform.opentdf.local:8443/healthz
 - https://keycloak.opentdf.local:9443/
 
-### Create an otdfctl Profile
+When you visit the platform healthz endpoint, you should see:
 
-A profile stores your platform connection details:
+Expected output:
+```json
+{"status":"SERVING"}
+```
+
+When you visit the Keycloak URL, seeing "Resource not found" is expected and indicates Keycloak is running correctly.
+
+#### Step 5: Create an otdfctl Profile
+
+A profile stores your platform connection details and authentication credentials, making commands shorter and easier to use.
+
+Without a profile, you'd need to type the full platform URL with every command. With a profile, you simply reference it by name using `--profile platform-otdf-local`. This also allows you to manage multiple environments (like local, staging, and production) by switching between different profiles.
 
 ```shell
 otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
 ```
 
-### Authenticate
+Expected output:
+```shell
+SUCCESS   Profile platform-otdf-local created
+```
+
+**About Default Profiles:**
+
+When you have only one profile (like most users following this guide), it automatically becomes your default profile. This means you can omit the `--profile platform-otdf-local` flag from all commands.
+
+If you have multiple profiles, you can set which one is the default:
+
+```shell
+otdfctl profile set-default platform-otdf-local
+```
+
+Expected output:
+```shell
+Set profile platform-otdf-local as default
+```
+
+For the rest of this guide, commands use the default profile. If you have multiple profiles, you can specify which one to use by adding `--profile <profile-name>` to any command.
+
+:::tip Managing the Platform
+Need to start, stop, or restart the platform later? See the [Managing the Platform](/getting-started/managing-platform) guide for platform management commands.
+:::
+
+## Authenticate
 
 Login using the pre-configured test credentials:
 
 ```shell
-otdfctl --profile platform-otdf-local auth client-credentials opentdf secret
+otdfctl auth client-credentials opentdf secret
+```
+
+Expected output:
+```shell
+Client credentials set for profile [platform-otdf-local]
 ```
 
 Credentials:
@@ -186,31 +410,119 @@ Credentials:
 
 These are test credentials provisioned automatically during installation.
 
+**Authentication Persistence**: Your credentials are saved in the profile and will be used automatically for all future commands. You won't need to re-authenticate unless you explicitly clear the credentials or change profiles.
+
 To verify authentication, list namespaces to confirm you're connected:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes namespaces list
+otdfctl policy attributes namespaces list
 ```
 
-Should return an empty list [] (no namespaces created yet).
+<details>
+<summary>Expected output</summary>
+
+```shell
+SUCCESS   Found namespaces: 4
+┌────────────────────────────────────────┬──────────────┬────────┬────────┬─────────────────────┬────────────────────────┐
+│Id                                      │Name          │Active  │Grants  │Created At           │Updated At              │
+├────────────────────────────────────────┼──────────────┼────────┼────────┼─────────────────────┼────────────────────────┤
+│0d94e00a-7bd3-4482-afe3-f1e4b03c1353    │example.org   │true    │[]      │Fri Jan 30 18:55:26…│Fri Jan 30 18:55:26 UT…│
+│87ba60e1-da12-4889-95fd-267968bf0896    │scenario.com  │true    │[]      │Fri Jan 30 18:55:26…│Fri Jan 30 18:55:26 UT…│
+│8f1d8839-2851-4bf4-8bf4-5243dbfe517d    │example.com   │true    │[]      │Fri Jan 30 18:55:26…│Fri Jan 30 18:55:26 UT…│
+│d69cf14d-744b-48cf-aab4-43756e97a8e5    │example.net   │true    │[]      │Fri Jan 30 18:55:26…│Fri Jan 30 18:55:26 UT…│
+└────────────────────────────────────────┴──────────────┴────────┴────────┴─────────────────────┴────────────────────────┘
+```
+
+</details>
+
+These are a few example namespaces that come pre-configured with the platform. You'll create your own namespace in the next section.
 
 ## Encrypt and Decrypt with the CLI
 
-Let's start with a simple encryption example:
+Let's start with a simple encryption example using some plain text:
 
 ```shell
-echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf
+echo 'my first encrypted tdf' | otdfctl encrypt -o example.tdf
 ```
 
-This creates an encrypted file called `example.tdf`. Now decrypt it:
+This creates an encrypted file called `example.tdf`.
+
+### Verify the File is Encrypted
+
+Before decrypting, let's verify that the file is actually encrypted by viewing its contents:
 
 ```shell
-otdfctl decrypt --profile platform-otdf-local example.tdf
+cat example.tdf
 ```
 
+Expected output (encrypted binary data):
 ```shell
-# Output
+PK?|^4 0.payload
+                 o??1.?%A#a?.?d??`g?????V[
+X??BUYPAG=(????De#??P.?
+                       #33PK?|^40.manifest.json{"encryptionInformation":{"type":"split","policy":"eyJ1dWlk...
+```
+
+As you can see, the file contains encrypted binary data and JSON metadata - not readable plain text. This confirms the encryption worked.
+
+### Decrypt the File
+
+Now decrypt it to retrieve the original content:
+
+```shell
+otdfctl decrypt example.tdf
+```
+
+Expected output:
+```shell
 my first encrypted tdf
+```
+
+### Encrypt an Existing File
+
+The same process works with files. Let's create a text file, encrypt it, and decrypt it:
+
+Create a text file:
+```shell
+echo "my first encrypted tdf file" > example.txt
+```
+
+Verify you can read the plain text file:
+```shell
+cat example.txt
+```
+
+Expected output:
+```shell
+my first encrypted tdf file
+```
+
+Now encrypt the file:
+```shell
+otdfctl encrypt example.txt -o example.txt.tdf
+```
+
+This creates `example.txt.tdf`.
+
+Try to read the encrypted file:
+```shell
+cat example.txt.tdf
+```
+
+Expected output (encrypted binary data):
+```shell
+PK?|^4 0.payload
+                 o??1.?%A#a?.?d??`g?????V[...
+```
+
+The file is now encrypted and unreadable. Decrypt it back to plain text:
+```shell
+otdfctl decrypt example.txt.tdf
+```
+
+Expected output:
+```shell
+my first encrypted tdf file
 ```
 
 That's it! You're encrypting and decrypting data. But encryption alone isn't very useful without access controls, so let's get into the details of our scenario.
@@ -222,7 +534,7 @@ A `namespace` is how you organize your `attributes` within the platform. Think o
 Let's check if there are any existing namespaces:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes namespaces list
+otdfctl policy attributes namespaces list
 ```
 
 ```shell
@@ -239,7 +551,7 @@ NOTE   Use 'namespaces get --id=<id> --json' to see all properties
 We'll create a namespace representing our company domain:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes namespaces create --name opentdf.io
+otdfctl policy attributes namespaces create --name opentdf.io
 ```
 
 ```shell
@@ -260,7 +572,7 @@ NOTE   Use 'namespaces get --id=7650f02a-be00-4faa-a1d1-37cded5e23dc --json' to 
 With that namespace created we should be able to see it in the list of namespaces as well as get the details of the namespace.
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes namespaces list
+otdfctl policy attributes namespaces list
 ```
 
 ```shell
@@ -279,10 +591,12 @@ Let's export the namespace id for later use.
 export NAMESPACE_ID=<id>
 ```
 
+No output expected for this and every following export command.
+
 ### Get the details of the namespace
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes namespaces get --id=$NAMESPACE_ID
+otdfctl policy attributes namespaces get --id=$NAMESPACE_ID
 ```
 
 ```shell
@@ -325,7 +639,7 @@ You can create values when creating the definition: `--value finance --value eng
 First, let's create an attribute for departments. We'll use `ANY_OF` since a person typically belongs to one department:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF
+otdfctl policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF
 ```
 
 ```shell
@@ -349,13 +663,15 @@ Save the department attribute ID:
 export DEPT_ATTRIBUTE_ID=<id>
 ```
 
+No output expected.
+
 ### Add Department Values
 
 Now add the specific departments. Preston works in finance, and Jack works in engineering:
 
 ```shell
 # Finance department (Preston's department)
-otdfctl --profile platform-otdf-local policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
+otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
 ```
 
 ```shell
@@ -378,9 +694,11 @@ Save the finance value ID:
 export FINANCE_VALUE_ID=<id>
 ```
 
+No output expected.
+
 ```shell
 # Engineering department (Jack's department)
-otdfctl --profile platform-otdf-local policy attributes values create -a $DEPT_ATTRIBUTE_ID --value engineering
+otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value engineering
 ```
 
 ```shell
@@ -403,12 +721,14 @@ Save the engineering value ID:
 export ENGINEERING_VALUE_ID=<id>
 ```
 
+No output expected.
+
 ### Create Clearance Attribute
 
 Now create a clearance attribute using `HIERARCHY` rule. This means someone with executive clearance automatically has standard clearance too:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes create --name clearance -s $NAMESPACE_ID -r HIERARCHY
+otdfctl policy attributes create --name clearance -s $NAMESPACE_ID -r HIERARCHY
 ```
 
 ```shell
@@ -438,7 +758,7 @@ Add clearance levels. Order matters for HIERARCHY - list them from highest to lo
 
 ```shell
 # Executive clearance (Jen has this - highest level)
-otdfctl --profile platform-otdf-local policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
+otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
 ```
 
 ```shell
@@ -463,7 +783,7 @@ export EXECUTIVE_VALUE_ID=<id>
 
 ```shell
 # Standard clearance (Preston and Jack have this)
-otdfctl --profile platform-otdf-local policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value standard
+otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value standard
 ```
 
 ```shell
@@ -491,7 +811,7 @@ export STANDARD_VALUE_ID=<id>
 Now you have two attributes with values. Let's verify the department attribute:
 
 ```shell
-otdfctl --profile platform-otdf-local policy attributes get --id=$DEPT_ATTRIBUTE_ID
+otdfctl policy attributes get --id=$DEPT_ATTRIBUTE_ID
 ```
 
 ```shell
@@ -530,7 +850,7 @@ For this tutorial, we'll simulate our three users by creating condition sets tha
 In a real deployment, you'd match users by email, group membership, or other identity properties from your identity provider (like Keycloak). For now, we'll use the default client ID.
 
 ```shell
-otdfctl --profile platform-otdf-local policy subject-condition-sets create -j <path to file>/subject_condition_set.json
+otdfctl policy subject-condition-sets create -j <path to file>/subject_condition_set.json
 ```
 
 ```shell
@@ -561,15 +881,17 @@ Before granting any permissions, let's create Jen's executive strategy document 
 Jen creates her highly sensitive executive strategy document. This requires executive clearance:
 
 ```shell
-echo 'Executive Financial Strategy 2026: Confidential merger plans and Board-level decisions' | otdfctl encrypt --profile platform-otdf-local -o executive-strategy.tdf --attr https://opentdf.io/attr/clearance/value/executive
+echo 'Executive Financial Strategy 2026: Confidential merger plans and Board-level decisions' | otdfctl encrypt -o executive-strategy.tdf --attr https://opentdf.io/attr/clearance/value/executive
 ```
+
+No output expected. This creates an encrypted file called `executive-strategy.tdf`.
 
 ### Try to Decrypt Without Permission (Will Fail)
 
 Right now, we haven't granted ourselves any entitlements. Let's try to decrypt this executive document and see the authorization **decision**:
 
 ```shell
-otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
+otdfctl decrypt executive-strategy.tdf
 ```
 
 You'll see an error like this:
@@ -589,7 +911,7 @@ This is an authorization **decision** in action! Here's what happened:
 Now let's grant an **entitlement** to represent Jen's access level. This changes what attribute values we're entitled to:
 
 ```shell
-otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 ```shell
@@ -616,7 +938,7 @@ Because we're using HIERARCHY for clearance, this executive clearance automatica
 Now that we've been granted an **entitlement** for executive clearance, try decrypting the executive document again:
 
 ```shell
-otdfctl decrypt --profile platform-otdf-local executive-strategy.tdf
+otdfctl decrypt executive-strategy.tdf
 ```
 
 ```shell
@@ -637,8 +959,10 @@ The same file that was locked before is now accessible because your entitlements
 Now Jen creates a derivative version for the finance team. This one requires finance department access but only standard clearance:
 
 ```shell
-echo 'Finance Department Report 2026: Budget allocations and quarterly targets (no executive details)' | otdfctl encrypt --profile platform-otdf-local -o finance-report.tdf --attr https://opentdf.io/attr/department/value/finance --attr https://opentdf.io/attr/clearance/value/standard
+echo 'Finance Department Report 2026: Budget allocations and quarterly targets (no executive details)' | otdfctl encrypt -o finance-report.tdf --attr https://opentdf.io/attr/department/value/finance --attr https://opentdf.io/attr/clearance/value/standard
 ```
+
+No output expected. This creates an encrypted file called `finance-report.tdf`.
 
 Notice this document has TWO attributes - it requires BOTH finance department membership AND standard clearance.
 
@@ -647,7 +971,23 @@ Notice this document has TWO attributes - it requires BOTH finance department me
 To simulate Preston's access, let's grant ourselves an additional **entitlement** for the finance department:
 
 ```shell
-otdfctl --profile platform-otdf-local policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+```
+
+Expected output:
+```shell
+SUCCESS   Created subject-mappings: <id>
+┌─────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Property                 │Value                                                                                                                                                   │
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Id                       │<id>                                                                                                                                                    │
+│Subject AttrVal: Id      │<finance-value-id>                                                                                                                                      │
+│Actions                  │[{"Value":{"Standard":1}}]                                                                                                                              │
+│Subject Condition Set: I…│<subject-condition-set-id>                                                                                                                              │
+│Attribute Value Id       │<finance-value-id>                                                                                                                                      │
+│Created At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
+│Updated At               │Mon Jun 24 11:35:13 UTC 2024                                                                                                                            │
+└─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Decrypt the Finance Report
@@ -655,7 +995,7 @@ otdfctl --profile platform-otdf-local policy subject-mappings create --action re
 Now we can access the derivative document (since we have executive clearance which includes standard, plus we just added finance department):
 
 ```shell
-otdfctl decrypt --profile platform-otdf-local finance-report.tdf
+otdfctl decrypt finance-report.tdf
 ```
 
 ```shell
