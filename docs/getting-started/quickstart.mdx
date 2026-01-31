@@ -880,9 +880,38 @@ First, we need a `subject condition set` - this defines WHO qualifies for the en
 
 ### Create Subject Condition Sets
 
-For this tutorial, we'll simulate our three personas by creating condition sets that match the default client credentials. Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example</a> subject condition set as a template.
+For this tutorial, we'll simulate our three personas by creating condition sets that match the default client credentials. Here's what a subject condition set looks like:
 
-In a real deployment, you'd match identities by email, group membership, or other properties from your identity provider (like Keycloak). For now, we'll use the default client ID.
+```json title="subject_condition_set.json"
+[
+  {
+    "condition_groups": [
+      {
+        "conditions": [
+          {
+            "subject_external_selector_value": ".clientId",
+            "operator": 1,
+            "subject_external_values": [
+              "opentdf"
+            ]
+          }
+        ],
+        "boolean_operator": 1
+      }
+    ]
+  }
+]
+```
+
+**Understanding the parameters:**
+- `subject_external_selector_value`: The identity claim to match against from your IdP (e.g., `.clientId`, `.email`, `.groups`, `.role`, `.department`; see [Subject Mappings](/components/policy/subject_mappings) for examples)
+- `operator`: Comparison operator (`0` = unspecified, `1` = IN/equals, `2` = NOT_IN/excludes, `3` = IN_CONTAINS/substring match; see [API reference](/OpenAPI-clients/policy/subjectmapping/policy-subjectmapping-subject-mapping-service-create-subject-condition-set) for details)
+- `subject_external_values`: The value(s) to match against the selected claim (here, `"opentdf"` matches our demo client ID)
+- `boolean_operator`: How to combine multiple conditions (`0` = unspecified, `1` = AND, `2` = OR; see [API reference](/OpenAPI-clients/policy/subjectmapping/policy-subjectmapping-subject-mapping-service-create-subject-condition-set) for details)
+
+In a real deployment, you'd match identities by email, group membership, or other properties from your identity provider (like Keycloak). For example, `.email` for email addresses, `.groups` for group membership, or custom claims from your IdP.
+
+Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example file</a> or create your own, then run:
 
 ```shell
 otdfctl policy subject-condition-sets create -j <path to file>/subject_condition_set.json
