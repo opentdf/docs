@@ -81,6 +81,24 @@ If you encounter TLS certificate errors like "Failed to validate TLS certificate
    ```
    Then all subsequent `otdfctl` commands will skip certificate verification.
 
-2. **Trust the SSL certificate**: The install script automatically imports the SSL certificate. If you started the platform manually, you may need to trust the certificate in your system keychain or browser.
+2. **Trust the SSL certificate**: The install script automatically imports the SSL certificate. If you started the platform manually or the automatic import failed, you can trust the certificate with these steps:
+
+   1.  **Extract the root CA certificate:**
+       ```shell
+       cd ~/.opentdf/platform
+       docker compose exec -T caddy cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt
+       ```
+
+   2.  **Add the certificate to your system's trust store:**
+       -   **macOS:**
+           ```shell
+           sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt
+           ```
+       -   **Linux (Debian/Ubuntu):**
+           ```shell
+           sudo cp caddy-root.crt /usr/local/share/ca-certificates/
+           sudo update-ca-certificates
+           ```
+       -   **Windows:** Manually import `caddy-root.crt` into the "Trusted Root Certification Authorities" store using Certificate Manager (`certmgr.msc`).
 
 **Important**: The `--tls-no-verify` flag doesn't work with profiles. Use the environment variable instead.
