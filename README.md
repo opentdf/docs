@@ -24,3 +24,13 @@ $ npm run build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
+
+### Preview Deployment
+
+Deploy to the preview domain for testing changes before merging to production:
+
+```
+$ npm run build && surge build opentdf-docs-preview.surge.sh
+```
+
+The preview will be available at https://opentdf-docs-preview.surge.sh/

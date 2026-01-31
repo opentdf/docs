@@ -1,0 +1,104 @@
+---
+sidebar_position: 3
+unlisted: true
+---
+
+# Managing the Platform
+
+If you've already installed OpenTDF and need to start, stop, or restart the platform services, use these commands:
+
+## Start the Platform
+
+If Docker/Colima isn't running, start it first:
+
+```shell
+# For Colima users (macOS)
+colima start
+
+# For Docker Desktop users
+# Start Docker Desktop from your Applications folder
+```
+
+Then start the OpenTDF platform:
+
+```shell
+cd ~/.opentdf/platform
+docker compose up -d
+```
+
+Expected output:
+```shell
+ Container platform-opentdfdb-1 Running
+ Container platform-keycloak-1 Started
+ Container platform-platform-1 Started
+ Container platform-caddy-1 Started
+```
+
+## Stop the Platform
+
+```shell
+cd ~/.opentdf/platform
+docker compose down
+```
+
+Expected output:
+```shell
+ Container platform-platform-1 Stopped
+ Container platform-keycloak-1 Stopped
+ Container platform-caddy-1 Stopped
+ Container platform-opentdfdb-1 Stopped
+```
+
+## Restart the Platform
+
+```shell
+cd ~/.opentdf/platform
+docker compose restart
+```
+
+## Check Platform Status
+
+```shell
+cd ~/.opentdf/platform
+docker compose ps
+```
+
+This shows all containers and their status (running, exited, etc.).
+
+You can also verify the platform is healthy by visiting:
+- https://platform.opentdf.local:8443/healthz (should show `{"status":"SERVING"}`)
+- https://keycloak.opentdf.local:9443/ (should show "Resource not found")
+
+## Troubleshooting
+
+### TLS Certificate Verification
+
+If you encounter TLS certificate errors like "Failed to validate TLS certificates," you have two options:
+
+1. **Set environment variable** (recommended - works with profiles):
+   ```shell
+   export OTDFCTL_TLS_NO_VERIFY=true
+   ```
+   Then all subsequent `otdfctl` commands will skip certificate verification.
+
+2. **Trust the SSL certificate**: The install script automatically imports the SSL certificate. If you started the platform manually or the automatic import failed, you can trust the certificate with these steps:
+
+   1.  **Extract the root CA certificate:**
+       ```shell
+       cd ~/.opentdf/platform
+       docker compose exec -T caddy cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt
+       ```
+
+   2.  **Add the certificate to your system's trust store:**
+       -   **macOS:**
+           ```shell
+           sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt
+           ```
+       -   **Linux (Debian/Ubuntu):**
+           ```shell
+           sudo cp caddy-root.crt /usr/local/share/ca-certificates/
+           sudo update-ca-certificates
+           ```
+       -   **Windows:** Manually import `caddy-root.crt` into the "Trusted Root Certification Authorities" store using Certificate Manager (`certmgr.msc`).
+
+**Important**: The `--tls-no-verify` flag doesn't work with profiles. Use the environment variable instead.
