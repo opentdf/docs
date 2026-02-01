@@ -32,7 +32,7 @@ attribute definitions, you can also create mappings for namespaces
 and attribute values.
 :::
 
-1. First you will need to [create a key access server](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L630)
+1. First you will need to [create a key access server](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/kasregistry/key_access_server_registry.proto#L59)
 
 OpenTDF CLI
 
@@ -40,7 +40,7 @@ OpenTDF CLI
 otdfctl policy kas-registry create --uri http://example.com/kas --name example-kas
 ```
 
-2. Next, you will need to [create a key](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L644)
+2. Next, you will need to [create a key](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/kasregistry/key_access_server_registry.proto#L379)
 
 OpenTDF CLI
 
@@ -48,7 +48,7 @@ OpenTDF CLI
 otdfctl key create --key-id "rsa-key-1" --algorithm "rsa:2048" --mode "local" --kas "891cfe85-b381-4f85-9699-5f7dbfe2a9ab" --wrapping-key-id "virtru-stored-key" --wrapping-key "a8c4824daafcfa38ed0d13002e92b08720e6c4fcee67d52e954c1a6e045907d1"
 ```
 
-3. [create a namespace](https://github.com/opentdf/platform/blob/main/service/policy/namespaces/namespaces.proto#L180)
+3. [create a namespace](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/namespaces/namespaces.proto#L95)
 
 OpenTDF CLI
 
@@ -56,7 +56,7 @@ OpenTDF CLI
 otdfctl policy attributes namespaces create --name opentdf.io
 ```
 
-4. [create an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L415)
+4. [create an attribute](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/attributes/attributes.proto#L116)
 
 OpenTDF CLI
 
@@ -64,7 +64,7 @@ OpenTDF CLI
 otdfctl policy attributes create --namespace 3d25d33e-2469-4990-a9ed-fdd13ce74436 --name myattribute --rule ANY_OF
 ```
 
-5. [assign a key to an attribute](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto#L457)
+5. [assign a key to an attribute](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/attributes/attributes.proto#L356)
 
 OpenTDF CLI
 

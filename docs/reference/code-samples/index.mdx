@@ -1,0 +1,230 @@
+# Code Samples
+
+Browse working code examples for OpenTDF across different languages and use cases.
+
+## Overview
+
+This section provides practical code examples to help you integrate OpenTDF into your applications. Code samples are available in the `code_samples/` directory of this repository.
+
+## Available Code Samples
+
+### Java SDK Examples
+
+Comprehensive examples for the Java SDK covering TDF operations and policy management.
+
+#### TDF Operations
+
+- **[Encrypt Data](https://github.com/opentdf/docs/blob/main/code_samples/java/encrypt-example.mdx)**: Create and encrypt TDFs with attributes
+- **[Decrypt Data](https://github.com/opentdf/docs/blob/main/code_samples/java/decrypt-example.mdx)**: Decrypt TDFs and access protected content
+- **[Encrypt Collection](https://github.com/opentdf/docs/blob/main/code_samples/java/encrypt-collection-example.mdx)**: Encrypt multiple files efficiently
+- **[Decrypt Collection](https://github.com/opentdf/docs/blob/main/code_samples/java/decrypt-collection-example.mdx)**: Decrypt multiple TDFs in batch
+- **[Get Manifest Information](https://github.com/opentdf/docs/blob/main/code_samples/java/get-manifest-information.mdx)**: Extract TDF metadata without decrypting
+
+#### Policy Management
+
+- **[Create Namespace](https://github.com/opentdf/docs/blob/main/code_samples/java/create-namespace.mdx)**: Define attribute namespaces
+- **[List Namespaces](https://github.com/opentdf/docs/blob/main/code_samples/java/list-namespaces.mdx)**: Retrieve all namespaces
+- **[Create Attribute](https://github.com/opentdf/docs/blob/main/code_samples/java/create-attribute.mdx)**: Define attributes with rules and values
+- **[List Attributes](https://github.com/opentdf/docs/blob/main/code_samples/java/list-attributes.mdx)**: Retrieve all attributes
+- **[Create Subject Condition Set](https://github.com/opentdf/docs/blob/main/code_samples/java/create-subject-condition-set.mdx)**: Define complex subject matching conditions
+- **[Create Subject Mapping](https://github.com/opentdf/docs/blob/main/code_samples/java/create-subject-mapping.mdx)**: Map subjects to attributes
+- **[List Subject Mappings](https://github.com/opentdf/docs/blob/main/code_samples/java/list-subject-mappings.mdx)**: Retrieve all subject mappings
+
+#### Authorization
+
+- **[Get Authorization Decisions](https://github.com/opentdf/docs/blob/main/code_samples/java/get-decisions.mdx)**: Make authorization decisions
+- **[Get Entitlements](https://github.com/opentdf/docs/blob/main/code_samples/java/get-entitlements.mdx)**: Retrieve user entitlements
+
+---
+
+### Python Examples
+
+Policy management examples using Python.
+
+- **[Create Namespace](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/create_namespace.mdx)**: Define namespaces
+- **[Create Attribute](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/create_attribute.mdx)**: Create attributes
+- **[Create Subject Condition Set](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/create_subject_condition_set.mdx)**: Define subject conditions
+- **[Create Subject Mapping](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/create_subject_mapping.mdx)**: Map subjects to attributes
+- **[List Namespaces](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/list_namespaces.mdx)**: Retrieve namespaces
+- **[List Attributes](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/list_attributes.mdx)**: Retrieve attributes
+- **[List Subject Mappings](https://github.com/opentdf/docs/blob/main/code_samples/policy_code/list_subject_mapping.mdx)**: Retrieve subject mappings
+
+---
+
+### TDF Format Examples
+
+- **[ZTDF Encryption](https://github.com/opentdf/docs/blob/main/code_samples/tdf/encryption_ztdf.mdx)**: Zero Trust Data Format encryption example
+
+---
+
+### Authorization Examples
+
+- **[Get Authorization Decision](https://github.com/opentdf/docs/blob/main/code_samples/authorization/get_decision.mdx)**: Request authorization decisions
+- **[Get Entitlements](https://github.com/opentdf/docs/blob/main/code_samples/authorization/get_entitlements.mdx)**: Retrieve user entitlements
+
+---
+
+## Example Patterns by Use Case
+
+### Use Case: Protecting Sensitive Documents
+
+**Scenario**: Encrypt documents with department-based access control
+
+**Steps**:
+1. [Create namespace](https://github.com/opentdf/docs/blob/main/code_samples/java/create-namespace.mdx) for your organization
+2. [Create attribute](https://github.com/opentdf/docs/blob/main/code_samples/java/create-attribute.mdx) for department
+3. [Create subject mapping](https://github.com/opentdf/docs/blob/main/code_samples/java/create-subject-mapping.mdx) to assign departments to users
+4. [Encrypt document](https://github.com/opentdf/docs/blob/main/code_samples/java/encrypt-example.mdx) with department attribute
+5. [Decrypt document](https://github.com/opentdf/docs/blob/main/code_samples/java/decrypt-example.mdx) as authorized user
+
+---
+
+### Use Case: Multi-Level Classification
+
+**Scenario**: Implement hierarchical classification (public, internal, confidential, secret)
+
+**Steps**:
+1. Create namespace with HIERARCHY rule
+2. Create attribute with ordered values (public=1, internal=2, confidential=3, secret=4)
+3. Map users to clearance levels via subject mappings
+4. Encrypt data with classification level
+5. Users with higher clearance can access lower-classified data automatically
+
+**Example Code**: See [Create Attribute](https://github.com/opentdf/docs/blob/main/code_samples/java/create-attribute.mdx) for hierarchies
+
+---
+
+### Use Case: Project-Based Access Control
+
+**Scenario**: Restrict data access to project team members
+
+**Steps**:
+1. Create project attribute (project-alpha, project-beta)
+2. Create subject mappings linking user groups to projects
+3. Encrypt data with project attribute
+4. Only users assigned to the project can decrypt
+
+**Example Code**: See [Subject Condition Sets](https://github.com/opentdf/docs/blob/main/code_samples/java/create-subject-condition-set.mdx) for complex conditions
+
+---
+
+## Code Sample Repositories
+
+Explore complete working applications and more examples:
+
+### Official SDK Repositories
+
+| Language | Repository | Description |
+|----------|------------|-------------|
+| **Java** | [opentdf/java-sdk](https://github.com/opentdf/java-sdk) | Comprehensive Java SDK with examples |
+| **Go** | [opentdf/platform/sdk](https://github.com/opentdf/platform/tree/main/sdk) | Go SDK integrated with platform services |
+| **Python** | [opentdf/client-python](https://github.com/opentdf/client-python) | Python client with examples |
+| **JavaScript** | [opentdf/client-web](https://github.com/opentdf/client-web) | Web and Node.js SDK with examples |
+
+### Example Applications
+
+| Name | Description | Link |
+|------|-------------|------|
+| **Java Examples** | Complete Java application examples | [View Repository](https://github.com/opentdf/java-sdk/tree/main/examples) |
+| **Web Demo** | Interactive web application demo | [View Repository](https://github.com/opentdf/web-demo) |
+| **CLI Tool** | Reference CLI implementation | [otdfctl Repository](https://github.com/opentdf/otdfctl) |
+
+---
+
+## Contributing Examples
+
+Have a useful code example to share? We welcome contributions!
+
+**How to Contribute**:
+
+1. Fork the [docs repository](https://github.com/opentdf/docs)
+2. Add your example to `code_samples/{language}/` directory
+3. Use MDX format for rich formatting
+4. Include:
+   - Clear description of what the example does
+   - Prerequisites
+   - Step-by-step code with comments
+   - Expected output
+5. Submit a pull request
+
+**Example Template**:
+
+```mdx
+# Example: [Title]
+
+## Description
+
+Brief description of what this example demonstrates.
+
+## Prerequisites
+
+- Prerequisite 1
+- Prerequisite 2
+
+## Code
+
+\`\`\`java
+// Your code here with comments
+public class Example {
+    public static void main(String[] args) {
+        // Step 1: Initialize
+        // Step 2: Execute
+        // Step 3: Output
+    }
+}
+\`\`\`
+
+## Expected Output
+
+\`\`\`
+Output here
+\`\`\`
+
+## Related
+
+- [Related Guide](link)
+- [Related API Reference](link)
+```
+
+---
+
+## Testing Code Examples
+
+All code examples should be tested against the latest OpenTDF release.
+
+**Testing Checklist**:
+- ✅ Code compiles without errors
+- ✅ Code runs against OpenTDF platform
+- ✅ Expected output is documented
+- ✅ Error handling is demonstrated
+- ✅ Dependencies are specified
+
+---
+
+## Related Resources
+
+### How-To Guides
+
+Learn how to implement common integration patterns:
+
+- [Implementing a PEP](../../how-to/integration-patterns/implementing-a-pep.mdx): Build custom policy enforcement
+- [Entity Service Integration](../../how-to/integration-patterns/entity-service-integration.mdx): Connect attribute sources
+- [Identity Provider Integration](../../how-to/integration-patterns/identity-provider-integration.mdx): Set up authentication
+
+### Tutorials
+
+Step-by-step tutorials for learning OpenTDF:
+
+- [Your First TDF](../../tutorials/your-first-tdf/index.mdx): Hands-on introduction
+
+---
+
+## Need Help?
+
+If you have questions about code examples or need help with implementation:
+
+- [GitHub Discussions](https://github.com/opentdf/community/discussions): Ask questions
+- [GitHub Issues](https://github.com/opentdf/platform/issues): Report bugs
+- [Slack Community](https://opentdf.io/slack): Real-time chat
+
+We're here to help you succeed with OpenTDF!

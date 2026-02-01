@@ -706,6 +706,8 @@ func getBulkDecisionsV1(client *sdk.SDK) {
 </TabItem>
 <TabItem value="java" label="Java">
 
+#### V2 API (Recommended)
+
 ```java
 public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedException {
     GetDecisionBulkRequest request = GetDecisionBulkRequest.newBuilder()
@@ -761,6 +763,12 @@ public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedExce
     }
 }
 ```
+
+#### V1 API (Legacy)
+
+import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
+
+<GetDecisionsExample />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">

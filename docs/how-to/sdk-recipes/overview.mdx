@@ -2,6 +2,9 @@
 sidebar_position: 1
 ---
 
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import CodeBlock from '@theme/CodeBlock'
+
 # Overview
 
 OpenTDF supports native SDKs in the Go, Java and JavaScript languages. 
@@ -29,13 +32,13 @@ go get github.com/opentdf/platform/sdk@latest
 </TabItem>
 <TabItem value="java" label="Java">
 
-```xml
-<dependency>
+<CodeBlock language="xml">
+{`<dependency>
   <groupId>io.opentdf.platform</groupId>
   <artifactId>sdk-pom</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
-</dependency>
-```
+  <version>`}{useDocusaurusContext().siteConfig.customFields.javaSdkVersion}{`</version>
+</dependency>`}
+</CodeBlock>
 
 </TabItem>
 <TabItem value="js" label="JavaScript">

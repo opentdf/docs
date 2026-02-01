@@ -19,7 +19,20 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
+// Allow overriding upstream branches via environment variables
+// Each repo can be independently configured, defaults to 'main' if not set
+const platformBranch = process.env.PLATFORM_BRANCH || 'main';
+const specBranch = process.env.SPEC_BRANCH || 'main';
+const otdfctlBranch = process.env.OTDFCTL_BRANCH || 'main';
+
+console.log(`Using upstream branches:`);
+console.log(`  - platform: ${platformBranch}`);
+console.log(`  - spec: ${specBranch}`);
+console.log(`  - otdfctl: ${otdfctlBranch}`);
+
+const otdfctl = listRemote.createRepo("opentdf", "otdfctl", otdfctlBranch);
+
+const javaSdkVersion = "0.11.1";
 
 const config: Config = {
   title: "OpenTDF",
@@ -32,6 +45,11 @@ const config: Config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
   trailingSlash: false,
+  customFields: {
+    javaSdkVersion,
+    googleGtagId: 'G-JH0PNJK88L',
+  },
+
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "opentdf", // Usually your GitHub org/user name.
@@ -176,6 +194,23 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: "Legal",
+          items: [
+            {
+              label: "Privacy Policy",
+              to: "/privacy-policy",
+            },
+            {
+              label: "Cookie Policy",
+              to: "/cookie-policy",
+            },
+            {
+              label: "Terms of Service",
+              to: "/terms-of-service",
+            },
+          ],
+        },
       ],
       copyright: `
           <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
@@ -222,7 +257,7 @@ const config: Config = {
     ],
     "plugin-image-zoom",
 
-    ...getSpecDocumentationPlugins(),
+    ...getSpecDocumentationPlugins(undefined, specBranch),
     [
       "docusaurus-plugin-remote-content",
       {
@@ -270,6 +305,23 @@ const config: Config = {
             return { content: "", filename: "" };
           }
 
+          // For selector generate and test files, link to selectors index page's flattening syntax section
+          // instead of including it inline
+          let modifiedContent = rawContent;
+          if (filename.includes('selectors/generate.md') || filename.includes('selectors/test.md')) {
+            // Fix inline references to flattening-syntax to point to selectors index page
+            // Use ./ to reference the current directory's index page
+            modifiedContent = modifiedContent.replace(
+              /\(#flattening-syntax\)/g,
+              '(./#flattening-syntax)'
+            );
+            // Remove the h1 Flattening Syntax section
+            modifiedContent = modifiedContent.replace(
+              /\n# Flattening Syntax[\s\S]*$/,
+              ''
+            );
+          }
+
           // Wrap the content in CommandLineDocs component
           const nextContent = `---
 title: ${commandTitle}
@@ -279,7 +331,7 @@ import React from 'react';
 import CommandLineDocs from '@site/src/components/CommandLineDocs';
 
 <CommandLineDocs {...JSON.parse("${dataJSON}")}>
-${rawContent}
+${modifiedContent}
 </CommandLineDocs>
           `;
 
@@ -296,7 +348,7 @@ ${rawContent}
         // options here
         name: "platform-configuration", // used by CLI, must be path safe
         sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/platform/main/docs/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+          `https://raw.githubusercontent.com/opentdf/platform/${platformBranch}/docs/`, // the base url for the markdown (gets prepended to all of the documents when fetching)
         outDir: "docs/how-to/getting-started", // the base directory to output to.
         documents: ["Configuring.md"], // the file names to download
         modifyContent: (filename, content) => {
@@ -315,11 +367,50 @@ ${updatedContent}`,
       },
     ],
     [
+      "docusaurus-plugin-remote-content",
+      {
+        name: "java-sdk-examples",
+        id: "java-sdk-examples",
+        sourceBaseUrl: `https://raw.githubusercontent.com/opentdf/java-sdk/refs/tags/v${javaSdkVersion}/`,
+        documents: [
+          "examples/src/main/java/io/opentdf/platform/CreateAttribute.java",
+          "examples/src/main/java/io/opentdf/platform/CreateNamespace.java",
+          "examples/src/main/java/io/opentdf/platform/CreateSubjectConditionSet.java",
+          "examples/src/main/java/io/opentdf/platform/CreateSubjectMapping.java",
+          "examples/src/main/java/io/opentdf/platform/DecryptCollectionExample.java",
+          "examples/src/main/java/io/opentdf/platform/DecryptExample.java",
+          "examples/src/main/java/io/opentdf/platform/EncryptCollectionExample.java",
+          "examples/src/main/java/io/opentdf/platform/EncryptExample.java",
+          "examples/src/main/java/io/opentdf/platform/GetDecisions.java",
+          "examples/src/main/java/io/opentdf/platform/GetEntitlements.java",
+          "examples/src/main/java/io/opentdf/platform/GetManifestInformation.java",
+          "examples/src/main/java/io/opentdf/platform/ListAttributes.java",
+          "examples/src/main/java/io/opentdf/platform/ListNamespaces.java",
+          "examples/src/main/java/io/opentdf/platform/ListSubjectMappings.java"
+        ],
+        outDir: "code_samples/java",
+        modifyContent: (filename, content) => {
+          const baseName =
+            filename.split("/").pop()?.replace(".java", "") || "default";
+          const kebabCaseName =
+            baseName[0].toLowerCase() +
+            baseName
+              .slice(1)
+              .replaceAll(/([A-Z])/g, "-$1")
+              .toLowerCase();
+          return {
+            content: `\`\`\`java\n${content}\n\`\`\``,
+            filename: `${kebabCaseName}.mdx`,
+          };
+        },
+      },
+    ],
+    [
       "docusaurus-plugin-openapi-docs",
       {
         id: "api", // plugin id
         docsPluginId: "classic", // configured for preset-classic
-        config: openApiSpecs 
+        config: openApiSpecs
       },
     ],
     require.resolve("docusaurus-lunr-search"),

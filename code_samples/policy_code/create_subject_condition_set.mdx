@@ -34,7 +34,7 @@ func main() {
 
 	// Create Subject Condition Set
 
-	coditionset := &subjectmapping.CreateSubjectConditionSetRequest{
+	conditionset := &subjectmapping.CreateSubjectConditionSetRequest{
 		SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
 			SubjectSets: []*policy.SubjectSet{
 				{
@@ -55,7 +55,7 @@ func main() {
 		},
 	}
 
-	log, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(), coditionset)
+	resp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(), conditionset)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,55 +67,9 @@ func main() {
 </TabItem>
 <TabItem value="java" label="Java">
 
-```java
-package io.opentdf.platform;
-import io.opentdf.platform.sdk.*;
+import CreateSubjectConditionSetExample from '@site/code_samples/java/create-subject-condition-set.mdx';
 
-import java.util.concurrent.ExecutionException;
-
-import io.opentdf.platform.policy.subjectmapping.*;
-import io.opentdf.platform.policy.SubjectMapping;
-import io.opentdf.platform.policy.SubjectConditionSet;
-import io.opentdf.platform.policy.SubjectSet;
-import io.opentdf.platform.policy.ConditionGroup;
-import io.opentdf.platform.policy.Condition;
-import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
-import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
-
-
-public class CreateSubjectConditionSet {
-    public static void main(String[] args) throws ExecutionException, InterruptedException{
-
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:8080";
-
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-                .clientSecret(clientId, clientSecret).useInsecurePlaintextConnection(true)
-                .build();
-
-        var subjectset = SubjectSet.newBuilder().addConditionGroups(ConditionGroup.newBuilder()
-        .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
-        .addConditions(Condition.newBuilder()
-        .setSubjectExternalSelectorValue(".myfield")
-        .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
-        .addSubjectExternalValues("myvalue")
-        ));
-
-        CreateSubjectConditionSetRequest request = CreateSubjectConditionSetRequest.newBuilder()
-        .setSubjectConditionSet(
-            SubjectConditionSetCreate.newBuilder().addSubjectSets(subjectset))
-        .build();
-
-        CreateSubjectConditionSetResponse resp = sdk.getServices().subjectMappings().createSubjectConditionSet(request).get();
-
-        SubjectConditionSet scs = resp.getSubjectConditionSet();
-
-        System.out.println(scs.getId());
-    }
-}
-```
+<CreateSubjectConditionSetExample />
 
 </TabItem>
 <TabItem value="js" label="Javascript">

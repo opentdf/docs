@@ -47,7 +47,7 @@ The primary difference is that the **Key Manager** needs to reach out to the KMS
 
 ## What is different with the new key architecture?
 
-1. Previously, when starting the platform users would be expected to populate the [startup yaml file](https://github.com/opentdf/platform/blob/main/opentdf-dev.yaml#L150-L158) with asymmetric keys that would be used by KAS for and decryption. Now keys, or their reference, should be stored/registered with the platform via the [kas-registry](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L644-L656).
+1. Previously, when starting the platform users would be expected to populate the [startup yaml file](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/opentdf-dev.yaml#L160-L171) with asymmetric keys that would be used by KAS for and decryption. Now keys, or their reference, should be stored/registered with the platform via the [kas-registry key endpoints](https://github.com/opentdf/platform/blob/main/service/policy/kasregistry/key_access_server_registry.proto#L678-L699).
 2. Endpoints for easier management of keys through the kas-registry.
    1. Create/Read/Update
    2. Key Rotation

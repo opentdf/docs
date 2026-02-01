@@ -1,6 +1,32 @@
 ---
 slug: /tutorials/your-first-tdf
 ---
+
+import dockerComposeContent from '!!raw-loader!./docker-compose.yaml';
+import CodeBlock from '@theme/CodeBlock';
+
+<style>
+{`
+.download-button {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #0066cc;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.download-button:hover {
+  background-color: #0052a3;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+`}
+</style>
+
 # Getting Started
 
 This guide will walk you through setting up a new platform locally and walk you through some of the basic concepts within the OpenTDF platform.
@@ -14,309 +40,6 @@ This guide will walk you through setting up a new platform locally and walk you 
   - [Podman](https://podman.io/)
   - [Docker Compose](https://docs.docker.com/compose/)
 
-## Getting the Platform Running
-
-The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
-
-> **Note for Apple M4 chip users:**  
-> If you are running on an Apple M4 chip, set the Java environment variable before running any commands:
-> ```sh
-> export JAVA_OPTS_APPEND="-XX:UseSVE=0"
-> ```
-> This resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
-
-:::warning
-Not for production use.
-:::
-
-<details>
-<summary>Docker Compose</summary>
-```yaml
-name: opentdf
-volumes:
-  configs:
-  keys:
-  caddy_data:
-configs:
-  caddy_config:
-    content: |
-      {
-        log {
-            level INFO
-            output stdout
-        }
-      }
-      https://keycloak.opentdf.local:9443 {
-        tls internal
-        reverse_proxy keycloak:8888
-      }
-      https://platform.opentdf.local:8443 {
-        tls internal
-        reverse_proxy {
-            to h2c://platform:8080
-            transport http {
-                versions h2c 2 1.1  # Enable gRPC proxying
-            }
-        }
-
-      }
-services:
-  caddy:
-    image: caddy:alpine
-    command: ['caddy','run', '--config', '/etc/caddy/Caddyfile']
-    configs:
-      - source: caddy_config
-        target: /etc/caddy/Caddyfile
-    ports:
-      - '9443:9443'
-      - '8443:8443'
-    volumes:
-      - caddy_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --server-response --tries=1 http://127.0.0.1:2019/metrics 2>&1 | awk '/^  HTTP/{print $2}' | grep -q '200'"]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-  check-certs:
-    image: bash:latest
-    volumes:
-      - type: volume
-        source: caddy_data
-        target: /etc/ssl/certs
-        volume:
-          subpath: caddy/certificates/local/keycloak.opentdf.local/
-    command:
-      - bash
-      - -c
-      - |
-        echo "Checking certificates"
-        ls -alh /etc/ssl/certs
-        cat /etc/ssl/certs/keycloak.opentdf.local.crt
-    depends_on:
-      caddy:
-        condition: service_healthy
-      ensure-permissions:
-        condition: service_completed_successfully
-  ensure-permissions:
-    image: alpine
-    command:
-    - 'sh'
-    - '-c'
-    - |
-      chmod -R 777 /configs
-      ls -alh /configs
-      chmod -R 777 /keys
-      ls -alh /keys
-      chmod -R 777 /data
-      ls -alh /data
-    volumes:
-      - configs:/configs
-      - keys:/keys
-      - caddy_data:/data
-
-  #================================================================
-
-# Start Keycloak
-
-  #----------------------------------------------------------------
-  keycloak:
-    image: keycloak/keycloak:25.0
-    restart: unless-stopped
-    command: ['start-dev']
-    environment:
-      KC_DB: postgres
-      KC_DB_URL_HOST: keycloak-db
-      KC_DB_URL_PORT: 5432
-      KC_DB_URL_DATABASE: keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: changeme
-      KC_HOSTNAME: 'https://keycloak.opentdf.local:9443'
-      KC_HOSTNAME_ADMIN: 'https://keycloak.opentdf.local:9443'
-      KC_HTTP_ENABLED: 'true'
-      KC_HTTP_PORT: 8888
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: changeme
-      KC_FEATURES: 'preview,token-exchange'
-      KC_HEALTH_ENABLED: 'true'
-      JAVA_OPTS_APPEND: '${JAVA_OPTS_APPEND:-}'
-    healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java ${JAVA_OPTS_APPEND} /tmp/HealthCheck.java http://localhost:9000/health/ready']
-      interval: 5s
-      timeout: 10s
-      retries: 3
-      start_period: 5m
-    depends_on:
-      keycloak-db:
-        condition: service_healthy
-        restart: true
-  keycloak-db:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_PASSWORD: changeme
-      POSTGRES_USER: postgres
-      POSTGRES_DB: keycloak
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 2m
-  download-keycloak-config:
-    image: curlimages/curl:latest
-    volumes:
-      - configs:/configs
-    command: ['-o', '/configs/keycloak-config.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/service/cmd/keycloak_data.yaml']
-    depends_on:
-      ensure-permissions:
-        condition: service_completed_successfully
-  #================================================================
-
-# Provisioning Keycloak with expected realm, clients, and users
-
-  #----------------------------------------------------------------
-  keycloak-provisioning:
-    image: registry.opentdf.io/platform:nightly
-    volumes:
-      - configs:/configs
-    command:
-      [
-        'provision',
-        'keycloak',
-        '-e',
-        'http://keycloak:8888',
-        '-f',
-        '/configs/keycloak-config.yaml',
-      ]
-    depends_on:
-      keycloak:
-        condition: service_healthy
-        restart: true
-      download-keycloak-config:
-        condition: service_completed_successfully
-        restart: true
-  #================================================================
-
-# Start the OpenTDF service
-
-  #----------------------------------------------------------------
-  download-platform-config:
-    image: curlimages/curl:latest
-    volumes:
-      - configs:/configs
-    command: ['-o', '/configs/.opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
-    depends_on:
-      ensure-permissions:
-        condition: service_completed_successfully
-  modify-platform-config:
-    image: bash:latest
-    volumes:
-      - configs:/configs
-    command:
-      - bash
-      - -c
-      - |
-        echo "Modifying /configs/.opentdf.yaml"
-        echo "$(</configs/.opentdf.yaml )"
-        sed -i 's|kas-private.pem|/keys/kas-private.pem|g' /configs/.opentdf.yaml
-        sed -i 's|kas-cert.pem|/keys/kas-cert.pem|g' /configs/.opentdf.yaml
-        sed -i 's|kas-ec-private.pem|/keys/kas-ec-private.pem|g' /configs/.opentdf.yaml
-        sed -i 's|kas-ec-cert.pem|/keys/kas-ec-cert.pem|g' /configs/.opentdf.yaml
-        sed -i 's|# db:|db: |g' /configs/.opentdf.yaml
-        sed -i 's|#   host: localhost|  host: |g' /configs/.opentdf.yaml
-        sed -i 's|issuer: http://localhost:8888/auth/realms/opentdf|issuer: http://keycloak:8888/realms/opentdf|g' /configs/.opentdf.yaml
-        sed -i 's|tokenendpoint: http://localhost:8888/auth/realms/opentdf/protocol/openid-connect/token|tokenendpoint: http://keycloak:8888/realms/opentdf/protocol/openid-connect/token|g' /configs/.opentdf.yaml
-        sed -i 's|url: http://localhost:8888/auth|url: http://keycloak:8888|g' /configs/.opentdf.yaml
-        echo "$(</configs/.opentdf.yaml )"
-    depends_on:
-      download-platform-config:
-        condition: service_completed_successfully
-  generate-kas-rsa-keys:
-    image: alpine/openssl
-    volumes:
-      - keys:/keys
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "Generating RSA keys"
-        openssl req -x509 -nodes -newkey RSA:2048 -subj "/CN=kas" -keyout /keys/kas-private.pem -out /keys/kas-cert.pem -days 365
-        chmod 444 /keys/kas-private.pem
-        chmod 444 /keys/kas-cert.pem
-    depends_on:
-      ensure-permissions:
-        condition: service_completed_successfully
-  generate-kas-ec-keys:
-    image: alpine/openssl
-    volumes:
-      - keys:/keys
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "Generating EC keys"
-        openssl ecparam -name secp256r1 -out /keys/secp256r1.pem && \
-        openssl req -x509 -nodes -newkey ec:/keys/secp256r1.pem -subj "/CN=kas" -keyout /keys/kas-ec-private.pem -out /keys/kas-ec-cert.pem -days 365
-        chmod 444 /keys/kas-ec-private.pem
-        chmod 444 /keys/kas-ec-cert.pem
-    depends_on:
-      ensure-permissions:
-        condition: service_completed_successfully
-  platform:
-    image: registry.opentdf.io/platform:nightly
-    volumes:
-      - configs:/configs
-      - keys:/keys
-      - type: volume
-        source: caddy_data
-        target: /etc/ssl/certs
-        volume:
-          subpath: caddy/certificates/local/keycloak.opentdf.local
-    extra_hosts:
-      - "keycloak.opentdf.local:host-gateway"
-    command: ['start','--config-file','/configs/.opentdf.yaml','--config-key','opentdf']
-    restart: always
-    environment:
-      OPENTDF_DB_HOST: platform-db
-      OPENTDF_DB_USER: postgres
-      OPENTDF_DB_PASSWORD: changeme
-    depends_on:
-      keycloak:
-        condition: service_healthy
-        restart: true
-      keycloak-provisioning:
-        condition: service_completed_successfully
-      platform-db:
-        condition: service_healthy
-        restart: true
-      download-platform-config:
-        condition: service_completed_successfully
-      generate-kas-rsa-keys:
-        condition: service_completed_successfully
-      generate-kas-ec-keys:
-        condition: service_completed_successfully
-      modify-platform-config:
-        condition: service_completed_successfully
-      caddy:
-        condition: service_healthy
-      check-certs:
-        condition: service_completed_successfully
-  platform-db:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: changeme
-      POSTGRES_DB: opentdf
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-```
-
-</details>
-
 ## Update /etc/hosts
 
 In order for the services to communicate correctly you will need to update your `/etc/hosts` file.
@@ -325,22 +48,58 @@ In order for the services to communicate correctly you will need to update your 
 echo -e "127.0.0.1 platform.opentdf.local\n127.0.0.1 keycloak.opentdf.local" | sudo tee -a /etc/hosts
 ```
 
+## Getting the Platform Running
+
+The first step is to get the platform running locally. You can use the following docker compose file to get the platform running. This docker compose file will start a local instance of the [platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/), and a [Postgres](https://www.postgresql.org/) database.
+
+:::warning
+Not for production use.
+:::
+
+<a href="/quickstart/docker-compose.yaml" download="docker-compose.yaml" className="download-button">Download docker-compose.yaml</a>
+
+<details>
+<summary>Docker Compose</summary>
+
+<CodeBlock language="yaml">{dockerComposeContent}</CodeBlock>
+
+</details>
+
+### Save the Docker Compose File
+
+Click the **download** button above to save the `docker-compose.yaml` file to your local machine. If you prefer to copy the content manually, save it as `docker-compose.yaml`.
+
+### Start the Platform
+
+Once you have the `docker-compose.yaml` file saved, start the platform using the following command:
+
+```shell
+# If running on Apple M4 chip
+JAVA_OPTS_APPEND="-XX:UseSVE=0" docker compose --file docker-compose.yaml up -d
+
+# Or on other architectures
+docker compose --file docker-compose.yaml up -d
+```
+
+> **Note for Apple M4 chip users:**  
+> The `JAVA_OPTS_APPEND="-XX:UseSVE=0"` environment variable resolves SIGILL with Code 134 errors when running Java processes (such as Keycloak).
+
 ## Trust Self Signed Certificates
 
-During the bootstrapping process `caddy` will generate self signed certificates. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
+After starting the platform, `caddy` will generate self-signed certificates during the bootstrapping process. You will either need to trust these certificates on your system or use the `--tls-no-verify` flag on every command. If using the `--tls-no-verify` command it will disable profiles and require that you pass in the host and authentication into each command.
 
-Example of extracting the certificate from the container.
+First, extract the certificates from the container:
 
 ```shell
 mkdir -p ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/keycloak.opentdf.local/keycloak.opentdf.local.crt ./opentdf-certs
 ```
 
 ```shell
-docker cp opentdf-caddy-1:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
+docker compose cp caddy:/data/caddy/certificates/local/platform.opentdf.local/platform.opentdf.local.crt ./opentdf-certs
 ```
 
 ### Import and Trust Certificates by Operating System
@@ -468,7 +227,7 @@ These self-signed certificates are only valid for local development. Never use s
 Creating a profile allows us to store the host we want to connect to and then to tie our credentials to it when we login.
 
 ```shell
-otdfctl profile create platform-otdf-local https://platform.otdf.local:8443
+otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
 ```
 
 ## Login to the Platform
@@ -582,6 +341,16 @@ Attribute name and values are case insensitive. This means `ROLE` is equal to `r
 :::tip
 
 You can also create values at the same time when creating the definition. This is useful when you know the values you want to use. (e.g. --value admin --value developer --value guest)
+
+:::
+
+:::info Learn More About Attribute Rules
+
+We're using the `ANY_OF` rule in this example, which means users need at least one of the attribute values to access data. OpenTDF also supports:
+- **ALL_OF**: Require multiple attribute values simultaneously (e.g., multiple certifications)
+- **HIERARCHY**: Create ordered levels like membership tiers (platinum > gold > silver)
+
+For detailed explanations with examples and guidance on choosing the right rule, see [ABAC: Attribute Rules](/explanation/abac-and-policy/#attribute-rules).
 
 :::
 
@@ -785,18 +554,12 @@ Now that we have a few basic resources in place we can show you how to control a
 
 ### Encrypt Data Without Attributes
 
-Within the `otdfctl` CLI there is basic functionality to interact with `zTDF` and `nanoTDF`.
+Within the `otdfctl` CLI there is basic functionality to interact with `zTDF`.
 
 #### Example zTDF encryption
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
-```
-
-#### Example nanoTDF encryption
-
-```shell
-echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano
 ```
 
 ### Decrypt Data Without Attributes
@@ -812,33 +575,18 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 my first encrypted tdf
 ```
 
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-# Output
-my first encrypted nano tdf
-```
-
 ### Encrypt Data With Attributes
 
 In this example we will encrypt the data with the attribute `https://opentdf.io/attr/role/value/guest`. First cleanup any existing tdf files from before.
 
 ```shell
-rm example.tdf example.nano.tdf
+rm example.tdf
 ```
 
 #### Example zTDF encryption with attributes
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
-```
-
-#### Example nanoTDF encryption with attributes
-
-```shell
-echo 'my first encrypted nano tdf' | otdfctl encrypt --profile platform-otdf-local -o example.nano.tdf --tdf-type nano --attr https://opentdf.io/attr/role/value/guest
 ```
 
 ### Decrypt Data With Attributes
@@ -854,17 +602,6 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```shell
 # Output
 ERROR    Failed to decrypt file: reader.WriteTo failed: doPayloadKeyUnwrap splitKey.rewrap failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
-            rpc error: code = PermissionDenied desc = forbidden
-```
-
-#### Example nanoTDF failed decryption
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-ERROR    Failed to decrypt file: readSeeker.Seek failed: error making request to kas: error making rewrap request: rpc error: code = PermissionDenied desc = request error
             rpc error: code = PermissionDenied desc = forbidden
 ```
 
@@ -904,17 +641,6 @@ otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
 ```shell
 # Output
 my first encrypted tdf
-```
-
-#### Example nanoTDF successful decryption
-
-```shell
-otdfctl decrypt --profile platform-otdf-local --tdf-type nano example.nano.tdf
-```
-
-```shell
-# Output
-my first encrypted nano tdf
 ```
 
 ## Takeaways and Next Steps
