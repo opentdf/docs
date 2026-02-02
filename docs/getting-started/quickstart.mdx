@@ -87,6 +87,21 @@ flowchart TD
     style F2 fill:#ffcccc
 ```
 
+<details>
+<summary>Text description of access control flow diagram</summary>
+
+**Executive Strategy Document** (requires clearance/executive):
+- **Jen** (has executive + finance entitlements) → **PERMIT** - Has executive clearance
+- **Preston** (has finance + standard entitlements) → **DENY** - Missing executive clearance
+- **Jack** (has engineering + standard entitlements) → **DENY** - Missing executive clearance
+
+**Finance Report Document** (requires finance + standard):
+- **Jen** (has executive + finance entitlements) → **PERMIT** - Has standard via hierarchy + finance
+- **Preston** (has finance + standard entitlements) → **PERMIT** - Has all required attributes
+- **Jack** (has engineering + standard entitlements) → **DENY** - Missing finance department
+
+</details>
+
 **The Implementation**: We'll set up attributes and entitlements, then watch OpenTDF make authorization decisions:
 
 - **Attributes** (how we classify data):
@@ -504,7 +519,15 @@ Expected output:
 > my first encrypted tdf file
 > ```
 
-That's it! You're encrypting and decrypting data. But encryption alone isn't very useful without access controls, so let's get into the details of our scenario.
+---
+
+:::tip Checkpoint: Basic Encryption Working
+**You've successfully encrypted and decrypted data!** This is a good stopping point if you just want to verify the platform works.
+
+To learn how to implement attribute-based access control, continue below to work through the full scenario with Jen, Preston, and Jack.
+:::
+
+---
 
 ## Create A Namespace
 
@@ -911,7 +934,7 @@ For this tutorial, we'll simulate our three personas by creating condition sets 
 
 In a real deployment, you'd match identities by email, group membership, or other properties from your identity provider (like Keycloak). For example, `.email` for email addresses, `.groups` for group membership, or custom claims from your IdP.
 
-Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">example file</a> or create your own, then run:
+Download the <a target="_blank" href="/quickstart/subject_condition_set.json" download="subject_condition_set.json">subject_condition_set.json example file</a> or create your own, then run:
 
 ```shell
 otdfctl policy subject-condition-sets create -j <path to file>/subject_condition_set.json
