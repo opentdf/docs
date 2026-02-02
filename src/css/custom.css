@@ -105,6 +105,62 @@ html[data-theme='dark'] .table-of-contents__link--active {
   color: var(--ifm-color-primary-light);
 }
 
+/* Dark mode overrides for custom VDS colors and homepage */
+html[data-theme='dark'] {
+  /* Override VDS colors for dark mode */
+  --vds-color-blue-lightest: #1a2332;
+  --vds-color-blue-lighter: #1e2a3a;
+  --vds-color-blue-light: #2d4a6f;
+  --vds-color-blue-dark: #6bbaff;
+  --vds-color-blue-006: #6aaae4;
+  --vds-color-blue-007: #92c0e9;
+
+  /* Homepage subtitle */
+  --vds-homepage-subtitle-color: #aaa;
+}
+
+/* Dark mode navbar for homepage */
+html[data-theme='dark'] .homepage .navbar {
+  background-color: var(--vds-color-blue-lightest);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme='dark'] .navbar .navbar__brand {
+  color: var(--vds-color-blue-dark);
+}
+
+/* Dark mode cookie consent */
+html[data-theme='dark'] .cookie-consent-banner a {
+  color: var(--ifm-color-primary-light);
+}
+
+html[data-theme='dark'] .cookie-consent-accept-button {
+  background: var(--ifm-color-primary-light);
+  color: #000;
+}
+
+/* Dark mode footer */
+html[data-theme='dark'] .footer {
+  background-color: #0a1929;
+  color: #b3d4fc;
+}
+
+html[data-theme='dark'] .footer__link-item {
+  color: #6aaae4;
+}
+
+html[data-theme='dark'] .footer__link-item:hover {
+  color: #92c0e9;
+}
+
+html[data-theme='dark'] .footer__title {
+  color: #6bbaff;
+}
+
+html[data-theme='dark'] .footer__copyright {
+  color: #6aaae4;
+}
+
 .star-logo {
   width: 200px;
 }
