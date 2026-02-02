@@ -36,6 +36,7 @@ const config: Config = {
   trailingSlash: false,
   customFields: {
     javaSdkVersion,
+    googleGtagId: 'G-JH0PNJK88L',
   },
 
   // GitHub pages deployment config.
@@ -175,6 +176,23 @@ const config: Config = {
             {
               label: "Roadmap",
               href: "https://github.com/orgs/opentdf/discussions/1806",
+            },
+          ],
+        },
+        {
+          title: "Legal",
+          items: [
+            {
+              label: "Privacy Policy",
+              to: "/privacy-policy",
+            },
+            {
+              label: "Cookie Policy",
+              to: "/cookie-policy",
+            },
+            {
+              label: "Terms of Service",
+              to: "/terms-of-service",
             },
           ],
         },
