@@ -1,0 +1,537 @@
+---
+sidebar_position: 1
+title: Go
+unlisted: true
+---
+
+# Go SDK Quickstart
+
+:::tip Back to SDK Quickstart
+This guide covers the **Go SDK** implementation. For other languages or general information, see the [SDK Quickstart](/sdks/quickstart) page.
+:::
+
+## Prerequisites
+
+- Go 1.21 or later
+- Your OpenTDF platform running locally (from Getting Started guide)
+
+## Step 1: Create a New Project {#step-1-go}
+
+Create a new directory and initialize a Go module:
+
+```bash
+mkdir opentdf-quickstart
+cd opentdf-quickstart
+go mod init opentdf-quickstart
+```
+
+## Step 2: Install the SDK {#step-2-go}
+
+```bash
+go get github.com/opentdf/platform/sdk@latest
+```
+
+Expected output:
+> ```console
+> go: downloading github.com/opentdf/platform/sdk v0.x.x
+> go: added github.com/opentdf/platform/sdk v0.x.x
+> ```
+
+## Step 3: Create Your Application {#step-3-go}
+
+### Go Implementation Code
+
+Create a file named `main.go`:
+
+```go title="main.go"
+package main
+
+import (
+	"bytes"
+	"log"
+	"strings"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	log.Println("🚀 Starting OpenTDF SDK Quickstart...")
+
+	platformEndpoint := "https://platform.opentdf.local:8443"
+	log.Printf("📡 Connecting to platform: %s", platformEndpoint)
+
+	// Create a new SDK client with client credentials
+	log.Println("🔐 Initializing SDK client with client credentials...")
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+		sdk.WithInsecurePlaintextConn(), // Only for local development!
+	)
+
+	if err != nil {
+		log.Fatalf("❌ Client initialization failed: %v", err)
+	}
+
+	log.Println("✅ SDK client initialized successfully")
+
+	// Encrypt data
+	log.Println("\n📝 Encrypting sensitive data...")
+	sensitiveData := "Hello from the OpenTDF Go SDK! This data is encrypted."
+	dataReader := strings.NewReader(sensitiveData)
+	encryptedBuffer := &bytes.Buffer{}
+
+	log.Println("🔒 Creating TDF...")
+	_, err = client.CreateTDF(
+		encryptedBuffer,
+		dataReader,
+		sdk.WithKasInformation(
+			sdk.KASInfo{
+				URL: platformEndpoint,
+			},
+		),
+	)
+
+	if err != nil {
+		log.Fatalf("❌ Encryption failed: %v", err)
+	}
+
+	log.Println("✅ Data successfully encrypted")
+	log.Printf("📊 Encrypted TDF size: %d bytes", encryptedBuffer.Len())
+
+	// Decrypt data
+	log.Println("\n🔓 Decrypting TDF...")
+	tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBuffer.Bytes()))
+	if err != nil {
+		log.Fatalf("❌ Decryption failed: %v", err)
+	}
+
+	var decryptedBuffer bytes.Buffer
+	if _, err = tdfReader.WriteTo(&decryptedBuffer); err != nil {
+		log.Fatalf("❌ Failed to read decrypted data: %v", err)
+	}
+
+	log.Println("✅ Data successfully decrypted")
+	log.Printf("📤 Decrypted content:\n\n%s\n", decryptedBuffer.String())
+
+	log.Println("\n🎉 Quickstart complete!")
+}
+```
+
+## Step 4: Run Your Application {#step-4-go}
+
+```bash
+go run main.go
+```
+
+<details>
+<summary>Expected output</summary>
+
+```console
+2026/02/02 14:30:00 🚀 Starting OpenTDF SDK Quickstart...
+2026/02/02 14:30:00 📡 Connecting to platform: https://platform.opentdf.local:8443
+2026/02/02 14:30:00 🔐 Initializing SDK client with client credentials...
+2026/02/02 14:30:01 ✅ SDK client initialized successfully
+
+2026/02/02 14:30:01 📝 Encrypting sensitive data...
+2026/02/02 14:30:01 🔒 Creating TDF...
+2026/02/02 14:30:01 ✅ Data successfully encrypted
+2026/02/02 14:30:01 📊 Encrypted TDF size: 1234 bytes
+
+2026/02/02 14:30:01 🔓 Decrypting TDF...
+2026/02/02 14:30:02 ✅ Data successfully decrypted
+2026/02/02 14:30:02 📤 Decrypted content:
+
+Hello from the OpenTDF Go SDK! This data is encrypted.
+
+2026/02/02 14:30:02 🎉 Quickstart complete!
+```
+
+</details>
+
+---
+
+## Step 5: Add ABAC Features {#step-5-go}
+
+:::tip Go-Specific Examples
+The following examples are specific to the **Go SDK**.
+:::
+
+Now that you have basic encryption working, you can add attribute-based access control to your application.
+
+If you want to follow along, you can add the code to your quickstart file as we go. Otherwise, a [complete version is available below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt).
+
+:::info More ABAC Examples
+For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
+:::
+
+### Create a New Attribute Value
+
+First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
+
+```go
+import (
+	"context"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+)
+
+// Get the existing department attribute
+attrFqn := "https://opentdf.io/attr/department"
+getAttrResp, err := client.Attributes.GetAttribute(context.Background(),
+	&attributes.GetAttributeRequest{
+		Fqn: attrFqn,
+	})
+if err != nil {
+	log.Fatalf("Failed to get attribute: %v", err)
+}
+
+log.Printf("✅ Found existing attribute: %s", getAttrResp.GetAttribute().GetName())
+
+// Check if "marketing" value already exists
+targetValue := "marketing"
+valueExists := false
+for _, value := range getAttrResp.GetAttribute().GetValues() {
+	if value.GetValue() == targetValue {
+		valueExists = true
+		break
+	}
+}
+
+if !valueExists {
+	// Add the "marketing" value to the existing attribute
+	_, err = client.Attributes.CreateAttributeValue(context.Background(),
+		&attributes.CreateAttributeValueRequest{
+			AttributeId: getAttrResp.GetAttribute().GetId(),
+			Value:       targetValue,
+		})
+	if err != nil {
+		log.Fatalf("Failed to create attribute value: %v", err)
+	}
+	log.Printf("✅ Added '%s' value to department attribute", targetValue)
+} else {
+	log.Printf("✅ Attribute 'department' already has '%s' value", targetValue)
+}
+
+log.Printf("Full attribute FQN: https://opentdf.io/attr/department/value/%s", targetValue)
+```
+
+:::warning
+If you get a [resource not found error](/sdks/troubleshooting#resource-not-found), you may need to create the "department" attribute, along with the namespace.
+:::
+
+### Add Attributes for Access Control
+
+Now that you've created the attribute, update your `CreateTDF` call to include the attribute for access control:
+
+```go
+_, err = client.CreateTDF(
+	encryptedBuffer,
+	dataReader,
+	sdk.WithDataAttributes("https://opentdf.io/attr/department/value/marketing"),
+	sdk.WithKasInformation(
+		sdk.KASInfo{
+			URL: platformEndpoint,
+		},
+	),
+)
+```
+
+:::tip
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a [permission denied error](/sdks/troubleshooting#permission-denied--insufficient-entitlements). Try it now!
+:::
+
+### Grant Yourself Access to the Attribute
+
+To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
+
+// Get the attribute value ID for "marketing"
+var attributeValueId string
+for _, value := range getAttrResp.GetAttribute().GetValues() {
+	if value.GetValue() == targetValue {
+		attributeValueId = value.GetId()
+		break
+	}
+}
+
+// Create a subject condition set that matches your identity
+scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
+	&subjectmapping.CreateSubjectConditionSetRequest{
+		SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
+			SubjectSets: []*policy.SubjectSet{
+				{
+					ConditionGroups: []*policy.ConditionGroup{
+						{
+							BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+							Conditions: []*policy.Condition{
+								{
+									SubjectExternalSelectorValue: ".clientId",
+									Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+									SubjectExternalValues:        []string{"opentdf"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+if err != nil {
+	log.Fatalf("Failed to create subject condition set: %v", err)
+}
+
+// Create the subject mapping to grant yourself the entitlement
+_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(),
+	&subjectmapping.CreateSubjectMappingRequest{
+		AttributeValueId:              attributeValueId,
+		Actions:                       []*policy.Action{{Name: "read"}},
+		ExistingSubjectConditionSetId: scsResp.GetSubjectConditionSet().GetId(),
+	})
+if err != nil {
+	log.Fatalf("Failed to create subject mapping: %v", err)
+}
+
+log.Printf("✅ Granted yourself access to department/marketing")
+```
+
+Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
+
+
+
+### Save TDF to a File
+
+In production applications, you'll often need to persist encrypted TDFs to disk for storage, transmission, or archival. This allows you to:
+
+- **Separate encryption from distribution**: Encrypt data once, then share the TDF file through your preferred channels (email, S3, SFTP, etc.)
+- **Enable offline access**: Recipients can decrypt TDFs without needing to re-fetch data from your application
+- **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
+
+```go
+import "os"
+
+// After encryption
+err = os.WriteFile("encrypted.tdf", encryptedBuffer.Bytes(), 0644)
+if err != nil {
+	log.Fatalf("Failed to save TDF: %v", err)
+}
+
+// Later, load from file
+tdfData, err := os.ReadFile("encrypted.tdf")
+if err != nil {
+	log.Fatalf("Failed to read TDF: %v", err)
+}
+
+tdfReader, err := client.LoadTDF(bytes.NewReader(tdfData))
+```
+
+### Handle Large Files with Streaming
+
+For large files, use file I/O instead of in-memory buffers:
+
+```go
+import "os"
+
+// Encrypt a large file
+inputFile, _ := os.Open("large-file.pdf")
+defer inputFile.Close()
+
+outputFile, _ := os.Create("large-file.pdf.tdf")
+defer outputFile.Close()
+
+_, err = client.CreateTDF(outputFile, inputFile,
+	sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+)
+```
+
+## Step 6: Putting it Together {#step-6-go}
+
+Here's a complete Go code example that brings all the pieces above together:
+
+<details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
+<summary>Create Attribute, Encrypt, Grant Access, Decrypt, Save File</summary>
+
+```go title="main.go"
+package main
+
+import (
+	"bytes"
+	"context"
+	"log"
+	"os"
+	"strings"
+
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	platformEndpoint := "https://platform.opentdf.local:8443"
+
+	// Create client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+		sdk.WithInsecurePlaintextConn(),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+
+	// 1. Create namespace (or use existing)
+	nsResp, err := client.Namespaces.CreateNamespace(context.Background(),
+		&namespaces.CreateNamespaceRequest{
+			Name: "opentdf.io",
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Namespace already exists, fetch it
+			listResp, listErr := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+			if listErr != nil {
+				log.Fatalf("Failed to list namespaces: %v", listErr)
+			}
+			for _, ns := range listResp.GetNamespaces() {
+				if ns.GetName() == "opentdf.io" {
+					nsResp = &namespaces.CreateNamespaceResponse{Namespace: ns}
+					log.Printf("✅ Using existing namespace: %s", ns.GetId())
+					break
+				}
+			}
+		} else {
+			log.Fatalf("Failed to create namespace: %v", err)
+		}
+	} else {
+		log.Printf("✅ Created namespace: %s", nsResp.GetNamespace().GetId())
+	}
+
+	// 2. Create attribute with marketing value (or use existing)
+	attrResp, err := client.Attributes.CreateAttribute(context.Background(),
+		&attributes.CreateAttributeRequest{
+			NamespaceId: nsResp.GetNamespace().GetId(),
+			Name:        "department",
+			Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+			Values:      []string{"marketing"},
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Attribute already exists, fetch it
+			listResp, listErr := client.Attributes.ListAttributes(context.Background(), &attributes.ListAttributesRequest{})
+			if listErr != nil {
+				log.Fatalf("Failed to list attributes: %v", listErr)
+			}
+			for _, attr := range listResp.GetAttributes() {
+				if attr.GetName() == "department" && attr.GetNamespace().GetId() == nsResp.GetNamespace().GetId() {
+					attrResp = &attributes.CreateAttributeResponse{Attribute: attr}
+					log.Printf("✅ Using existing attribute: %s", attr.GetName())
+					break
+				}
+			}
+		} else {
+			log.Fatalf("Failed to create attribute: %v", err)
+		}
+	} else {
+		log.Printf("✅ Created attribute: %s", attrResp.GetAttribute().GetName())
+	}
+
+	// 3. Encrypt data with the marketing attribute
+	plaintext := []byte("Sensitive marketing campaign data")
+	dataReader := bytes.NewReader(plaintext)
+	var encryptedBuffer bytes.Buffer
+
+	_, err = client.CreateTDF(
+		&encryptedBuffer,
+		dataReader,
+		sdk.WithDataAttributes("https://opentdf.io/attr/department/value/marketing"),
+		sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+	)
+	if err != nil {
+		log.Fatalf("Failed to encrypt: %v", err)
+	}
+	log.Printf("✅ Data encrypted with marketing attribute")
+
+	// 4. Save TDF to file
+	err = os.WriteFile("encrypted.tdf", encryptedBuffer.Bytes(), 0644)
+	if err != nil {
+		log.Fatalf("Failed to save TDF: %v", err)
+	}
+	log.Printf("✅ TDF saved to encrypted.tdf")
+
+	// 5. Grant yourself access to the marketing attribute
+	attributeValueId := attrResp.GetAttribute().GetValues()[0].GetId()
+
+	scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
+		&subjectmapping.CreateSubjectConditionSetRequest{
+			SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
+				SubjectSets: []*policy.SubjectSet{
+					{
+						ConditionGroups: []*policy.ConditionGroup{
+							{
+								BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+								Conditions: []*policy.Condition{
+									{
+										SubjectExternalSelectorValue: ".clientId",
+										Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+										SubjectExternalValues:        []string{"opentdf"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	if err != nil {
+		log.Fatalf("Failed to create subject condition set: %v", err)
+	}
+
+	_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(),
+		&subjectmapping.CreateSubjectMappingRequest{
+			AttributeValueId:              attributeValueId,
+			Actions:                       []*policy.Action{{Name: "read"}},
+			ExistingSubjectConditionSetId: scsResp.GetSubjectConditionSet().GetId(),
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Subject mapping already exists
+			log.Printf("✅ Subject mapping already exists for department/marketing")
+		} else {
+			log.Fatalf("Failed to create subject mapping: %v", err)
+		}
+	} else {
+		log.Printf("✅ Granted yourself access to department/marketing")
+	}
+
+	// 6. Load TDF from file
+	tdfData, err := os.ReadFile("encrypted.tdf")
+	if err != nil {
+		log.Fatalf("Failed to read TDF: %v", err)
+	}
+	log.Printf("✅ TDF loaded from encrypted.tdf")
+
+	// 7. Decrypt the data
+	tdfReader, err := client.LoadTDF(bytes.NewReader(tdfData))
+	if err != nil {
+		log.Fatalf("Failed to load TDF: %v", err)
+	}
+
+	var decryptedBuffer bytes.Buffer
+	_, err = tdfReader.WriteTo(&decryptedBuffer)
+	if err != nil {
+		log.Fatalf("Failed to decrypt: %v", err)
+	}
+
+	log.Printf("✅ Data successfully decrypted")
+	log.Printf("📤 Decrypted content: %s", decryptedBuffer.String())
+}
+```
+
+</details>
+
+## Troubleshooting
+
+Having issues? See the **[SDK Troubleshooting](/sdks/troubleshooting)** guide for solutions to common problems.

@@ -1,0 +1,231 @@
+---
+sidebar_position: 10
+title: Troubleshooting
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# SDK Troubleshooting
+
+This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
+
+## Authentication Failed
+
+**Error**: `rpc error: code = Unauthenticated` or `401 Unauthorized`
+
+**Solution**: Verify your credentials are correct (replace `opentdf` with your client ID and `secret` with your client secret):
+```bash
+otdfctl auth client-credentials opentdf secret
+```
+
+Check that Keycloak is running:
+```bash
+curl https://keycloak.opentdf.local:9443/
+```
+
+## Certificate Errors (SSL/TLS)
+
+**Error**: `x509: certificate signed by unknown authority` or `Failed to validate TLS certificates`
+
+**Cause**: The platform uses self-signed certificates for local development. During installation, the [setup script](/quickstart#step-2-install-opentdf) automatically imports the Caddy root CA certificate to your system keychain.
+
+**Solution**: If you're seeing certificate errors, the certificate import may have failed during installation. Try these steps:
+
+1. **Restart your browser and terminal** - The certificate import requires applications to reload their certificate stores. Close and reopen your browser and terminal windows.
+
+2. **Verify the certificate was imported** - During the [installation process](/quickstart#step-2-install-opentdf), you should have been prompted twice for your password:
+   - Once to add entries to /etc/hosts
+   - Once to import the SSL certificate
+
+   If you don't remember seeing both prompts, the certificate import may have failed.
+
+3. **Skip certificate verification** (quick workaround for CLI):
+   ```bash
+   export OTDFCTL_TLS_NO_VERIFY=true
+   ```
+   This allows `otdfctl` commands to work without validating certificates.
+
+4. **Manually trust the certificate** - For SDKs and applications, you'll need to properly trust the certificate. See the [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) guide for detailed steps on extracting and trusting the Caddy root CA certificate on macOS, Linux, or Windows.
+
+## Connection Refused
+
+**Error**: `connection refused` or `platform unreachable`
+
+**Solution**: Verify your platform is running:
+```bash
+curl https://platform.opentdf.local:8443/healthz
+```
+
+Should return: `{"status":"SERVING"}`
+
+If not running, restart the platform:
+```bash
+cd ~/.opentdf/platform
+docker compose up -d
+```
+
+## Import Errors
+
+**Go**: `package github.com/opentdf/platform/sdk is not in GOROOT`
+```bash
+go mod tidy
+go get github.com/opentdf/platform/sdk@latest
+```
+
+**Java**: `package io.opentdf.platform.sdk does not exist`
+```bash
+mvn clean install -U
+```
+
+**JavaScript**: `Cannot find module '@opentdf/client'`
+```bash
+npm install @opentdf/client
+```
+
+## Permission Denied / Insufficient Entitlements
+
+**Error**: When attempting to decrypt a TDF, you may see different error formats depending on your SDK:
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```
+reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://platform.opentdf.local:8443 }:tdf: rewrap request 403
+kao unwrap failed for split {https://platform.opentdf.local:8443 }: permission_denied: request error
+rpc error: code = PermissionDenied desc = forbidden]
+```
+
+**What to Look For**: The meaningful information is buried in the error. Look for:
+- `PermissionDenied` or `forbidden`
+- `rewrap request 403`
+- `permission_denied: request error`
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```
+io.opentdf.platform.sdk.SDK$SplitKeyException: splitKey.unable to reconstruct split key:
+{KeySplitStep{kas='https://platform.opentdf.local:8443/kas', splitID=''}=io.opentdf.platform.sdk.SDKException: error unwrapping key}
+error unwrapping key
+```
+
+**What to Look For**: The meaningful information is:
+- `splitKey.unable to reconstruct split key`
+- `error unwrapping key`
+- `SplitKeyException`
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```
+Error: splitKey.unable to reconstruct split key
+error unwrapping key
+```
+
+**What to Look For**: The meaningful information is:
+- `unable to reconstruct split key`
+- `error unwrapping key`
+
+</TabItem>
+</Tabs>
+
+These errors indicate an authorization failure, not a cryptographic or network issue.
+
+**Cause**: Your identity lacks the required entitlements (attribute values) to decrypt the TDF. This is ABAC (Attribute-Based Access Control) working correctly.
+
+For example, if you encrypted data with `https://opentdf.io/attr/department/value/marketing`, you need a subject mapping that grants you the `marketing` entitlement.
+
+**Solution**: Grant yourself (or the entity) entitlements by [creating a subject mapping](/sdks/policy#create-subject-mapping).
+
+**Quick fix using the CLI:**
+
+```bash
+# List your attributes to get the attribute value ID
+otdfctl policy attributes list --namespace opentdf.io
+
+# Create a subject condition set (if needed)
+otdfctl policy subject-condition-sets create \
+    --subject-set '[".clientId == \"opentdf\""]' \
+    --label "OpenTDF Service Account"
+
+export SUBJECT_CONDITION_SET_ID=<id-from-output>
+
+# Create the subject mapping to grant the entitlement
+otdfctl policy subject-mappings create \
+    --action read \
+    --attribute-value-fqn https://opentdf.io/attr/department/value/marketing \
+    --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+```
+
+## Resource Already Exists
+
+**Error**: `already_exists: resource unique field violation`
+
+**Example**:
+```
+2026/02/02 15:45:14 Failed to create namespace: already_exists: resource unique field violation
+exit status 1
+```
+
+**Cause**: You're trying to create a resource (namespace, attribute, subject mapping, etc.) that already exists on the platform. This commonly happens when running the quickstart examples multiple times.
+
+**Solution**: This is expected behavior when re-running examples. You have several options:
+
+1. **Handle the error in your code** (recommended): The complete examples in the language-specific quickstart guides show how to handle `already_exists` errors gracefully by catching the error and fetching the existing resource instead.
+
+2. **Deactivate or delete the existing resource**:
+
+   :::tip Deactivate vs Delete
+   In production environments, **deactivate** attributes instead of deleting them to preserve access to historical TDFs. Deletion is an unsafe operation that permanently removes the resource and can break decryption of existing TDFs.
+
+   Use **delete** only in development/testing contexts when you need to completely remove test data.
+   :::
+
+   ```bash
+   # List attributes to find the ID
+   otdfctl policy attributes list
+
+   # Deactivate the attribute (recommended - preserves historical TDFs)
+   otdfctl policy attributes deactivate --id <attribute-id>
+
+   # OR delete the attribute (development/testing only - unsafe operation)
+   otdfctl policy attributes unsafe delete --id <attribute-id>
+   ```
+
+3. **Do nothing**: In some cases, failing when a resource already exists is the correct behavior. Not all code should be idempotent - sometimes you want to be alerted when attempting to create a duplicate resource.
+
+## Resource Not Found
+
+**Error**: `not_found: resource not found` or `attribute not found`
+
+**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform.
+
+**Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
+
+**Quick fix using the CLI:**
+
+```bash
+# Get the namespace ID for opentdf.io
+# (Namespace should exist from platform initialization - see /quickstart)
+export NAMESPACE_ID=$(otdfctl policy attributes list --json | jq -r '.attributes[0].namespace.id // empty')
+
+# Create the attribute definition with initial values
+otdfctl policy attributes create \
+  --name department \
+  --namespace $NAMESPACE_ID \
+  --rule ANY_OF \
+  --value finance \
+  --value engineering \
+  --value marketing
+```
+
+Alternatively, to add values after creating the attribute:
+
+```bash
+# Get the attribute ID for 'department' in the 'opentdf.io' namespace
+export DEPT_ATTRIBUTE_ID=$(otdfctl policy attributes list --json | jq -r '[.attributes[] | select(.name=="department" and .namespace.name=="opentdf.io")][0].id')
+
+# Add individual value(s)
+otdfctl policy attributes values create --attribute-id $DEPT_ATTRIBUTE_ID --value marketing
+```

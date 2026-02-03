@@ -1,0 +1,790 @@
+---
+sidebar_position: 2
+title: Java
+unlisted: true
+---
+
+# Java SDK Quickstart
+
+:::tip Back to SDK Quickstart
+This guide covers the **Java SDK** implementation. For other languages or general information, see the [SDK Quickstart](/sdks/quickstart) page.
+:::
+
+## Prerequisites
+
+- Java 17 or later
+- Maven or Gradle
+- Your OpenTDF platform running locally (from Getting Started guide)
+
+## Step 1: Create a New Maven Project {#step-1-java}
+
+Create a new directory with a `pom.xml` file:
+
+```bash
+mkdir opentdf-quickstart
+cd opentdf-quickstart
+```
+
+Create `pom.xml`:
+
+```xml title="pom.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.opentdf</groupId>
+    <artifactId>opentdf-quickstart</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <grpc.version>1.68.0</grpc.version>
+        <protobuf.version>4.29.2</protobuf.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.opentdf.platform</groupId>
+            <artifactId>sdk</artifactId>
+            <version>0.12.0</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+## Step 2: Install Dependencies {#step-2-java}
+
+```bash
+mvn clean install
+```
+
+This will download the OpenTDF Java SDK and its dependencies (including Bouncy Castle for cryptography).
+
+## Step 3: Create Your Application {#step-3-java}
+
+Create the directory structure:
+
+```bash
+mkdir -p src/main/java/io/opentdf/quickstart
+```
+
+### Java Implementation Code
+
+Create `src/main/java/io/opentdf/quickstart/QuickstartApp.java`:
+
+```java title="src/main/java/io/opentdf/quickstart/QuickstartApp.java"
+package io.opentdf.quickstart;
+
+import io.opentdf.platform.sdk.*;
+import nl.altindag.ssl.SSLFactory;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.channels.FileChannel;
+
+public class QuickstartApp {
+    public static void main(String[] args) {
+        try {
+            System.out.println("🚀 Starting OpenTDF SDK Quickstart...");
+
+            String clientId = "opentdf";
+            String clientSecret = "secret";
+            String platformEndpoint = "https://platform.opentdf.local:8443";
+
+            System.out.println("📡 Connecting to platform: " + platformEndpoint);
+
+            // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+            System.out.println("🔓 Creating SSL factory for self-signed certificates...");
+            SSLFactory sslFactory = SSLFactory.builder()
+                    .withTrustingAllCertificatesWithoutValidation()
+                    .build();
+
+            // Create SDK client with client credentials (try-with-resources ensures proper cleanup)
+            System.out.println("🔐 Initializing SDK client with client credentials...");
+            SDKBuilder builder = SDKBuilder.newBuilder();
+            try (SDK sdk = builder.platformEndpoint(platformEndpoint)
+                    .clientSecret(clientId, clientSecret)
+                    .sslFactory(sslFactory)
+                    .build()) {
+
+                System.out.println("✅ SDK client initialized successfully");
+
+                // Encrypt data
+                System.out.println("\n📝 Encrypting sensitive data...");
+                String sensitiveData = "Hello from the OpenTDF Java SDK! This data is encrypted.";
+
+                var kasInfo = new Config.KASInfo();
+                kasInfo.URL = platformEndpoint + "/kas";
+
+                var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+
+                var inputStream = new ByteArrayInputStream(sensitiveData.getBytes(StandardCharsets.UTF_8));
+                var outputStream = new ByteArrayOutputStream();
+
+                System.out.println("🔒 Creating TDF...");
+                sdk.createTDF(inputStream, outputStream, tdfConfig);
+
+                System.out.println("✅ Data successfully encrypted");
+                System.out.println("📊 Encrypted TDF size: " + outputStream.size() + " bytes");
+
+                // Decrypt data
+                System.out.println("\n🔓 Decrypting TDF...");
+                byte[] encryptedData = outputStream.toByteArray();
+
+                // Save to temporary file for decryption
+                Path tempFile = Files.createTempFile("opentdf-quickstart", ".tdf");
+                try {
+                    Files.write(tempFile, encryptedData);
+
+                    try (FileChannel fileChannel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
+                        var readerConfig = Config.newTDFReaderConfig();
+                        var reader = sdk.loadTDF(fileChannel, readerConfig);
+                        var decryptedOutput = new ByteArrayOutputStream();
+                        reader.readPayload(decryptedOutput);
+
+                        String decryptedContent = new String(decryptedOutput.toByteArray(), StandardCharsets.UTF_8);
+                        System.out.println("✅ Data successfully decrypted");
+                        System.out.println("📤 Decrypted content:\n\n" + decryptedContent + "\n");
+                    }
+                } finally {
+                    // Clean up temporary file
+                    Files.deleteIfExists(tempFile);
+                }
+
+                System.out.println("🎉 Quickstart complete!");
+            } // SDK auto-closes here, shutting down gRPC connections
+        } catch (Exception e) {
+            System.err.println("❌ Error occurred: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        // Force JVM exit (SDK background threads may not shut down immediately)
+        System.exit(0);
+    }
+}
+```
+
+## Step 4: Run Your Application {#step-4-java}
+
+```bash
+mvn compile exec:java -Dexec.mainClass="io.opentdf.quickstart.QuickstartApp"
+```
+
+<details>
+<summary>Expected output</summary>
+
+```console
+🚀 Starting OpenTDF SDK Quickstart...
+📡 Connecting to platform: https://platform.opentdf.local:8443
+🔐 Initializing SDK client with client credentials...
+✅ SDK client initialized successfully
+
+📝 Encrypting sensitive data...
+🔒 Creating TDF...
+✅ Data successfully encrypted
+📊 Encrypted TDF size: 1234 bytes
+
+🔓 Decrypting TDF...
+✅ Data successfully decrypted
+📤 Decrypted content:
+
+Hello from the OpenTDF Java SDK! This data is encrypted.
+
+🎉 Quickstart complete!
+```
+
+</details>
+
+---
+
+## Step 5: Add ABAC Features {#step-5-java}
+
+:::tip Java-Specific Examples
+The following examples are specific to the **Java SDK**.
+:::
+
+Now that you have basic encryption working, you can add attribute-based access control to your application.
+
+If you want to follow along, you can add the code to your quickstart file as we go. Otherwise, a [complete version is available below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt).
+
+:::info More ABAC Examples
+For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
+:::
+
+
+### Create a New Attribute Value
+
+First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
+
+```java
+import io.opentdf.platform.policy.attributes.GetAttributeRequest;
+import io.opentdf.platform.policy.attributes.GetAttributeResponse;
+import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
+import com.connectrpc.ResponseMessageKt;
+import java.util.Collections;
+
+// Get the existing department attribute
+String attrFqn = "https://opentdf.io/attr/department";
+GetAttributeResponse getAttrResponse = ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .attributes()
+        .getAttributeBlocking(
+            GetAttributeRequest.newBuilder()
+                .setFqn(attrFqn)
+                .build(),
+            Collections.emptyMap())
+        .execute());
+
+System.out.println("✅ Found existing attribute: " + getAttrResponse.getAttribute().getName());
+
+// Check if "marketing" value already exists
+String targetValue = "marketing";
+boolean valueExists = false;
+for (var value : getAttrResponse.getAttribute().getValuesList()) {
+    if (targetValue.equals(value.getValue())) {
+        valueExists = true;
+        break;
+    }
+}
+
+if (!valueExists) {
+    // Add the "marketing" value to the existing attribute
+    var createValueRequest = CreateAttributeValueRequest.newBuilder()
+        .setAttributeId(getAttrResponse.getAttribute().getId())
+        .setValue(targetValue)
+        .build();
+
+    ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .attributes()
+            .createAttributeValueBlocking(createValueRequest, Collections.emptyMap())
+            .execute());
+
+    System.out.println("✅ Added '" + targetValue + "' value to department attribute");
+} else {
+    System.out.println("✅ Attribute 'department' already has '" + targetValue + "' value");
+}
+
+System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/" + targetValue);
+```
+
+:::warning
+If you get a [resource not found error](/sdks/troubleshooting#resource-not-found), you may need to create the "department" attribute, along with the namespace:
+:::
+
+<details>
+<summary>Show full code for creating namespace and attribute</summary>
+
+```java
+import io.opentdf.platform.policy.AttributeRuleTypeEnum;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
+import io.opentdf.platform.policy.namespaces.GetNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.GetNamespaceResponse;
+import io.opentdf.platform.policy.attributes.CreateAttributeRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeResponse;
+import io.opentdf.platform.policy.attributes.GetAttributeRequest;
+import io.opentdf.platform.policy.attributes.GetAttributeResponse;
+import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
+import com.connectrpc.ResponseMessageKt;
+import java.util.Arrays;
+import java.util.Collections;
+
+// Get or create the namespace
+CreateNamespaceResponse nsResponse;
+try {
+    // Try to get existing namespace
+    GetNamespaceResponse getNamespaceResponse = ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .namespaces()
+            .getNamespaceBlocking(
+                GetNamespaceRequest.newBuilder()
+                    .setFqn("https://opentdf.io")
+                    .build(),
+                Collections.emptyMap())
+            .execute());
+
+    nsResponse = CreateNamespaceResponse.newBuilder()
+        .setNamespace(getNamespaceResponse.getNamespace())
+        .build();
+    System.out.println("✅ Using existing namespace: " + getNamespaceResponse.getNamespace().getId());
+
+} catch (Exception e) {
+    if (e.getMessage() != null && e.getMessage().contains("not_found")) {
+        // Namespace doesn't exist, create it
+        nsResponse = ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .namespaces()
+                .createNamespaceBlocking(
+                    CreateNamespaceRequest.newBuilder()
+                        .setName("opentdf.io")
+                        .build(),
+                    Collections.emptyMap())
+                .execute());
+        System.out.println("✅ Created namespace: " + nsResponse.getNamespace().getId());
+    } else {
+        throw e;
+    }
+}
+
+// Get or create the department attribute, and ensure it has the "marketing" value
+String attrFqn = "https://opentdf.io/attr/department";
+try {
+    // Try to get the existing attribute
+    GetAttributeResponse getAttrResponse = ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .attributes()
+            .getAttributeBlocking(
+                GetAttributeRequest.newBuilder()
+                    .setFqn(attrFqn)
+                    .build(),
+                Collections.emptyMap())
+            .execute());
+
+    System.out.println("✅ Found existing attribute: " + getAttrResponse.getAttribute().getName());
+
+    // Check if "marketing" value already exists
+    String targetValue = "marketing";
+    boolean valueExists = false;
+    for (var value : getAttrResponse.getAttribute().getValuesList()) {
+        if (targetValue.equals(value.getValue())) {
+            valueExists = true;
+            break;
+        }
+    }
+
+    if (!valueExists) {
+        // Add the value to the existing attribute
+        var createValueRequest = CreateAttributeValueRequest.newBuilder()
+            .setAttributeId(getAttrResponse.getAttribute().getId())
+            .setValue(targetValue)
+            .build();
+
+        ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .attributes()
+                .createAttributeValueBlocking(createValueRequest, Collections.emptyMap())
+                .execute());
+
+        System.out.println("✅ Added '" + targetValue + "' value to department attribute");
+    } else {
+        System.out.println("✅ Attribute 'department' already has '" + targetValue + "' value");
+    }
+
+} catch (Exception e) {
+    if (e.getMessage() != null && e.getMessage().contains("not_found")) {
+        // Attribute doesn't exist, create it with the value
+        String targetValue = "marketing";
+        var attrRequest = CreateAttributeRequest.newBuilder()
+            .setNamespaceId(nsResponse.getNamespace().getId())
+            .setName("department")
+            .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
+            .addAllValues(Arrays.asList(targetValue))
+            .build();
+
+        CreateAttributeResponse createAttrResponse = ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .attributes()
+                .createAttributeBlocking(attrRequest, Collections.emptyMap())
+                .execute());
+        System.out.println("✅ Created attribute: " + createAttrResponse.getAttribute().getName());
+    } else {
+        throw e;
+    }
+}
+
+String targetValue = "marketing";
+System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/" + targetValue);
+```
+
+</details>
+
+### Add Attributes for Access Control
+
+Now that you've created the attribute, update your TDF config to include the attribute for access control:
+
+```java
+var tdfConfig = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withDataAttributes("https://opentdf.io/attr/department/value/marketing")
+);
+```
+
+:::tip
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a [permission denied error](/sdks/troubleshooting#permission-denied--insufficient-entitlements). Try it now!
+:::
+
+### Grant Yourself Access to the Attribute
+
+To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+```java
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.Condition;
+import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
+import io.opentdf.platform.policy.ConditionGroup;
+import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.SubjectSet;
+import io.opentdf.platform.policy.subjectmapping.*;
+
+// Get the attribute value ID from the attribute you fetched
+String attributeValueId = getAttrResponse.getAttribute().getValues(0).getId();
+
+// Create subject condition set that matches your identity
+var condition = Condition.newBuilder()
+    .setSubjectExternalSelectorValue(".clientId")
+    .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+    .addSubjectExternalValues("opentdf")
+    .build();
+
+var conditionGroup = ConditionGroup.newBuilder()
+    .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+    .addConditions(condition)
+    .build();
+
+var subjectSet = SubjectSet.newBuilder()
+    .addConditionGroups(conditionGroup)
+    .build();
+
+var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
+    .setSubjectConditionSet(
+        SubjectConditionSetCreate.newBuilder()
+            .addSubjectSets(subjectSet)
+            .build())
+    .build();
+
+var scsResponse = ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .subjectMappings()
+        .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
+        .execute());
+
+// Create the subject mapping to grant yourself the entitlement
+var smRequest = CreateSubjectMappingRequest.newBuilder()
+    .setAttributeValueId(attributeValueId)
+    .addActions(Action.newBuilder().setName("read").build())
+    .setExistingSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+    .build();
+
+ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .subjectMappings()
+        .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
+        .execute());
+
+System.out.println("✅ Granted yourself access to department/marketing");
+```
+
+Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
+
+
+### Save TDF to a File
+
+In production applications, you'll often need to persist encrypted TDFs to disk for storage, transmission, or archival. This allows you to:
+
+- **Separate encryption from distribution**: Encrypt data once, then share the TDF file through your preferred channels (email, S3, SFTP, etc.)
+- **Enable offline access**: Recipients can decrypt TDFs without needing to re-fetch data from your application
+- **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
+
+```java
+import java.io.FileOutputStream;
+
+// After creating TDF config
+try (FileOutputStream fos = new FileOutputStream("encrypted.tdf")) {
+    sdk.createTDF(inputStream, fos, tdfConfig);
+}
+
+// Later, decrypt from file
+try (FileChannel fileChannel = FileChannel.open(
+        Path.of("encrypted.tdf"),
+        StandardOpenOption.READ)) {
+    var readerConfig = Config.newTDFReaderConfig();
+    var reader = sdk.loadTDF(fileChannel, readerConfig);
+    var decryptedOutput = new ByteArrayOutputStream();
+    reader.readPayload(decryptedOutput);
+
+    String decryptedContent = new String(decryptedOutput.toByteArray(), StandardCharsets.UTF_8);
+    System.out.println("✅ Data successfully decrypted");
+    System.out.println("📤 Decrypted content: " + decryptedContent);
+}
+```
+
+### Handle Large Files with Streaming
+
+```java
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
+// Encrypt a large file
+try (FileChannel inputChannel = FileChannel.open(
+        Path.of("large-file.pdf"), StandardOpenOption.READ);
+     FileChannel outputChannel = FileChannel.open(
+        Path.of("large-file.pdf.tdf"),
+        StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+
+    sdk.createTDF(inputChannel, outputChannel, tdfConfig);
+}
+```
+
+## Step 6: Putting it Together {#step-6-java}
+
+Here's a complete Java code example that brings all the pieces together:
+
+<details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
+<summary>Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
+
+```java title="src/main/java/io/opentdf/quickstart/QuickstartApp.java"
+package io.opentdf.quickstart;
+
+import io.opentdf.platform.sdk.*;
+import nl.altindag.ssl.SSLFactory;
+import io.opentdf.platform.policy.AttributeRuleTypeEnum;
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.Condition;
+import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
+import io.opentdf.platform.policy.ConditionGroup;
+import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.SubjectSet;
+import io.opentdf.platform.policy.Namespace;
+import io.opentdf.platform.policy.Attribute;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
+import io.opentdf.platform.policy.namespaces.ListNamespacesRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeResponse;
+import io.opentdf.platform.policy.attributes.ListAttributesRequest;
+import io.opentdf.platform.policy.subjectmapping.*;
+import com.connectrpc.ResponseMessageKt;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+
+public class QuickstartApp {
+    public static void main(String[] args) throws Exception {
+        String clientId = "opentdf";
+        String clientSecret = "secret";
+        String platformEndpoint = "https://platform.opentdf.local:8443";
+
+        // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+        SSLFactory sslFactory = SSLFactory.builder()
+                .withTrustingAllCertificatesWithoutValidation()
+                .build();
+
+        // Create SDK client (try-with-resources ensures proper cleanup)
+        try (SDK sdk = new SDKBuilder()
+            .platformEndpoint(platformEndpoint)
+            .clientSecret(clientId, clientSecret)
+            .sslFactory(sslFactory)
+            .build()) {
+
+            var kasInfo = new Config.KASInfo();
+            kasInfo.URL = platformEndpoint + "/kas";
+
+            // 1. Create namespace (or use existing)
+            CreateNamespaceResponse nsResponse;
+            try {
+                    nsResponse = ResponseMessageKt.getOrThrow(
+                        sdk.getServices()
+                            .namespaces()
+                            .createNamespaceBlocking(
+                                CreateNamespaceRequest.newBuilder()
+                                    .setName("opentdf.io")
+                                    .build(),
+                                Collections.emptyMap())
+                            .execute());
+                    System.out.println("✅ Created namespace: " + nsResponse.getNamespace().getId());
+                } catch (Exception e) {
+                    if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
+                        // Namespace already exists, fetch it
+                        var listResponse = ResponseMessageKt.getOrThrow(
+                            sdk.getServices()
+                                .namespaces()
+                                .listNamespacesBlocking(
+                                    ListNamespacesRequest.newBuilder().build(),
+                                    Collections.emptyMap())
+                                .execute());
+                        Namespace existingNs = null;
+                        for (Namespace ns : listResponse.getNamespacesList()) {
+                            if ("opentdf.io".equals(ns.getName())) {
+                                existingNs = ns;
+                                break;
+                            }
+                        }
+                        nsResponse = CreateNamespaceResponse.newBuilder()
+                            .setNamespace(existingNs)
+                            .build();
+                        System.out.println("✅ Using existing namespace: " + existingNs.getId());
+                    } else {
+                        throw e;
+                    }
+                }
+
+                // 2. Create attribute with marketing value (or use existing)
+                var attrRequest = CreateAttributeRequest.newBuilder()
+                    .setNamespaceId(nsResponse.getNamespace().getId())
+                    .setName("department")
+                    .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
+                    .addAllValues(Arrays.asList("marketing"))
+                    .build();
+
+                CreateAttributeResponse attrResponse;
+                try {
+                    attrResponse = ResponseMessageKt.getOrThrow(
+                        sdk.getServices()
+                            .attributes()
+                            .createAttributeBlocking(attrRequest, Collections.emptyMap())
+                            .execute());
+                    System.out.println("✅ Created attribute: " + attrResponse.getAttribute().getName());
+                } catch (Exception e) {
+                    if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
+                        // Attribute already exists, fetch it
+                        var listResponse = ResponseMessageKt.getOrThrow(
+                            sdk.getServices()
+                                .attributes()
+                                .listAttributesBlocking(
+                                    ListAttributesRequest.newBuilder().build(),
+                                    Collections.emptyMap())
+                                .execute());
+                        Attribute existingAttr = null;
+                        for (Attribute attr : listResponse.getAttributesList()) {
+                            if ("department".equals(attr.getName()) &&
+                                attr.getNamespace().getId().equals(nsResponse.getNamespace().getId())) {
+                                existingAttr = attr;
+                                break;
+                            }
+                        }
+                        attrResponse = CreateAttributeResponse.newBuilder()
+                            .setAttribute(existingAttr)
+                            .build();
+                        System.out.println("✅ Using existing attribute: " + existingAttr.getName());
+                    } else {
+                        throw e;
+                    }
+                }
+
+                // 3. Encrypt data with the marketing attribute
+                String plaintext = "Sensitive marketing campaign data";
+                var inputStream = new ByteArrayInputStream(plaintext.getBytes(StandardCharsets.UTF_8));
+                var outputStream = new ByteArrayOutputStream();
+
+                var tdfConfig = Config.newTDFConfig(
+                    Config.withKasInformation(kasInfo),
+                    Config.withDataAttributes("https://opentdf.io/attr/department/value/marketing")
+                );
+
+                sdk.createTDF(inputStream, outputStream, tdfConfig);
+                System.out.println("✅ Data encrypted with marketing attribute");
+
+                // 4. Save TDF to file
+                try (var fos = new FileOutputStream("encrypted.tdf")) {
+                    fos.write(outputStream.toByteArray());
+                }
+                System.out.println("✅ TDF saved to encrypted.tdf");
+
+                // 5. Grant yourself access to the marketing attribute
+                String attributeValueId = attrResponse.getAttribute().getValues(0).getId();
+
+                var condition = Condition.newBuilder()
+                    .setSubjectExternalSelectorValue(".clientId")
+                    .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+                    .addSubjectExternalValues("opentdf")
+                    .build();
+
+                var conditionGroup = ConditionGroup.newBuilder()
+                    .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+                    .addConditions(condition)
+                    .build();
+
+                var subjectSet = SubjectSet.newBuilder()
+                    .addConditionGroups(conditionGroup)
+                    .build();
+
+                var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
+                    .setSubjectConditionSet(
+                        SubjectConditionSetCreate.newBuilder()
+                            .addSubjectSets(subjectSet)
+                            .build())
+                    .build();
+
+                var scsResponse = ResponseMessageKt.getOrThrow(
+                    sdk.getServices()
+                        .subjectMappings()
+                        .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
+                        .execute());
+
+                var smRequest = CreateSubjectMappingRequest.newBuilder()
+                    .setAttributeValueId(attributeValueId)
+                    .addActions(Action.newBuilder().setName("read").build())
+                    .setExistingSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+                    .build();
+
+                try {
+                    ResponseMessageKt.getOrThrow(
+                        sdk.getServices()
+                            .subjectMappings()
+                            .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
+                            .execute());
+                    System.out.println("✅ Granted yourself access to department/marketing");
+                } catch (Exception e) {
+                    if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
+                        System.out.println("✅ Subject mapping already exists for department/marketing");
+                    } else {
+                        throw e;
+                    }
+                }
+
+                // 6. Load TDF from file
+                byte[] tdfData = Files.readAllBytes(Path.of("encrypted.tdf"));
+                System.out.println("✅ TDF loaded from encrypted.tdf");
+
+                // 7. Decrypt the data
+                var decryptedStream = new ByteArrayOutputStream();
+                var reader = sdk.loadTDF(new ByteArrayInputStream(tdfData));
+                reader.readPayload(decryptedStream);
+
+                    System.out.println("✅ Data successfully decrypted");
+                    System.out.println("📤 Decrypted content: " + decryptedStream.toString(StandardCharsets.UTF_8));
+                } // SDK auto-closes here, shutting down gRPC connections
+
+            // Force JVM exit (SDK background threads may not shut down immediately)
+            System.exit(0);
+        }
+}
+```
+
+</details>
+
+## Troubleshooting
+
+Having issues? See the **[SDK Troubleshooting](/sdks/troubleshooting)** guide for solutions to common problems.
