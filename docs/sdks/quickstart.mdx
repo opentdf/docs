@@ -1,0 +1,1862 @@
+---
+sidebar_position: 2
+title: SDK Quickstart
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# SDK Quickstart
+
+This guide shows you how to build a simple application using the OpenTDF SDKs to encrypt and decrypt data. You'll create a lightweight client that connects to your local OpenTDF platform and demonstrates the core SDK functionality.
+
+:::tip Prerequisites
+Complete the [Getting Started](/quickstart) guide first to set up your local OpenTDF platform. This quickstart assumes:
+- Platform running at `https://platform.opentdf.local:8443`
+- Keycloak running at `https://keycloak.opentdf.local:9443`
+- Client credentials: `opentdf` / `secret`
+:::
+
+:::note Time Commitment
+This quickstart takes **15-20 minutes** to complete.
+:::
+
+## What You'll Build
+
+A simple application that:
+1. Connects to your local OpenTDF platform
+2. Authenticates using client credentials
+3. Encrypts sensitive data into a TDF file
+4. Decrypts the TDF file back to plaintext
+
+## Choose Your SDK
+
+OpenTDF provides native SDKs in three languages. **Use the tabs below to select your language** - all examples are complete and ready to run.
+
+:::note
+Each tab contains a complete, working example for that specific SDK. The code and commands are different for each language.
+:::
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+## Go SDK Implementation
+
+:::info Language: Go
+This section covers the **Go SDK** implementation. Switch tabs above to see Java or JavaScript examples.
+:::
+
+### Prerequisites
+
+- Go 1.21 or later
+- Your OpenTDF platform running locally (from Getting Started guide)
+
+### Step 1: Create a New Project
+
+Create a new directory and initialize a Go module:
+
+```bash
+mkdir opentdf-quickstart
+cd opentdf-quickstart
+go mod init opentdf-quickstart
+```
+
+### Step 2: Install the SDK
+
+```bash
+go get github.com/opentdf/platform/sdk@latest
+```
+
+Expected output:
+> ```console
+> go: downloading github.com/opentdf/platform/sdk v0.x.x
+> go: added github.com/opentdf/platform/sdk v0.x.x
+> ```
+
+### Step 3: Create Your Application
+
+#### Go Implementation Code
+
+Create a file named `main.go`:
+
+```go title="main.go"
+package main
+
+import (
+	"bytes"
+	"log"
+	"strings"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	log.Println("🚀 Starting OpenTDF SDK Quickstart...")
+
+	platformEndpoint := "https://platform.opentdf.local:8443"
+	log.Printf("📡 Connecting to platform: %s", platformEndpoint)
+
+	// Create a new SDK client with client credentials
+	log.Println("🔐 Initializing SDK client with client credentials...")
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+		sdk.WithInsecurePlaintextConn(), // Only for local development!
+	)
+
+	if err != nil {
+		log.Fatalf("❌ Client initialization failed: %v", err)
+	}
+
+	log.Println("✅ SDK client initialized successfully")
+
+	// Encrypt data
+	log.Println("\n📝 Encrypting sensitive data...")
+	sensitiveData := "Hello from the OpenTDF Go SDK! This data is encrypted."
+	dataReader := strings.NewReader(sensitiveData)
+	encryptedBuffer := &bytes.Buffer{}
+
+	log.Println("🔒 Creating TDF...")
+	_, err = client.CreateTDF(
+		encryptedBuffer,
+		dataReader,
+		sdk.WithKasInformation(
+			sdk.KASInfo{
+				URL: platformEndpoint,
+			},
+		),
+	)
+
+	if err != nil {
+		log.Fatalf("❌ Encryption failed: %v", err)
+	}
+
+	log.Println("✅ Data successfully encrypted")
+	log.Printf("📊 Encrypted TDF size: %d bytes", encryptedBuffer.Len())
+
+	// Decrypt data
+	log.Println("\n🔓 Decrypting TDF...")
+	tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBuffer.Bytes()))
+	if err != nil {
+		log.Fatalf("❌ Decryption failed: %v", err)
+	}
+
+	var decryptedBuffer bytes.Buffer
+	if _, err = tdfReader.WriteTo(&decryptedBuffer); err != nil {
+		log.Fatalf("❌ Failed to read decrypted data: %v", err)
+	}
+
+	log.Println("✅ Data successfully decrypted")
+	log.Printf("📤 Decrypted content:\n\n%s\n", decryptedBuffer.String())
+
+	log.Println("\n🎉 Quickstart complete!")
+}
+```
+
+### Step 4: Run Your Application
+
+```bash
+go run main.go
+```
+
+<details>
+<summary>Expected output</summary>
+
+```console
+2026/02/02 14:30:00 🚀 Starting OpenTDF SDK Quickstart...
+2026/02/02 14:30:00 📡 Connecting to platform: https://platform.opentdf.local:8443
+2026/02/02 14:30:00 🔐 Initializing SDK client with client credentials...
+2026/02/02 14:30:01 ✅ SDK client initialized successfully
+
+2026/02/02 14:30:01 📝 Encrypting sensitive data...
+2026/02/02 14:30:01 🔒 Creating TDF...
+2026/02/02 14:30:01 ✅ Data successfully encrypted
+2026/02/02 14:30:01 📊 Encrypted TDF size: 1234 bytes
+
+2026/02/02 14:30:01 🔓 Decrypting TDF...
+2026/02/02 14:30:02 ✅ Data successfully decrypted
+2026/02/02 14:30:02 📤 Decrypted content:
+
+Hello from the OpenTDF Go SDK! This data is encrypted.
+
+2026/02/02 14:30:02 🎉 Quickstart complete!
+```
+
+</details>
+
+---
+
+### Next Steps with Go SDK
+
+:::tip Go-Specific Examples
+The following examples are specific to the **Go SDK**.
+:::
+
+Now that you have basic encryption working, you can add attribute-based access control to your application.
+
+If you want to follow along, you can add the code to your quickstart file as we go. Otherwise, a [complete version is available below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt).
+
+:::info More ABAC Examples
+For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
+:::
+
+
+**Create an Attribute**
+
+First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+
+```go
+import (
+	"context"
+	"strings"
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+)
+
+// Create the namespace (or use existing)
+nsResp, err := client.Namespaces.CreateNamespace(context.Background(),
+	&namespaces.CreateNamespaceRequest{
+		Name: "opentdf.io",
+	})
+if err != nil {
+	if strings.Contains(err.Error(), "already_exists") {
+		// Namespace already exists, fetch it
+		listResp, listErr := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+		if listErr != nil {
+			log.Fatalf("Failed to list namespaces: %v", listErr)
+		}
+		for _, ns := range listResp.GetNamespaces() {
+			if ns.GetName() == "opentdf.io" {
+				nsResp = &namespaces.CreateNamespaceResponse{Namespace: ns}
+				log.Printf("Using existing namespace: %s", ns.GetId())
+				break
+			}
+		}
+	} else {
+		log.Fatalf("Failed to create namespace: %v", err)
+	}
+} else {
+	log.Printf("Created namespace: %s", nsResp.GetNamespace().GetId())
+}
+
+// Create the attribute with the marketing value
+attrResp, err := client.Attributes.CreateAttribute(context.Background(),
+	&attributes.CreateAttributeRequest{
+		NamespaceId: nsResp.GetNamespace().GetId(),
+		Name:        "department",
+		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+		Values:      []string{"marketing"},
+	})
+if err != nil {
+	log.Fatalf("Failed to create attribute: %v", err)
+}
+
+log.Printf("Created attribute: %s", attrResp.GetAttribute().GetName())
+log.Printf("Full attribute FQN: https://opentdf.io/attr/department/value/marketing")
+```
+
+:::note
+You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
+:::
+
+**Add Attributes for Access Control**
+
+Now that you've created the attribute, update your `CreateTDF` call to include the attribute for access control:
+
+```go
+_, err = client.CreateTDF(
+	encryptedBuffer,
+	dataReader,
+	sdk.WithDataAttributes("https://opentdf.io/attr/department/value/marketing"),
+	sdk.WithKasInformation(
+		sdk.KASInfo{
+			URL: platformEndpoint,
+		},
+	),
+)
+```
+
+:::tip
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+:::
+
+**Grant Yourself Access to the Attribute**
+
+To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
+
+// Get the attribute value ID from the attribute you created
+attributeValueId := attrResp.GetAttribute().GetValues()[0].GetId()
+
+// Create a subject condition set that matches your identity
+scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
+	&subjectmapping.CreateSubjectConditionSetRequest{
+		SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
+			SubjectSets: []*policy.SubjectSet{
+				{
+					ConditionGroups: []*policy.ConditionGroup{
+						{
+							BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+							Conditions: []*policy.Condition{
+								{
+									SubjectExternalSelectorValue: ".clientId",
+									Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+									SubjectExternalValues:        []string{"opentdf"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+if err != nil {
+	log.Fatalf("Failed to create subject condition set: %v", err)
+}
+
+// Create the subject mapping to grant yourself the entitlement
+_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(),
+	&subjectmapping.CreateSubjectMappingRequest{
+		AttributeValueId:              attributeValueId,
+		Actions:                       []*policy.Action{{Name: "read"}},
+		ExistingSubjectConditionSetId: scsResp.GetSubjectConditionSet().GetId(),
+	})
+if err != nil {
+	log.Fatalf("Failed to create subject mapping: %v", err)
+}
+
+log.Printf("✅ Granted yourself access to department/marketing")
+```
+
+Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+
+**Save TDF to a File**
+
+```go
+import "os"
+
+// After encryption
+err = os.WriteFile("encrypted.tdf", encryptedBuffer.Bytes(), 0644)
+if err != nil {
+	log.Fatalf("Failed to save TDF: %v", err)
+}
+
+// Later, load from file
+tdfData, err := os.ReadFile("encrypted.tdf")
+if err != nil {
+	log.Fatalf("Failed to read TDF: %v", err)
+}
+
+tdfReader, err := client.LoadTDF(bytes.NewReader(tdfData))
+```
+
+**Handle Large Files with Streaming**
+
+For large files, use file I/O instead of in-memory buffers:
+
+```go
+import "os"
+
+// Encrypt a large file
+inputFile, _ := os.Open("large-file.pdf")
+defer inputFile.Close()
+
+outputFile, _ := os.Create("large-file.pdf.tdf")
+defer outputFile.Close()
+
+_, err = client.CreateTDF(outputFile, inputFile,
+	sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+)
+```
+
+<details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
+<summary>Complete Example: Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
+
+Here's a complete example that brings all the pieces together:
+
+```go
+package main
+
+import (
+	"bytes"
+	"context"
+	"log"
+	"strings"
+
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	platformEndpoint := "https://platform.opentdf.local:8443"
+
+	// Create client
+	client, err := sdk.New(
+		platformEndpoint,
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+		sdk.WithInsecurePlaintextConn(),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+
+	// 1. Create namespace (or use existing)
+	nsResp, err := client.Namespaces.CreateNamespace(context.Background(),
+		&namespaces.CreateNamespaceRequest{
+			Name: "opentdf.io",
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Namespace already exists, fetch it
+			listResp, listErr := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+			if listErr != nil {
+				log.Fatalf("Failed to list namespaces: %v", listErr)
+			}
+			for _, ns := range listResp.GetNamespaces() {
+				if ns.GetName() == "opentdf.io" {
+					nsResp = &namespaces.CreateNamespaceResponse{Namespace: ns}
+					log.Printf("✅ Using existing namespace: %s", ns.GetId())
+					break
+				}
+			}
+		} else {
+			log.Fatalf("Failed to create namespace: %v", err)
+		}
+	} else {
+		log.Printf("✅ Created namespace: %s", nsResp.GetNamespace().GetId())
+	}
+
+	// 2. Create attribute with marketing value (or use existing)
+	attrResp, err := client.Attributes.CreateAttribute(context.Background(),
+		&attributes.CreateAttributeRequest{
+			NamespaceId: nsResp.GetNamespace().GetId(),
+			Name:        "department",
+			Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+			Values:      []string{"marketing"},
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Attribute already exists, fetch it
+			listResp, listErr := client.Attributes.ListAttributes(context.Background(), &attributes.ListAttributesRequest{})
+			if listErr != nil {
+				log.Fatalf("Failed to list attributes: %v", listErr)
+			}
+			for _, attr := range listResp.GetAttributes() {
+				if attr.GetName() == "department" && attr.GetNamespace().GetId() == nsResp.GetNamespace().GetId() {
+					attrResp = &attributes.CreateAttributeResponse{Attribute: attr}
+					log.Printf("✅ Using existing attribute: %s", attr.GetName())
+					break
+				}
+			}
+		} else {
+			log.Fatalf("Failed to create attribute: %v", err)
+		}
+	} else {
+		log.Printf("✅ Created attribute: %s", attrResp.GetAttribute().GetName())
+	}
+
+	// 3. Encrypt data with the marketing attribute
+	plaintext := []byte("Sensitive marketing campaign data")
+	dataReader := bytes.NewReader(plaintext)
+	var encryptedBuffer bytes.Buffer
+
+	_, err = client.CreateTDF(
+		&encryptedBuffer,
+		dataReader,
+		sdk.WithDataAttributes("https://opentdf.io/attr/department/value/marketing"),
+		sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+	)
+	if err != nil {
+		log.Fatalf("Failed to encrypt: %v", err)
+	}
+	log.Printf("✅ Data encrypted with marketing attribute")
+
+	// 4. Grant yourself access to the marketing attribute
+	attributeValueId := attrResp.GetAttribute().GetValues()[0].GetId()
+
+	scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
+		&subjectmapping.CreateSubjectConditionSetRequest{
+			SubjectConditionSet: &subjectmapping.SubjectConditionSetCreate{
+				SubjectSets: []*policy.SubjectSet{
+					{
+						ConditionGroups: []*policy.ConditionGroup{
+							{
+								Conditions: []*policy.Condition{
+									{
+										SubjectExternalSelectorValue: ".clientId",
+										Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+										SubjectExternalValues:        []string{"opentdf"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	if err != nil {
+		log.Fatalf("Failed to create subject condition set: %v", err)
+	}
+
+	_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(),
+		&subjectmapping.CreateSubjectMappingRequest{
+			AttributeValueId:              attributeValueId,
+			Actions:                       []*policy.Action{{Name: "read"}},
+			ExistingSubjectConditionSetId: scsResp.GetSubjectConditionSet().GetId(),
+		})
+	if err != nil {
+		if strings.Contains(err.Error(), "already_exists") {
+			// Subject mapping already exists
+			log.Printf("✅ Subject mapping already exists for department/marketing")
+		} else {
+			log.Fatalf("Failed to create subject mapping: %v", err)
+		}
+	} else {
+		log.Printf("✅ Granted yourself access to department/marketing")
+	}
+
+	// 5. Decrypt the data
+	tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBuffer.Bytes()))
+	if err != nil {
+		log.Fatalf("Failed to load TDF: %v", err)
+	}
+
+	var decryptedBuffer bytes.Buffer
+	_, err = tdfReader.WriteTo(&decryptedBuffer)
+	if err != nil {
+		log.Fatalf("Failed to decrypt: %v", err)
+	}
+
+	log.Printf("✅ Data successfully decrypted")
+	log.Printf("📤 Decrypted content: %s", decryptedBuffer.String())
+}
+```
+
+</details>
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+## Java SDK Implementation
+
+:::info Language: Java
+This section covers the **Java SDK** implementation. Switch tabs above to see Go or JavaScript examples.
+:::
+
+### Prerequisites
+
+- Java 17 or later
+- Maven or Gradle
+- Your OpenTDF platform running locally (from Getting Started guide)
+
+### Step 1: Create a New Maven Project
+
+Create a new directory with a `pom.xml` file:
+
+```bash
+mkdir opentdf-quickstart
+cd opentdf-quickstart
+```
+
+Create `pom.xml`:
+
+```xml title="pom.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.opentdf</groupId>
+    <artifactId>opentdf-quickstart</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.opentdf.platform</groupId>
+            <artifactId>sdk</artifactId>
+            <version>0.6.2</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+### Step 2: Install Dependencies
+
+```bash
+mvn clean install
+```
+
+This will download the OpenTDF Java SDK and its dependencies (including Bouncy Castle for cryptography).
+
+### Step 3: Create Your Application
+
+Create the directory structure:
+
+```bash
+mkdir -p src/main/java/io/opentdf/quickstart
+```
+
+#### Java Implementation Code
+
+Create `src/main/java/io/opentdf/quickstart/QuickstartApp.java`:
+
+```java title="src/main/java/io/opentdf/quickstart/QuickstartApp.java"
+package io.opentdf.quickstart;
+
+import io.opentdf.platform.sdk.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.channels.FileChannel;
+
+public class QuickstartApp {
+    public static void main(String[] args) {
+        try {
+            System.out.println("🚀 Starting OpenTDF SDK Quickstart...");
+
+            String clientId = "opentdf";
+            String clientSecret = "secret";
+            String platformEndpoint = "https://platform.opentdf.local:8443";
+
+            System.out.println("📡 Connecting to platform: " + platformEndpoint);
+
+            // Create SDK client with client credentials
+            System.out.println("🔐 Initializing SDK client with client credentials...");
+            SDKBuilder builder = SDKBuilder.newBuilder();
+            SDK sdk = builder.platformEndpoint(platformEndpoint)
+                    .clientSecret(clientId, clientSecret)
+                    .build();
+
+            System.out.println("✅ SDK client initialized successfully");
+
+            // Encrypt data
+            System.out.println("\n📝 Encrypting sensitive data...");
+            String sensitiveData = "Hello from the OpenTDF Java SDK! This data is encrypted.";
+
+            var kasInfo = new Config.KASInfo();
+            kasInfo.URL = platformEndpoint + "/kas";
+
+            var tdfConfig = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+
+            var inputStream = new ByteArrayInputStream(sensitiveData.getBytes(StandardCharsets.UTF_8));
+            var outputStream = new ByteArrayOutputStream();
+
+            System.out.println("🔒 Creating TDF...");
+            sdk.createTDF(inputStream, outputStream, tdfConfig);
+
+            System.out.println("✅ Data successfully encrypted");
+            System.out.println("📊 Encrypted TDF size: " + outputStream.size() + " bytes");
+
+            // Decrypt data
+            System.out.println("\n🔓 Decrypting TDF...");
+            byte[] encryptedData = outputStream.toByteArray();
+
+            // Save to temporary file for decryption
+            Path tempFile = Files.createTempFile("opentdf-quickstart", ".tdf");
+            try {
+                Files.write(tempFile, encryptedData);
+
+                try (FileChannel fileChannel = FileChannel.open(tempFile, StandardOpenOption.READ)) {
+                    var readerConfig = Config.newTDFReaderConfig();
+                    var reader = sdk.loadTDF(fileChannel, readerConfig);
+                    var decryptedOutput = new ByteArrayOutputStream();
+                    reader.readPayload(decryptedOutput);
+
+                    String decryptedContent = new String(decryptedOutput.toByteArray(), StandardCharsets.UTF_8);
+                    System.out.println("✅ Data successfully decrypted");
+                    System.out.println("📤 Decrypted content:\n\n" + decryptedContent + "\n");
+                }
+            } finally {
+                // Clean up temporary file
+                Files.deleteIfExists(tempFile);
+            }
+
+            System.out.println("🎉 Quickstart complete!");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error occurred: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+}
+```
+
+### Step 4: Run Your Application
+
+```bash
+mvn compile exec:java -Dexec.mainClass="io.opentdf.quickstart.QuickstartApp"
+```
+
+<details>
+<summary>Expected output</summary>
+
+```console
+🚀 Starting OpenTDF SDK Quickstart...
+📡 Connecting to platform: https://platform.opentdf.local:8443
+🔐 Initializing SDK client with client credentials...
+✅ SDK client initialized successfully
+
+📝 Encrypting sensitive data...
+🔒 Creating TDF...
+✅ Data successfully encrypted
+📊 Encrypted TDF size: 1234 bytes
+
+🔓 Decrypting TDF...
+✅ Data successfully decrypted
+📤 Decrypted content:
+
+Hello from the OpenTDF Java SDK! This data is encrypted.
+
+🎉 Quickstart complete!
+```
+
+</details>
+
+---
+
+### Next Steps with Java SDK
+
+:::tip Java-Specific Examples
+The following examples are specific to the **Java SDK**.
+:::
+
+Now that you have basic encryption working, you can add attribute-based access control to your application.
+
+If you want to follow along, you can add the code to your quickstart file as we go. Otherwise, a [complete version is available below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt).
+
+:::info More ABAC Examples
+For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
+:::
+
+
+**Create an Attribute**
+
+First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+
+```java
+import io.opentdf.platform.policy.AttributeRuleTypeEnum;
+import io.opentdf.platform.policy.Namespace;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
+import io.opentdf.platform.policy.namespaces.ListNamespacesRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeResponse;
+import com.connectrpc.ResponseMessageKt;
+import java.util.Arrays;
+import java.util.Collections;
+
+// Create the namespace (or use existing)
+CreateNamespaceResponse nsResponse;
+try {
+    nsResponse = ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .namespaces()
+            .createNamespaceBlocking(
+                CreateNamespaceRequest.newBuilder()
+                    .setName("opentdf.io")
+                    .build(),
+                Collections.emptyMap())
+            .execute());
+    System.out.println("Created namespace: " + nsResponse.getNamespace().getId());
+} catch (Exception e) {
+    if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+        // Namespace already exists, fetch it
+        var listResponse = ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .namespaces()
+                .listNamespacesBlocking(
+                    ListNamespacesRequest.newBuilder().build(),
+                    Collections.emptyMap())
+                .execute());
+        Namespace existingNs = null;
+        for (Namespace ns : listResponse.getNamespacesList()) {
+            if ("opentdf.io".equals(ns.getName())) {
+                existingNs = ns;
+                break;
+            }
+        }
+        nsResponse = CreateNamespaceResponse.newBuilder()
+            .setNamespace(existingNs)
+            .build();
+        System.out.println("Using existing namespace: " + existingNs.getId());
+    } else {
+        throw e;
+    }
+}
+
+// Create the attribute with the marketing value
+var attrRequest = CreateAttributeRequest.newBuilder()
+    .setNamespaceId(nsResponse.getNamespace().getId())
+    .setName("department")
+    .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
+    .addAllValues(Arrays.asList("marketing"))
+    .build();
+
+CreateAttributeResponse attrResponse = ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .attributes()
+        .createAttributeBlocking(attrRequest, Collections.emptyMap())
+        .execute());
+
+System.out.println("Created attribute: " + attrResponse.getAttribute().getName());
+System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/marketing");
+```
+
+:::note
+You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
+:::
+
+**Add Attributes for Access Control**
+
+Now that you've created the attribute, update your `createTDF` call to include the attribute for access control:
+
+```java
+var tdfConfig = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withDataAttributes("https://opentdf.io/attr/department/value/marketing")
+);
+```
+
+:::tip
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+:::
+
+**Grant Yourself Access to the Attribute**
+
+To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+```java
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.subjectmapping.*;
+
+// Get the attribute value ID from the attribute you created
+String attributeValueId = attrResponse.getAttribute().getValues(0).getId();
+
+// Create subject condition set that matches your identity
+var condition = Condition.newBuilder()
+    .setSubjectExternalSelectorValue(".clientId")
+    .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+    .addSubjectExternalValues("opentdf")
+    .build();
+
+var conditionGroup = ConditionGroup.newBuilder()
+    .addConditions(condition)
+    .build();
+
+var subjectSet = SubjectSet.newBuilder()
+    .addConditionGroups(conditionGroup)
+    .build();
+
+var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
+    .setSubjectConditionSet(
+        SubjectConditionSet.newBuilder()
+            .addSubjectSets(subjectSet)
+            .build())
+    .build();
+
+var scsResponse = ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .subjectMapping()
+        .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
+        .execute());
+
+// Create the subject mapping to grant yourself the entitlement
+var smRequest = CreateSubjectMappingRequest.newBuilder()
+    .setAttributeValueId(attributeValueId)
+    .addActions(Action.newBuilder()
+        .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT))
+    .setSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+    .build();
+
+ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .subjectMapping()
+        .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
+        .execute());
+
+System.out.println("✅ Granted yourself access to department/marketing");
+```
+
+Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+
+**Save TDF to a File**
+
+```java
+import java.io.FileOutputStream;
+
+// After creating TDF config
+try (FileOutputStream fos = new FileOutputStream("encrypted.tdf")) {
+    sdk.createTDF(inputStream, fos, tdfConfig);
+}
+
+// Later, decrypt from file
+try (FileChannel fileChannel = FileChannel.open(
+        Path.of("encrypted.tdf"),
+        StandardOpenOption.READ)) {
+    var reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+    reader.readPayload(System.out);
+}
+```
+
+**Handle Large Files**
+
+```java
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
+// Encrypt a large file
+try (FileChannel inputChannel = FileChannel.open(
+        Path.of("large-file.pdf"), StandardOpenOption.READ);
+     FileChannel outputChannel = FileChannel.open(
+        Path.of("large-file.pdf.tdf"),
+        StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+
+    sdk.createTDF(inputChannel, outputChannel, tdfConfig);
+}
+```
+
+<details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
+<summary>Complete Example: Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
+
+Here's a complete example that brings all the pieces together:
+
+```java
+package io.opentdf.quickstart;
+
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.AttributeRuleTypeEnum;
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.Namespace;
+import io.opentdf.platform.policy.Attribute;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
+import io.opentdf.platform.policy.namespaces.ListNamespacesRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeRequest;
+import io.opentdf.platform.policy.attributes.CreateAttributeResponse;
+import io.opentdf.platform.policy.attributes.ListAttributesRequest;
+import io.opentdf.platform.policy.subjectmapping.*;
+import com.connectrpc.ResponseMessageKt;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+
+public class CompleteExample {
+    public static void main(String[] args) throws Exception {
+        String clientId = "opentdf";
+        String clientSecret = "secret";
+        String platformEndpoint = "localhost:8443";
+
+        // Create SDK client
+        SDK sdk = new SDKBuilder()
+            .platformEndpoint(platformEndpoint)
+            .clientSecret(clientId, clientSecret)
+            .useInsecurePlaintextConnection(true)
+            .build();
+
+        var kasInfo = new Config.KASInfo();
+        kasInfo.URL = "http://localhost:8080/kas";
+
+        // 1. Create namespace (or use existing)
+        CreateNamespaceResponse nsResponse;
+        try {
+            nsResponse = ResponseMessageKt.getOrThrow(
+                sdk.getServices()
+                    .namespaces()
+                    .createNamespaceBlocking(
+                        CreateNamespaceRequest.newBuilder()
+                            .setName("opentdf.io")
+                            .build(),
+                        Collections.emptyMap())
+                    .execute());
+            System.out.println("✅ Created namespace: " + nsResponse.getNamespace().getId());
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+                // Namespace already exists, fetch it
+                var listResponse = ResponseMessageKt.getOrThrow(
+                    sdk.getServices()
+                        .namespaces()
+                        .listNamespacesBlocking(
+                            ListNamespacesRequest.newBuilder().build(),
+                            Collections.emptyMap())
+                        .execute());
+                Namespace existingNs = null;
+                for (Namespace ns : listResponse.getNamespacesList()) {
+                    if ("opentdf.io".equals(ns.getName())) {
+                        existingNs = ns;
+                        break;
+                    }
+                }
+                nsResponse = CreateNamespaceResponse.newBuilder()
+                    .setNamespace(existingNs)
+                    .build();
+                System.out.println("✅ Using existing namespace: " + existingNs.getId());
+            } else {
+                throw e;
+            }
+        }
+
+        // 2. Create attribute with marketing value (or use existing)
+        var attrRequest = CreateAttributeRequest.newBuilder()
+            .setNamespaceId(nsResponse.getNamespace().getId())
+            .setName("department")
+            .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
+            .addAllValues(Arrays.asList("marketing"))
+            .build();
+
+        CreateAttributeResponse attrResponse;
+        try {
+            attrResponse = ResponseMessageKt.getOrThrow(
+                sdk.getServices()
+                    .attributes()
+                    .createAttributeBlocking(attrRequest, Collections.emptyMap())
+                    .execute());
+            System.out.println("✅ Created attribute: " + attrResponse.getAttribute().getName());
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+                // Attribute already exists, fetch it
+                var listResponse = ResponseMessageKt.getOrThrow(
+                    sdk.getServices()
+                        .attributes()
+                        .listAttributesBlocking(
+                            ListAttributesRequest.newBuilder().build(),
+                            Collections.emptyMap())
+                        .execute());
+                Attribute existingAttr = null;
+                for (Attribute attr : listResponse.getAttributesList()) {
+                    if ("department".equals(attr.getName()) &&
+                        attr.getNamespace().getId().equals(nsResponse.getNamespace().getId())) {
+                        existingAttr = attr;
+                        break;
+                    }
+                }
+                attrResponse = CreateAttributeResponse.newBuilder()
+                    .setAttribute(existingAttr)
+                    .build();
+                System.out.println("✅ Using existing attribute: " + existingAttr.getName());
+            } else {
+                throw e;
+            }
+        }
+
+        // 3. Encrypt data with the marketing attribute
+        String plaintext = "Sensitive marketing campaign data";
+        var inputStream = new ByteArrayInputStream(plaintext.getBytes(StandardCharsets.UTF_8));
+        var outputStream = new ByteArrayOutputStream();
+
+        var tdfConfig = Config.newTDFConfig(
+            Config.withKasInformation(kasInfo),
+            Config.withDataAttributes("https://opentdf.io/attr/department/value/marketing")
+        );
+
+        sdk.createTDF(inputStream, outputStream, tdfConfig);
+        System.out.println("✅ Data encrypted with marketing attribute");
+
+        // 4. Grant yourself access to the marketing attribute
+        String attributeValueId = attrResponse.getAttribute().getValues(0).getId();
+
+        var condition = Condition.newBuilder()
+            .setSubjectExternalSelectorValue(".clientId")
+            .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+            .addSubjectExternalValues("opentdf")
+            .build();
+
+        var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
+            .setSubjectConditionSet(
+                SubjectConditionSet.newBuilder()
+                    .addSubjectSets(SubjectSet.newBuilder()
+                        .addConditionGroups(ConditionGroup.newBuilder()
+                            .addConditions(condition)
+                            .build())
+                        .build())
+                    .build())
+            .build();
+
+        var scsResponse = ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .subjectMapping()
+                .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
+                .execute());
+
+        var smRequest = CreateSubjectMappingRequest.newBuilder()
+            .setAttributeValueId(attributeValueId)
+            .addActions(Action.newBuilder()
+                .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT))
+            .setSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+            .build();
+
+        try {
+            ResponseMessageKt.getOrThrow(
+                sdk.getServices()
+                    .subjectMapping()
+                    .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
+                    .execute());
+            System.out.println("✅ Granted yourself access to department/marketing");
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+                System.out.println("✅ Subject mapping already exists for department/marketing");
+            } else {
+                throw e;
+            }
+        }
+
+        // 5. Decrypt the data
+        var encryptedBytes = outputStream.toByteArray();
+        var decryptedStream = new ByteArrayOutputStream();
+
+        var reader = sdk.loadTDF(new ByteArrayInputStream(encryptedBytes));
+        reader.readPayload(decryptedStream);
+
+        System.out.println("✅ Data successfully decrypted");
+        System.out.println("📤 Decrypted content: " + decryptedStream.toString(StandardCharsets.UTF_8));
+    }
+}
+```
+
+</details>
+
+</TabItem>
+<TabItem value="js" label="JavaScript/TypeScript">
+
+## JavaScript/TypeScript SDK Implementation
+
+:::info Language: JavaScript/TypeScript
+This section covers the **JavaScript/TypeScript SDK** implementation. Switch tabs above to see Go or Java examples.
+:::
+
+### Prerequisites
+
+- Node.js 18 or later
+- npm or yarn
+- Your OpenTDF platform running locally (from Getting Started guide)
+
+### Step 1: Create a New Project
+
+Create a new directory and initialize a Node.js project:
+
+```bash
+mkdir opentdf-quickstart
+cd opentdf-quickstart
+npm init -y
+```
+
+### Step 2: Install the SDK
+
+```bash
+npm install @opentdf/client
+```
+
+Expected output:
+> ```console
+> added 45 packages, and audited 46 packages in 3s
+> ```
+
+### Step 3: Create Your Application
+
+#### TypeScript Implementation Code
+
+For **TypeScript** projects, create `quickstart.ts`:
+
+```typescript title="quickstart.ts"
+import { AuthProviders, OpenTDF } from '@opentdf/client';
+
+async function main() {
+    try {
+        console.log("🚀 Starting OpenTDF SDK Quickstart...");
+
+        const platformEndpoint = "https://platform.opentdf.local:8443";
+        const oidcOrigin = "https://keycloak.opentdf.local:9443/realms/opentdf";
+        const clientId = "opentdf";
+        const clientSecret = "secret";
+
+        console.log("📡 Connecting to platform: " + platformEndpoint);
+
+        // Create authentication provider with client credentials
+        console.log("🔐 Setting up client credentials authentication...");
+        const authProvider = await AuthProviders.clientSecretAuthProvider({
+            clientId,
+            clientSecret,
+            oidcOrigin,
+            exchange: 'client',
+        });
+        console.log("✅ Authentication provider created");
+
+        // Create OpenTDF client
+        console.log("🔧 Initializing SDK client...");
+        const client = new OpenTDF({
+            authProvider: authProvider,
+            kasEndpoint: platformEndpoint,
+        });
+        console.log("✅ SDK client initialized successfully");
+
+        // Encrypt data
+        console.log("\n📝 Encrypting sensitive data...");
+        const sensitiveData = "Hello from the OpenTDF JavaScript SDK! This data is encrypted.";
+        const dataBuffer = new TextEncoder().encode(sensitiveData);
+
+        console.log("🔒 Creating TDF...");
+        const encryptedStream = await client.encrypt({
+            offline: false,
+            source: dataBuffer,
+        });
+
+        // Convert stream to buffer
+        const encryptedBuffer = await new Response(encryptedStream).arrayBuffer();
+        const encryptedBytes = new Uint8Array(encryptedBuffer);
+
+        console.log("✅ Data successfully encrypted");
+        console.log("📊 Encrypted TDF size: " + encryptedBytes.length + " bytes");
+
+        // Decrypt data
+        console.log("\n🔓 Decrypting TDF...");
+        const decryptedStream = await client.decrypt({
+            source: encryptedBytes,
+        });
+
+        const decryptedText = await new Response(decryptedStream).text();
+
+        console.log("✅ Data successfully decrypted");
+        console.log("📤 Decrypted content:\n\n" + decryptedText + "\n");
+
+        console.log("🎉 Quickstart complete!");
+        process.exit(0);
+
+    } catch (error) {
+        console.error("❌ Error occurred:", error);
+        process.exit(1);
+    }
+}
+
+main();
+```
+
+#### JavaScript Implementation Code
+
+For **JavaScript** projects, create `quickstart.mjs`:
+
+```javascript title="quickstart.mjs"
+import { AuthProviders, OpenTDF } from '@opentdf/client';
+
+async function main() {
+    try {
+        console.log("🚀 Starting OpenTDF SDK Quickstart...");
+
+        const platformEndpoint = "https://platform.opentdf.local:8443";
+        const oidcOrigin = "https://keycloak.opentdf.local:9443/realms/opentdf";
+        const clientId = "opentdf";
+        const clientSecret = "secret";
+
+        console.log("📡 Connecting to platform: " + platformEndpoint);
+
+        // Create authentication provider with client credentials
+        console.log("🔐 Setting up client credentials authentication...");
+        const authProvider = await AuthProviders.clientSecretAuthProvider({
+            clientId,
+            clientSecret,
+            oidcOrigin,
+            exchange: 'client',
+        });
+        console.log("✅ Authentication provider created");
+
+        // Create OpenTDF client
+        console.log("🔧 Initializing SDK client...");
+        const client = new OpenTDF({
+            authProvider: authProvider,
+            kasEndpoint: platformEndpoint,
+        });
+        console.log("✅ SDK client initialized successfully");
+
+        // Encrypt data
+        console.log("\n📝 Encrypting sensitive data...");
+        const sensitiveData = "Hello from the OpenTDF JavaScript SDK! This data is encrypted.";
+        const dataBuffer = new TextEncoder().encode(sensitiveData);
+
+        console.log("🔒 Creating TDF...");
+        const encryptedStream = await client.encrypt({
+            offline: false,
+            source: dataBuffer,
+        });
+
+        // Convert stream to buffer
+        const encryptedBuffer = await new Response(encryptedStream).arrayBuffer();
+        const encryptedBytes = new Uint8Array(encryptedBuffer);
+
+        console.log("✅ Data successfully encrypted");
+        console.log("📊 Encrypted TDF size: " + encryptedBytes.length + " bytes");
+
+        // Decrypt data
+        console.log("\n🔓 Decrypting TDF...");
+        const decryptedStream = await client.decrypt({
+            source: encryptedBytes,
+        });
+
+        const decryptedText = await new Response(decryptedStream).text();
+
+        console.log("✅ Data successfully decrypted");
+        console.log("📤 Decrypted content:\n\n" + decryptedText + "\n");
+
+        console.log("🎉 Quickstart complete!");
+        process.exit(0);
+
+    } catch (error) {
+        console.error("❌ Error occurred:", error);
+        process.exit(1);
+    }
+}
+
+main();
+```
+
+### Step 4: Run Your Application
+
+For TypeScript:
+```bash
+npx tsx quickstart.ts
+```
+
+For JavaScript:
+```bash
+node quickstart.mjs
+```
+
+<details>
+<summary>Expected output</summary>
+
+```console
+🚀 Starting OpenTDF SDK Quickstart...
+📡 Connecting to platform: https://platform.opentdf.local:8443
+🔐 Setting up client credentials authentication...
+✅ Authentication provider created
+🔧 Initializing SDK client...
+✅ SDK client initialized successfully
+
+📝 Encrypting sensitive data...
+🔒 Creating TDF...
+✅ Data successfully encrypted
+📊 Encrypted TDF size: 1234 bytes
+
+🔓 Decrypting TDF...
+✅ Data successfully decrypted
+📤 Decrypted content:
+
+Hello from the OpenTDF JavaScript SDK! This data is encrypted.
+
+🎉 Quickstart complete!
+```
+
+</details>
+
+---
+
+### Next Steps with JavaScript SDK
+
+:::tip JavaScript-Specific Examples
+The following examples are specific to the **JavaScript/TypeScript SDK**.
+:::
+
+Now that you have basic encryption working, you can add attribute-based access control to your application.
+
+If you want to follow along, you can add the code to your quickstart file as we go. Otherwise, a [complete version is available below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt).
+
+:::info More ABAC Examples
+For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
+:::
+
+
+**Create an Attribute**
+
+First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+
+```typescript
+// Create the namespace (or use existing)
+let nsResponse;
+try {
+    nsResponse = await client.namespaces.createNamespace({
+        name: 'opentdf.io',
+    });
+    console.log(`Created namespace: ${nsResponse.namespace.id}`);
+} catch (error: any) {
+    if (error.message && error.message.includes('already_exists')) {
+        // Namespace already exists, fetch it
+        const listResponse = await client.namespaces.listNamespaces();
+        const existingNs = listResponse.namespaces.find(
+            (ns: any) => ns.name === 'opentdf.io'
+        );
+        nsResponse = { namespace: existingNs };
+        console.log(`Using existing namespace: ${existingNs.id}`);
+    } else {
+        throw error;
+    }
+}
+
+// Create the attribute with the marketing value
+const attrResponse = await client.attributes.createAttribute({
+    namespaceId: nsResponse.namespace.id,
+    name: 'department',
+    rule: 'ANY_OF',
+    values: ['marketing'],
+});
+
+console.log(`Created attribute: ${attrResponse.attribute.name}`);
+console.log('Full attribute FQN: https://opentdf.io/attr/department/value/marketing');
+```
+
+:::note
+You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
+:::
+
+**Add Attributes for Access Control**
+
+Now that you've created the attribute, update your `encrypt` call to include the attribute for access control:
+
+```typescript
+const encryptedStream = await client.encrypt({
+    offline: false,
+    source: dataBuffer,
+    attributes: ["https://opentdf.io/attr/department/value/marketing"],
+});
+```
+
+:::tip
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+:::
+
+**Grant Yourself Access to the Attribute**
+
+To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+```typescript
+// Get the attribute value ID from the attribute you created
+const attributeValueId = attrResponse.attribute.values[0].id;
+
+// Create subject condition set that matches your identity
+const scsResponse = await client.subjectMapping.createSubjectConditionSet({
+    subjectConditionSet: {
+        subjectSets: [{
+            conditionGroups: [{
+                conditions: [{
+                    subjectExternalSelectorValue: '.clientId',
+                    operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
+                    subjectExternalValues: ['opentdf'],
+                }],
+            }],
+        }],
+    },
+});
+
+// Create the subject mapping to grant yourself the entitlement
+await client.subjectMapping.createSubjectMapping({
+    attributeValueId: attributeValueId,
+    actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
+    subjectConditionSetId: scsResponse.subjectConditionSet.id,
+});
+
+console.log('✅ Granted yourself access to department/marketing');
+```
+
+Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+
+**Save TDF to a File**
+
+```typescript
+import * as fs from 'fs';
+
+// After encryption
+fs.writeFileSync('encrypted.tdf', encryptedBytes);
+
+// Later, decrypt from file
+const fileData = fs.readFileSync('encrypted.tdf');
+const decryptedStream = await client.decrypt({
+    source: new Uint8Array(fileData),
+});
+```
+
+**Handle Large Files with Streaming**
+
+```typescript
+import * as fs from 'fs';
+import { Readable } from 'stream';
+
+// Encrypt a large file
+const fileStream = fs.createReadStream('large-file.pdf');
+const encryptedStream = await client.encrypt({
+    offline: false,
+    source: fileStream,
+});
+
+// Save encrypted stream to file
+const writeStream = fs.createWriteStream('large-file.pdf.tdf');
+Readable.fromWeb(encryptedStream).pipe(writeStream);
+```
+
+<details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
+<summary>Complete Example: Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
+
+Here's a complete example that brings all the pieces together:
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/client';
+
+async function main() {
+    try {
+        const platformEndpoint = 'http://localhost:8080';
+        const oidcEndpoint = 'http://localhost:8888/realms/opentdf';
+
+        // Create authentication provider
+        const authProvider = await AuthProviders.clientSecretAuthProvider({
+            clientId: 'opentdf',
+            clientSecret: 'secret',
+            oidcOrigin: oidcEndpoint,
+            exchange: 'client',
+        });
+
+        // Create SDK client
+        const client = new OpenTDF({
+            authProvider: authProvider,
+            platformUrl: platformEndpoint,
+        });
+
+        // 1. Create namespace (or use existing)
+        let nsResponse;
+        try {
+            nsResponse = await client.namespaces.createNamespace({
+                name: 'opentdf.io',
+            });
+            console.log(`✅ Created namespace: ${nsResponse.namespace.id}`);
+        } catch (error: any) {
+            if (error.message && error.message.includes('already_exists')) {
+                // Namespace already exists, fetch it
+                const listResponse = await client.namespaces.listNamespaces();
+                const existingNs = listResponse.namespaces.find(
+                    (ns: any) => ns.name === 'opentdf.io'
+                );
+                nsResponse = { namespace: existingNs };
+                console.log(`✅ Using existing namespace: ${existingNs.id}`);
+            } else {
+                throw error;
+            }
+        }
+
+        // 2. Create attribute with marketing value (or use existing)
+        let attrResponse;
+        try {
+            attrResponse = await client.attributes.createAttribute({
+                namespaceId: nsResponse.namespace.id,
+                name: 'department',
+                rule: 'ANY_OF',
+                values: ['marketing'],
+            });
+            console.log(`✅ Created attribute: ${attrResponse.attribute.name}`);
+        } catch (error: any) {
+            if (error.message && error.message.includes('already_exists')) {
+                // Attribute already exists, fetch it
+                const listResponse = await client.attributes.listAttributes();
+                const existingAttr = listResponse.attributes.find(
+                    (attr: any) => attr.name === 'department' && attr.namespace.id === nsResponse.namespace.id
+                );
+                attrResponse = { attribute: existingAttr };
+                console.log(`✅ Using existing attribute: ${existingAttr.name}`);
+            } else {
+                throw error;
+            }
+        }
+
+        // 3. Encrypt data with the marketing attribute
+        const plaintext = 'Sensitive marketing campaign data';
+        const dataBuffer = new TextEncoder().encode(plaintext);
+
+        const encryptedStream = await client.encrypt({
+            offline: false,
+            source: dataBuffer,
+            attributes: ['https://opentdf.io/attr/department/value/marketing'],
+        });
+
+        const encryptedBuffer = await new Response(encryptedStream).arrayBuffer();
+        const encryptedBytes = new Uint8Array(encryptedBuffer);
+        console.log('✅ Data encrypted with marketing attribute');
+
+        // 4. Grant yourself access to the marketing attribute
+        const attributeValueId = attrResponse.attribute.values[0].id;
+
+        const scsResponse = await client.subjectMapping.createSubjectConditionSet({
+            subjectConditionSet: {
+                subjectSets: [{
+                    conditionGroups: [{
+                        conditions: [{
+                            subjectExternalSelectorValue: '.clientId',
+                            operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
+                            subjectExternalValues: ['opentdf'],
+                        }],
+                    }],
+                }],
+            },
+        });
+
+        try {
+            await client.subjectMapping.createSubjectMapping({
+                attributeValueId: attributeValueId,
+                actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
+                subjectConditionSetId: scsResponse.subjectConditionSet.id,
+            });
+            console.log('✅ Granted yourself access to department/marketing');
+        } catch (error: any) {
+            if (error.message && error.message.includes('already_exists')) {
+                console.log('✅ Subject mapping already exists for department/marketing');
+            } else {
+                throw error;
+            }
+        }
+
+        // 5. Decrypt the data
+        const decryptedStream = await client.decrypt({
+            source: encryptedBytes,
+        });
+
+        const decryptedText = await new Response(decryptedStream).text();
+        console.log('✅ Data successfully decrypted');
+        console.log(`📤 Decrypted content: ${decryptedText}`);
+    } catch (error) {
+        console.error('❌ Error:', error);
+        process.exit(1);
+    }
+}
+
+main();
+```
+
+</details>
+
+</TabItem>
+</Tabs>
+
+## Key Concepts
+
+### Client Credentials Authentication
+
+All three SDKs use **client credentials** to authenticate with the platform. This is a machine-to-machine authentication flow suitable for:
+- Backend services
+- CLI tools
+- Server-side applications
+- Batch processing jobs
+
+In production, you would create separate client IDs for each service with appropriate permissions.
+
+### TDF Format
+
+The SDKs create **TDF (Trusted Data Format)** files, which contain:
+- **Encrypted payload**: Your data, encrypted with a symmetric key
+- **Manifest**: Metadata including policy attributes and Key Access Server information
+- **Policy**: Access control rules (which attributes are required to decrypt)
+
+### Connection Security
+
+:::warning Development Only - Language-Specific Settings
+The SDK examples use different settings for local development with self-signed certificates:
+
+**Go SDK**: `.WithInsecurePlaintextConn()`
+**Java SDK**: `.useInsecurePlaintextConnection(true)`
+**JavaScript SDK**: May need `NODE_TLS_REJECT_UNAUTHORIZED=0`
+
+**Never use these settings in production.**
+
+In production:
+- Use HTTPS connections with valid TLS certificates
+- Remove all insecure connection flags
+- Configure proper certificate validation
+:::
+
+## Troubleshooting
+
+### Attribute Not Found
+
+**Error**: `not_found: resource not found` or `attribute not found`
+
+**Cause**: You're trying to encrypt with an attribute that doesn't exist on the platform.
+
+**Solution**: Create the attribute first using otdfctl or the [SDK Create Attribute function](/sdks/policy#create-attribute).
+
+**Quick fix using the CLI:**
+
+```bash
+# Create the attribute definition
+otdfctl policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF
+export DEPT_ATTRIBUTE_ID=<namespace-id>
+
+# Add the specific value(s)
+otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
+```
+
+### Permission Denied / Insufficient Entitlements
+
+**Error**: When attempting to decrypt a TDF, you may see a verbose error like:
+
+```
+reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://platform.opentdf.local:8443 }:tdf: rewrap request 403
+kao unwrap failed for split {https://platform.opentdf.local:8443 }: permission_denied: request error
+rpc error: code = PermissionDenied desc = forbidden]
+```
+
+**What to Look For**: The meaningful information is buried in the error. Look for:
+- `PermissionDenied` or `forbidden`
+- `rewrap request 403`
+- `permission_denied: request error`
+
+These indicate an authorization failure, not a cryptographic or network issue.
+
+**Cause**: Your identity lacks the required entitlements (attribute values) to decrypt the TDF. This is ABAC (Attribute-Based Access Control) working correctly.
+
+For example, if you encrypted data with `https://opentdf.io/attr/department/value/marketing`, you need a subject mapping that grants you the `marketing` entitlement.
+
+**Solution**: Grant yourself (or the entity) entitlements by [creating a subject mapping](/sdks/policy#create-subject-mapping).
+
+**Quick fix using the CLI:**
+
+```bash
+# List your attributes to get the attribute value ID
+otdfctl policy attributes list --namespace opentdf.io
+
+# Create a subject condition set (if needed)
+otdfctl policy subject-condition-sets create \
+    --subject-set '[".clientId == \"opentdf\""]' \
+    --label "OpenTDF Service Account"
+
+export SUBJECT_CONDITION_SET_ID=<id-from-output>
+
+# Create the subject mapping to grant the entitlement
+otdfctl policy subject-mappings create \
+    --action read \
+    --attribute-value-fqn https://opentdf.io/attr/department/value/marketing \
+    --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+```
+
+### Resource Already Exists
+
+**Error**: `already_exists: resource unique field violation`
+
+**Example**:
+```
+2026/02/02 15:45:14 Failed to create namespace: already_exists: resource unique field violation
+exit status 1
+```
+
+**Cause**: You're trying to create a resource (namespace, attribute, subject mapping, etc.) that already exists on the platform. This commonly happens when running the quickstart examples multiple times.
+
+**Solution**: This is expected behavior when re-running examples. You have several options:
+
+1. **Handle the error in your code** (recommended): The [complete examples](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) in this guide show how to handle `already_exists` errors gracefully by catching the error and fetching the existing resource instead.
+
+2. **Delete the existing resource first**: Use the CLI to remove the existing resource:
+   ```bash
+   # List resources to find the ID
+   otdfctl policy attributes namespaces list
+
+   # Delete the resource
+   otdfctl policy attributes namespaces delete --id <namespace-id>
+   ```
+
+3. **Do nothing**: In some cases, failing when a resource already exists is the correct behavior. Not all code should be idempotent - sometimes you want to be alerted when attempting to create a duplicate resource.
+
+### Connection Refused
+
+**Error**: `connection refused` or `platform unreachable`
+
+**Solution**: Verify your platform is running:
+```bash
+curl https://platform.opentdf.local:8443/healthz
+```
+
+Should return: `{"status":"SERVING"}`
+
+If not running, restart the platform:
+```bash
+cd ~/.opentdf/platform
+docker compose up -d
+```
+
+### Authentication Failed
+
+**Error**: `rpc error: code = Unauthenticated` or `401 Unauthorized`
+
+**Solution**: Verify your credentials are correct:
+```bash
+otdfctl auth client-credentials opentdf secret
+```
+
+Check that Keycloak is running:
+```bash
+curl https://keycloak.opentdf.local:9443/
+```
+
+### Certificate Errors (SSL/TLS)
+
+**Error**: `x509: certificate signed by unknown authority`
+
+**Solution**: The platform uses self-signed certificates for local development. The installation script should have imported these. If you're still seeing errors:
+
+1. Verify the certificate was imported during installation
+2. Restart your terminal/IDE
+3. For Go, use `sdk.WithInsecurePlaintextConn()` (development only)
+4. For Java, the SDK handles this automatically
+5. For Node.js, you may need: `NODE_TLS_REJECT_UNAUTHORIZED=0` (development only)
+
+### Import Errors
+
+**Go**: `package github.com/opentdf/platform/sdk is not in GOROOT`
+```bash
+go mod tidy
+go get github.com/opentdf/platform/sdk@latest
+```
+
+**Java**: `package io.opentdf.platform.sdk does not exist`
+```bash
+mvn clean install -U
+```
+
+**JavaScript**: `Cannot find module '@opentdf/client'`
+```bash
+npm install @opentdf/client
+```
+
+## What's Next?
+
+Now that you have basic SDK integration working, explore:
+
+- **[Creating TDFs](/sdks/tdf)**: Learn about TDF options, attributes, and policies
+- **[Managing Policy](/sdks/policy)**: Create and manage attributes programmatically
+- **[Authorization](/sdks/authorization)**: Check entitlements and authorization decisions
+- **[SDK Feature Matrix](/appendix/matrix#sdk)**: Compare features across SDKs
+- **[Performance Guide](https://github.com/opentdf/sdk-planning/blob/main/9-performance-characteristics-guide.md)**: Optimize for large-scale operations
+
+### Real-World Integration
+
+To integrate OpenTDF into your application:
+
+1. **Choose Authentication Method**: Client credentials, bearer token, or custom auth
+2. **Define Your Attributes**: Map your organizational roles and data classifications to attributes
+3. **Create Subject Mappings**: Connect users/services to their entitlements
+4. **Encrypt at Rest**: Protect files, documents, and data stores
+5. **Encrypt in Transit**: Protect data shared between services
+6. **Audit Access**: Monitor who accessed what data and when
