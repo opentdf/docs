@@ -383,6 +383,9 @@ ${updatedContent}`,
     ],
     require.resolve("docusaurus-lunr-search"),
   ],
+  clientModules: [
+    require.resolve('./src/theme/TabsHashSync.js'),
+  ],
 };
 
 export default config;

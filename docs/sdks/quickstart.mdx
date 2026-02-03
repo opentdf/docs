@@ -21,7 +21,7 @@ Complete the [Getting Started](/quickstart) guide first to set up your local Ope
 This quickstart takes **15-20 minutes** to complete.
 :::
 
-## What You'll Build
+## What You'll Build {#what-youll-build}
 
 A simple application that:
 1. Connects to your local OpenTDF platform
@@ -29,7 +29,7 @@ A simple application that:
 3. Encrypts sensitive data into a TDF file
 4. Decrypts the TDF file back to plaintext
 
-## Choose Your SDK
+## Choose Your SDK {#choose-your-sdk}
 
 OpenTDF provides native SDKs in three languages. **Use the tabs below to select your language** - all examples are complete and ready to run.
 
@@ -40,7 +40,7 @@ Each tab contains a complete, working example for that specific SDK. The code an
 <Tabs>
 <TabItem value="go" label="Go">
 
-## Go SDK Implementation
+## Go SDK Implementation {#go-sdk-implementation}
 
 :::info Language: Go
 This section covers the **Go SDK** implementation. Switch tabs above to see Java or JavaScript examples.
@@ -51,7 +51,7 @@ This section covers the **Go SDK** implementation. Switch tabs above to see Java
 - Go 1.21 or later
 - Your OpenTDF platform running locally (from Getting Started guide)
 
-### Step 1: Create a New Project
+### Step 1: Create a New Project {#step-1-go}
 
 Create a new directory and initialize a Go module:
 
@@ -61,7 +61,7 @@ cd opentdf-quickstart
 go mod init opentdf-quickstart
 ```
 
-### Step 2: Install the SDK
+### Step 2: Install the SDK {#step-2-go}
 
 ```bash
 go get github.com/opentdf/platform/sdk@latest
@@ -73,7 +73,7 @@ Expected output:
 > go: added github.com/opentdf/platform/sdk v0.x.x
 > ```
 
-### Step 3: Create Your Application
+### Step 3: Create Your Application {#step-3-go}
 
 #### Go Implementation Code
 
@@ -153,7 +153,7 @@ func main() {
 }
 ```
 
-### Step 4: Run Your Application
+### Step 4: Run Your Application {#step-4-go}
 
 ```bash
 go run main.go
@@ -186,7 +186,7 @@ Hello from the OpenTDF Go SDK! This data is encrypted.
 
 ---
 
-### Next Steps with Go SDK
+### Next Steps with Go SDK {#next-steps-with-go-sdk}
 
 :::tip Go-Specific Examples
 The following examples are specific to the **Go SDK**.
@@ -545,7 +545,7 @@ func main() {
 </TabItem>
 <TabItem value="java" label="Java">
 
-## Java SDK Implementation
+## Java SDK Implementation {#java-sdk-implementation}
 
 :::info Language: Java
 This section covers the **Java SDK** implementation. Switch tabs above to see Go or JavaScript examples.
@@ -557,7 +557,7 @@ This section covers the **Java SDK** implementation. Switch tabs above to see Go
 - Maven or Gradle
 - Your OpenTDF platform running locally (from Getting Started guide)
 
-### Step 1: Create a New Maven Project
+### Step 1: Create a New Maven Project {#step-1-java}
 
 Create a new directory with a `pom.xml` file:
 
@@ -583,19 +583,38 @@ Create `pom.xml`:
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <grpc.version>1.68.0</grpc.version>
+        <protobuf.version>4.29.2</protobuf.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>io.opentdf.platform</groupId>
             <artifactId>sdk</artifactId>
-            <version>0.6.2</version>
+            <version>0.12.0</version>
         </dependency>
     </dependencies>
 </project>
 ```
 
-### Step 2: Install Dependencies
+### Step 2: Install Dependencies {#step-2-java}
 
 ```bash
 mvn clean install
@@ -603,7 +622,7 @@ mvn clean install
 
 This will download the OpenTDF Java SDK and its dependencies (including Bouncy Castle for cryptography).
 
-### Step 3: Create Your Application
+### Step 3: Create Your Application {#step-3-java}
 
 Create the directory structure:
 
@@ -619,6 +638,7 @@ Create `src/main/java/io/opentdf/quickstart/QuickstartApp.java`:
 package io.opentdf.quickstart;
 
 import io.opentdf.platform.sdk.*;
+import nl.altindag.ssl.SSLFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -638,11 +658,18 @@ public class QuickstartApp {
 
             System.out.println("📡 Connecting to platform: " + platformEndpoint);
 
+            // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+            System.out.println("🔓 Creating SSL factory for self-signed certificates...");
+            SSLFactory sslFactory = SSLFactory.builder()
+                    .withTrustingAllCertificatesWithoutValidation()
+                    .build();
+
             // Create SDK client with client credentials
             System.out.println("🔐 Initializing SDK client with client credentials...");
             SDKBuilder builder = SDKBuilder.newBuilder();
             SDK sdk = builder.platformEndpoint(platformEndpoint)
                     .clientSecret(clientId, clientSecret)
+                    .sslFactory(sslFactory)
                     .build();
 
             System.out.println("✅ SDK client initialized successfully");
@@ -700,7 +727,7 @@ public class QuickstartApp {
 }
 ```
 
-### Step 4: Run Your Application
+### Step 4: Run Your Application {#step-4-java}
 
 ```bash
 mvn compile exec:java -Dexec.mainClass="io.opentdf.quickstart.QuickstartApp"
@@ -733,7 +760,7 @@ Hello from the OpenTDF Java SDK! This data is encrypted.
 
 ---
 
-### Next Steps with Java SDK
+### Next Steps with Java SDK {#next-steps-with-java-sdk}
 
 :::tip Java-Specific Examples
 The following examples are specific to the **Java SDK**.
@@ -944,6 +971,7 @@ Here's a complete example that brings all the pieces together:
 package io.opentdf.quickstart;
 
 import io.opentdf.platform.sdk.*;
+import nl.altindag.ssl.SSLFactory;
 import io.opentdf.platform.policy.AttributeRuleTypeEnum;
 import io.opentdf.platform.policy.Action;
 import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
@@ -968,17 +996,22 @@ public class CompleteExample {
     public static void main(String[] args) throws Exception {
         String clientId = "opentdf";
         String clientSecret = "secret";
-        String platformEndpoint = "localhost:8443";
+        String platformEndpoint = "https://platform.opentdf.local:8443";
+
+        // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+        SSLFactory sslFactory = SSLFactory.builder()
+                .withTrustingAllCertificatesWithoutValidation()
+                .build();
 
         // Create SDK client
         SDK sdk = new SDKBuilder()
             .platformEndpoint(platformEndpoint)
             .clientSecret(clientId, clientSecret)
-            .useInsecurePlaintextConnection(true)
+            .sslFactory(sslFactory)
             .build();
 
         var kasInfo = new Config.KASInfo();
-        kasInfo.URL = "http://localhost:8080/kas";
+        kasInfo.URL = platformEndpoint + "/kas";
 
         // 1. Create namespace (or use existing)
         CreateNamespaceResponse nsResponse;
@@ -1141,7 +1174,7 @@ public class CompleteExample {
 </TabItem>
 <TabItem value="js" label="JavaScript/TypeScript">
 
-## JavaScript/TypeScript SDK Implementation
+## JavaScript/TypeScript SDK Implementation {#javascript-sdk-implementation}
 
 :::info Language: JavaScript/TypeScript
 This section covers the **JavaScript/TypeScript SDK** implementation. Switch tabs above to see Go or Java examples.
@@ -1153,7 +1186,7 @@ This section covers the **JavaScript/TypeScript SDK** implementation. Switch tab
 - npm or yarn
 - Your OpenTDF platform running locally (from Getting Started guide)
 
-### Step 1: Create a New Project
+### Step 1: Create a New Project {#step-1-javascript}
 
 Create a new directory and initialize a Node.js project:
 
@@ -1163,7 +1196,7 @@ cd opentdf-quickstart
 npm init -y
 ```
 
-### Step 2: Install the SDK
+### Step 2: Install the SDK {#step-2-javascript}
 
 ```bash
 npm install @opentdf/client
@@ -1174,7 +1207,7 @@ Expected output:
 > added 45 packages, and audited 46 packages in 3s
 > ```
 
-### Step 3: Create Your Application
+### Step 3: Create Your Application {#step-3-javascript}
 
 #### TypeScript Implementation Code
 
@@ -1330,7 +1363,7 @@ async function main() {
 main();
 ```
 
-### Step 4: Run Your Application
+### Step 4: Run Your Application {#step-4-javascript}
 
 For TypeScript:
 ```bash
@@ -1371,7 +1404,7 @@ Hello from the OpenTDF JavaScript SDK! This data is encrypted.
 
 ---
 
-### Next Steps with JavaScript SDK
+### Next Steps with JavaScript SDK {#next-steps-with-javascript-sdk}
 
 :::tip JavaScript-Specific Examples
 The following examples are specific to the **JavaScript/TypeScript SDK**.
@@ -1652,7 +1685,7 @@ main();
 </TabItem>
 </Tabs>
 
-## Key Concepts
+## Key Concepts {#key-concepts}
 
 ### Client Credentials Authentication
 
@@ -1688,7 +1721,7 @@ In production:
 - Configure proper certificate validation
 :::
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 
 ### Attribute Not Found
 
@@ -1840,7 +1873,7 @@ mvn clean install -U
 npm install @opentdf/client
 ```
 
-## What's Next?
+## What's Next? {#whats-next}
 
 Now that you have basic SDK integration working, explore:
 
