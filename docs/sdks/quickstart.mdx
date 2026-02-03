@@ -201,63 +201,58 @@ For additional policy management examples including managing attributes, namespa
 :::
 
 
-**Create an Attribute**
+**Create a New Attribute Value**
 
-First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
 
 ```go
 import (
 	"context"
-	"strings"
-	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
 )
 
-// Create the namespace (or use existing)
-nsResp, err := client.Namespaces.CreateNamespace(context.Background(),
-	&namespaces.CreateNamespaceRequest{
-		Name: "opentdf.io",
+// Get the existing department attribute
+attrFqn := "https://opentdf.io/attr/department"
+getAttrResp, err := client.Attributes.GetAttribute(context.Background(),
+	&attributes.GetAttributeRequest{
+		Fqn: attrFqn,
 	})
 if err != nil {
-	if strings.Contains(err.Error(), "already_exists") {
-		// Namespace already exists, fetch it
-		listResp, listErr := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
-		if listErr != nil {
-			log.Fatalf("Failed to list namespaces: %v", listErr)
-		}
-		for _, ns := range listResp.GetNamespaces() {
-			if ns.GetName() == "opentdf.io" {
-				nsResp = &namespaces.CreateNamespaceResponse{Namespace: ns}
-				log.Printf("Using existing namespace: %s", ns.GetId())
-				break
-			}
-		}
-	} else {
-		log.Fatalf("Failed to create namespace: %v", err)
+	log.Fatalf("Failed to get attribute: %v", err)
+}
+
+log.Printf("✅ Found existing attribute: %s", getAttrResp.GetAttribute().GetName())
+
+// Check if "marketing" value already exists
+targetValue := "marketing"
+valueExists := false
+for _, value := range getAttrResp.GetAttribute().GetValues() {
+	if value.GetValue() == targetValue {
+		valueExists = true
+		break
 	}
+}
+
+if !valueExists {
+	// Add the "marketing" value to the existing attribute
+	_, err = client.Attributes.CreateAttributeValue(context.Background(),
+		&attributes.CreateAttributeValueRequest{
+			AttributeId: getAttrResp.GetAttribute().GetId(),
+			Value:       targetValue,
+		})
+	if err != nil {
+		log.Fatalf("Failed to create attribute value: %v", err)
+	}
+	log.Printf("✅ Added '%s' value to department attribute", targetValue)
 } else {
-	log.Printf("Created namespace: %s", nsResp.GetNamespace().GetId())
+	log.Printf("✅ Attribute 'department' already has '%s' value", targetValue)
 }
 
-// Create the attribute with the marketing value
-attrResp, err := client.Attributes.CreateAttribute(context.Background(),
-	&attributes.CreateAttributeRequest{
-		NamespaceId: nsResp.GetNamespace().GetId(),
-		Name:        "department",
-		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
-		Values:      []string{"marketing"},
-	})
-if err != nil {
-	log.Fatalf("Failed to create attribute: %v", err)
-}
-
-log.Printf("Created attribute: %s", attrResp.GetAttribute().GetName())
-log.Printf("Full attribute FQN: https://opentdf.io/attr/department/value/marketing")
+log.Printf("Full attribute FQN: https://opentdf.io/attr/department/value/%s", targetValue)
 ```
 
-:::note
-You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
+:::warning
+If you get a [resource not found error](#resource-not-found), you may need to create the "department" attribute, along with the namespace.
 :::
 
 **Add Attributes for Access Control**
@@ -278,7 +273,7 @@ _, err = client.CreateTDF(
 ```
 
 :::tip
-Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a [permission denied error](#permission-denied--insufficient-entitlements). Try it now!
 :::
 
 **Grant Yourself Access to the Attribute**
@@ -290,8 +285,14 @@ import (
 	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 )
 
-// Get the attribute value ID from the attribute you created
-attributeValueId := attrResp.GetAttribute().GetValues()[0].GetId()
+// Get the attribute value ID for "marketing"
+var attributeValueId string
+for _, value := range getAttrResp.GetAttribute().GetValues() {
+	if value.GetValue() == targetValue {
+		attributeValueId = value.GetId()
+		break
+	}
+}
 
 // Create a subject condition set that matches your identity
 scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
@@ -333,7 +334,7 @@ if err != nil {
 log.Printf("✅ Granted yourself access to department/marketing")
 ```
 
-Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
 
 **Save TDF to a File**
 
@@ -489,6 +490,7 @@ func main() {
 					{
 						ConditionGroups: []*policy.ConditionGroup{
 							{
+								BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
 								Conditions: []*policy.Condition{
 									{
 										SubjectExternalSelectorValue: ".clientId",
@@ -775,86 +777,196 @@ For additional policy management examples including managing attributes, namespa
 :::
 
 
-**Create an Attribute**
+**Create a New Attribute Value**
 
-First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
+
+```java
+import io.opentdf.platform.policy.attributes.GetAttributeRequest;
+import io.opentdf.platform.policy.attributes.GetAttributeResponse;
+import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
+import com.connectrpc.ResponseMessageKt;
+import java.util.Collections;
+
+// Get the existing department attribute
+String attrFqn = "https://opentdf.io/attr/department";
+GetAttributeResponse getAttrResponse = ResponseMessageKt.getOrThrow(
+    sdk.getServices()
+        .attributes()
+        .getAttributeBlocking(
+            GetAttributeRequest.newBuilder()
+                .setFqn(attrFqn)
+                .build(),
+            Collections.emptyMap())
+        .execute());
+
+System.out.println("✅ Found existing attribute: " + getAttrResponse.getAttribute().getName());
+
+// Check if "marketing" value already exists
+String targetValue = "marketing";
+boolean valueExists = false;
+for (var value : getAttrResponse.getAttribute().getValuesList()) {
+    if (targetValue.equals(value.getValue())) {
+        valueExists = true;
+        break;
+    }
+}
+
+if (!valueExists) {
+    // Add the "marketing" value to the existing attribute
+    var createValueRequest = CreateAttributeValueRequest.newBuilder()
+        .setAttributeId(getAttrResponse.getAttribute().getId())
+        .setValue(targetValue)
+        .build();
+
+    ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .attributes()
+            .createAttributeValueBlocking(createValueRequest, Collections.emptyMap())
+            .execute());
+
+    System.out.println("✅ Added '" + targetValue + "' value to department attribute");
+} else {
+    System.out.println("✅ Attribute 'department' already has '" + targetValue + "' value");
+}
+
+System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/" + targetValue);
+```
+
+:::warning
+If you get a [resource not found error](#attribute-not-found), you may need to create the "department" attribute, along with the namespace:
+:::
+
+<details>
+<summary>Show full code for creating namespace and attribute</summary>
 
 ```java
 import io.opentdf.platform.policy.AttributeRuleTypeEnum;
-import io.opentdf.platform.policy.Namespace;
 import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
 import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
-import io.opentdf.platform.policy.namespaces.ListNamespacesRequest;
+import io.opentdf.platform.policy.namespaces.GetNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.GetNamespaceResponse;
 import io.opentdf.platform.policy.attributes.CreateAttributeRequest;
 import io.opentdf.platform.policy.attributes.CreateAttributeResponse;
+import io.opentdf.platform.policy.attributes.GetAttributeRequest;
+import io.opentdf.platform.policy.attributes.GetAttributeResponse;
+import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
 import com.connectrpc.ResponseMessageKt;
 import java.util.Arrays;
 import java.util.Collections;
 
-// Create the namespace (or use existing)
+// Get or create the namespace
 CreateNamespaceResponse nsResponse;
 try {
-    nsResponse = ResponseMessageKt.getOrThrow(
+    // Try to get existing namespace
+    GetNamespaceResponse getNamespaceResponse = ResponseMessageKt.getOrThrow(
         sdk.getServices()
             .namespaces()
-            .createNamespaceBlocking(
-                CreateNamespaceRequest.newBuilder()
-                    .setName("opentdf.io")
+            .getNamespaceBlocking(
+                GetNamespaceRequest.newBuilder()
+                    .setFqn("https://opentdf.io")
                     .build(),
                 Collections.emptyMap())
             .execute());
-    System.out.println("Created namespace: " + nsResponse.getNamespace().getId());
+
+    nsResponse = CreateNamespaceResponse.newBuilder()
+        .setNamespace(getNamespaceResponse.getNamespace())
+        .build();
+    System.out.println("✅ Using existing namespace: " + getNamespaceResponse.getNamespace().getId());
+
 } catch (Exception e) {
-    if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
-        // Namespace already exists, fetch it
-        var listResponse = ResponseMessageKt.getOrThrow(
+    if (e.getMessage() != null && e.getMessage().contains("not_found")) {
+        // Namespace doesn't exist, create it
+        nsResponse = ResponseMessageKt.getOrThrow(
             sdk.getServices()
                 .namespaces()
-                .listNamespacesBlocking(
-                    ListNamespacesRequest.newBuilder().build(),
+                .createNamespaceBlocking(
+                    CreateNamespaceRequest.newBuilder()
+                        .setName("opentdf.io")
+                        .build(),
                     Collections.emptyMap())
                 .execute());
-        Namespace existingNs = null;
-        for (Namespace ns : listResponse.getNamespacesList()) {
-            if ("opentdf.io".equals(ns.getName())) {
-                existingNs = ns;
-                break;
-            }
-        }
-        nsResponse = CreateNamespaceResponse.newBuilder()
-            .setNamespace(existingNs)
-            .build();
-        System.out.println("Using existing namespace: " + existingNs.getId());
+        System.out.println("✅ Created namespace: " + nsResponse.getNamespace().getId());
     } else {
         throw e;
     }
 }
 
-// Create the attribute with the marketing value
-var attrRequest = CreateAttributeRequest.newBuilder()
-    .setNamespaceId(nsResponse.getNamespace().getId())
-    .setName("department")
-    .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
-    .addAllValues(Arrays.asList("marketing"))
-    .build();
+// Get or create the department attribute, and ensure it has the "marketing" value
+String attrFqn = "https://opentdf.io/attr/department";
+try {
+    // Try to get the existing attribute
+    GetAttributeResponse getAttrResponse = ResponseMessageKt.getOrThrow(
+        sdk.getServices()
+            .attributes()
+            .getAttributeBlocking(
+                GetAttributeRequest.newBuilder()
+                    .setFqn(attrFqn)
+                    .build(),
+                Collections.emptyMap())
+            .execute());
 
-CreateAttributeResponse attrResponse = ResponseMessageKt.getOrThrow(
-    sdk.getServices()
-        .attributes()
-        .createAttributeBlocking(attrRequest, Collections.emptyMap())
-        .execute());
+    System.out.println("✅ Found existing attribute: " + getAttrResponse.getAttribute().getName());
 
-System.out.println("Created attribute: " + attrResponse.getAttribute().getName());
-System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/marketing");
+    // Check if "marketing" value already exists
+    String targetValue = "marketing";
+    boolean valueExists = false;
+    for (var value : getAttrResponse.getAttribute().getValuesList()) {
+        if (targetValue.equals(value.getValue())) {
+            valueExists = true;
+            break;
+        }
+    }
+
+    if (!valueExists) {
+        // Add the value to the existing attribute
+        var createValueRequest = CreateAttributeValueRequest.newBuilder()
+            .setAttributeId(getAttrResponse.getAttribute().getId())
+            .setValue(targetValue)
+            .build();
+
+        ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .attributes()
+                .createAttributeValueBlocking(createValueRequest, Collections.emptyMap())
+                .execute());
+
+        System.out.println("✅ Added '" + targetValue + "' value to department attribute");
+    } else {
+        System.out.println("✅ Attribute 'department' already has '" + targetValue + "' value");
+    }
+
+} catch (Exception e) {
+    if (e.getMessage() != null && e.getMessage().contains("not_found")) {
+        // Attribute doesn't exist, create it with the value
+        String targetValue = "marketing";
+        var attrRequest = CreateAttributeRequest.newBuilder()
+            .setNamespaceId(nsResponse.getNamespace().getId())
+            .setName("department")
+            .setRule(AttributeRuleTypeEnum.ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF)
+            .addAllValues(Arrays.asList(targetValue))
+            .build();
+
+        CreateAttributeResponse createAttrResponse = ResponseMessageKt.getOrThrow(
+            sdk.getServices()
+                .attributes()
+                .createAttributeBlocking(attrRequest, Collections.emptyMap())
+                .execute());
+        System.out.println("✅ Created attribute: " + createAttrResponse.getAttribute().getName());
+    } else {
+        throw e;
+    }
+}
+
+String targetValue = "marketing";
+System.out.println("Full attribute FQN: https://opentdf.io/attr/department/value/" + targetValue);
 ```
 
-:::note
-You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
-:::
+</details>
 
 **Add Attributes for Access Control**
 
-Now that you've created the attribute, update your `createTDF` call to include the attribute for access control:
+Now that you've created the attribute, update your TDF config to include the attribute for access control:
 
 ```java
 var tdfConfig = Config.newTDFConfig(
@@ -864,7 +976,7 @@ var tdfConfig = Config.newTDFConfig(
 ```
 
 :::tip
-Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a [permission denied error](#permission-denied--insufficient-entitlements). Try it now!
 :::
 
 **Grant Yourself Access to the Attribute**
@@ -873,7 +985,11 @@ To decrypt the TDF you just created, you need to grant yourself the `marketing` 
 
 ```java
 import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.Condition;
+import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
+import io.opentdf.platform.policy.ConditionGroup;
 import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.SubjectSet;
 import io.opentdf.platform.policy.subjectmapping.*;
 
 // Get the attribute value ID from the attribute you created
@@ -887,6 +1003,7 @@ var condition = Condition.newBuilder()
     .build();
 
 var conditionGroup = ConditionGroup.newBuilder()
+    .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
     .addConditions(condition)
     .build();
 
@@ -896,35 +1013,34 @@ var subjectSet = SubjectSet.newBuilder()
 
 var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
     .setSubjectConditionSet(
-        SubjectConditionSet.newBuilder()
+        SubjectConditionSetCreate.newBuilder()
             .addSubjectSets(subjectSet)
             .build())
     .build();
 
 var scsResponse = ResponseMessageKt.getOrThrow(
     sdk.getServices()
-        .subjectMapping()
+        .subjectMappings()
         .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
         .execute());
 
 // Create the subject mapping to grant yourself the entitlement
 var smRequest = CreateSubjectMappingRequest.newBuilder()
     .setAttributeValueId(attributeValueId)
-    .addActions(Action.newBuilder()
-        .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT))
-    .setSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+    .addActions(Action.newBuilder().setName("read").build())
+    .setExistingSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
     .build();
 
 ResponseMessageKt.getOrThrow(
     sdk.getServices()
-        .subjectMapping()
+        .subjectMappings()
         .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
         .execute());
 
 System.out.println("✅ Granted yourself access to department/marketing");
 ```
 
-Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
 
 **Save TDF to a File**
 
@@ -974,7 +1090,11 @@ import io.opentdf.platform.sdk.*;
 import nl.altindag.ssl.SSLFactory;
 import io.opentdf.platform.policy.AttributeRuleTypeEnum;
 import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.Condition;
+import io.opentdf.platform.policy.ConditionBooleanTypeEnum;
+import io.opentdf.platform.policy.ConditionGroup;
 import io.opentdf.platform.policy.SubjectMappingOperatorEnum;
+import io.opentdf.platform.policy.SubjectSet;
 import io.opentdf.platform.policy.Namespace;
 import io.opentdf.platform.policy.Attribute;
 import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
@@ -1027,7 +1147,7 @@ public class CompleteExample {
                     .execute());
             System.out.println("✅ Created namespace: " + nsResponse.getNamespace().getId());
         } catch (Exception e) {
-            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+            if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
                 // Namespace already exists, fetch it
                 var listResponse = ResponseMessageKt.getOrThrow(
                     sdk.getServices()
@@ -1069,7 +1189,7 @@ public class CompleteExample {
                     .execute());
             System.out.println("✅ Created attribute: " + attrResponse.getAttribute().getName());
         } catch (Exception e) {
-            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+            if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
                 // Attribute already exists, fetch it
                 var listResponse = ResponseMessageKt.getOrThrow(
                     sdk.getServices()
@@ -1117,39 +1237,43 @@ public class CompleteExample {
             .addSubjectExternalValues("opentdf")
             .build();
 
+        var conditionGroup = ConditionGroup.newBuilder()
+            .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+            .addConditions(condition)
+            .build();
+
+        var subjectSet = SubjectSet.newBuilder()
+            .addConditionGroups(conditionGroup)
+            .build();
+
         var scsRequest = CreateSubjectConditionSetRequest.newBuilder()
             .setSubjectConditionSet(
-                SubjectConditionSet.newBuilder()
-                    .addSubjectSets(SubjectSet.newBuilder()
-                        .addConditionGroups(ConditionGroup.newBuilder()
-                            .addConditions(condition)
-                            .build())
-                        .build())
+                SubjectConditionSetCreate.newBuilder()
+                    .addSubjectSets(subjectSet)
                     .build())
             .build();
 
         var scsResponse = ResponseMessageKt.getOrThrow(
             sdk.getServices()
-                .subjectMapping()
+                .subjectMappings()
                 .createSubjectConditionSetBlocking(scsRequest, Collections.emptyMap())
                 .execute());
 
         var smRequest = CreateSubjectMappingRequest.newBuilder()
             .setAttributeValueId(attributeValueId)
-            .addActions(Action.newBuilder()
-                .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT))
-            .setSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
+            .addActions(Action.newBuilder().setName("read").build())
+            .setExistingSubjectConditionSetId(scsResponse.getSubjectConditionSet().getId())
             .build();
 
         try {
             ResponseMessageKt.getOrThrow(
                 sdk.getServices()
-                    .subjectMapping()
+                    .subjectMappings()
                     .createSubjectMappingBlocking(smRequest, Collections.emptyMap())
                     .execute());
             System.out.println("✅ Granted yourself access to department/marketing");
         } catch (Exception e) {
-            if (e.getMessage() != null && e.getMessage().contains("already_exists")) {
+            if (e.getMessage() != null && (e.getMessage().contains("already_exists") || e.getMessage().contains("unique field violation"))) {
                 System.out.println("✅ Subject mapping already exists for department/marketing");
             } else {
                 throw e;
@@ -1419,46 +1543,41 @@ For additional policy management examples including managing attributes, namespa
 :::
 
 
-**Create an Attribute**
+**Create a New Attribute Value**
 
-First, let's create an attribute that we can use for access control. We'll create a department attribute with a marketing value:
+First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
 
 ```typescript
-// Create the namespace (or use existing)
-let nsResponse;
-try {
-    nsResponse = await client.namespaces.createNamespace({
-        name: 'opentdf.io',
-    });
-    console.log(`Created namespace: ${nsResponse.namespace.id}`);
-} catch (error: any) {
-    if (error.message && error.message.includes('already_exists')) {
-        // Namespace already exists, fetch it
-        const listResponse = await client.namespaces.listNamespaces();
-        const existingNs = listResponse.namespaces.find(
-            (ns: any) => ns.name === 'opentdf.io'
-        );
-        nsResponse = { namespace: existingNs };
-        console.log(`Using existing namespace: ${existingNs.id}`);
-    } else {
-        throw error;
-    }
-}
-
-// Create the attribute with the marketing value
-const attrResponse = await client.attributes.createAttribute({
-    namespaceId: nsResponse.namespace.id,
-    name: 'department',
-    rule: 'ANY_OF',
-    values: ['marketing'],
+// Get the existing department attribute
+const attrFqn = 'https://opentdf.io/attr/department';
+const getAttrResponse = await client.attributes.getAttribute({
+    fqn: attrFqn,
 });
 
-console.log(`Created attribute: ${attrResponse.attribute.name}`);
-console.log('Full attribute FQN: https://opentdf.io/attr/department/value/marketing');
+console.log(`✅ Found existing attribute: ${getAttrResponse.attribute.name}`);
+
+// Check if "marketing" value already exists
+const targetValue = 'marketing';
+const valueExists = getAttrResponse.attribute.values.some(
+    (value: any) => value.value === targetValue
+);
+
+if (!valueExists) {
+    // Add the "marketing" value to the existing attribute
+    await client.attributes.createAttributeValue({
+        attributeId: getAttrResponse.attribute.id,
+        value: targetValue,
+    });
+    console.log(`✅ Added '${targetValue}' value to department attribute`);
+} else {
+    console.log(`✅ Attribute 'department' already has '${targetValue}' value`);
+}
+
+console.log(`Full attribute FQN: https://opentdf.io/attr/department/value/${targetValue}`);
 ```
 
-:::note
-You may encounter errors if attempting to create a resource that already exists. The [complete example below](#complete-example-create-attribute-encrypt-grant-access-and-decrypt) includes full error handling for idempotency.
+:::warning
+If you get a [resource not found error](#resource-not-found), you may need to create the "department" attribute, along with the namespace.
 :::
 
 **Add Attributes for Access Control**
@@ -1474,7 +1593,7 @@ const encryptedStream = await client.encrypt({
 ```
 
 :::tip
-Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a permission denied error. Try it now!
+Only users with the `department/marketing` entitlement will be able to decrypt this TDF. If you try to decrypt before granting access to the attribute, you will see a [permission denied error](#permission-denied--insufficient-entitlements). Try it now!
 :::
 
 **Grant Yourself Access to the Attribute**
@@ -1482,14 +1601,18 @@ Only users with the `department/marketing` entitlement will be able to decrypt t
 To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
 
 ```typescript
-// Get the attribute value ID from the attribute you created
-const attributeValueId = attrResponse.attribute.values[0].id;
+// Get the attribute value ID for "marketing"
+const attributeValue = getAttrResponse.attribute.values.find(
+    (value: any) => value.value === targetValue
+);
+const attributeValueId = attributeValue.id;
 
 // Create subject condition set that matches your identity
 const scsResponse = await client.subjectMapping.createSubjectConditionSet({
     subjectConditionSet: {
         subjectSets: [{
             conditionGroups: [{
+                booleanOperator: 'CONDITION_BOOLEAN_TYPE_ENUM_AND',
                 conditions: [{
                     subjectExternalSelectorValue: '.clientId',
                     operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
@@ -1503,14 +1626,14 @@ const scsResponse = await client.subjectMapping.createSubjectConditionSet({
 // Create the subject mapping to grant yourself the entitlement
 await client.subjectMapping.createSubjectMapping({
     attributeValueId: attributeValueId,
-    actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
-    subjectConditionSetId: scsResponse.subjectConditionSet.id,
+    actions: [{ name: 'read' }],
+    existingSubjectConditionSetId: scsResponse.subjectConditionSet.id,
 });
 
 console.log('✅ Granted yourself access to department/marketing');
 ```
 
-Now you can decrypt the TDF you encrypted with the `marketing` attribute.
+Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
 
 **Save TDF to a File**
 
@@ -1638,6 +1761,7 @@ async function main() {
             subjectConditionSet: {
                 subjectSets: [{
                     conditionGroups: [{
+                        booleanOperator: 'CONDITION_BOOLEAN_TYPE_ENUM_AND',
                         conditions: [{
                             subjectExternalSelectorValue: '.clientId',
                             operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
@@ -1651,8 +1775,8 @@ async function main() {
         try {
             await client.subjectMapping.createSubjectMapping({
                 attributeValueId: attributeValueId,
-                actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
-                subjectConditionSetId: scsResponse.subjectConditionSet.id,
+                actions: [{ name: 'read' }],
+                existingSubjectConditionSetId: scsResponse.subjectConditionSet.id,
             });
             console.log('✅ Granted yourself access to department/marketing');
         } catch (error: any) {
@@ -1723,13 +1847,13 @@ In production:
 
 ## Troubleshooting {#troubleshooting}
 
-### Attribute Not Found
+### Resource Not Found
 
 **Error**: `not_found: resource not found` or `attribute not found`
 
-**Cause**: You're trying to encrypt with an attribute that doesn't exist on the platform.
+**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform.
 
-**Solution**: Create the attribute first using otdfctl or the [SDK Create Attribute function](/sdks/policy#create-attribute).
+**Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
 
 **Quick fix using the CLI:**
 
@@ -1744,7 +1868,10 @@ otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
 
 ### Permission Denied / Insufficient Entitlements
 
-**Error**: When attempting to decrypt a TDF, you may see a verbose error like:
+**Error**: When attempting to decrypt a TDF, you may see different error formats depending on your SDK:
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```
 reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://platform.opentdf.local:8443 }:tdf: rewrap request 403
@@ -1757,13 +1884,58 @@ rpc error: code = PermissionDenied desc = forbidden]
 - `rewrap request 403`
 - `permission_denied: request error`
 
-These indicate an authorization failure, not a cryptographic or network issue.
+</TabItem>
+<TabItem value="java" label="Java">
+
+```
+io.opentdf.platform.sdk.SDK$SplitKeyException: splitKey.unable to reconstruct split key:
+{KeySplitStep{kas='https://platform.opentdf.local:8443/kas', splitID=''}=io.opentdf.platform.sdk.SDKException: error unwrapping key}
+error unwrapping key
+```
+
+**What to Look For**: The meaningful information is:
+- `splitKey.unable to reconstruct split key`
+- `error unwrapping key`
+- `SplitKeyException`
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```
+Error: splitKey.unable to reconstruct split key
+error unwrapping key
+```
+
+**What to Look For**: The meaningful information is:
+- `unable to reconstruct split key`
+- `error unwrapping key`
+
+</TabItem>
+</Tabs>
+
+These errors indicate an authorization failure, not a cryptographic or network issue.
 
 **Cause**: Your identity lacks the required entitlements (attribute values) to decrypt the TDF. This is ABAC (Attribute-Based Access Control) working correctly.
 
 For example, if you encrypted data with `https://opentdf.io/attr/department/value/marketing`, you need a subject mapping that grants you the `marketing` entitlement.
 
 **Solution**: Grant yourself (or the entity) entitlements by [creating a subject mapping](/sdks/policy#create-subject-mapping).
+
+:::warning Common Mistake: Using "decrypt" Instead of "read"
+When creating subject mappings for TDF decryption, the action must be `"read"`, not `"decrypt"`. While "decrypt" seems intuitive, the OpenTDF platform uses `"read"` as the action name for TDF decryption entitlements.
+
+**Incorrect:**
+```java
+.addActions(Action.newBuilder().setName("decrypt").build())
+```
+
+**Correct:**
+```java
+.addActions(Action.newBuilder().setName("read").build())
+```
+
+Using the wrong action name will result in the "error unwrapping key" error shown above.
+:::
 
 **Quick fix using the CLI:**
 
