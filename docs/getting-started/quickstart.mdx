@@ -145,7 +145,41 @@ We'll run a local instance using Docker. This includes the [Platform](https://gi
 Not for production use.
 :::
 
-#### Step 1: Run Pre-flight Check (Optional)
+#### Step 1: Check for Port Conflicts (Recommended)
+
+OpenTDF uses these ports by default:
+- **8443**: Platform API
+- **9443**: Keycloak authentication
+- **2019**: Caddy admin
+- **5432**: PostgreSQL
+
+Port 9443 commonly conflicts with other services (Rancher, steve, Kubernetes dashboards). Before installing, check if these ports are available:
+
+```shell
+# Check for port conflicts
+lsof -i :9443  # Most common conflict
+lsof -i :8443
+lsof -i :5432
+```
+
+If ports are in use, configure OpenTDF to use different ports before installation:
+
+```shell
+# Create config directory
+mkdir -p ~/.opentdf/platform
+
+# Set custom ports
+cat > ~/.opentdf/platform/.env <<'EOF'
+PLATFORM_PORT=8443
+KEYCLOAK_PORT=9444
+CADDY_ADMIN_PORT=2019
+POSTGRES_PORT=5432
+EOF
+```
+
+Change `KEYCLOAK_PORT` to an available port if 9443 is in use.
+
+#### Step 2: Run Pre-flight Check (Optional)
 
 Verify your system meets the requirements:
 
@@ -155,7 +189,7 @@ curl -fsSL https://opentdf.io/quickstart/check.sh | bash
 
 Or download and run locally:
 ```shell
-curl -fsSL https://docs.opentdf.io/quickstart/check.sh -o check.sh
+curl -fsSL https://opentdf.io/quickstart/check.sh -o check.sh
 chmod +x check.sh
 ./check.sh
 ```
@@ -201,9 +235,9 @@ Ready to install OpenTDF:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-</details>
+></details>
 
-#### Step 2: Install OpenTDF
+#### Step 3: Install OpenTDF
 
 Run the automated installer:
 
@@ -213,7 +247,7 @@ curl -fsSL https://opentdf.io/quickstart/install.sh | bash
 
 Or download and run locally:
 ```shell
-curl -fsSL https://docs.opentdf.io/quickstart/install.sh -o install.sh
+curl -fsSL https://opentdf.io/quickstart/install.sh -o install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -262,6 +296,10 @@ Password: [you'll be prompted for your password again]
 ✓ Caddy root CA imported to System keychain
   Note: You may need to restart your browser
 
+:::note Certificate Import May Fail Silently
+If the certificate import fails during installation, you'll need to import it manually in the next step. Symptoms include browser "Not Secure" warnings and needing `-k` flags with curl commands.
+:::
+
 → Running connectivity test...
 ✓ Platform is responding
 
@@ -283,7 +321,7 @@ Password: [you'll be prompted for your password again]
      /Users/username/.opentdf/bin/otdfctl --version
 
   4. Create an otdfctl profile:
-     /Users/username/.opentdf/bin/otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
+     /Users/username/.opentdf/bin/otdfctl profile create platform https://platform.opentdf.local:8443
 
 🌐 Access points:
    Platform: https://platform.opentdf.local:8443
@@ -319,7 +357,7 @@ You'll be prompted for your password twice:
 1. To add entries to /etc/hosts
 2. To import the SSL certificate
 
-#### Step 3: Add otdfctl to Your PATH (Optional)
+#### Step 4: Add otdfctl to Your PATH (Optional)
 
 Choose one option:
 
@@ -350,7 +388,7 @@ Expected output:
 > otdfctl version 0.x.x (2026-XX-XXT00:00:00Z) <commit-hash>
 > ```
 
-#### Step 4: Verify Installation
+#### Step 5: Verify Installation
 
 ```shell
 otdfctl --version
@@ -374,19 +412,19 @@ Expected output:
 
 When you visit the Keycloak URL, seeing "Resource not found" is expected and indicates Keycloak is running correctly.
 
-#### Step 5: Create an otdfctl Profile
+#### Step 6: Create an otdfctl Profile
 
 A profile stores your platform connection details and authentication credentials, making commands shorter and easier to use.
 
 Without a profile, you'd need to type the full platform URL with every command. With a profile, you simply reference it by name using `--profile platform-otdf-local`. This also allows you to manage multiple environments (like local, staging, and production) by switching between different profiles.
 
 ```shell
-otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
+otdfctl profile create platform https://platform.opentdf.local:8443
 ```
 
 Expected output:
 > ```console
-> SUCCESS   Profile platform-otdf-local created
+> SUCCESS   Profile platform created
 > ```
 
 **About Default Profiles:**
@@ -396,15 +434,29 @@ When you have only one profile (like most users following this guide), it automa
 If you have multiple profiles, you can set which one is the default:
 
 ```shell
-otdfctl profile set-default platform-otdf-local
+otdfctl profile set-default platform
 ```
 
 Expected output:
 > ```console
-> Set profile platform-otdf-local as default
+> Set profile platform as default
 > ```
 
 For the rest of this guide, commands use the default profile. If you have multiple profiles, you can specify which one to use by adding `--profile <profile-name>` to any command.
+
+#### Step 7: Trust SSL Certificate (If Needed)
+
+The installer attempts to import Caddy's self-signed certificate automatically, but this may fail without proper permissions.
+
+**Symptoms of untrusted certificate:**
+- Browser shows "Not Secure" warning when visiting platform URLs
+- curl commands require `-k` flag
+- SDK applications show certificate validation errors
+
+**Solution:** Follow the [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) guide for detailed instructions on:
+- Extracting the Caddy root CA certificate
+- Trusting it on your OS (macOS, Linux, or Windows)
+- Using the `OTDFCTL_TLS_NO_VERIFY` environment variable as a workaround
 
 :::tip Managing the Platform
 Need to start, stop, or restart the platform later? See the [Managing the Platform](/getting-started/managing-platform) guide for platform management commands.
@@ -420,7 +472,7 @@ otdfctl auth client-credentials opentdf secret
 
 Expected output:
 > ```console
-> Client credentials set for profile [platform-otdf-local]
+> Client credentials set for profile [platform]
 > ```
 
 Credentials:
@@ -770,7 +822,21 @@ otdfctl policy attributes get --id=$DEPT_ATTRIBUTE_ID
 
 ### Create Clearance Attribute
 
-Now create a clearance attribute using `HIERARCHY` rule. In the next few steps you will add an executive clearance value and a standard clearance value to the hierarchy. The order that you add the values to the hierarchy matters - the order defines the hierarchy.
+Now create a clearance attribute using `HIERARCHY` rule.
+
+:::tip Understanding HIERARCHY Rule
+With HIERARCHY, the **order you create values** determines their privilege level:
+- **First value created = highest privilege** (can access all lower levels)
+- **Later values = lower privileges** (cannot access higher levels)
+
+For example, if you create "executive" first and "standard" second:
+- Users with "executive" clearance can access both "executive" and "standard" content
+- Users with "standard" clearance can only access "standard" content
+
+The order matters! Always create values from highest to lowest privilege.
+:::
+
+In the next few steps you will add an executive clearance value and a standard clearance value to the hierarchy.
 
 ```shell
 otdfctl policy attributes create --name clearance -s $NAMESPACE_ID -r HIERARCHY
@@ -799,7 +865,7 @@ export CLEARANCE_ATTRIBUTE_ID=<id>
 
 ### Add Clearance Values
 
-Add clearance levels. Order matters for HIERARCHY - list them from highest to lowest:
+Add clearance levels in order from highest to lowest privilege. We'll create "executive" first (highest clearance), then "standard" (lower clearance):
 
 ```shell
 otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
@@ -912,7 +978,7 @@ For this tutorial, we'll simulate our three personas by creating condition sets 
       {
         "conditions": [
           {
-            "subject_external_selector_value": ".clientId",
+            "subject_external_selector_value": ".client_id",
             "operator": 1,
             "subject_external_values": [
               "opentdf"
@@ -998,7 +1064,7 @@ This is an authorization **decision** in action! Here's what happened:
 Now let's grant an **entitlement** to represent Jen's access level. This changes what attribute values we're entitled to:
 
 ```shell
-otdfctl policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 > ```console
@@ -1058,7 +1124,7 @@ Notice this document has TWO attributes - it requires BOTH finance department me
 To simulate Preston's access, let's grant ourselves an additional **entitlement** for the finance department:
 
 ```shell
-otdfctl policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 Expected output:
@@ -1139,3 +1205,192 @@ In production, you would:
 - Learn about [Key Access Servers (KAS)](/components/key_access) for policy enforcement
 - Understand [policy management](/components/policy) for access control
 - Build [attribute hierarchies](/components/authorization) for complex organizational structures
+
+## Troubleshooting
+
+:::note Troubleshooting Scope
+This section covers issues specific to **platform installation and setup**. For SDK-specific errors when writing code, see [SDK Troubleshooting](/sdks/troubleshooting).
+:::
+
+### "Address already in use" Error
+
+**Symptom:** Services fail to start, docker compose shows port binding errors
+
+**Cause:** Port conflict - another service is using one of OpenTDF's required ports
+
+**Solution:**
+
+```shell
+# Find what's using the port
+lsof -i :9443  # or whichever port is conflicting
+
+# Option 1: Stop the conflicting service
+
+# Option 2: Reconfigure OpenTDF to use different ports
+# Edit ~/.opentdf/platform/.env and change KEYCLOAK_PORT
+# Then restart the platform
+cd ~/.opentdf/platform && docker compose restart
+```
+
+### "Invalid character '<'" Error During Authentication
+
+**Symptom:**
+```console
+ERROR: invalid character '<' looking for beginning of value
+```
+
+**Cause:** Port conflict - you're hitting a different service (like Rancher) instead of Keycloak
+
+**Solution:** Fix the port conflict as described above in Step 1, then restart the platform
+
+### "PermissionDenied" After Creating Subject Mapping
+
+**Symptom:** Subject mapping created but decryption still fails with `PermissionDenied`
+
+**Investigation steps:**
+
+```shell
+# 1. Verify mapping exists
+otdfctl policy subject-mappings list
+
+# 2. Check your token claims match condition set
+otdfctl auth print-access-token
+
+# 3. Verify field name in condition set
+# Token shows "client_id" - your condition set must use ".client_id" not ".clientId"
+
+# 4. Check platform logs for details
+docker logs platform-platform-1 --tail 50
+```
+
+### TLS/Certificate Warnings
+
+**Symptom:** Browser shows "Not Secure", curl/SDK commands show certificate validation errors
+
+**Solution:** See [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) for complete instructions on trusting the Caddy root CA certificate
+
+### Services Won't Start
+
+**Investigation:**
+
+```shell
+# Check all services
+docker ps --filter name=platform-
+
+# View logs for specific service
+docker logs platform-platform-1
+docker logs platform-keycloak-1
+
+# Restart everything
+cd ~/.opentdf/platform
+docker compose down
+docker compose up -d
+
+# Wait for health checks
+watch 'docker ps --filter name=platform- --format "table {{.Names}}\t{{.Status}}"'
+```
+
+### Platform Not Responding
+
+**Symptom:** Commands timeout or connection refused
+
+**Solution:**
+
+```shell
+# Check if platform is healthy
+curl -k https://platform.opentdf.local:8443/healthz
+
+# Expected output: {"status":"SERVING"}
+
+# If not responding, check Docker logs
+docker logs platform-platform-1 --tail 100
+
+# Restart platform service
+cd ~/.opentdf/platform && docker compose restart platform
+```
+
+## Quick Reference
+
+### Platform Management
+
+```shell
+# Start platform
+cd ~/.opentdf/platform && docker compose up -d
+
+# Stop platform
+cd ~/.opentdf/platform && docker compose down
+
+# View logs
+docker logs -f platform-platform-1
+
+# Check health
+curl -k https://platform.opentdf.local:8443/healthz
+
+# Check service status
+docker ps --filter name=platform-
+```
+
+### Common otdfctl Commands
+
+```shell
+# Profiles
+otdfctl profile list
+otdfctl profile create <name> <url> [--tls-no-verify]
+otdfctl profile set-default <name>
+
+# Authentication
+otdfctl auth client-credentials <client-id> <secret>
+otdfctl auth print-access-token
+
+# Namespaces
+otdfctl policy attributes namespaces list
+otdfctl policy attributes namespaces create --name <name>
+otdfctl policy attributes namespaces get --id <id>
+
+# Attributes
+otdfctl policy attributes create \
+  --name <name> -s <namespace-id> --rule <ANY_OF|ALL_OF|HIERARCHY>
+otdfctl policy attributes get --id <id>
+otdfctl policy attributes list
+
+# Values
+otdfctl policy attributes values create \
+  -a <attribute-id> --value <value>
+otdfctl policy attributes values get --id <id>
+
+# Subject Mappings
+otdfctl policy subject-condition-sets create -j <file.json>
+otdfctl policy subject-mappings create \
+  --action STANDARD_ACTION_DECRYPT \
+  --attribute-value-id <value-id> \
+  --subject-condition-set-id <condition-set-id>
+otdfctl policy subject-mappings list
+
+# Encrypt/Decrypt
+echo "data" | otdfctl encrypt -o file.tdf --attr <attribute-url>
+otdfctl encrypt <input-file> -o <output.tdf> --attr <attribute-url>
+otdfctl decrypt <file.tdf>
+```
+
+### Default Ports
+
+```shell
+# Configure in ~/.opentdf/platform/.env if needed
+PLATFORM_PORT=8443
+KEYCLOAK_PORT=9443
+CADDY_ADMIN_PORT=2019
+POSTGRES_PORT=5432
+```
+
+### Access Points
+
+- Platform API: https://platform.opentdf.local:8443
+- Platform Health: https://platform.opentdf.local:8443/healthz
+- Keycloak: https://keycloak.opentdf.local:9443
+
+### Default Test Credentials
+
+- Client ID: `opentdf`
+- Client Secret: `secret`
+- Username: `user1`
+- Password: `testuser123`
