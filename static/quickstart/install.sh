@@ -65,17 +65,59 @@ fi
 echo -e "${BLUE}→${NC} Detected OS: $OS ($ARCH)"
 echo ""
 
+# Detect docker compose command early (needed for "already installed" message)
+if command -v docker-compose &> /dev/null; then
+    COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null 2>&1; then
+    COMPOSE_CMD="docker compose"
+else
+    COMPOSE_CMD="docker compose"  # Default fallback
+fi
+
 # Check if already installed
 if [ -d "$OPENTDF_DIR" ]; then
     echo -e "${YELLOW}⚠ OpenTDF appears to be already installed at $OPENTDF_DIR${NC}"
+    echo ""
     read -p "Do you want to reinstall? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled."
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo -e "${GREEN}OpenTDF is already installed!${NC}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "🚀 To start the platform:"
+        echo ""
+        echo "  1. Start Docker/Colima (if not running):"
+        echo "     # For Colima users (macOS)"
+        echo "     colima start"
+        echo ""
+        echo "     # For Docker Desktop users"
+        echo "     # Start Docker Desktop from Applications"
+        echo ""
+        echo "  2. Start OpenTDF services:"
+        echo "     cd $OPENTDF_DIR"
+        echo "     $COMPOSE_CMD up -d"
+        echo ""
+        echo "🛠️  Management commands:"
+        echo "   Stop:    cd $OPENTDF_DIR && $COMPOSE_CMD down"
+        echo "   Start:   cd $OPENTDF_DIR && $COMPOSE_CMD up -d"
+        echo "   Restart: cd $OPENTDF_DIR && $COMPOSE_CMD restart"
+        echo "   Logs:    cd $OPENTDF_DIR && $COMPOSE_CMD logs -f"
+        echo "   Status:  cd $OPENTDF_DIR && $COMPOSE_CMD ps"
+        echo ""
+        echo "✅ Verify it's running:"
+        echo "   https://platform.opentdf.local:8443/healthz"
+        echo "   (Should show: {\"status\":\"SERVING\"})"
+        echo ""
+        echo "📚 Full documentation:"
+        echo "   https://opentdf.io/quickstart"
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         exit 0
     fi
     echo -e "${BLUE}→${NC} Stopping existing services..."
-    cd "$OPENTDF_DIR" && docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
+    (cd "$OPENTDF_DIR" && $COMPOSE_CMD down 2>/dev/null) || true
 fi
 
 # Create installation directory
@@ -300,7 +342,7 @@ start_services() {
 
     while [ $WAIT_TIME -lt $MAX_WAIT ]; do
         # Check if key services are healthy
-        if docker compose ps | grep -q "healthy" 2>/dev/null || docker-compose ps | grep -q "healthy" 2>/dev/null; then
+        if $COMPOSE_CMD ps | grep -q "healthy" 2>/dev/null; then
             echo -e "${GREEN}✓${NC} Services are starting up"
             break
         fi
