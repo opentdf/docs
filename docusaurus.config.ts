@@ -101,8 +101,8 @@ const config: Config = {
   themeConfig: {
     colorMode: {
       defaultMode: "light",
-      disableSwitch: true,
-      respectPrefersColorScheme: false,
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
     },
     image: "img/opentdf-social.png",
     navbar: {
