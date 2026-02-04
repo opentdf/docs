@@ -16,7 +16,45 @@ This guide covers the **JavaScript/TypeScript SDK** implementation. For other la
 - npm or yarn
 - Your OpenTDF platform running locally (from Getting Started guide)
 
-## Step 1: Create a New Project {#step-1-javascript}
+:::warning Browser Authentication Requirements
+The JavaScript SDK is browser-only and cannot use client credentials (client secrets) for security reasons. Instead, you'll need to obtain a refresh token from your OIDC provider. This quickstart shows how to get a token from Keycloak for testing purposes.
+
+For production applications, your web app would obtain tokens through a proper OAuth/OIDC authentication flow.
+:::
+
+## Step 1: Get a Refresh Token {#step-1-javascript}
+
+Before you can use the SDK, you need to obtain a refresh token from Keycloak:
+
+```bash
+curl -k -X POST 'https://keycloak.opentdf.local:9443/auth/realms/opentdf/protocol/openid-connect/token' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=password' \
+  -d 'client_id=opentdf-public' \
+  -d 'username=sample-user' \
+  -d 'password=testuser123' \
+  -d 'scope=openid'
+```
+
+This will return a JSON response. Copy the `refresh_token` value (you'll need it in Step 4).
+
+<details>
+<summary>Example response</summary>
+
+```json
+{
+  "access_token": "eyJhbGc...",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": "eyJhbGc...",  // Copy this value
+  "token_type": "Bearer",
+  "scope": "openid email profile"
+}
+```
+
+</details>
+
+## Step 2: Create a New Project {#step-2-javascript}
 
 Create a new directory and initialize a Node.js project:
 
@@ -26,7 +64,7 @@ cd opentdf-quickstart
 npm init -y
 ```
 
-## Step 2: Install the SDK {#step-2-javascript}
+## Step 3: Install the SDK {#step-3-javascript}
 
 ```bash
 npm install @opentdf/client
@@ -37,39 +75,42 @@ Expected output:
 > added 45 packages, and audited 46 packages in 3s
 > ```
 
-## Step 3: Create Your Application {#step-3-javascript}
+## Step 4: Create Your Application {#step-4-javascript}
 
-### TypeScript Implementation Code
+<details>
+<summary>TypeScript Implementation Code</summary>
 
 For **TypeScript** projects, create `quickstart.ts`:
 
 ```typescript title="quickstart.ts"
-import { AuthProviders, OpenTDF } from '@opentdf/client';
+import { AuthProviders, TDF3Client } from '@opentdf/client';
 
 async function main() {
     try {
         console.log("🚀 Starting OpenTDF SDK Quickstart...");
 
         const platformEndpoint = "https://platform.opentdf.local:8443";
-        const oidcOrigin = "https://keycloak.opentdf.local:9443/realms/opentdf";
-        const clientId = "opentdf";
-        const clientSecret = "secret";
+        const oidcOrigin = "https://keycloak.opentdf.local:9443/auth/realms/opentdf";
+        const clientId = "opentdf-public";
+
+        // TODO: Paste your refresh token from Step 1 here
+        const refreshToken = "YOUR_REFRESH_TOKEN_HERE";
 
         console.log("📡 Connecting to platform: " + platformEndpoint);
 
-        // Create authentication provider with client credentials
-        console.log("🔐 Setting up client credentials authentication...");
-        const authProvider = await AuthProviders.clientSecretAuthProvider({
+        // Create authentication provider with refresh token
+        console.log("🔐 Setting up refresh token authentication...");
+        const authProvider = await AuthProviders.refreshAuthProvider({
             clientId,
-            clientSecret,
+            refreshToken,
             oidcOrigin,
-            exchange: 'client',
+            exchange: 'refresh',
         });
         console.log("✅ Authentication provider created");
 
         // Create OpenTDF client
         console.log("🔧 Initializing SDK client...");
-        const client = new OpenTDF({
+        const client = new TDF3Client({
             authProvider: authProvider,
             kasEndpoint: platformEndpoint,
         });
@@ -78,16 +119,23 @@ async function main() {
         // Encrypt data
         console.log("\n📝 Encrypting sensitive data...");
         const sensitiveData = "Hello from the OpenTDF JavaScript SDK! This data is encrypted.";
-        const dataBuffer = new TextEncoder().encode(sensitiveData);
 
         console.log("🔒 Creating TDF...");
-        const encryptedStream = await client.encrypt({
-            offline: false,
-            source: dataBuffer,
+        // Create a ReadableStream from the data
+        const source = new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode(sensitiveData));
+                controller.close();
+            },
         });
 
-        // Convert stream to buffer
-        const encryptedBuffer = await new Response(encryptedStream).arrayBuffer();
+        const encryptedStream = await client.encrypt({
+            offline: false,
+            source: source,
+        });
+
+        // Convert encrypted stream to buffer for decryption
+        const encryptedBuffer = await new Response(encryptedStream as any).arrayBuffer();
         const encryptedBytes = new Uint8Array(encryptedBuffer);
 
         console.log("✅ Data successfully encrypted");
@@ -96,57 +144,60 @@ async function main() {
         // Decrypt data
         console.log("\n🔓 Decrypting TDF...");
         const decryptedStream = await client.decrypt({
-            source: encryptedBytes,
+            source: { type: 'buffer', location: encryptedBytes },
         });
 
-        const decryptedText = await new Response(decryptedStream).text();
+        const decryptedText = await decryptedStream.toString();
 
         console.log("✅ Data successfully decrypted");
         console.log("📤 Decrypted content:\n\n" + decryptedText + "\n");
 
         console.log("🎉 Quickstart complete!");
-        process.exit(0);
 
     } catch (error) {
         console.error("❌ Error occurred:", error);
-        process.exit(1);
     }
 }
 
 main();
 ```
 
-### JavaScript Implementation Code
+</details>
+
+<details>
+<summary>JavaScript Implementation Code</summary>
 
 For **JavaScript** projects, create `quickstart.mjs`:
 
 ```javascript title="quickstart.mjs"
-import { AuthProviders, OpenTDF } from '@opentdf/client';
+import { AuthProviders, TDF3Client } from '@opentdf/client';
 
 async function main() {
     try {
         console.log("🚀 Starting OpenTDF SDK Quickstart...");
 
         const platformEndpoint = "https://platform.opentdf.local:8443";
-        const oidcOrigin = "https://keycloak.opentdf.local:9443/realms/opentdf";
-        const clientId = "opentdf";
-        const clientSecret = "secret";
+        const oidcOrigin = "https://keycloak.opentdf.local:9443/auth/realms/opentdf";
+        const clientId = "opentdf-public";
+
+        // TODO: Paste your refresh token from Step 1 here
+        const refreshToken = "YOUR_REFRESH_TOKEN_HERE";
 
         console.log("📡 Connecting to platform: " + platformEndpoint);
 
-        // Create authentication provider with client credentials
-        console.log("🔐 Setting up client credentials authentication...");
-        const authProvider = await AuthProviders.clientSecretAuthProvider({
+        // Create authentication provider with refresh token
+        console.log("🔐 Setting up refresh token authentication...");
+        const authProvider = await AuthProviders.refreshAuthProvider({
             clientId,
-            clientSecret,
+            refreshToken,
             oidcOrigin,
-            exchange: 'client',
+            exchange: 'refresh',
         });
         console.log("✅ Authentication provider created");
 
         // Create OpenTDF client
         console.log("🔧 Initializing SDK client...");
-        const client = new OpenTDF({
+        const client = new TDF3Client({
             authProvider: authProvider,
             kasEndpoint: platformEndpoint,
         });
@@ -155,15 +206,22 @@ async function main() {
         // Encrypt data
         console.log("\n📝 Encrypting sensitive data...");
         const sensitiveData = "Hello from the OpenTDF JavaScript SDK! This data is encrypted.";
-        const dataBuffer = new TextEncoder().encode(sensitiveData);
 
         console.log("🔒 Creating TDF...");
-        const encryptedStream = await client.encrypt({
-            offline: false,
-            source: dataBuffer,
+        // Create a ReadableStream from the data
+        const source = new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode(sensitiveData));
+                controller.close();
+            },
         });
 
-        // Convert stream to buffer
+        const encryptedStream = await client.encrypt({
+            offline: false,
+            source: source,
+        });
+
+        // Convert encrypted stream to buffer for decryption
         const encryptedBuffer = await new Response(encryptedStream).arrayBuffer();
         const encryptedBytes = new Uint8Array(encryptedBuffer);
 
@@ -173,45 +231,73 @@ async function main() {
         // Decrypt data
         console.log("\n🔓 Decrypting TDF...");
         const decryptedStream = await client.decrypt({
-            source: encryptedBytes,
+            source: { type: 'buffer', location: encryptedBytes },
         });
 
-        const decryptedText = await new Response(decryptedStream).text();
+        const decryptedText = await decryptedStream.toString();
 
         console.log("✅ Data successfully decrypted");
         console.log("📤 Decrypted content:\n\n" + decryptedText + "\n");
 
         console.log("🎉 Quickstart complete!");
-        process.exit(0);
 
     } catch (error) {
         console.error("❌ Error occurred:", error);
-        process.exit(1);
     }
 }
 
 main();
 ```
 
-## Step 4: Run Your Application {#step-4-javascript}
+</details>
 
-For TypeScript:
-```bash
-npx tsx quickstart.ts
+## Step 5: Run Your Application {#step-5-javascript}
+
+The JavaScript SDK is designed for browser environments. To run your quickstart code, you'll need to set up a simple web application.
+
+### Create an HTML File
+
+Create `index.html` in your project directory:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTDF Quickstart</title>
+</head>
+<body>
+    <h1>OpenTDF JavaScript SDK Quickstart</h1>
+    <p>Check the browser console for output (F12 or Right-click → Inspect → Console)</p>
+    <script type="module" src="/quickstart.ts"></script>
+</body>
+</html>
 ```
 
-For JavaScript:
+### Install and Run Vite Dev Server
+
+Install Vite as a development dependency:
+
 ```bash
-node quickstart.mjs
+npm install --save-dev vite
 ```
+
+Start the development server:
+
+```bash
+npx vite
+```
+
+Open your browser to `http://localhost:5173` (or the URL shown in the terminal). Open the browser console (F12 or Right-click → Inspect → Console) to see the output.
 
 <details>
-<summary>Expected output</summary>
+<summary>Expected browser console output</summary>
 
 ```console
 🚀 Starting OpenTDF SDK Quickstart...
 📡 Connecting to platform: https://platform.opentdf.local:8443
-🔐 Setting up client credentials authentication...
+🔐 Setting up refresh token authentication...
 ✅ Authentication provider created
 🔧 Initializing SDK client...
 ✅ SDK client initialized successfully
@@ -234,7 +320,7 @@ Hello from the OpenTDF JavaScript SDK! This data is encrypted.
 
 ---
 
-## Step 5: Add ABAC Features {#step-5-javascript}
+## Step 6: Add ABAC Features {#step-6-javascript}
 
 :::tip JavaScript-Specific Examples
 The following examples are specific to the **JavaScript/TypeScript SDK**.
@@ -350,6 +436,10 @@ In production applications, you'll often need to persist encrypted TDFs to disk 
 - **Enable offline access**: Recipients can decrypt TDFs without needing to re-fetch data from your application
 - **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
 
+:::note Browser vs Server-Side
+The example below shows Node.js file system operations. In a browser environment, you would trigger a download using the browser's download API or save data to IndexedDB. For server-side applications using Node.js, you'll need to handle the SDK's browser dependencies appropriately.
+:::
+
 ```typescript
 import * as fs from 'fs';
 
@@ -364,6 +454,10 @@ const decryptedStream = await client.decrypt({
 ```
 
 ## Handle Large Files with Streaming
+
+:::note Browser vs Server-Side
+The example below shows Node.js streaming with the file system. In a browser environment, you would use the File API to read files and trigger downloads for the encrypted output. For server-side applications using Node.js, you'll need to handle the SDK's browser dependencies appropriately.
+:::
 
 ```typescript
 import * as fs from 'fs';
@@ -381,15 +475,19 @@ const writeStream = fs.createWriteStream('large-file.pdf.tdf');
 Readable.fromWeb(encryptedStream).pipe(writeStream);
 ```
 
-## Step 6: Putting it Together {#step-6-javascript}
+## Step 7: Putting it Together {#step-7-javascript}
 
 Here's a complete TypeScript code example that brings all the pieces together:
+
+:::note
+This example includes Node.js file system operations (`fs.writeFileSync`, `fs.readFileSync`). In a browser environment, you would use browser APIs for file handling instead.
+:::
 
 <details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
 <summary>Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
 
 ```typescript title="complete-example.ts"
-import { AuthProviders, OpenTDF } from '@opentdf/client';
+import { AuthProviders, TDF3Client } from '@opentdf/client';
 import * as fs from 'fs';
 
 async function main() {
@@ -397,18 +495,21 @@ async function main() {
         const platformEndpoint = 'http://localhost:8080';
         const oidcEndpoint = 'http://localhost:8888/realms/opentdf';
 
+        // TODO: Paste your refresh token here
+        const refreshToken = "YOUR_REFRESH_TOKEN_HERE";
+
         // Create authentication provider
-        const authProvider = await AuthProviders.clientSecretAuthProvider({
+        const authProvider = await AuthProviders.refreshAuthProvider({
             clientId: 'opentdf',
-            clientSecret: 'secret',
+            refreshToken,
             oidcOrigin: oidcEndpoint,
-            exchange: 'client',
+            exchange: 'refresh',
         });
 
         // Create SDK client
-        const client = new OpenTDF({
+        const client = new TDF3Client({
             authProvider: authProvider,
-            platformUrl: platformEndpoint,
+            kasEndpoint: platformEndpoint,
         });
 
         // 1. Create namespace (or use existing)
