@@ -183,7 +183,10 @@ public class QuickstartApp {
             System.exit(1);
         }
 
-        // Force JVM exit (SDK background threads may not shut down immediately)
+        // Force JVM exit to terminate SDK background threads immediately.
+        // Note: In production applications, you should configure daemon threads properly
+        // or implement explicit shutdown hooks instead of using System.exit(0).
+        // This approach is acceptable for quickstart/demo purposes only.
         System.exit(0);
     }
 }
