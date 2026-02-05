@@ -32,7 +32,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 # Getting Started
 
-This guide will walk you through **encrypting and decrypting data** using OpenTDF tools. You'll learn how to secure sensitive information through encryption and control access using **attribute-based access controls (ABAC)**. We'll set up a sandbox [OpenTDF platform](/architecture) locally to demonstrate these core concepts.
+This guide will walk you through **encrypting and decrypting data** using OpenTDF tools. You'll learn how to secure sensitive information through encryption and control access using **attribute-based access controls (ABAC)**. You'll set up a sandbox [OpenTDF platform](/architecture) locally to demonstrate these core concepts.
 
 :::note Time Commitment
 This quickstart is designed to take **10 minutes** for basic encryption/decryption, or **30 minutes** if you complete the full ABAC scenario.
@@ -102,7 +102,7 @@ flowchart TD
 
 </details>
 
-**The Implementation**: We'll set up attributes and entitlements, then watch OpenTDF make authorization decisions:
+**The Implementation**: You'll set up attributes and entitlements, then watch OpenTDF make authorization decisions:
 
 - **Attributes** (how we classify data):
   - `department`: `finance`, `engineering`
@@ -139,7 +139,7 @@ The OpenTDF Platform is the core service that enforces attribute-based access co
 
 ### Installation
 
-We'll run a local instance using Docker. This includes the [Platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/) (for user authentication), and [PostgreSQL](https://www.postgresql.org/) (for storing attributes and policies).
+You'll run a local instance using Docker. This includes the [Platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/) (for user authentication), and [PostgreSQL](https://www.postgresql.org/) (for storing attributes and policies).
 
 :::warning
 Not for production use.
@@ -608,11 +608,11 @@ SUCCESS   Found namespaces: 4
 
 </details>
 
-These are example namespaces that come pre-configured with the platform. We'll create our own namespace for this tutorial.
+These are example namespaces that come pre-configured with the platform. You'll create your own namespace for this tutorial.
 
 ### Create a new namespace
 
-We'll create a namespace representing our company domain:
+Create a namespace representing our company domain:
 
 ```shell
 otdfctl policy attributes namespaces create --name opentdf.io
@@ -717,7 +717,7 @@ You can create values when creating the definition: `--value finance --value eng
 
 ### Create Department Attribute
 
-First, let's create an attribute for departments. We'll use `ANY_OF` since a person typically belongs to one department:
+First, create an attribute for departments. We use `ANY_OF` since a person typically belongs to one department:
 
 ```shell
 otdfctl policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF
@@ -865,7 +865,7 @@ export CLEARANCE_ATTRIBUTE_ID=<id>
 
 ### Add Clearance Values
 
-Add clearance levels in order from highest to lowest privilege. We'll create "executive" first (highest clearance), then "standard" (lower clearance):
+Add clearance levels in order from highest to lowest privilege. Create "executive" first (highest clearance), then "standard" (lower clearance):
 
 ```shell
 otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
@@ -949,13 +949,13 @@ A `subject mapping` connects identities to attributes, **granting them entitleme
 
 An identity can be a user (human individual), service account, application, device, or any authenticated entity making requests.
 
-For our scenario, we'll grant these entitlements:
+For our scenario, you'll grant these entitlements:
 - **Jen** gets `clearance/executive` (which also grants `clearance/standard` due to hierarchy)
 - **Preston** gets `department/finance` and `clearance/standard`
 - **Jack** gets `department/engineering` and `clearance/standard`
 
 :::note Production Usage
-In this tutorial, Jen, Preston, and Jack are personas we're using to learn how entitlements work. We're simulating all three by using the same `opentdf` client credentials.
+In this tutorial, Jen, Preston, and Jack are personas you'll use to learn how entitlements work. You're simulating all three by using the same `opentdf` client credentials.
 
 In production, each identity would have:
 - **Distinct credentials** - Separate user accounts, service accounts, or application identities
@@ -969,7 +969,7 @@ First, we need a `subject condition set` - this defines WHO qualifies for the en
 
 ### Create Subject Condition Sets
 
-For this tutorial, we'll simulate our three personas by creating condition sets that match the default client credentials. Here's what a subject condition set looks like:
+For this tutorial, you'll simulate the three personas by creating condition sets that match the default client credentials. Here's what a subject condition set looks like:
 
 ```json title="subject_condition_set.json"
 [
@@ -1019,7 +1019,7 @@ otdfctl policy subject-condition-sets create -j <path to file>/subject_condition
 > NOTE   Use 'subject-condition-sets get --id=74bf521f-5a79-48fe-acb8-b4b63ee7950b --json' to see all properties
 > ```
 
-Save the condition set ID - we'll use this to represent all three users in our demo:
+Save the condition set ID - you'll use this to represent all three users in the demo:
 
 ```shell
 export SUBJECT_CONDITION_SET_ID=<id>
@@ -1041,7 +1041,7 @@ This creates an encrypted file called `executive-strategy.tdf`.
 
 ### Try to Decrypt Without Permission (Will Fail)
 
-Right now, we haven't granted ourselves any entitlements. Let's try to decrypt this executive document and see the authorization **decision**:
+Right now, you haven't granted any entitlements. Try to decrypt this executive document and see the authorization **decision**:
 
 ```shell
 otdfctl decrypt executive-strategy.tdf
@@ -1061,7 +1061,7 @@ This is an authorization **decision** in action! Here's what happened:
 
 ### Grant Jen Executive Clearance
 
-Now let's grant an **entitlement** to represent Jen's access level. This changes what attribute values we're entitled to:
+Now grant an **entitlement** to represent Jen's access level. This changes what attribute values you're entitled to:
 
 ```shell
 otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
@@ -1088,7 +1088,7 @@ Because we're using HIERARCHY for clearance, this executive clearance automatica
 
 ### Decrypt Now That We Have Permission
 
-Now that we've been granted an **entitlement** for executive clearance, try decrypting the executive document again:
+Now that you've been granted an **entitlement** for executive clearance, try decrypting the executive document again:
 
 ```shell
 otdfctl decrypt executive-strategy.tdf
@@ -1121,7 +1121,7 @@ Notice this document has TWO attributes - it requires BOTH finance department me
 
 ### Grant Finance Department Access
 
-To simulate Preston's access, let's grant ourselves an additional **entitlement** for the finance department:
+To simulate Preston's access, grant yourself an additional **entitlement** for the finance department:
 
 ```shell
 otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
@@ -1145,7 +1145,7 @@ Expected output:
 
 ### Decrypt the Finance Report
 
-Now we can access the derivative document (since we have executive clearance which includes standard, plus we just added finance department):
+Now you can access the derivative document (since you have executive clearance which includes standard, plus you just added finance department):
 
 ```shell
 otdfctl decrypt finance-report.tdf
