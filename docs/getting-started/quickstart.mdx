@@ -419,7 +419,7 @@ A profile stores your platform connection details and authentication credentials
 Without a profile, you'd need to type the full platform URL with every command. With a profile, you simply reference it by name using `--profile platform-otdf-local`. This also allows you to manage multiple environments (like local, staging, and production) by switching between different profiles.
 
 ```shell
-otdfctl profile create platform https://platform.opentdf.local:8443
+otdfctl profile create --tls-no-verify platform https://platform.opentdf.local:8443
 ```
 
 Expected output:
@@ -444,11 +444,11 @@ Expected output:
 
 For the rest of this guide, commands use the default profile. If you have multiple profiles, you can specify which one to use by adding `--profile <profile-name>` to any command.
 
-#### Step 7: Trust SSL Certificate (If Needed)
+#### Step 7: Trust SSL Certificate (Optional)
 
-The installer attempts to import Caddy's self-signed certificate automatically, but this may fail without proper permissions.
+The profile was created with `--tls-no-verify` to skip certificate validation for the CLI. This is sufficient for quickstart testing, but for production use or if you're using browsers/SDKs, you may want to trust the certificate properly.
 
-**Symptoms of untrusted certificate:**
+**Symptoms indicating you should trust the certificate:**
 - Browser shows "Not Secure" warning when visiting platform URLs
 - curl commands require `-k` flag
 - SDK applications show certificate validation errors
@@ -456,7 +456,7 @@ The installer attempts to import Caddy's self-signed certificate automatically, 
 **Solution:** Follow the [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) guide for detailed instructions on:
 - Extracting the Caddy root CA certificate
 - Trusting it on your OS (macOS, Linux, or Windows)
-- Using the `OTDFCTL_TLS_NO_VERIFY` environment variable as a workaround
+- When to use `--tls-no-verify` vs properly trusting certificates
 
 :::tip Managing the Platform
 Need to start, stop, or restart the platform later? See the [Managing the Platform](/getting-started/managing-platform) guide for platform management commands.
@@ -482,6 +482,16 @@ Credentials:
 These are test credentials provisioned automatically during installation.
 
 **Authentication Persistence**: Your credentials are saved in the profile and will be used automatically for all future commands. You won't need to re-authenticate unless you explicitly clear the credentials or change profiles.
+
+:::tip Troubleshooting TLS Certificate Errors
+If you see a TLS certificate verification error during authentication (e.g., "x509: certificate is not trusted"), your profile may have been created without the `--tls-no-verify` flag. To fix this:
+
+1. Set another profile as default: `otdfctl profile set-default <other-profile-name>`
+2. Delete the problematic profile: `otdfctl profile delete platform`
+3. Recreate with TLS verification disabled: `otdfctl profile create --tls-no-verify platform https://platform.opentdf.local:8443`
+4. Set it as default: `otdfctl profile set-default platform`
+5. Retry authentication: `otdfctl auth client-credentials opentdf secret`
+:::
 
 ## Encrypt and Decrypt with the CLI
 
@@ -978,7 +988,7 @@ For this tutorial, you'll simulate the three personas by creating condition sets
       {
         "conditions": [
           {
-            "subject_external_selector_value": ".client_id",
+            "subject_external_selector_value": ".clientId",
             "operator": 1,
             "subject_external_values": [
               "opentdf"
@@ -1064,7 +1074,7 @@ This is an authorization **decision** in action! Here's what happened:
 Now grant an **entitlement** to represent Jen's access level. This changes what attribute values you're entitled to:
 
 ```shell
-otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 > ```console
@@ -1124,7 +1134,7 @@ Notice this document has TWO attributes - it requires BOTH finance department me
 To simulate Preston's access, grant yourself an additional **entitlement** for the finance department:
 
 ```shell
-otdfctl policy subject-mappings create --action STANDARD_ACTION_DECRYPT --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
+otdfctl policy subject-mappings create --action read --attribute-value-id $FINANCE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
 Expected output:
@@ -1257,7 +1267,7 @@ otdfctl policy subject-mappings list
 otdfctl auth print-access-token
 
 # 3. Verify field name in condition set
-# Token shows "client_id" - your condition set must use ".client_id" not ".clientId"
+# Your condition set must use ".clientId" to match the JWT token claim
 
 # 4. Check platform logs for details
 docker logs platform-platform-1 --tail 50

@@ -15,6 +15,24 @@ This guide covers the **Go SDK** implementation. For other languages or general 
 - Go 1.21 or later
 - Your OpenTDF platform running locally (from Getting Started guide)
 
+:::warning Platform Must Be Running
+Before you begin, **make sure your OpenTDF platform is running!**
+
+Verify it's running:
+```bash
+curl -k https://platform.opentdf.local:8443/healthz
+```
+
+Should return: `{"status":"SERVING"}`
+
+If not running, start it:
+```bash
+cd ~/.opentdf/platform && docker compose up -d
+```
+
+See the [Managing the Platform](/getting-started/managing-platform) guide for details.
+:::
+
 ## Step 1: Create a New Project {#step-1-go}
 
 Create a new directory and initialize a Go module:

@@ -16,6 +16,24 @@ This guide covers the **Java SDK** implementation. For other languages or genera
 - Maven or Gradle
 - Your OpenTDF platform running locally (from Getting Started guide)
 
+:::warning Platform Must Be Running
+Before you begin, **make sure your OpenTDF platform is running!**
+
+Verify it's running:
+```bash
+curl -k https://platform.opentdf.local:8443/healthz
+```
+
+Should return: `{"status":"SERVING"}`
+
+If not running, start it:
+```bash
+cd ~/.opentdf/platform && docker compose up -d
+```
+
+See the [Managing the Platform](/getting-started/managing-platform) guide for details.
+:::
+
 ## Step 1: Create a New Maven Project {#step-1-java}
 
 Create a new directory with a `pom.xml` file:
@@ -68,6 +86,12 @@ Create `pom.xml`:
             <groupId>io.opentdf.platform</groupId>
             <artifactId>sdk</artifactId>
             <version>0.12.0</version>
+        </dependency>
+        <!-- Simple logging implementation to avoid SLF4J warnings -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.9</version>
         </dependency>
     </dependencies>
 </project>
