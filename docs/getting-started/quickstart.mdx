@@ -2,7 +2,6 @@
 title: Quickstart
 slug: /quickstart
 sidebar_label: Quickstart
-unlisted: true
 ---
 
 import dockerComposeContent from '!!raw-loader!./docker-compose.yaml';
@@ -321,7 +320,7 @@ If the certificate import fails during installation, you'll need to import it ma
      /Users/username/.opentdf/bin/otdfctl --version
 
   4. Create an otdfctl profile:
-     /Users/username/.opentdf/bin/otdfctl profile create platform https://platform.opentdf.local:8443
+     /Users/username/.opentdf/bin/otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
 
 🌐 Access points:
    Platform: https://platform.opentdf.local:8443
@@ -419,12 +418,12 @@ A profile stores your platform connection details and authentication credentials
 Without a profile, you'd need to type the full platform URL with every command. With a profile, you simply reference it by name using `--profile platform-otdf-local`. This also allows you to manage multiple environments (like local, staging, and production) by switching between different profiles.
 
 ```shell
-otdfctl profile create --tls-no-verify platform https://platform.opentdf.local:8443
+otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443
 ```
 
 Expected output:
 > ```console
-> SUCCESS   Profile platform created
+> SUCCESS   Profile platform-otdf-local created
 > ```
 
 **About Default Profiles:**
@@ -434,12 +433,12 @@ When you have only one profile (like most users following this guide), it automa
 If you have multiple profiles, you can set which one is the default:
 
 ```shell
-otdfctl profile set-default platform
+otdfctl profile set-default platform-otdf-local
 ```
 
 Expected output:
 > ```console
-> Set profile platform as default
+> Set profile platform-otdf-local as default
 > ```
 
 For the rest of this guide, commands use the default profile. If you have multiple profiles, you can specify which one to use by adding `--profile <profile-name>` to any command.
@@ -472,7 +471,7 @@ otdfctl auth client-credentials opentdf secret
 
 Expected output:
 > ```console
-> Client credentials set for profile [platform]
+> Client credentials set for profile [platform-otdf-local]
 > ```
 
 Credentials:
@@ -487,9 +486,9 @@ These are test credentials provisioned automatically during installation.
 If you see a TLS certificate verification error during authentication (e.g., "x509: certificate is not trusted"), your profile may have been created without the `--tls-no-verify` flag. To fix this:
 
 1. Set another profile as default: `otdfctl profile set-default <other-profile-name>`
-2. Delete the problematic profile: `otdfctl profile delete platform`
-3. Recreate with TLS verification disabled: `otdfctl profile create --tls-no-verify platform https://platform.opentdf.local:8443`
-4. Set it as default: `otdfctl profile set-default platform`
+2. Delete the problematic profile: `otdfctl profile delete platform-otdf-local`
+3. Recreate with TLS verification disabled: `otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443`
+4. Set it as default: `otdfctl profile set-default platform-otdf-local`
 5. Retry authentication: `otdfctl auth client-credentials opentdf secret`
 :::
 
@@ -724,6 +723,62 @@ Each attribute has:
 :::tip
 You can create values when creating the definition: `--value finance --value engineering`
 :::
+
+### How ABAC Components Work Together
+
+Before creating attributes, let's visualize how all the pieces of attribute-based access control fit together:
+
+```mermaid
+graph TD
+    NS[Namespace: opentdf.io<br/>Your organization's domain]
+
+    NS -->|contains| A1[Attribute: department<br/>Rule: ANY_OF]
+    NS -->|contains| A2[Attribute: clearance<br/>Rule: HIERARCHY]
+
+    A1 -->|has values| V1[Value: finance]
+    A1 -->|has values| V2[Value: engineering]
+    A2 -->|has values| V3[Value: executive]
+    A2 -->|has values| V4[Value: standard]
+
+    SCS[Subject Condition Set<br/>WHO can access?<br/>e.g., .clientId = 'opentdf']
+
+    SCS -->|connects to| SM1[Subject Mapping<br/>Grants: finance<br/>Action: read]
+    SCS -->|connects to| SM2[Subject Mapping<br/>Grants: engineering<br/>Action: read]
+
+    SM1 -.->|grants access to| V1
+    SM2 -.->|grants access to| V2
+
+    TDF[Encrypted TDF<br/>Requires: finance]
+
+    V1 -.->|protects| TDF
+
+    style NS fill:#e1f5ff
+    style A1 fill:#fff4e6
+    style A2 fill:#fff4e6
+    style V1 fill:#f0f9ff
+    style V2 fill:#f0f9ff
+    style V3 fill:#f0f9ff
+    style V4 fill:#f0f9ff
+    style SCS fill:#f0fff4
+    style SM1 fill:#fffbeb
+    style SM2 fill:#fffbeb
+    style TDF fill:#fef2f2
+```
+
+**Key Relationships:**
+
+1. **Namespace** - Your organization's domain (e.g., `opentdf.io`)
+2. **Attributes** - Categories for classifying data (e.g., `department`, `clearance`)
+3. **Values** - Specific options within each attribute (e.g., `finance`, `engineering`)
+4. **Subject Condition Set** - Defines WHO can access by matching JWT token claims (e.g., `.clientId = "opentdf"`)
+5. **Subject Mapping** - Grants entitlements by connecting WHO (subject condition set) to WHAT (attribute values) with ACTIONS (e.g., `read`)
+6. **TDF** - Encrypted data that requires specific attribute values to decrypt
+
+When a user tries to decrypt a TDF:
+- Their JWT token is evaluated against **Subject Condition Sets**
+- Matching sets grant them **entitlements** via **Subject Mappings**
+- The platform checks if their entitlements satisfy the TDF's required **attribute values**
+- If authorized, they can decrypt the data
 
 ### Create Department Attribute
 
@@ -1072,6 +1127,12 @@ This is an authorization **decision** in action! Here's what happened:
 ### Grant Jen Executive Clearance
 
 Now grant an **entitlement** to represent Jen's access level. This changes what attribute values you're entitled to:
+
+:::tip About the `read` Action
+The `--action read` flag specifies what the entity can _do_ with this attribute value. The `read` action is one of the standard actions used for TDF decryption. Other standard actions include `create`, `update`, and `delete`. You can also define custom actions for your specific use cases.
+
+Learn more about actions in the [Actions documentation](/components/policy/actions).
+:::
 
 ```shell
 otdfctl policy subject-mappings create --action read --attribute-value-id $EXECUTIVE_VALUE_ID --subject-condition-set-id $SUBJECT_CONDITION_SET_ID

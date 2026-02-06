@@ -1,7 +1,6 @@
 ---
 sidebar_position: 1
 title: Go
-unlisted: true
 ---
 
 # Go SDK Quickstart
@@ -83,7 +82,10 @@ func main() {
 	client, err := sdk.New(
 		platformEndpoint,
 		sdk.WithClientCredentials("opentdf", "secret", nil),
-		sdk.WithInsecurePlaintextConn(), // Only for local development!
+		// WithInsecureSkipVerifyConn() disables TLS certificate verification
+		// This allows connections to the platform's self-signed certificate
+		// Only use this for local development - never in production!
+		sdk.WithInsecureSkipVerifyConn(),
 	)
 
 	if err != nil {
@@ -102,6 +104,8 @@ func main() {
 	_, err = client.CreateTDF(
 		encryptedBuffer,
 		dataReader,
+		// KASInfo specifies the Key Access Service (KAS) endpoint
+		// KAS manages encryption keys and enforces access policies
 		sdk.WithKasInformation(
 			sdk.KASInfo{
 				URL: platformEndpoint,
@@ -184,25 +188,75 @@ For additional policy management examples including managing attributes, namespa
 
 ### Create a New Attribute Value
 
-First, let's create a new attribute value that we can use for access control. If you followed the [Quickstart setup guide](/quickstart), you'll already have an attribute "department" with two values: finance and engineering. Let's add "marketing" to those values:
+Let's work with the "department" attribute and add a "marketing" value. If you completed the [Quickstart setup guide](/quickstart), the attribute may already exist with finance and engineering values. If not, we'll create it:
 
 ```go
 import (
 	"context"
+	"strings"
+	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
 )
 
-// Get the existing department attribute
-attrFqn := "https://opentdf.io/attr/department"
-getAttrResp, err := client.Attributes.GetAttribute(context.Background(),
-	&attributes.GetAttributeRequest{
-		Fqn: attrFqn,
+// First, ensure the namespace exists
+nsResp, err := client.Namespaces.CreateNamespace(context.Background(),
+	&namespaces.CreateNamespaceRequest{
+		Name: "opentdf.io",
 	})
 if err != nil {
-	log.Fatalf("Failed to get attribute: %v", err)
+	if strings.Contains(err.Error(), "already_exists") {
+		// Namespace exists, fetch it
+		listNsResp, listErr := client.Namespaces.ListNamespaces(context.Background(),
+			&namespaces.ListNamespacesRequest{})
+		if listErr != nil {
+			log.Fatalf("Failed to list namespaces: %v", listErr)
+		}
+		for _, ns := range listNsResp.GetNamespaces() {
+			if ns.GetName() == "opentdf.io" {
+				nsResp = &namespaces.CreateNamespaceResponse{Namespace: ns}
+				log.Printf("✅ Using existing namespace: %s", ns.GetId())
+				break
+			}
+		}
+	} else {
+		log.Fatalf("Failed to create namespace: %v", err)
+	}
+} else {
+	log.Printf("✅ Created namespace: %s", nsResp.GetNamespace().GetId())
 }
 
-log.Printf("✅ Found existing attribute: %s", getAttrResp.GetAttribute().GetName())
+// Get or create the department attribute
+listResp, err := client.Attributes.ListAttributes(context.Background(),
+	&attributes.ListAttributesRequest{})
+if err != nil {
+	log.Fatalf("Failed to list attributes: %v", err)
+}
+
+var getAttrResp *attributes.GetAttributeResponse
+for _, attr := range listResp.GetAttributes() {
+	if attr.GetName() == "department" &&
+	   attr.GetNamespace().GetId() == nsResp.GetNamespace().GetId() {
+		getAttrResp = &attributes.GetAttributeResponse{Attribute: attr}
+		log.Printf("✅ Found existing attribute: %s", attr.GetName())
+		break
+	}
+}
+
+// Create the attribute if it doesn't exist
+if getAttrResp == nil {
+	attrResp, err := client.Attributes.CreateAttribute(context.Background(),
+		&attributes.CreateAttributeRequest{
+			NamespaceId: nsResp.GetNamespace().GetId(),
+			Name:        "department",
+			Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+		})
+	if err != nil {
+		log.Fatalf("Failed to create attribute: %v", err)
+	}
+	getAttrResp = &attributes.GetAttributeResponse{Attribute: attrResp.GetAttribute()}
+	log.Printf("✅ Created attribute: %s", attrResp.GetAttribute().GetName())
+}
 
 // Check if "marketing" value already exists
 targetValue := "marketing"
@@ -230,6 +284,20 @@ if !valueExists {
 }
 
 log.Printf("Full attribute FQN: https://opentdf.io/attr/department/value/%s", targetValue)
+
+// Re-fetch the attribute to get the updated values list with IDs
+listResp, err = client.Attributes.ListAttributes(context.Background(),
+	&attributes.ListAttributesRequest{})
+if err != nil {
+	log.Fatalf("Failed to re-fetch attributes: %v", err)
+}
+for _, attr := range listResp.GetAttributes() {
+	if attr.GetName() == "department" &&
+	   attr.GetNamespace().GetId() == nsResp.GetNamespace().GetId() {
+		getAttrResp = &attributes.GetAttributeResponse{Attribute: attr}
+		break
+	}
+}
 ```
 
 :::warning
@@ -245,6 +313,8 @@ _, err = client.CreateTDF(
 	encryptedBuffer,
 	dataReader,
 	sdk.WithDataAttributes("https://opentdf.io/attr/department/value/marketing"),
+	// KASInfo specifies the Key Access Service (KAS) endpoint
+	// KAS manages encryption keys and enforces access policies
 	sdk.WithKasInformation(
 		sdk.KASInfo{
 			URL: platformEndpoint,
@@ -260,6 +330,12 @@ Only users with the `department/marketing` entitlement will be able to decrypt t
 ### Grant Yourself Access to the Attribute
 
 To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
+
+:::tip About the `read` Action
+The subject mapping below uses the `read` action, which specifies what you can _do_ with this attribute value. The `read` action is one of the standard actions used for TDF decryption. Other standard actions include `create`, `update`, and `delete`, and you can define custom actions for your specific use cases.
+
+Learn more about actions in the [Actions documentation](/components/policy/actions).
+:::
 
 ```go
 import (
@@ -360,14 +436,16 @@ defer inputFile.Close()
 outputFile, _ := os.Create("large-file.pdf.tdf")
 defer outputFile.Close()
 
+// KASInfo specifies the Key Access Service (KAS) endpoint
+// KAS manages encryption keys and enforces access policies
 _, err = client.CreateTDF(outputFile, inputFile,
 	sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
 )
 ```
 
-## Step 6: Putting it Together {#step-6-go}
+## Step 6: Complete Reference Implementation {#step-6-go}
 
-Here's a complete Go code example that brings all the pieces above together:
+For reference, here's a complete example showing all the pieces together:
 
 <details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
 <summary>Create Attribute, Encrypt, Grant Access, Decrypt, Save File</summary>
@@ -396,7 +474,10 @@ func main() {
 	client, err := sdk.New(
 		platformEndpoint,
 		sdk.WithClientCredentials("opentdf", "secret", nil),
-		sdk.WithInsecurePlaintextConn(),
+		// WithInsecureSkipVerifyConn() disables TLS certificate verification
+		// This allows connections to the platform's self-signed certificate
+		// Only use this for local development - never in production!
+		sdk.WithInsecureSkipVerifyConn(),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -462,6 +543,8 @@ func main() {
 	dataReader := bytes.NewReader(plaintext)
 	var encryptedBuffer bytes.Buffer
 
+	// KASInfo specifies the Key Access Service (KAS) endpoint
+	// KAS manages encryption keys and enforces access policies
 	_, err = client.CreateTDF(
 		&encryptedBuffer,
 		dataReader,
@@ -481,7 +564,17 @@ func main() {
 	log.Printf("✅ TDF saved to encrypted.tdf")
 
 	// 5. Grant yourself access to the marketing attribute
-	attributeValueId := attrResp.GetAttribute().GetValues()[0].GetId()
+	// Find the marketing value by name
+	var attributeValueId string
+	for _, value := range attrResp.GetAttribute().GetValues() {
+		if value.GetValue() == "marketing" {
+			attributeValueId = value.GetId()
+			break
+		}
+	}
+	if attributeValueId == "" {
+		log.Fatalf("Marketing value not found in department attribute")
+	}
 
 	scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Background(),
 		&subjectmapping.CreateSubjectConditionSetRequest{
