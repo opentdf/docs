@@ -1,7 +1,6 @@
 ---
 sidebar_position: 2
 title: Java
-unlisted: true
 ---
 
 # Java SDK Quickstart
@@ -93,6 +92,12 @@ Create `pom.xml`:
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.9</version>
         </dependency>
+        <!-- SSL utilities for handling self-signed certificates (DEV ONLY) -->
+        <dependency>
+            <groupId>io.github.hakky54</groupId>
+            <artifactId>sslcontext-kickstart</artifactId>
+            <version>9.2.1</version>
+        </dependency>
     </dependencies>
 </project>
 ```
@@ -141,7 +146,10 @@ public class QuickstartApp {
 
             System.out.println("📡 Connecting to platform: " + platformEndpoint);
 
-            // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+            // Create SSL factory that trusts all certificates
+            // withTrustingAllCertificatesWithoutValidation() disables certificate verification
+            // This allows connections to the platform's self-signed certificate
+            // Only use this for local development - never in production!
             System.out.println("🔓 Creating SSL factory for self-signed certificates...");
             SSLFactory sslFactory = SSLFactory.builder()
                     .withTrustingAllCertificatesWithoutValidation()
@@ -161,6 +169,8 @@ public class QuickstartApp {
                 System.out.println("\n📝 Encrypting sensitive data...");
                 String sensitiveData = "Hello from the OpenTDF Java SDK! This data is encrypted.";
 
+                // KASInfo specifies the Key Access Service (KAS) endpoint
+                // KAS manages encryption keys and enforces access policies
                 var kasInfo = new Config.KASInfo();
                 kasInfo.URL = platformEndpoint + "/kas";
 
@@ -470,6 +480,12 @@ Only users with the `department/marketing` entitlement will be able to decrypt t
 
 To decrypt the TDF you just created, you need to grant yourself the `marketing` entitlement by creating a subject mapping. This connects your identity to the attribute value, giving you permission to access data encrypted with it.
 
+:::tip About the `read` Action
+The subject mapping below uses the `read` action, which specifies what you can _do_ with this attribute value. The `read` action is one of the standard actions used for TDF decryption. Other standard actions include `create`, `update`, and `delete`, and you can define custom actions for your specific use cases.
+
+Learn more about actions in the [Actions documentation](/components/policy/actions).
+:::
+
 ```java
 import io.opentdf.platform.policy.Action;
 import io.opentdf.platform.policy.Condition;
@@ -578,9 +594,9 @@ try (FileChannel inputChannel = FileChannel.open(
 }
 ```
 
-## Step 6: Putting it Together {#step-6-java}
+## Step 6: Complete Reference Implementation {#step-6-java}
 
-Here's a complete Java code example that brings all the pieces together:
+For reference, here's a complete example showing all the pieces together:
 
 <details id="complete-example-create-attribute-encrypt-grant-access-and-decrypt">
 <summary>Create Attribute, Encrypt, Grant Access, and Decrypt</summary>
@@ -623,18 +639,23 @@ public class QuickstartApp {
         String clientSecret = "secret";
         String platformEndpoint = "https://platform.opentdf.local:8443";
 
-        // Create SSL factory that trusts all certificates (DEV ONLY - DO NOT USE IN PRODUCTION)
+        // Create SSL factory that trusts all certificates
+        // withTrustingAllCertificatesWithoutValidation() disables certificate verification
+        // This allows connections to the platform's self-signed certificate
+        // Only use this for local development - never in production!
         SSLFactory sslFactory = SSLFactory.builder()
                 .withTrustingAllCertificatesWithoutValidation()
                 .build();
 
         // Create SDK client (try-with-resources ensures proper cleanup)
-        try (SDK sdk = new SDKBuilder()
-            .platformEndpoint(platformEndpoint)
+        SDKBuilder builder = SDKBuilder.newBuilder();
+        try (SDK sdk = builder.platformEndpoint(platformEndpoint)
             .clientSecret(clientId, clientSecret)
             .sslFactory(sslFactory)
             .build()) {
 
+            // KASInfo specifies the Key Access Service (KAS) endpoint
+            // KAS manages encryption keys and enforces access policies
             var kasInfo = new Config.KASInfo();
             kasInfo.URL = platformEndpoint + "/kas";
 
@@ -740,7 +761,17 @@ public class QuickstartApp {
                 System.out.println("✅ TDF saved to encrypted.tdf");
 
                 // 5. Grant yourself access to the marketing attribute
-                String attributeValueId = attrResponse.getAttribute().getValues(0).getId();
+                // Find the marketing value by name
+                String attributeValueId = null;
+                for (var value : attrResponse.getAttribute().getValuesList()) {
+                    if ("marketing".equals(value.getValue())) {
+                        attributeValueId = value.getId();
+                        break;
+                    }
+                }
+                if (attributeValueId == null) {
+                    throw new RuntimeException("Marketing value not found in department attribute");
+                }
 
                 var condition = Condition.newBuilder()
                     .setSubjectExternalSelectorValue(".clientId")
@@ -791,17 +822,20 @@ public class QuickstartApp {
                     }
                 }
 
-                // 6. Load TDF from file
-                byte[] tdfData = Files.readAllBytes(Path.of("encrypted.tdf"));
+                // 6. Load TDF from file and decrypt
                 System.out.println("✅ TDF loaded from encrypted.tdf");
 
-                // 7. Decrypt the data
-                var decryptedStream = new ByteArrayOutputStream();
-                var reader = sdk.loadTDF(new ByteArrayInputStream(tdfData));
-                reader.readPayload(decryptedStream);
+                try (java.nio.channels.FileChannel fileChannel = java.nio.channels.FileChannel.open(
+                        Path.of("encrypted.tdf"),
+                        java.nio.file.StandardOpenOption.READ)) {
+                    var readerConfig = Config.newTDFReaderConfig();
+                    var reader = sdk.loadTDF(fileChannel, readerConfig);
+                    var decryptedStream = new ByteArrayOutputStream();
+                    reader.readPayload(decryptedStream);
 
                     System.out.println("✅ Data successfully decrypted");
                     System.out.println("📤 Decrypted content: " + decryptedStream.toString(StandardCharsets.UTF_8));
+                }
                 } // SDK auto-closes here, shutting down gRPC connections
 
             // Force JVM exit (SDK background threads may not shut down immediately)
