@@ -168,3 +168,23 @@
     height: 270px;
   }
 }
+
+/* Dark mode overrides */
+:global(html[data-theme='dark']) .container {
+  background: var(--vds-color-blue-lightest);
+  border-bottom-color: var(--ifm-background-color);
+}
+
+:global(html[data-theme='dark']) .tag > div {
+  border-color: var(--vds-color-blue-dark);
+  color: var(--vds-color-blue-006);
+}
+
+:global(html[data-theme='dark']) .heading {
+  color: var(--vds-color-blue-006);
+}
+
+:global(html[data-theme='dark']) .callToAction > a {
+  background-color: var(--vds-color-blue-dark);
+  color: #000;
+}

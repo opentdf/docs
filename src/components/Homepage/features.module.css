@@ -135,3 +135,27 @@
     font-size: var(--vds-homepage-font-size-xxs);
   }
 }
+
+/* Dark mode overrides */
+:global(html[data-theme='dark']) .container {
+  border-top-color: #444;
+}
+
+:global(html[data-theme='dark']) .item .iconContainer {
+  border-color: #444;
+  color: #ccc;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+:global(html[data-theme='dark']) .itemDescription {
+  color: #aaa;
+}
+
+:global(html[data-theme='dark']) .itemCallToAction a {
+  color: var(--vds-color-blue-006);
+}
+
+:global(html[data-theme='dark']) .itemCallToAction a:hover {
+  background: var(--vds-color-blue-dark);
+  color: #000;
+}

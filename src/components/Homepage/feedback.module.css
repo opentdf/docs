@@ -92,3 +92,12 @@
     font-size: 0.8rem;
   }
 }
+
+/* Dark mode overrides */
+:global(html[data-theme='dark']) .wrapper {
+  background: #1a2332;
+}
+
+:global(html[data-theme='dark']) .description {
+  color: #aaa;
+}

@@ -164,6 +164,16 @@ if [[ "$OS" != "windows" ]]; then
     else
         print_status 0 "sudo access available (will prompt for password)"
     fi
+
+    # Check if /etc/hosts is writable
+    if sudo test -w /etc/hosts 2>/dev/null; then
+        print_status 0 "/etc/hosts is writable"
+    else
+        print_warning "/etc/hosts is read-only or not writable"
+        echo -e "${YELLOW}   The installer needs to modify /etc/hosts.${NC}"
+        echo -e "${YELLOW}   For NixOS/immutable systems, manually add these entries:${NC}"
+        echo -e "${YELLOW}   127.0.0.1 platform.opentdf.local keycloak.opentdf.local${NC}"
+    fi
 fi
 echo ""
 

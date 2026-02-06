@@ -5,3 +5,28 @@
 .card_accent--secondary {
   background-color: var(--ifm-color-secondary);
 }
+
+/* Dark mode overrides */
+:global(html[data-theme='dark']) :global(.card) {
+  background-color: #1e2a3a;
+  color: #e0e0e0;
+}
+
+:global(html[data-theme='dark']) :global(.card__body) h3 {
+  color: #ffffff;
+}
+
+:global(html[data-theme='dark']) :global(.card__body) p {
+  color: #b0b0b0;
+}
+
+:global(html[data-theme='dark']) :global(.button--secondary) {
+  background-color: #2d4a6f;
+  color: #ffffff;
+  border-color: #6aaae4;
+}
+
+:global(html[data-theme='dark']) :global(.button--secondary):hover {
+  background-color: #6aaae4;
+  color: #000000;
+}
