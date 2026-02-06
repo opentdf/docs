@@ -262,12 +262,21 @@ otdfctl decrypt <file.tdf>
 
 ### Default Ports
 
+OpenTDF exposes the following ports on your host machine:
+
+- **8080** - Platform API (direct HTTP/2 access)
+- **8443** - Platform API (HTTPS via Caddy reverse proxy)
+- **9443** - Keycloak (HTTPS via Caddy reverse proxy)
+- **2019** - Caddy admin API and metrics
+
+PostgreSQL (5432) runs internally in the Docker network and is not exposed to the host.
+
+You can configure these ports in `~/.opentdf/platform/.env` if needed:
 ```shell
-# Configure in ~/.opentdf/platform/.env if needed
+PLATFORM_HTTP_PORT=8080
 PLATFORM_PORT=8443
 KEYCLOAK_PORT=9443
 CADDY_ADMIN_PORT=2019
-POSTGRES_PORT=5432
 ```
 
 ### Access Points
