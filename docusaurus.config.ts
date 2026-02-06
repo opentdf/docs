@@ -175,7 +175,7 @@ const config: Config = {
             },
             {
               label: "Roadmap",
-              href: "https://github.com/orgs/opentdf/discussions/1806",
+              href: "https://opentdf.io/appendix/matrix",
             },
           ],
         },

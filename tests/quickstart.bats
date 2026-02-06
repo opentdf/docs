@@ -82,6 +82,9 @@ setup() {
 
 # Port checking tests
 @test "check.sh port validation works" {
+    run bash -c "grep -q 'check_port.*8080' $SCRIPT_DIR/check.sh"
+    [ "$status" -eq 0 ]
+
     run bash -c "grep -q 'check_port.*8443' $SCRIPT_DIR/check.sh"
     [ "$status" -eq 0 ]
 
@@ -89,9 +92,6 @@ setup() {
     [ "$status" -eq 0 ]
 
     run bash -c "grep -q 'check_port.*2019' $SCRIPT_DIR/check.sh"
-    [ "$status" -eq 0 ]
-
-    run bash -c "grep -q 'check_port.*5432' $SCRIPT_DIR/check.sh"
     [ "$status" -eq 0 ]
 }
 

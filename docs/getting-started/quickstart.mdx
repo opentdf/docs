@@ -142,8 +142,16 @@ The OpenTDF Platform is the core service that enforces attribute-based access co
 
 You'll run a local instance using Docker. This includes the [Platform](https://github.com/opentdf/platform/tree/main), [Keycloak](https://www.keycloak.org/) (for user authentication), and [PostgreSQL](https://www.postgresql.org/) (for storing attributes and policies).
 
-:::warning
-Not for production use.
+:::danger ⚠️ EVALUATION AND DEVELOPMENT ONLY
+**This quickstart setup is NOT intended for production use.**
+
+This configuration uses:
+- Self-signed certificates
+- Default credentials and secrets
+- Insecure TLS settings
+- No data persistence guarantees
+
+For production deployment guidance, visit: https://opentdf.io
 :::
 
 #### Step 1: Check Prerequisites
@@ -160,6 +168,10 @@ curl -fsSL https://opentdf.io/quickstart/check.sh -o check.sh
 chmod +x check.sh
 ./check.sh
 ```
+
+:::note Sudo Password Prompt
+You may be prompted for your sudo password during the "Checking permissions..." step. This is needed to verify write access to `/etc/hosts` (required for adding local domain mappings) and to check Docker permissions.
+:::
 
 <details>
 <summary>Expected output</summary>
@@ -186,10 +198,10 @@ Checking disk space...
 ✓ Disk space: 50GB available
 
 Checking port availability...
+✓ Port 8080 is available
 ✓ Port 8443 is available
 ✓ Port 9443 is available
 ✓ Port 2019 is available
-✓ Port 5432 is available
 
 Checking permissions...
 ✓ sudo access available (will prompt for password)
@@ -208,7 +220,7 @@ Ready to install OpenTDF:
 The script checks:
 - Docker is installed and running
 - Docker Compose is available
-- Required ports are available (8443, 9443, 2019, 5432)
+- Required ports are available (8080, 8443, 9443, 2019)
 - Sufficient disk space (10GB+) and RAM (4GB+)
 - curl is installed
 - sudo access for /etc/hosts modification
@@ -372,6 +384,17 @@ otdfctl profile create --tls-no-verify platform-otdf-local https://platform.open
 otdfctl auth client-credentials opentdf secret
 ```
 
+:::note Linux Keyring Limitation
+On Linux systems, you may see a warning: `Warning: Keyring storage is not available on Linux`. This is a known limitation. As a workaround, you can create the profile with credentials in one command:
+
+```shell
+otdfctl profile create --tls-no-verify \
+  --with-client-creds='{"clientId":"opentdf", "clientSecret":"secret"}' \
+  --host=https://platform.opentdf.local:8443 \
+  platform-otdf-local
+```
+:::
+
 Expected output:
 > ```console
 > SUCCESS   Profile platform-otdf-local created
@@ -424,6 +447,76 @@ Expected output (encrypted binary data):
 > ```
 
 As you can see, the file contains encrypted binary data and JSON metadata - not readable plain text. This confirms the encryption worked.
+
+#### Understanding TDF File Structure
+
+TDF files are actually ZIP archives containing the encrypted payload and metadata. You can inspect the structure using standard zip tools:
+
+```shell
+unzip -l example.tdf
+```
+
+Expected output:
+> ```console
+> Archive:  example.tdf
+>   Length      Date    Time    Name
+> ---------  ---------- -----   ----
+>        35  01-01-2025 12:00   0.payload
+>      1234  01-01-2025 12:00   0.manifest.json
+> ---------                     -------
+>      1269                     2 files
+> ```
+
+To view the manifest (which contains policy and encryption metadata):
+
+```shell
+unzip -p example.tdf 0.manifest.json | jq
+```
+
+Expected output:
+> ```json
+> {
+>   "encryptionInformation": {
+>     "type": "split",
+>     "policy": "eyJ1dWlkIjoiZjQyMzI4Y...",
+>     "method": {
+>       "algorithm": "AES-256-GCM",
+>       "isStreamable": true,
+>       "iv": "base64encodediv=="
+>     },
+>     "integrityInformation": {
+>       "rootSignature": {
+>         "alg": "HS256",
+>         "sig": "base64encodedsignature=="
+>       },
+>       "segmentSizeDefault": 1048576,
+>       "encryptedSegmentSizeDefault": 1048604
+>     },
+>     "keyAccess": [
+>       {
+>         "type": "wrapped",
+>         "url": "https://platform.opentdf.local:8443/kas",
+>         "protocol": "kas",
+>         "wrappedKey": "base64encodedkey==",
+>         "policyBinding": "base64encodedbinding==",
+>         "encryptedMetadata": "base64encodedmetadata=="
+>       }
+>     ]
+>   },
+>   "payload": {
+>     "type": "reference",
+>     "url": "0.payload",
+>     "protocol": "zip",
+>     "isEncrypted": true
+>   }
+> }
+> ```
+
+The manifest contains:
+- **Encryption details**: Algorithm (AES-256-GCM), initialization vector, integrity signatures
+- **Key Access**: How to retrieve the decryption key from the Key Access Server (KAS)
+- **Policy binding**: The attributes and access policies protecting this data
+- **Payload reference**: Location of the encrypted content within the zip file
 
 ### Decrypt the File
 
