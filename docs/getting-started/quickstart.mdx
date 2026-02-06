@@ -2,6 +2,7 @@
 title: Quickstart
 slug: /quickstart
 sidebar_label: Quickstart
+pagination_next: sdks/quickstart/index
 ---
 
 import dockerComposeContent from '!!raw-loader!./docker-compose.yaml';
@@ -144,43 +145,9 @@ You'll run a local instance using Docker. This includes the [Platform](https://g
 Not for production use.
 :::
 
-#### Step 1: Check for Port Conflicts (Recommended)
+#### Step 1: Check Prerequisites
 
-OpenTDF uses these ports by default:
-- **8443**: Platform API
-- **9443**: Keycloak authentication
-- **2019**: Caddy admin
-- **5432**: PostgreSQL
-
-Port 9443 commonly conflicts with other services (Rancher, steve, Kubernetes dashboards). Before installing, check if these ports are available:
-
-```shell
-# Check for port conflicts
-lsof -i :9443  # Most common conflict
-lsof -i :8443
-lsof -i :5432
-```
-
-If ports are in use, configure OpenTDF to use different ports before installation:
-
-```shell
-# Create config directory
-mkdir -p ~/.opentdf/platform
-
-# Set custom ports
-cat > ~/.opentdf/platform/.env <<'EOF'
-PLATFORM_PORT=8443
-KEYCLOAK_PORT=9444
-CADDY_ADMIN_PORT=2019
-POSTGRES_PORT=5432
-EOF
-```
-
-Change `KEYCLOAK_PORT` to an available port if 9443 is in use.
-
-#### Step 2: Run Pre-flight Check (Optional)
-
-Verify your system meets the requirements:
+Before installing, verify your system is ready by running the pre-flight check script:
 
 ```shell
 curl -fsSL https://opentdf.io/quickstart/check.sh | bash
@@ -206,7 +173,7 @@ Checking container runtime...
 ✓ Docker found and running
 
 Checking docker-compose...
-✓ docker compose plugin found (Docker Compose version v2.x.x-desktop.x)
+✓ docker compose plugin found (Docker Compose version v2.29.1-desktop.1)
 
 Checking required tools...
 ✓ curl found
@@ -215,12 +182,13 @@ Checking system resources...
 ✓ Memory: 16GB available
 
 Checking disk space...
-✓ Disk space: 100GB available
+✓ Disk space: 50GB available
 
 Checking port availability...
-✓ Port 8080 is available
 ✓ Port 8443 is available
 ✓ Port 9443 is available
+✓ Port 2019 is available
+✓ Port 5432 is available
 
 Checking permissions...
 ✓ sudo access available (will prompt for password)
@@ -236,7 +204,19 @@ Ready to install OpenTDF:
 
 </details>
 
-#### Step 3: Install OpenTDF
+The script checks:
+- Docker is installed and running
+- Docker Compose is available
+- Required ports are available (8443, 9443, 2019, 5432)
+- Sufficient disk space (10GB+) and RAM (4GB+)
+- curl is installed
+- sudo access for /etc/hosts modification
+
+:::tip Port Conflicts
+Port 9443 commonly conflicts with Rancher and Kubernetes dashboards. If you encounter port conflicts, see [troubleshooting](/getting-started/managing-platform#address-already-in-use-error) to resolve them before proceeding.
+:::
+
+#### Step 2: Install OpenTDF
 
 Run the automated installer:
 
@@ -344,152 +324,76 @@ If the certificate import fails during installation, you'll need to import it ma
 
 </details>
 
-What this does:
-- Downloads and installs the [otdfctl CLI](https://github.com/opentdf/otdfctl)
-- Verifies Docker is running
-- Adds entries to /etc/hosts (requires sudo)
-- Downloads and starts all services (Platform, Keycloak, PostgreSQL, Caddy)
-- Imports SSL certificates (requires sudo)
-- Takes 3-5 minutes on first run
+The installer will:
+- Download and install the [otdfctl CLI](https://github.com/opentdf/otdfctl)
+- Verify Docker is running
+- Add entries to /etc/hosts (requires sudo)
+- Download and start all services (Platform, Keycloak, PostgreSQL, Caddy)
+- Import SSL certificates (requires sudo)
+- Take 3-5 minutes on first run
 
-You'll be prompted for your password twice:
-1. To add entries to /etc/hosts
-2. To import the SSL certificate
+You'll be prompted for your password twice: once for /etc/hosts and once for SSL certificate import.
 
-#### Step 4: Add otdfctl to Your PATH (Optional)
+**Add otdfctl to your PATH** (optional but recommended):
 
-Choose one option:
-
-Option A: Add to shell profile (recommended)
+For bash:
 ```shell
-echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-Or for zsh:
+For zsh:
 ```shell
-echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+echo 'export PATH="$HOME/.opentdf/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
 
-Option B: Create system-wide symlink
+Or create a symlink:
 ```shell
 sudo ln -sf ~/.opentdf/bin/otdfctl /usr/local/bin/otdfctl
 ```
 
-Option C: Use full path (no setup needed)
-```shell
-~/.opentdf/bin/otdfctl --version
-```
-
-Expected output:
-> ```console
-> otdfctl version 0.x.x (2026-XX-XXT00:00:00Z) <commit-hash>
-> ```
-
-#### Step 5: Verify Installation
-
+**Verify installation:**
 ```shell
 otdfctl --version
+curl -k https://platform.opentdf.local:8443/healthz
 ```
 
-Expected output:
-> ```console
-> otdfctl version 0.x.x (2026-XX-XXT00:00:00Z) <commit-hash>
-> ```
+Expected: version output and `{"status":"SERVING"}` from the healthz check.
 
-You can verify that the platform and keycloak are running at the following locations:
-- https://platform.opentdf.local:8443/healthz
-- https://keycloak.opentdf.local:9443/
+#### Step 3: Create Profile & Authenticate
 
-When you visit the platform healthz endpoint, you should see:
-
-Expected output:
-```json
-{"status":"SERVING"}
-```
-
-When you visit the Keycloak URL, seeing "Resource not found" is expected and indicates Keycloak is running correctly.
-
-#### Step 6: Create an otdfctl Profile
-
-A profile stores your platform connection details and authentication credentials, making commands shorter and easier to use.
-
-Without a profile, you'd need to type the full platform URL with every command. With a profile, you simply reference it by name using `--profile platform-otdf-local`. This also allows you to manage multiple environments (like local, staging, and production) by switching between different profiles.
+Create a profile to store your connection details, then authenticate:
 
 ```shell
+# Create profile (--tls-no-verify skips certificate validation for local development)
 otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443
-```
 
-Expected output:
-> ```console
-> SUCCESS   Profile platform-otdf-local created
-> ```
-
-**About Default Profiles:**
-
-When you have only one profile (like most users following this guide), it automatically becomes your default profile. This means you can omit the `--profile platform-otdf-local` flag from all commands.
-
-If you have multiple profiles, you can set which one is the default:
-
-```shell
-otdfctl profile set-default platform-otdf-local
-```
-
-Expected output:
-> ```console
-> Set profile platform-otdf-local as default
-> ```
-
-For the rest of this guide, commands use the default profile. If you have multiple profiles, you can specify which one to use by adding `--profile <profile-name>` to any command.
-
-#### Step 7: Trust SSL Certificate (Optional)
-
-The profile was created with `--tls-no-verify` to skip certificate validation for the CLI. This is sufficient for quickstart testing, but for production use or if you're using browsers/SDKs, you may want to trust the certificate properly.
-
-**Symptoms indicating you should trust the certificate:**
-- Browser shows "Not Secure" warning when visiting platform URLs
-- curl commands require `-k` flag
-- SDK applications show certificate validation errors
-
-**Solution:** Follow the [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) guide for detailed instructions on:
-- Extracting the Caddy root CA certificate
-- Trusting it on your OS (macOS, Linux, or Windows)
-- When to use `--tls-no-verify` vs properly trusting certificates
-
-:::tip Managing the Platform
-Need to start, stop, or restart the platform later? See the [Managing the Platform](/getting-started/managing-platform) guide for platform management commands.
-:::
-
-## Authenticate
-
-Login using the pre-configured test credentials:
-
-```shell
+# Authenticate with test credentials
 otdfctl auth client-credentials opentdf secret
 ```
 
 Expected output:
 > ```console
+> SUCCESS   Profile platform-otdf-local created
 > Client credentials set for profile [platform-otdf-local]
 > ```
 
-Credentials:
-- Client ID: opentdf
-- Client Secret: secret
+**What is a profile?** A profile stores your platform URL and credentials so you don't need to type them with every command. When you have only one profile, it's automatically your default.
 
-These are test credentials provisioned automatically during installation.
+Your credentials are saved in the profile and persist across commands—no need to re-authenticate unless you change profiles.
 
-**Authentication Persistence**: Your credentials are saved in the profile and will be used automatically for all future commands. You won't need to re-authenticate unless you explicitly clear the credentials or change profiles.
+#### Step 4: Trust SSL Certificate (Optional)
 
-:::tip Troubleshooting TLS Certificate Errors
-If you see a TLS certificate verification error during authentication (e.g., "x509: certificate is not trusted"), your profile may have been created without the `--tls-no-verify` flag. To fix this:
+The `--tls-no-verify` flag skips certificate validation, which is fine for CLI quickstart testing. However, if you're using browsers or SDKs, you may see certificate warnings.
 
-1. Set another profile as default: `otdfctl profile set-default <other-profile-name>`
-2. Delete the problematic profile: `otdfctl profile delete platform-otdf-local`
-3. Recreate with TLS verification disabled: `otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443`
-4. Set it as default: `otdfctl profile set-default platform-otdf-local`
-5. Retry authentication: `otdfctl auth client-credentials opentdf secret`
+**Trust the certificate if you see:**
+- Browser "Not Secure" warnings
+- curl commands requiring `-k` flag
+- SDK certificate validation errors
+
+**Solution:** See [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) for instructions on trusting the Caddy root CA certificate on your OS.
+
+:::tip Managing the Platform
+Need to start, stop, or restart the platform later? See the [Managing the Platform](/getting-started/managing-platform) guide.
 :::
 
 ## Encrypt and Decrypt with the CLI
@@ -811,79 +715,21 @@ export DEPT_ATTRIBUTE_ID=<id>
 
 ### Add Department Values
 
-Now add the specific departments. Preston works in finance, and Jack works in engineering:
+Add values for finance and engineering:
 
 ```shell
+# Add finance value
 otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value finance
-```
+export FINANCE_VALUE_ID=<id-from-output>
 
-> ```console
-> SUCCESS   Created values: 0fe7e8d0-a3ff-485f-ac24-a54d85904712
-> ┌────────────┬──────────────────────────────────────────────────────┐
-> │Property    │Value                                                 │
-> ├────────────┼──────────────────────────────────────────────────────┤
-> │Id          │0fe7e8d0-a3ff-485f-ac24-a54d85904712                  │
-> │FQN         │https://opentdf.io/attr/department/value/finance      │
-> │Value       │finance                                               │
-> │Created At  │Mon Jun 24 11:11:15 UTC 2024                          │
-> │Updated At  │Mon Jun 24 11:11:15 UTC 2024                          │
-> └────────────┴──────────────────────────────────────────────────────┘
-> NOTE   Use 'values get --id=0fe7e8d0-a3ff-485f-ac24-a54d85904712 --json' to see all properties
-> ```
-
-Save the finance value ID:
-
-```shell
-export FINANCE_VALUE_ID=<id>
-```
-
-```shell
+# Add engineering value
 otdfctl policy attributes values create -a $DEPT_ATTRIBUTE_ID --value engineering
+export ENGINEERING_VALUE_ID=<id-from-output>
 ```
 
-> ```console
-> SUCCESS   Created values: dbfcbe15-7392-4e35-9e1d-3d06918472be
-> ┌────────────┬─────────────────────────────────────────────────────────┐
-> │Property    │Value                                                    │
-> ├────────────┼─────────────────────────────────────────────────────────┤
-> │Id          │dbfcbe15-7392-4e35-9e1d-3d06918472be                     │
-> │FQN         │https://opentdf.io/attr/department/value/engineering     │
-> │Value       │engineering                                              │
-> │Created At  │Mon Jun 24 11:12:45 UTC 2024                             │
-> │Updated At  │Mon Jun 24 11:12:45 UTC 2024                             │
-> └────────────┴─────────────────────────────────────────────────────────┘
-> NOTE   Use 'values get --id=dbfcbe15-7392-4e35-9e1d-3d06918472be --json' to see all properties
-> ```
-
-Save the engineering value ID:
-
-```shell
-export ENGINEERING_VALUE_ID=<id>
-```
-
-### Review Your Department Attributes
-
-Now that you've created the department attribute with its values, let's verify it:
-
-```shell
-otdfctl policy attributes get --id=$DEPT_ATTRIBUTE_ID
-```
-
-> ```console
-> SUCCESS   Found attributes: bd02d7ab-564d-4b6c-95c4-3d4a8a259000
-> ┌────────────┬──────────────────────────────────────┐
-> │Property    │Value                                 │
-> ├────────────┼──────────────────────────────────────┤
-> │Id          │bd02d7ab-564d-4b6c-95c4-3d4a8a259000  │
-> │Name        │department                            │
-> │Rule        │ANY_OF                                │
-> │Values      │[finance, engineering]                │
-> │Namespace   │opentdf.io                            │
-> │Created At  │Mon Jun 24 11:09:39 UTC 2024          │
-> │Updated At  │Mon Jun 24 11:14:22 UTC 2024          │
-> └────────────┴──────────────────────────────────────┘
-> NOTE   Use 'attributes get --id=bd02d7ab-564d-4b6c-95c4-3d4a8a259000 --json' to see all properties
-> ```
+:::tip Pro Tip
+You can create attributes with values in one command: `otdfctl policy attributes create --name department -s $NAMESPACE_ID -r ANY_OF --value finance --value engineering`
+:::
 
 ### Create Clearance Attribute
 
@@ -905,27 +751,7 @@ In the next few steps you will add an executive clearance value and a standard c
 
 ```shell
 otdfctl policy attributes create --name clearance -s $NAMESPACE_ID -r HIERARCHY
-```
-
-> ```console
-> SUCCESS   Created attributes: af23c7bd-987d-4c6b-85f4-2a8d4a127abc
-> ┌────────────┬──────────────────────────────┐
-> │Property    │Value                         │
-> ├────────────┼──────────────────────────────┤
-> │Name        │clearance                     │
-> │Rule        │HIERARCHY                     │
-> │Values      │[]                            │
-> │Namespace   │opentdf.io                    │
-> │Created At  │Mon Jun 24 11:09:39 UTC 2024  │
-> │Updated At  │Mon Jun 24 11:09:39 UTC 2024  │
-> └────────────┴──────────────────────────────┘
-> NOTE   Use 'attributes get --id=af23c7bd-987d-4c6b-85f4-2a8d4a127abc --json' to see all properties
-> ```
-
-Save the clearance attribute ID:
-
-```shell
-export CLEARANCE_ATTRIBUTE_ID=<id>
+export CLEARANCE_ATTRIBUTE_ID=<id-from-output>
 ```
 
 ### Add Clearance Values
@@ -933,78 +759,16 @@ export CLEARANCE_ATTRIBUTE_ID=<id>
 Add clearance levels in order from highest to lowest privilege. Create "executive" first (highest clearance), then "standard" (lower clearance):
 
 ```shell
+# Add executive value (highest privilege)
 otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value executive
-```
+export EXECUTIVE_VALUE_ID=<id-from-output>
 
-> ```console
-> SUCCESS   Created values: 654f0877-2c0b-4a62-a9c3-87ed42bf77ac
-> ┌────────────┬──────────────────────────────────────────────────────┐
-> │Property    │Value                                                 │
-> ├────────────┼──────────────────────────────────────────────────────┤
-> │Id          │654f0877-2c0b-4a62-a9c3-87ed42bf77ac                  │
-> │FQN         │https://opentdf.io/attr/clearance/value/executive     │
-> │Value       │executive                                             │
-> │Created At  │Mon Jun 24 11:14:22 UTC 2024                          │
-> │Updated At  │Mon Jun 24 11:14:22 UTC 2024                          │
-> └────────────┴──────────────────────────────────────────────────────┘
-> NOTE   Use 'values get --id=654f0877-2c0b-4a62-a9c3-87ed42bf77ac --json' to see all properties
-> ```
-
-Save the executive clearance value ID:
-
-```shell
-export EXECUTIVE_VALUE_ID=<id>
-```
-
-```shell
+# Add standard value (lower privilege)
 otdfctl policy attributes values create -a $CLEARANCE_ATTRIBUTE_ID --value standard
+export STANDARD_VALUE_ID=<id-from-output>
 ```
 
-> ```console
-> SUCCESS   Created values: 789a1234-3c0b-4a62-b8d4-98fe53cf88bd
-> ┌────────────┬─────────────────────────────────────────────────────┐
-> │Property    │Value                                                │
-> ├────────────┼─────────────────────────────────────────────────────┤
-> │Id          │789a1234-3c0b-4a62-b8d4-98fe53cf88bd                 │
-> │FQN         │https://opentdf.io/attr/clearance/value/standard     │
-> │Value       │standard                                             │
-> │Created At  │Mon Jun 24 11:14:22 UTC 2024                         │
-> │Updated At  │Mon Jun 24 11:14:22 UTC 2024                         │
-> └────────────┴─────────────────────────────────────────────────────┘
-> NOTE   Use 'values get --id=789a1234-3c0b-4a62-b8d4-98fe53cf88bd --json' to see all properties
-> ```
-
-Save the standard clearance value ID:
-
-```shell
-export STANDARD_VALUE_ID=<id>
-```
-
-### Review Your Clearance Attributes
-
-Now that you've created the clearance hierarchy attribute with its values, let's verify it:
-
-```shell
-otdfctl policy attributes get --id=$CLEARANCE_ATTRIBUTE_ID
-```
-
-> ```console
-> SUCCESS   Found attributes: af23c7bd-987d-4c6b-85f4-2a8d4a127abc
-> ┌────────────┬──────────────────────────────────────┐
-> │Property    │Value                                 │
-> ├────────────┼──────────────────────────────────────┤
-> │Id          │af23c7bd-987d-4c6b-85f4-2a8d4a127abc  │
-> │Name        │clearance                             │
-> │Rule        │HIERARCHY                             │
-> │Values      │[executive, standard]                 │
-> │Namespace   │opentdf.io                            │
-> │Created At  │Mon Jun 24 11:09:39 UTC 2024          │
-> │Updated At  │Mon Jun 24 11:14:22 UTC 2024          │
-> └────────────┴──────────────────────────────────────┘
-> NOTE   Use 'attributes get --id=af23c7bd-987d-4c6b-85f4-2a8d4a127abc --json' to see all properties
-> ```
-
-Notice that executive is listed before standard in the Values array. This order is important - because we're using a HIERARCHY rule, someone with executive clearance automatically has standard clearance too. The hierarchy flows from highest (executive) to lowest (standard).
+Because we're using a HIERARCHY rule, someone with executive clearance automatically has standard clearance too. The hierarchy flows from highest (executive) to lowest (standard).
 
 ## Create Subject Mappings
 

@@ -151,9 +151,10 @@ check_port() {
     fi
 }
 
-check_port 8080 || true
 check_port 8443 || true
 check_port 9443 || true
+check_port 2019 || true
+check_port 5432 || true
 echo ""
 
 # Check for sudo access (needed for /etc/hosts)
