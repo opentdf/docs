@@ -107,8 +107,8 @@ The SDKs create **TDF (Trusted Data Format)** files, which contain:
 :::warning Development Only - Language-Specific Settings
 The SDK examples use different settings for local development with self-signed certificates:
 
-**Go SDK**: `.WithInsecurePlaintextConn()`
-**Java SDK**: `.useInsecurePlaintextConnection(true)`
+**Go SDK**: `sdk.WithInsecureSkipVerifyConn()` - Disables TLS certificate verification
+**Java SDK**: `SSLFactory.builder().withTrustingAllCertificatesWithoutValidation()` - Trusts all certificates
 **JavaScript SDK**: May need `NODE_TLS_REJECT_UNAUTHORIZED=0`
 
 **Never use these settings in production.**
