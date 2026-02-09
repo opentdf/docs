@@ -558,22 +558,22 @@ Here's the key insight: **You create Subject Mappings for the PATTERN, not every
 
 **Problem:** This requires creating a new Subject Mapping for every user. Not scalable.
 
-**Option 2: Group/Department-Based Access (Recommended)**
+**Option 2: Pattern-Based Access (Recommended)**
 
-Create Subject Mappings based on department or group claims that cover multiple users:
+Create Subject Mappings based on patterns in token claims (like email domains) that cover multiple users:
 
 ```json
 {
-  "attribute_value_id": "attr-department-finance",
+  "attribute_value_id": "attr-company-employees",
   "actions": ["DECRYPT"],
   "subject_condition_set": {
     "subject_sets": [{
       "condition_groups": [{
         "boolean_operator": 1,
         "conditions": [{
-          "subject_external_selector_value": ".department",
-          "operator": 1,
-          "subject_external_values": ["finance", "accounting"]
+          "subject_external_selector_value": ".email",
+          "operator": 3,  // IN_CONTAINS (substring match)
+          "subject_external_values": ["@example.com"]
         }]
       }]
     }]
@@ -581,9 +581,9 @@ Create Subject Mappings based on department or group claims that cover multiple 
 }
 ```
 
-→ Anyone with `department: "finance"` or `department: "accounting"` in their token gets entitlement for `department/finance` attribute
+→ Anyone with an email containing `@example.com` in their token gets entitlement for the `company/employees` attribute
 
-**Key:** One Subject Mapping covers all matching users. The IdP provides the claims (email domain, department, groups) that the condition evaluates.
+**Key:** One Subject Mapping covers all matching users. The IdP provides the claims (email addresses) and the condition evaluates the pattern at decision time.
 
 :::tip Advanced Pattern: True Per-User Self-Service
 For true self-service access where users can only access resources tagged specifically with their own identity (e.g., Alice accesses files tagged `owner/alice@example.com` but not `owner/bob@example.com`), the standard Subject Mapping system alone is insufficient.
