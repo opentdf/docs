@@ -555,22 +555,22 @@ Here's the key insight: **You create Subject Mappings for the PATTERN, not every
 
 **Problem:** This requires creating a new Subject Mapping for every user. Not scalable.
 
-**Option 2: Dynamic Self-Service (Recommended)**
+**Option 2: Group/Department-Based Access (Recommended)**
 
-Use a **generic Subject Mapping** that matches the token claim to the attribute value:
+Create Subject Mappings based on department or group claims that cover multiple users:
 
 ```json
 {
-  "attribute_value_id": "attr-owner-{{EMAIL}}",  // Placeholder
+  "attribute_value_id": "attr-department-finance",
   "actions": ["DECRYPT"],
   "subject_condition_set": {
     "subject_sets": [{
       "condition_groups": [{
         "boolean_operator": 1,
         "conditions": [{
-          "subject_external_selector_value": ".email",
-          "operator": 3,  // IN_CONTAINS for substring match
-          "subject_external_values": ["@example.com"]  // Any company email
+          "subject_external_selector_value": ".department",
+          "operator": 1,
+          "subject_external_values": ["finance", "accounting"]
         }]
       }]
     }]
@@ -578,14 +578,26 @@ Use a **generic Subject Mapping** that matches the token claim to the attribute 
 }
 ```
 
-:::tip Advanced Pattern: Self-Service Attributes
-For true self-service (user can access resources tagged with their own email), use **Entity Resolution** with attribute value creation:
+→ Anyone with `department: "finance"` or `department: "accounting"` in their token gets entitlement for `department/finance` attribute
 
-1. Define attribute without enumeration
-2. When encrypting, dynamically create attribute value: `owner_email/alice@example.com`
-3. Subject Mapping grants access IF token email matches attribute value
+**Key:** One Subject Mapping covers all matching users. The IdP provides the claims (email domain, department, groups) that the condition evaluates.
 
-This pattern requires custom Entity Resolution logic or attribute value auto-creation. Contact OpenTDF maintainers for implementation guidance.
+:::tip Advanced Pattern: True Per-User Self-Service
+For true self-service access where users can only access resources tagged specifically with their own identity (e.g., Alice accesses files tagged `owner/alice@example.com` but not `owner/bob@example.com`), the standard Subject Mapping system alone is insufficient.
+
+Subject Mappings grant **entitlements** to attribute values, but they cannot dynamically match a user's claim to a resource's attribute value at decision time. A Subject Mapping must reference a specific `attribute_value_id` that already exists.
+
+**This pattern requires custom logic** in one of these places:
+- **Entity Resolution Service**: Custom resolver that dynamically creates entitlements matching the user's identity claim
+- **Authorization Service**: Custom decision logic that compares token claims directly to resource attribute values
+- **Application layer**: Pre-authorization filtering based on user identity before calling OpenTDF
+
+**Conceptual workflow:**
+1. Define attribute without value enumeration (`owner_email`)
+2. When encrypting, create attribute value dynamically: `owner_email/alice@example.com`
+3. At decryption time, custom logic grants access when token's `.email` claim matches the resource's `owner_email` value
+
+This requires development work beyond standard Subject Mapping configuration. Consult OpenTDF maintainers for implementation guidance.
 :::
 
 ### Comparison Table
