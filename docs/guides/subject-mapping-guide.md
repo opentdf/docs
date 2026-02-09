@@ -3,6 +3,9 @@ title: Subject Mapping Comprehensive Guide
 sidebar_position: 1
 ---
 
+<!-- vale Vale.Terms = NO -->
+<!-- vale Vale.Spelling = NO -->
+
 # Subject Mapping: Comprehensive Guide
 
 :::info What You'll Learn
