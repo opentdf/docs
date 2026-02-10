@@ -1,6 +1,5 @@
 ---
-sidebar_position: 3
-unlisted: true
+sidebar_position: 2
 ---
 
 # Managing the Platform
@@ -73,7 +72,11 @@ You can also verify the platform is healthy by visiting:
 
 ### TLS Certificate Verification
 
-If you encounter TLS certificate errors like "Failed to validate TLS certificates," you have two options:
+:::tip Canonical TLS Certificate Guide
+This is the comprehensive guide for resolving all certificate/TLS issues across the platform, CLI, and SDKs. Both the [Quickstart](/quickstart#troubleshooting) and [SDK Troubleshooting](/sdks/troubleshooting) guides reference this section.
+:::
+
+If you encounter TLS certificate errors like "Failed to validate TLS certificates," "certificate signed by unknown authority," or browser "Not Secure" warnings, you have two options:
 
 1. **Set environment variable** (recommended - works with profiles):
    ```shell
@@ -102,3 +105,189 @@ If you encounter TLS certificate errors like "Failed to validate TLS certificate
        -   **Windows:** Manually import `caddy-root.crt` into the "Trusted Root Certification Authorities" store using Certificate Manager (`certmgr.msc`).
 
 **Important**: The `--tls-no-verify` flag doesn't work with profiles. Use the environment variable instead.
+
+### "Address already in use" Error
+
+**Symptom:** Services fail to start, docker compose shows port binding errors
+
+**Cause:** Port conflict - another service is using one of OpenTDF's required ports
+
+**Solution:**
+
+```shell
+# Find what's using the port
+lsof -i :9443  # or whichever port is conflicting
+
+# Option 1: Stop the conflicting service
+
+# Option 2: Reconfigure OpenTDF to use different ports
+# Edit ~/.opentdf/platform/.env and change KEYCLOAK_PORT
+# Then restart the platform
+cd ~/.opentdf/platform && docker compose restart
+```
+
+### "Invalid character" Error During Authentication
+
+**Symptom:**
+```console
+ERROR: invalid character '<' looking for beginning of value
+```
+
+**Cause:** Port conflict - you're hitting a different service (like Rancher) instead of Keycloak
+
+**Solution:** Fix the port conflict as described above, then restart the platform
+
+### "PermissionDenied" After Creating Subject Mapping
+
+**Symptom:** Subject mapping created but decryption still fails with `PermissionDenied`
+
+**Investigation steps:**
+
+```shell
+# 1. Verify mapping exists
+otdfctl policy subject-mappings list
+
+# 2. Check your token claims match condition set
+otdfctl auth print-access-token
+
+# 3. Verify field name in condition set
+# Your condition set must use ".clientId" to match the JWT token claim
+
+# 4. Check platform logs for details
+docker logs platform-platform-1 --tail 50
+```
+
+### Services Won't Start
+
+**Investigation:**
+
+```shell
+# Check all services
+docker ps --filter name=platform-
+
+# View logs for specific service
+docker logs platform-platform-1
+docker logs platform-keycloak-1
+
+# Restart everything
+cd ~/.opentdf/platform
+docker compose down
+docker compose up -d
+
+# Wait for health checks
+watch 'docker ps --filter name=platform- --format "table {{.Names}}\t{{.Status}}"'
+```
+
+### Platform Not Responding
+
+**Symptom:** Commands timeout or connection refused
+
+**Solution:**
+
+```shell
+# Check if platform is healthy
+curl -k https://platform.opentdf.local:8443/healthz
+
+# Expected output: {"status":"SERVING"}
+
+# If not responding, check Docker logs
+docker logs platform-platform-1 --tail 100
+
+# Restart platform service
+cd ~/.opentdf/platform && docker compose restart platform
+```
+
+## Quick Reference
+
+### Platform Management Commands
+
+```shell
+# Start platform
+cd ~/.opentdf/platform && docker compose up -d
+
+# Stop platform
+cd ~/.opentdf/platform && docker compose down
+
+# View logs
+docker logs -f platform-platform-1
+
+# Check health
+curl -k https://platform.opentdf.local:8443/healthz
+
+# Check service status
+docker ps --filter name=platform-
+```
+
+### Common otdfctl Commands
+
+```shell
+# Profiles
+otdfctl profile list
+otdfctl profile create <name> <url> [--tls-no-verify]
+otdfctl profile set-default <name>
+
+# Authentication
+otdfctl auth client-credentials <client-id> <secret>
+otdfctl auth print-access-token
+
+# Namespaces
+otdfctl policy attributes namespaces list
+otdfctl policy attributes namespaces create --name <name>
+otdfctl policy attributes namespaces get --id <id>
+
+# Attributes
+otdfctl policy attributes create \
+  --name <name> -s <namespace-id> --rule <ANY_OF|ALL_OF|HIERARCHY>
+otdfctl policy attributes get --id <id>
+otdfctl policy attributes list
+
+# Values
+otdfctl policy attributes values create \
+  -a <attribute-id> --value <value>
+otdfctl policy attributes values get --id <id>
+
+# Subject Mappings
+otdfctl policy subject-condition-sets create -j <file.json>
+otdfctl policy subject-mappings create \
+  --action read \
+  --attribute-value-id <value-id> \
+  --subject-condition-set-id <condition-set-id>
+otdfctl policy subject-mappings list
+
+# Encrypt/Decrypt
+echo "data" | otdfctl encrypt -o file.tdf --attr <attribute-url>
+otdfctl encrypt <input-file> -o <output.tdf> --attr <attribute-url>
+otdfctl decrypt <file.tdf>
+```
+
+### Default Ports
+
+OpenTDF exposes the following ports on your host machine:
+
+- **8080** - Platform API (direct HTTP/2 access)
+- **8443** - Platform API (HTTPS via Caddy reverse proxy)
+- **9443** - Keycloak (HTTPS via Caddy reverse proxy)
+- **2019** - Caddy admin API and metrics
+
+PostgreSQL (5432) runs internally in the Docker network and is not exposed to the host.
+
+You can configure these ports in `~/.opentdf/platform/.env` if needed:
+```shell
+PLATFORM_HTTP_PORT=8080
+PLATFORM_PORT=8443
+KEYCLOAK_PORT=9443
+CADDY_ADMIN_PORT=2019
+```
+
+### Access Points
+
+- Platform API: https://platform.opentdf.local:8443
+- Platform Health: https://platform.opentdf.local:8443/healthz
+- Keycloak: https://keycloak.opentdf.local:9443
+
+### Default Test Credentials
+
+- Client ID: `opentdf`
+- Client Secret: `secret`
+- Username: `user1`
+- Password: `testuser123`

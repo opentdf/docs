@@ -90,6 +90,9 @@ setup() {
 
     run bash -c "grep -q 'check_port.*9443' $SCRIPT_DIR/check.sh"
     [ "$status" -eq 0 ]
+
+    run bash -c "grep -q 'check_port.*2019' $SCRIPT_DIR/check.sh"
+    [ "$status" -eq 0 ]
 }
 
 # Script structure tests

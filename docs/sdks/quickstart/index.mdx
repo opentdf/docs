@@ -1,0 +1,145 @@
+---
+sidebar_position: 2
+title: SDK Quickstart
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# SDK Quickstart
+
+This guide shows you how to build a simple application using the OpenTDF SDKs to encrypt and decrypt data. You'll create a lightweight client that connects to your local OpenTDF platform and demonstrates the core SDK functionality.
+
+:::tip Prerequisites
+Complete the [Getting Started](/quickstart) guide first to set up your local OpenTDF platform. This quickstart assumes:
+- Platform running at `https://platform.opentdf.local:8443`
+- Keycloak running at `https://keycloak.opentdf.local:9443`
+- Client credentials: `opentdf` / `secret`
+:::
+
+:::note Time Commitment
+This quickstart takes **15-20 minutes** to complete.
+:::
+
+## What You'll Build {#what-youll-build}
+
+A simple application that:
+1. Connects to your local OpenTDF platform
+2. Authenticates using client credentials
+3. Encrypts sensitive data into a TDF file
+4. Decrypts the TDF file back to plaintext
+
+## Choose Your SDK {#choose-your-sdk}
+
+OpenTDF provides native SDKs in three languages. Choose your language to get started with complete, working examples:
+
+<div className="row">
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>Go SDK</h3>
+      </div>
+      <div className="card__body">
+        <p>Native Go library with excellent performance for backend services and CLI tools.</p>
+      </div>
+      <div className="card__footer">
+        <a className="button button--primary button--block" href="/sdks/quickstart/go">
+          Get Started with Go
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>Java SDK</h3>
+      </div>
+      <div className="card__body">
+        <p>Full-featured Java library for enterprise applications and Android development.</p>
+      </div>
+      <div className="card__footer">
+        <a className="button button--primary button--block" href="/sdks/quickstart/java">
+          Get Started with Java
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div className="col col--4">
+    <div className="card">
+      <div className="card__header">
+        <h3>JavaScript/TypeScript SDK</h3>
+      </div>
+      <div className="card__body">
+        <p>Modern SDK for Node.js and browser applications with TypeScript support.</p>
+      </div>
+      <div className="card__footer">
+        <a className="button button--primary button--block" href="/sdks/quickstart/javascript">
+          Under development - coming soon
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+## Key Concepts {#key-concepts}
+
+### Client Credentials Authentication
+
+All three SDKs use **client credentials** to authenticate with the platform. This is a machine-to-machine authentication flow suitable for:
+- Backend services
+- CLI tools
+- Server-side applications
+- Batch processing jobs
+
+In production, you would create separate client IDs for each service with appropriate permissions.
+
+### TDF Format
+
+The SDKs create **TDF (Trusted Data Format)** files, which contain:
+- **Encrypted payload**: Your data, encrypted with a symmetric key
+- **Manifest**: Metadata including policy attributes and Key Access Server information
+- **Policy**: Access control rules (which attributes are required to decrypt)
+
+### Connection Security
+
+:::warning Development Only - Language-Specific Settings
+The SDK examples use different settings for local development with self-signed certificates:
+
+**Go SDK**: `sdk.WithInsecureSkipVerifyConn()` - Disables TLS certificate verification
+**Java SDK**: `SSLFactory.builder().withTrustingAllCertificatesWithoutValidation()` - Trusts all certificates
+**JavaScript SDK**: May need `NODE_TLS_REJECT_UNAUTHORIZED=0`
+
+**Never use these settings in production.**
+
+In production:
+- Use HTTPS connections with valid TLS certificates
+- Remove all insecure connection flags
+- Configure proper certificate validation
+:::
+
+## What's Next? {#whats-next}
+
+Having issues? See the **[SDK Troubleshooting](/sdks/troubleshooting)** guide for solutions to common problems.
+
+
+
+Now that you have basic SDK integration working, explore:
+
+- **[Creating TDFs](/sdks/tdf)**: Learn about TDF options, attributes, and policies
+- **[Managing Policy](/sdks/policy)**: Create and manage attributes programmatically
+- **[Authorization](/sdks/authorization)**: Check entitlements and authorization decisions
+- **[SDK Feature Matrix](/appendix/matrix#sdk)**: Compare features across SDKs
+- **[Best Practices](/sdks/authorization#best-practices)**: Optimize for large-scale operations
+
+### Real-World Integration
+
+To integrate OpenTDF into your application:
+
+1. **Choose Authentication Method**: Client credentials, bearer token, or custom auth
+2. **Define Your Attributes**: Map your organizational roles and data classifications to attributes
+3. **Create Subject Mappings**: Connect users/services to their entitlements
+4. **Encrypt at Rest**: Protect files, documents, and data stores
+5. **Encrypt in Transit**: Protect data shared between services
+6. **Audit Access**: Monitor who accessed what data and when
