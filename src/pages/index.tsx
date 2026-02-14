@@ -86,7 +86,7 @@ export default function Home() {
                   secure applications without sacrificing speed or simplicity.
                 </p>
                 <div className="hero-actions">
-                  <a href="/tutorials" className="hero-button hero-button--primary">
+                  <a href="/quickstart" className="hero-button hero-button--primary">
                     <iconify-icon data-icon="mdi:code-tags" style={{fontSize: '1.2rem'}}></iconify-icon>
                     Quick Start
                   </a>
