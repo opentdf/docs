@@ -31,6 +31,35 @@ const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
 const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
 
+// Service descriptions and categorization for OpenAPI index generation
+const SERVICE_DESCRIPTIONS: Record<string, string> = {
+    'Well-Known Configuration': 'Platform configuration and service discovery',
+    'kas': 'Key Access Service for TDF encryption/decryption',
+    'V1 Authorization': 'Authorization decisions (v1)',
+    'V2 Authorization': 'Authorization decisions (v2)',
+    'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
+    'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
+    'Policy Objects': 'Core policy objects and management',
+    'Policy Attributes': 'Attribute definitions and values',
+    'Policy Namespaces': 'Namespace management',
+    'Policy Actions': 'Action definitions',
+    'Policy Subject Mapping': 'Map subjects to attributes',
+    'Policy Resource Mapping': 'Map resources to attributes',
+    'Policy Obligations': 'Usage obligations and triggers',
+    'Policy Registered Resources': 'Resource registration',
+    'Policy KAS Registry': 'KAS registration and management',
+    'Key Management': 'Cryptographic key management',
+    'Policy Unsafe Service': 'Administrative operations',
+};
+
+const CATEGORY_MAPPING: Record<string, string[]> = {
+    'Core Services': ['Well-Known Configuration', 'kas'],
+    'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
+    'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
+                         'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
+                         'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
+};
+
 // Read BUILD_OPENAPI_SAMPLES once
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
@@ -441,39 +470,9 @@ async function preprocessOpenApiSpecs() {
         return null;
     }
 
-    // Service descriptions - can be customized per service
-    const serviceDescriptions: Record<string, string> = {
-        'Well-Known Configuration': 'Platform configuration and service discovery',
-        'kas': 'Key Access Service for TDF encryption/decryption',
-        'V1 Authorization': 'Authorization decisions (v1)',
-        'V2 Authorization': 'Authorization decisions (v2)',
-        'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
-        'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
-        'Policy Objects': 'Core policy objects and management',
-        'Policy Attributes': 'Attribute definitions and values',
-        'Policy Namespaces': 'Namespace management',
-        'Policy Actions': 'Action definitions',
-        'Policy Subject Mapping': 'Map subjects to attributes',
-        'Policy Resource Mapping': 'Map resources to attributes',
-        'Policy Obligations': 'Usage obligations and triggers',
-        'Policy Registered Resources': 'Resource registration',
-        'Policy KAS Registry': 'KAS registration and management',
-        'Key Management': 'Cryptographic key management',
-        'Policy Unsafe Service': 'Administrative operations',
-    };
-
-    // Categorization - define which specs belong to which category
-    const categoryMapping: Record<string, string[]> = {
-        'Core Services': ['Well-Known Configuration', 'kas'],
-        'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
-        'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
-                             'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
-                             'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
-    };
-
     // Build service links dynamically from openApiSpecsArray
     let serviceLinksMarkdown = '';
-    Object.entries(categoryMapping).forEach(([category, specIds]) => {
+    Object.entries(CATEGORY_MAPPING).forEach(([category, specIds]) => {
         serviceLinksMarkdown += `\n## ${category}\n\n`;
         specIds.forEach(specId => {
             const spec = openApiSpecsArray.find(s => s.id === specId);
@@ -481,7 +480,7 @@ async function preprocessOpenApiSpecs() {
                 // Try to read the document ID from the generated .info.mdx file
                 const docId = getDocIdFromInfoFile(spec.outputDir);
                 if (docId) {
-                    const description = serviceDescriptions[specId] || 'API documentation';
+                    const description = SERVICE_DESCRIPTIONS[specId] || 'API documentation';
                     serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
                 } else {
                     console.warn(`⚠️  Could not generate link for ${spec.id} - .info.mdx file not found yet`);
@@ -558,36 +557,6 @@ function renameInfoFilesToIndex() {
 function updateOpenApiIndex() {
     console.log('📝 Updating OpenAPI index page with generated doc links...');
 
-    // Service descriptions - can be customized per service
-    const serviceDescriptions: Record<string, string> = {
-        'Well-Known Configuration': 'Platform configuration and service discovery',
-        'kas': 'Key Access Service for TDF encryption/decryption',
-        'V1 Authorization': 'Authorization decisions (v1)',
-        'V2 Authorization': 'Authorization decisions (v2)',
-        'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
-        'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
-        'Policy Objects': 'Core policy objects and management',
-        'Policy Attributes': 'Attribute definitions and values',
-        'Policy Namespaces': 'Namespace management',
-        'Policy Actions': 'Action definitions',
-        'Policy Subject Mapping': 'Map subjects to attributes',
-        'Policy Resource Mapping': 'Map resources to attributes',
-        'Policy Obligations': 'Usage obligations and triggers',
-        'Policy Registered Resources': 'Resource registration',
-        'Policy KAS Registry': 'KAS registration and management',
-        'Key Management': 'Cryptographic key management',
-        'Policy Unsafe Service': 'Administrative operations',
-    };
-
-    // Categorization
-    const categoryMapping: Record<string, string[]> = {
-        'Core Services': ['Well-Known Configuration', 'kas'],
-        'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
-        'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
-                             'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
-                             'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
-    };
-
     // Helper function to find and read the document ID from a generated index.mdx file
     function getDocIdFromInfoFile(outputDir: string): string | null {
         try {
@@ -614,14 +583,14 @@ function updateOpenApiIndex() {
 
     // Build service links dynamically from openApiSpecsArray
     let serviceLinksMarkdown = '';
-    Object.entries(categoryMapping).forEach(([category, specIds]) => {
+    Object.entries(CATEGORY_MAPPING).forEach(([category, specIds]) => {
         serviceLinksMarkdown += `\n## ${category}\n\n`;
         specIds.forEach(specId => {
             const spec = openApiSpecsArray.find(s => s.id === specId);
             if (spec) {
                 const docId = getDocIdFromInfoFile(spec.outputDir);
                 if (docId) {
-                    const description = serviceDescriptions[specId] || 'API documentation';
+                    const description = SERVICE_DESCRIPTIONS[specId] || 'API documentation';
                     serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
                 }
             }
