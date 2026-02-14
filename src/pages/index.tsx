@@ -90,7 +90,7 @@ export default function Home() {
                     <iconify-icon data-icon="mdi:code-tags" style={{fontSize: '1.2rem'}}></iconify-icon>
                     Quick Start
                   </a>
-                  <a href="/reference" className="hero-button hero-button--secondary">
+                  <a href="/OpenAPI-clients" className="hero-button hero-button--secondary">
                     <iconify-icon data-icon="mdi:api" style={{fontSize: '1.2rem'}}></iconify-icon>
                     API Reference
                   </a>
