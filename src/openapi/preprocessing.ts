@@ -471,10 +471,14 @@ async function preprocessOpenApiSpecs() {
     }
 
     // Build service links dynamically from openApiSpecsArray
+    // Track which specs are categorized to find uncategorized ones
+    const categorizedSpecs = new Set<string>();
     let serviceLinksMarkdown = '';
+
     Object.entries(CATEGORY_MAPPING).forEach(([category, specIds]) => {
         serviceLinksMarkdown += `\n## ${category}\n\n`;
         specIds.forEach(specId => {
+            categorizedSpecs.add(specId);
             const spec = openApiSpecsArray.find(s => s.id === specId);
             if (spec) {
                 // Try to read the document ID from the generated .info.mdx file
@@ -488,6 +492,20 @@ async function preprocessOpenApiSpecs() {
             }
         });
     });
+
+    // Add uncategorized APIs to a catch-all category
+    const uncategorizedSpecs = openApiSpecsArray.filter(spec => !categorizedSpecs.has(spec.id));
+    if (uncategorizedSpecs.length > 0) {
+        console.warn(`⚠️  Found ${uncategorizedSpecs.length} uncategorized API(s): ${uncategorizedSpecs.map(s => s.id).join(', ')}`);
+        serviceLinksMarkdown += `\n## Other APIs\n\n`;
+        uncategorizedSpecs.forEach(spec => {
+            const docId = getDocIdFromInfoFile(spec.outputDir);
+            if (docId) {
+                const description = SERVICE_DESCRIPTIONS[spec.id] || 'API documentation';
+                serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+            }
+        });
+    }
 
     const indexContent = `---
 title: OpenAPI Clients
@@ -582,10 +600,14 @@ function updateOpenApiIndex() {
     }
 
     // Build service links dynamically from openApiSpecsArray
+    // Track which specs are categorized to find uncategorized ones
+    const categorizedSpecs = new Set<string>();
     let serviceLinksMarkdown = '';
+
     Object.entries(CATEGORY_MAPPING).forEach(([category, specIds]) => {
         serviceLinksMarkdown += `\n## ${category}\n\n`;
         specIds.forEach(specId => {
+            categorizedSpecs.add(specId);
             const spec = openApiSpecsArray.find(s => s.id === specId);
             if (spec) {
                 const docId = getDocIdFromInfoFile(spec.outputDir);
@@ -596,6 +618,20 @@ function updateOpenApiIndex() {
             }
         });
     });
+
+    // Add uncategorized APIs to a catch-all category
+    const uncategorizedSpecs = openApiSpecsArray.filter(spec => !categorizedSpecs.has(spec.id));
+    if (uncategorizedSpecs.length > 0) {
+        console.warn(`⚠️  Found ${uncategorizedSpecs.length} uncategorized API(s): ${uncategorizedSpecs.map(s => s.id).join(', ')}`);
+        serviceLinksMarkdown += `\n## Other APIs\n\n`;
+        uncategorizedSpecs.forEach(spec => {
+            const docId = getDocIdFromInfoFile(spec.outputDir);
+            if (docId) {
+                const description = SERVICE_DESCRIPTIONS[spec.id] || 'API documentation';
+                serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+            }
+        });
+    }
 
     const indexContent = `---
 title: OpenAPI Clients
