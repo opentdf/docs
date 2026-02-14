@@ -19,24 +19,27 @@ export default function Home() {
               <div className="hero-text">
                 <h1 className="hero-title">Protect the Data, Build the Future</h1>
                 <p className="hero-subtitle">
-                  Zero-trust data protection that travels with your data wherever it goes. 
-                  OpenTDF cryptographically binds access control policies directly to data objects, 
-                  ensuring your data remains secure regardless of network boundaries or storage location.
+                  Open-source data-centric security for developers. OpenTDF delivers the Trusted Data Format (TDF) specification, 
+                  foundational services for key management and access control, and SDKs — the building blocks to cryptographically 
+                  bind protection directly to your data, wherever it goes.
+                </p>
+                <p className="hero-subtitle">
+                  Explore the standard. Prototype custom applications. Build architectures where security travels with the data, not the network.
                 </p>
                 <div className="hero-actions">
                   <a href="/getting-started" className="hero-button hero-button--primary">
-                    <iconify-icon data-icon="mdi:rocket-launch" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     Get Started
                   </a>
                   <a href="/introduction" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:book-open-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     View Documentation
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-right">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:shield-lock" className="hero-icon"></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -50,24 +53,34 @@ export default function Home() {
               <div className="hero-text">
                 <h2 className="hero-title">Traditional Security Fails When Data Leaves the Perimeter</h2>
                 <p className="hero-subtitle">
-                  Once data crosses network boundaries, traditional security models lose control. 
-                  OpenTDF solves this by cryptographically binding policies to data objects themselves, 
-                  creating self-protecting data that enforces access controls anywhere it travels.
+                  Firewalls, VPNs, and network policies protect the boundary — not the data. 
+                  The moment a file is shared, downloaded, or moved to a new environment, 
+                  those controls vanish. Access decisions remain at the perimeter, while the 
+                  data moves on without them.
+                </p>
+                <p className="hero-subtitle">
+                  OpenTDF inverts this model. Policies travel with the data itself, so you can:
+                  <ul>
+                    <li>Revoke access after sharing — even after data has left your environment</li>
+                    <li>Enforce controls in zero-trust environments — no VPN, no network dependency</li>
+                    <li>Maintain a complete audit trail — know who accessed what, when, and where</li>
+                  </ul>
+                  This is data-centric security: protection that's embedded, not bolted on.
                 </p>
                 <div className="hero-actions">
-                  <a href="/category/concepts" className="hero-button hero-button--solid">
-                    <iconify-icon data-icon="mdi:lightbulb-on" style={{fontSize: '1.2rem'}}></iconify-icon>
+                  <a href="/spec/concepts" className="hero-button hero-button--solid">
+                    
                     Learn the Concepts
                   </a>
-                  <a href="/explanation" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:eye" style={{fontSize: '1.2rem'}}></iconify-icon>
-                    See Use Cases
+                  <a href="/architecture" className="hero-button hero-button--secondary">
+                    
+                    Architecture
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-left">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:shield-alert" className="hero-icon" style={{color: '#dc3545'}}></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -86,19 +99,19 @@ export default function Home() {
                   secure applications without sacrificing speed or simplicity.
                 </p>
                 <div className="hero-actions">
-                  <a href="/quickstart" className="hero-button hero-button--primary">
-                    <iconify-icon data-icon="mdi:code-tags" style={{fontSize: '1.2rem'}}></iconify-icon>
+                  <a href="/getting-started/quickstart" className="hero-button hero-button--primary">
+                    
                     Quick Start
                   </a>
                   <a href="/OpenAPI-clients" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:api" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     API Reference
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-right">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:code-brackets" className="hero-icon"></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -117,19 +130,15 @@ export default function Home() {
                   to government and defense. Battle-tested, enterprise-ready, open source.
                 </p>
                 <div className="hero-actions">
-                  <a href="https://virtru.com" className="hero-button hero-button--primary">
-                    <iconify-icon data-icon="mdi:domain" style={{fontSize: '1.2rem'}}></iconify-icon>
+                  <a href="https://www.virtru.com/data-security-platform" className="hero-button hero-button--primary">
+                    
                     Enterprise Solutions
-                  </a>
-                  <a href="/how-to" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:cog" style={{fontSize: '1.2rem'}}></iconify-icon>
-                    Deployment Guides
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-left">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:office-building" className="hero-icon"></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -148,19 +157,19 @@ export default function Home() {
                   ensuring your data protection strategy is future-proof and audit-ready.
                 </p>
                 <div className="hero-actions">
-                  <a href="/reference/trusted-data-format/specifications" className="hero-button hero-button--solid">
-                    <iconify-icon data-icon="mdi:certificate" style={{fontSize: '1.2rem'}}></iconify-icon>
+                  <a href="/spec" className="hero-button hero-button--solid">
+                    
                     View Specifications
                   </a>
                   <a href="/explanation/platform-architecture" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:chart-timeline-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     Architecture Overview
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-right">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:check-decagram" className="hero-icon" style={{color: '#28a745'}}></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -180,18 +189,18 @@ export default function Home() {
                 </p>
                 <div className="hero-actions">
                   <a href="https://github.com/opentdf" className="hero-button hero-button--primary">
-                    <iconify-icon data-icon="mdi:github" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     GitHub
                   </a>
                   <a href="https://github.com/orgs/opentdf/discussions" className="hero-button hero-button--secondary">
-                    <iconify-icon data-icon="mdi:forum" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    
                     Community Discussions
                   </a>
                 </div>
               </div>
               <div className="hero-visual slide-in-left">
                 <div className="hero-icon-container">
-                  <iconify-icon data-icon="mdi:account-group" className="hero-icon"></iconify-icon>
+                  
                 </div>
               </div>
             </div>
@@ -208,16 +217,16 @@ export default function Home() {
               Choose your path and start building with OpenTDF today.
             </p>
             <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
-              <a href="/tutorials/your-first-tdf" className="hero-button hero-button--solid">
-                <iconify-icon data-icon="mdi:play-circle" style={{fontSize: '1.2rem'}}></iconify-icon>
+              <a href="/getting-started/quickstart" className="hero-button hero-button--solid">
+                
                 Start Tutorial
               </a>
-              <a href="/documentation" className="hero-button hero-button--secondary">
-                <iconify-icon data-icon="mdi:book-open-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+              <a href="/introduction" className="hero-button hero-button--secondary">
+                
                 Browse Documentation
               </a>
               <a href="https://github.com/opentdf" className="hero-button hero-button--secondary">
-                <iconify-icon data-icon="mdi:github" style={{fontSize: '1.2rem'}}></iconify-icon>
+                
                 View Source
               </a>
             </div>

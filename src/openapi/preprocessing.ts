@@ -4,6 +4,7 @@ When making changes to this file, consider: https://virtru.atlassian.net/browse/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import matter from 'gray-matter';
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 
 // Utility to find the repo root (directory containing package.json)
@@ -414,16 +415,101 @@ async function preprocessOpenApiSpecs() {
         delete spec.specPathModified;
     }
 
-    // Create the index page for OpenAPI documentation
+    // Create the index page for OpenAPI documentation with auto-generated service links
+
+    // Helper function to find and read the document ID from a generated .info.mdx file
+    function getDocIdFromInfoFile(outputDir: string): string | null {
+        try {
+            // Find .info.mdx files in the output directory
+            const files = fs.readdirSync(outputDir);
+            const infoFile = files.find(f => f.endsWith('.info.mdx'));
+
+            if (infoFile) {
+                const infoPath = path.join(outputDir, infoFile);
+                const fileContent = fs.readFileSync(infoPath, 'utf8');
+                const parsed = matter(fileContent);
+
+                if (parsed.data.id) {
+                    // Return the full document path
+                    const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
+                    return `OpenAPI-clients/${relativePath}/${parsed.data.id}`;
+                }
+            }
+        } catch (error) {
+            console.warn(`⚠️  Could not read info file from ${outputDir}: ${error}`);
+        }
+        return null;
+    }
+
+    // Service descriptions - can be customized per service
+    const serviceDescriptions: Record<string, string> = {
+        'Well-Known Configuration': 'Platform configuration and service discovery',
+        'kas': 'Key Access Service for TDF encryption/decryption',
+        'V1 Authorization': 'Authorization decisions (v1)',
+        'V2 Authorization': 'Authorization decisions (v2)',
+        'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
+        'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
+        'Policy Objects': 'Core policy objects and management',
+        'Policy Attributes': 'Attribute definitions and values',
+        'Policy Namespaces': 'Namespace management',
+        'Policy Actions': 'Action definitions',
+        'Policy Subject Mapping': 'Map subjects to attributes',
+        'Policy Resource Mapping': 'Map resources to attributes',
+        'Policy Obligations': 'Usage obligations and triggers',
+        'Policy Registered Resources': 'Resource registration',
+        'Policy KAS Registry': 'KAS registration and management',
+        'Key Management': 'Cryptographic key management',
+        'Policy Unsafe Service': 'Administrative operations',
+    };
+
+    // Categorization - define which specs belong to which category
+    const categoryMapping: Record<string, string[]> = {
+        'Core Services': ['Well-Known Configuration', 'kas'],
+        'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
+        'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
+                             'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
+                             'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
+    };
+
+    // Build service links dynamically from openApiSpecsArray
+    let serviceLinksMarkdown = '';
+    Object.entries(categoryMapping).forEach(([category, specIds]) => {
+        serviceLinksMarkdown += `\n## ${category}\n\n`;
+        specIds.forEach(specId => {
+            const spec = openApiSpecsArray.find(s => s.id === specId);
+            if (spec) {
+                // Try to read the document ID from the generated .info.mdx file
+                const docId = getDocIdFromInfoFile(spec.outputDir);
+                if (docId) {
+                    const description = serviceDescriptions[specId] || 'API documentation';
+                    serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+                } else {
+                    console.warn(`⚠️  Could not generate link for ${spec.id} - .info.mdx file not found yet`);
+                }
+            }
+        });
+    });
+
     const indexContent = `---
 title: OpenAPI Clients
 sidebar_position: 7
 ---
 # OpenAPI Clients
 
-OpenAPI client examples are available for platform endpoints.  
+Interactive API documentation for OpenTDF Platform services. Each endpoint includes request/response examples, parameter descriptions, and the ability to try requests directly in your browser.
 
-Expand each section in the navigation panel to access the OpenAPI documentation for each service.
+${serviceLinksMarkdown}
+
+## Getting Started
+
+1. Select a service from the list above or navigation sidebar
+2. Browse available endpoints and operations
+3. Review request parameters and response schemas
+4. Test endpoints using the "Try it" feature
+
+## Authentication
+
+Most endpoints require authentication. Configure your access token in the API documentation interface before testing endpoints.
 `
 
     // Ensure the file 'OPENAPI_INDEX_PAGE' exists
@@ -436,5 +522,138 @@ Expand each section in the navigation panel to access the OpenAPI documentation 
 };
 
 
+/**
+ * Renames all .info.mdx files to index.mdx so they become category index pages
+ * instead of appearing as separate items in the sidebar.
+ */
+function renameInfoFilesToIndex() {
+    console.log('🔄 Renaming .info.mdx files to index.mdx...');
+
+    function processDirectory(dir: string) {
+        if (!fs.existsSync(dir)) return;
+
+        const items = fs.readdirSync(dir, { withFileTypes: true });
+
+        for (const item of items) {
+            const fullPath = path.join(dir, item.name);
+
+            if (item.isDirectory()) {
+                processDirectory(fullPath);
+            } else if (item.name.endsWith('.info.mdx')) {
+                const newPath = path.join(dir, 'index.mdx');
+                fs.renameSync(fullPath, newPath);
+                console.log(`  Renamed: ${fullPath} → ${newPath}`);
+            }
+        }
+    }
+
+    processDirectory(OUTPUT_PREFIX);
+    console.log('✅ Renamed all .info.mdx files to index.mdx');
+}
+
+/**
+ * Updates the OpenAPI index page with links to generated docs.
+ * This should be called AFTER the OpenAPI docs have been generated.
+ */
+function updateOpenApiIndex() {
+    console.log('📝 Updating OpenAPI index page with generated doc links...');
+
+    // Service descriptions - can be customized per service
+    const serviceDescriptions: Record<string, string> = {
+        'Well-Known Configuration': 'Platform configuration and service discovery',
+        'kas': 'Key Access Service for TDF encryption/decryption',
+        'V1 Authorization': 'Authorization decisions (v1)',
+        'V2 Authorization': 'Authorization decisions (v2)',
+        'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
+        'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
+        'Policy Objects': 'Core policy objects and management',
+        'Policy Attributes': 'Attribute definitions and values',
+        'Policy Namespaces': 'Namespace management',
+        'Policy Actions': 'Action definitions',
+        'Policy Subject Mapping': 'Map subjects to attributes',
+        'Policy Resource Mapping': 'Map resources to attributes',
+        'Policy Obligations': 'Usage obligations and triggers',
+        'Policy Registered Resources': 'Resource registration',
+        'Policy KAS Registry': 'KAS registration and management',
+        'Key Management': 'Cryptographic key management',
+        'Policy Unsafe Service': 'Administrative operations',
+    };
+
+    // Categorization
+    const categoryMapping: Record<string, string[]> = {
+        'Core Services': ['Well-Known Configuration', 'kas'],
+        'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
+        'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
+                             'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
+                             'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
+    };
+
+    // Helper function to find and read the document ID from a generated index.mdx file
+    function getDocIdFromInfoFile(outputDir: string): string | null {
+        try {
+            if (!fs.existsSync(outputDir)) {
+                return null;
+            }
+
+            const indexPath = path.join(outputDir, 'index.mdx');
+
+            if (fs.existsSync(indexPath)) {
+                const fileContent = fs.readFileSync(indexPath, 'utf8');
+                const parsed = matter(fileContent);
+
+                if (parsed.data.id) {
+                    const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
+                    return `OpenAPI-clients/${relativePath}/${parsed.data.id}`;
+                }
+            }
+        } catch (error) {
+            // Silently skip if file doesn't exist yet
+        }
+        return null;
+    }
+
+    // Build service links dynamically from openApiSpecsArray
+    let serviceLinksMarkdown = '';
+    Object.entries(categoryMapping).forEach(([category, specIds]) => {
+        serviceLinksMarkdown += `\n## ${category}\n\n`;
+        specIds.forEach(specId => {
+            const spec = openApiSpecsArray.find(s => s.id === specId);
+            if (spec) {
+                const docId = getDocIdFromInfoFile(spec.outputDir);
+                if (docId) {
+                    const description = serviceDescriptions[specId] || 'API documentation';
+                    serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+                }
+            }
+        });
+    });
+
+    const indexContent = `---
+title: OpenAPI Clients
+sidebar_position: 7
+---
+# OpenAPI Clients
+
+Interactive API documentation for OpenTDF Platform services. Each endpoint includes request/response examples, parameter descriptions, and the ability to try requests directly in your browser.
+
+${serviceLinksMarkdown}
+
+## Getting Started
+
+1. Select a service from the list above or navigation sidebar
+2. Browse available endpoints and operations
+3. Review request parameters and response schemas
+4. Test endpoints using the "Try it" feature
+
+## Authentication
+
+Most endpoints require authentication. Configure your access token in the API documentation interface before testing endpoints.
+`;
+
+    fs.mkdirSync(path.dirname(OPENAPI_INDEX_PAGE), { recursive: true });
+    fs.writeFileSync(OPENAPI_INDEX_PAGE, indexContent, 'utf8');
+    console.log(`✅ Updated OpenAPI index page at ${OPENAPI_INDEX_PAGE}`);
+}
+
 // Export the function and data without automatically executing it
-export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs };
+export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs, updateOpenApiIndex, renameInfoFilesToIndex };
