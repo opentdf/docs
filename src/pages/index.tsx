@@ -55,7 +55,7 @@ export default function Home() {
                   creating self-protecting data that enforces access controls anywhere it travels.
                 </p>
                 <div className="hero-actions">
-                  <a href="/explanation/data-centric-security" className="hero-button hero-button--solid">
+                  <a href="/category/components-and-services" className="hero-button hero-button--solid">
                     <iconify-icon data-icon="mdi:lightbulb-on" style={{fontSize: '1.2rem'}}></iconify-icon>
                     Learn the Concepts
                   </a>
