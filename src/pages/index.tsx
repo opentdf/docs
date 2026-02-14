@@ -24,7 +24,7 @@ export default function Home() {
                   ensuring your data remains secure regardless of network boundaries or storage location.
                 </p>
                 <div className="hero-actions">
-                  <a href="/tutorials/your-first-tdf" className="hero-button hero-button--primary">
+                  <a href="/getting-started" className="hero-button hero-button--primary">
                     <iconify-icon data-icon="mdi:rocket-launch" style={{fontSize: '1.2rem'}}></iconify-icon>
                     Get Started
                   </a>
