@@ -1,103 +1,229 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import Head from "@docusaurus/Head";
-import { Columns, Hero, Features, Feedback } from "../components/Homepage";
+import styles from "./index.module.css";
 
 export default function Home() {
   return (
-    <div className="homepage">
+    <div className="marketing-homepage">
       <Head>
         <meta property="og:title" content="OpenTDF - Protect the Data, Build the Future" />
-        <meta property="og:description" content="Persistent data centric security that extends owner control wherever data travels." />
+        <meta property="og:description" content="Zero-trust data protection that travels with your data wherever it goes" />
       </Head>
-      <Layout title="OpenTDF" description="OpenTDF">
-        <Hero
-          heading="OpenTDF: A toolkit for zero trust, data-centric security"
-          callToAction={{
-            text: "Get Started",
-            url: "/getting-started",
-          }}
-        >
-          <p>
-          OpenTDF is an open source system for implementing data centric security. 
-          It provides the basic services required to enable the definition, application, 
-          and enforcement of attribute based policies using the Trust Data Format (TDF). 
-          TDF is an open standard that enables you to cryptographically bind 
-          attribute based access control (ABAC) policy to a data object so that 
-          the policy travels with the data wherever it goes.
-          </p>
-          <p>
-          OpenTDF builds upon a decade of experience at Virtru 
-          protecting data objects at scale using the Trusted Data Format 
-          for organizations of all sizes and across all industries.
-          </p>
-        </Hero>
-        <Columns>
-          <Columns.Item title="Zero Trust and OpenTDF" subtitle="Why OpenTDF?">
-            <p>
-            Today's cybersecurity landscape is increasingly adopting and requiring Zero Trust models and frameworks. 
-            Zero Trust operates on the principle of "never trust, always verify," 
-            ensuring that every access request is authenticated, authorized, and encrypted, 
-            regardless of its origin. OpenTDF implements this model by providing an open-source framework, specification, and set of services
-            that prioritizes the protection and integrity of data at every stage. 
+      <Layout title="OpenTDF - Protect the Data, Build the Future" description="Zero-trust data protection that travels with your data wherever it goes">
+        
+        {/* Hero 1: Main Value Proposition */}
+        <section className="marketing-hero marketing-hero--primary">
+          <div className="container">
+            <div className="hero-content fade-in">
+              <div className="hero-text">
+                <h1 className="hero-title">Protect the Data, Build the Future</h1>
+                <p className="hero-subtitle">
+                  Zero-trust data protection that travels with your data wherever it goes. 
+                  OpenTDF cryptographically binds access control policies directly to data objects, 
+                  ensuring your data remains secure regardless of network boundaries or storage location.
+                </p>
+                <div className="hero-actions">
+                  <a href="/tutorials/your-first-tdf" className="hero-button hero-button--primary">
+                    <iconify-icon data-icon="mdi:rocket-launch" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Get Started
+                  </a>
+                  <a href="/documentation" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:book-open-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    View Documentation
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-right">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:shield-lock" className="hero-icon"></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Hero 2: Problem/Solution */}
+        <section className="marketing-hero marketing-hero--secondary">
+          <div className="container">
+            <div className="hero-content hero-content--reverse fade-in">
+              <div className="hero-text">
+                <h2 className="hero-title">Traditional Security Fails When Data Leaves the Perimeter</h2>
+                <p className="hero-subtitle">
+                  Once data crosses network boundaries, traditional security models lose control. 
+                  OpenTDF solves this by cryptographically binding policies to data objects themselves, 
+                  creating self-protecting data that enforces access controls anywhere it travels.
+                </p>
+                <div className="hero-actions">
+                  <a href="/explanation/data-centric-security" className="hero-button hero-button--solid">
+                    <iconify-icon data-icon="mdi:lightbulb-on" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Learn the Concepts
+                  </a>
+                  <a href="/explanation" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:eye" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    See Use Cases
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-left">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:shield-alert" className="hero-icon" style={{color: '#dc3545'}}></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Hero 3: Developer-First */}
+        <section className="marketing-hero marketing-hero--dark">
+          <div className="container">
+            <div className="hero-content fade-in">
+              <div className="hero-text">
+                <h2 className="hero-title">Built for Developers</h2>
+                <p className="hero-subtitle">
+                  Native SDKs for Go, Java, and JavaScript. RESTful APIs. Comprehensive documentation. 
+                  Get started in minutes, not months. OpenTDF provides the tools developers need to build 
+                  secure applications without sacrificing speed or simplicity.
+                </p>
+                <div className="hero-actions">
+                  <a href="/tutorials" className="hero-button hero-button--primary">
+                    <iconify-icon data-icon="mdi:code-tags" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Quick Start
+                  </a>
+                  <a href="/reference" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:api" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    API Reference
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-right">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:code-brackets" className="hero-icon"></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Hero 4: Enterprise Trust */}
+        <section className="marketing-hero marketing-hero--accent">
+          <div className="container">
+            <div className="hero-content hero-content--reverse fade-in">
+              <div className="hero-text">
+                <h2 className="hero-title">Trusted by Organizations Worldwide</h2>
+                <p className="hero-subtitle">
+                  Built on a decade of Virtru's experience protecting data at scale. OpenTDF powers 
+                  secure data sharing for organizations across industries—from healthcare and finance 
+                  to government and defense. Battle-tested, enterprise-ready, open source.
+                </p>
+                <div className="hero-actions">
+                  <a href="https://virtru.com" className="hero-button hero-button--primary">
+                    <iconify-icon data-icon="mdi:domain" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Enterprise Solutions
+                  </a>
+                  <a href="/how-to" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:cog" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Deployment Guides
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-left">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:office-building" className="hero-icon"></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Hero 5: Standards & Compliance */}
+        <section className="marketing-hero marketing-hero--secondary">
+          <div className="container">
+            <div className="hero-content fade-in">
+              <div className="hero-text">
+                <h2 className="hero-title">Standards-Based Security</h2>
+                <p className="hero-subtitle">
+                  Built on the proven NIST ABAC model for interoperability and compliance. 
+                  OpenTDF follows established standards for attribute-based access control, 
+                  ensuring your data protection strategy is future-proof and audit-ready.
+                </p>
+                <div className="hero-actions">
+                  <a href="/reference/trusted-data-format/specifications" className="hero-button hero-button--solid">
+                    <iconify-icon data-icon="mdi:certificate" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    View Specifications
+                  </a>
+                  <a href="/explanation/platform-architecture" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:chart-timeline-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Architecture Overview
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-right">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:check-decagram" className="hero-icon" style={{color: '#28a745'}}></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Hero 6: Community */}
+        <section className="marketing-hero marketing-hero--dark">
+          <div className="container">
+            <div className="hero-content hero-content--reverse fade-in">
+              <div className="hero-text">
+                <h2 className="hero-title">Join the Movement</h2>
+                <p className="hero-subtitle">
+                  Open source, open community. Shape the future of data-centric security with developers, 
+                  security professionals, and organizations from around the world. Contribute code, 
+                  share ideas, and help build the next generation of data protection.
+                </p>
+                <div className="hero-actions">
+                  <a href="https://github.com/opentdf" className="hero-button hero-button--primary">
+                    <iconify-icon data-icon="mdi:github" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    GitHub
+                  </a>
+                  <a href="https://github.com/orgs/opentdf/discussions" className="hero-button hero-button--secondary">
+                    <iconify-icon data-icon="mdi:forum" style={{fontSize: '1.2rem'}}></iconify-icon>
+                    Community Discussions
+                  </a>
+                </div>
+              </div>
+              <div className="hero-visual slide-in-left">
+                <div className="hero-icon-container">
+                  <iconify-icon data-icon="mdi:account-group" className="hero-icon"></iconify-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section style={{padding: '4rem 0', textAlign: 'center', background: '#f8f9fa'}}>
+          <div className="container">
+            <h2 style={{fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--ifm-color-primary)'}}>
+              Ready to Protect Your Data?
+            </h2>
+            <p style={{fontSize: '1.2rem', marginBottom: '2rem', opacity: 0.8}}>
+              Choose your path and start building with OpenTDF today.
             </p>
-            <p>
-            By integrating OpenTDF’s data security features with a Zero Trust architecture, 
-            organizations can enforce strict access controls, ensure data is continuously monitored, 
-            and maintain comprehensive visibility into data interactions. This synergy not only 
-            minimizes the risk of data breaches but also fosters a secure environment where data 
-            can be shared and utilized with confidence. Together, Zero Trust and OpenTDF empower businesses 
-            to uphold the highest standards of data security in an interconnected world.
-            </p>
-          </Columns.Item>
-          <Columns.Item title="Project Overview and Current State" subtitle="What's New">
-            <p>
-            In 2023, the OpenTDF team undertook a significant re-architecture 
-            of the OpenTDF platform to enhance its extensibility and interoperability, 
-            responding to the evolving needs of our diverse user base and the dynamic cybersecurity landscape.
-            See our {" "}<a href="https://github.com/opentdf/">Github Organization Page</a> to navigate the new repositories. 
-            </p>
-            <p>
-            This comprehensive overhaul involved simplifying core service components, 
-            adopting standardized policy schemas, and improving platform APIs and SDKs both in 
-            developer experience and in capability. By focusing on extensibility, we have enabled 
-            developers to customize and extend OpenTDF’s functionalities to suit specific use cases, 
-            fostering innovation and adaptability. As we continue to advance, our focus remains on empowering the community with a secure, adaptable, 
-            and interoperable platform that meets the highest standards of data protection and fosters collaborative innovation.
-            </p>
-            <p>
-              Through the sponsorship of Virtru and its partners, the OpenTDF project has been
-              meeting the needs of customers across industries and use cases. Check out{" "}
-              <a href="https://www.virtru.com/data-security-platform">
-                Virtru Data Security Platform
-              </a>{" "}
-              for more.
-            </p>
-          </Columns.Item>
-        </Columns>
-        <Features
-          title="OpenTDF Examples"
-          description="Ideas for leveraging OpenTDF in your own applications"
-          imageUrl=""
-        >
-          {/* <Features.Item title="SecureCycle" description="SecureCycle is a sample application that demonstrates how OpenTDF safeguards private health information &hyphen; in this case, sensitive data related to period tracking and symptoms." icon="carbon:location-heart"
-          callToAction={{ title: 'Learn more', url: 'https://google.com' }} /> */}
-          <Features.Item title="Secure IoT Sensor Data" description="From full-motion video to biometric devices, attach access controls and preserve data integrity to guard against data spoofing." icon="carbon:fingerprint-recognition" />
-          <Features.Item title="Secure Data Sharing" description="Securely share data with partners, customers, and suppliers, and maintain control over who can access it." icon="carbon:ai-governance-lifecycle" />
-        </Features>
-        <Feedback
-          title="Share Your Feedback"
-        >
-          <p>
-            Virtru, the sponsor of the OpenTDF developer community, would love to hear from you!
-          </p>
-          <p>
-            We're developers, too, and as we mature the project, we're curious what you're building, and what kind of problems you may be encountering or are trying to solve.
-          </p>
-          <p>
-            You can provide anonymous feedback (name, email, and company are not required fields on this form), or share your contact information for access to curated resources, updates, and if you request a response.
-          </p>
-        </Feedback>
+            <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
+              <a href="/tutorials/your-first-tdf" className="hero-button hero-button--solid">
+                <iconify-icon data-icon="mdi:play-circle" style={{fontSize: '1.2rem'}}></iconify-icon>
+                Start Tutorial
+              </a>
+              <a href="/documentation" className="hero-button hero-button--secondary">
+                <iconify-icon data-icon="mdi:book-open-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
+                Browse Documentation
+              </a>
+              <a href="https://github.com/opentdf" className="hero-button hero-button--secondary">
+                <iconify-icon data-icon="mdi:github" style={{fontSize: '1.2rem'}}></iconify-icon>
+                View Source
+              </a>
+            </div>
+          </div>
+        </section>
+        
       </Layout>
     </div>
   );
