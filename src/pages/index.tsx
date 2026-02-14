@@ -28,7 +28,7 @@ export default function Home() {
                     <iconify-icon data-icon="mdi:rocket-launch" style={{fontSize: '1.2rem'}}></iconify-icon>
                     Get Started
                   </a>
-                  <a href="/documentation" className="hero-button hero-button--secondary">
+                  <a href="/introduction" className="hero-button hero-button--secondary">
                     <iconify-icon data-icon="mdi:book-open-variant" style={{fontSize: '1.2rem'}}></iconify-icon>
                     View Documentation
                   </a>
