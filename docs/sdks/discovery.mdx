@@ -10,11 +10,7 @@ import TabItem from '@theme/TabItem';
 
 Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
 
-The Go and Java SDKs provide four methods to discover and validate attributes without manual platform queries.
-
-:::info Other SDKs
-These convenience methods are currently available in the **Go** and **Java** SDKs. They wrap the lower-level service clients (`sdk.Attributes` in Go, `sdk.getServices().attributes()` in Java), which are available in all SDKs for direct use.
-:::
+The Go, Java, and JavaScript SDKs provide four methods to discover and validate attributes without manual platform queries.
 
 ---
 
@@ -63,6 +59,28 @@ To filter by namespace:
 
 ```java
 List<Attribute> attrs = sdk.listAttributes("opentdf.io");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { listAttributes } from '@opentdf/sdk';
+
+const attrs = await listAttributes(platformUrl, authProvider);
+
+for (const a of attrs) {
+    console.log(a.fqn, a.rule);
+    for (const v of a.values) {
+        console.log('  value:', v.value);
+    }
+}
+```
+
+To filter by namespace:
+
+```ts
+const attrs = await listAttributes(platformUrl, authProvider, 'opentdf.io');
 ```
 
 </TabItem>
@@ -124,6 +142,30 @@ sdk.createTDF(inputStream, outputStream, config);
 ```
 
 </TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+
+const fqns = [
+    'https://opentdf.io/attr/department/value/marketing',
+    'https://opentdf.io/attr/clearance/value/secret',
+];
+
+try {
+    await validateAttributes(platformUrl, authProvider, fqns);
+} catch (e) {
+    if (e instanceof AttributeNotFoundError) {
+        console.error('attribute validation failed:', e.message);
+        // e.message names the specific FQNs that are missing, e.g.:
+        // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+    }
+}
+
+// Safe to encrypt — all attributes confirmed present
+```
+
+</TabItem>
 </Tabs>
 
 **Why this matters**: `CreateTDF` succeeds even when the attribute doesn't exist on the platform (it embeds the FQN string in the TDF policy). The failure only surfaces later when a decryption client attempts to resolve the attribute through the KAS and gets a `not_found` response. `ValidateAttributes` makes that failure happen immediately, at the point of encryption, with a clear message.
@@ -159,6 +201,23 @@ try {
     sdk.validateAttributeValue(fqn);
 } catch (SDK.AttributeNotFoundException e) {
     System.err.println("attribute value not found: " + e.getMessage());
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { validateAttributeValue, AttributeNotFoundError } from '@opentdf/sdk';
+
+const fqn = 'https://opentdf.io/attr/department/value/marketing';
+
+try {
+    await validateAttributeValue(platformUrl, authProvider, fqn);
+} catch (e) {
+    if (e instanceof AttributeNotFoundError) {
+        console.error('attribute value not found:', e.message);
+    }
 }
 ```
 
@@ -239,6 +298,33 @@ Entity.newBuilder().setId("e1").setClientId("my-service").build();
 
 // By UUID
 Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { getEntityAttributes } from '@opentdf/sdk';
+
+// By email address
+const fqns = await getEntityAttributes(platformUrl, authProvider, {
+    id: 'e1',
+    entityType: { case: 'emailAddress' as const, value: 'alice@example.com' },
+});
+console.log("alice's entitlements:", fqns);
+```
+
+Other supported entity types:
+
+```ts
+// By username
+{ id: 'e1', entityType: { case: 'userName' as const, value: 'alice' } }
+
+// By client ID (NPE / service account)
+{ id: 'e1', entityType: { case: 'clientId' as const, value: 'my-service' } }
+
+// By UUID
+{ id: 'e1', entityType: { case: 'uuid' as const, value: '550e8400-e29b-41d4-a716-446655440000' } }
 ```
 
 </TabItem>
@@ -324,6 +410,44 @@ try (SDK sdk = new SDKBuilder()
     sdk.createTDF(inputStream, outputStream, config);
     System.out.println("data encrypted successfully");
 }
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { OpenTDF, AuthProviders, listAttributes, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.clientCredentials({
+    clientId: 'opentdf',
+    clientSecret: 'secret',
+    oidcOrigin: oidcEndpoint,
+});
+
+// 1. See what's available on the platform
+const attrs = await listAttributes(platformUrl, authProvider);
+console.log(`platform has ${attrs.length} active attributes`);
+
+// 2. Validate before encrypting
+const required = ['https://opentdf.io/attr/department/value/marketing'];
+try {
+    await validateAttributes(platformUrl, authProvider, required);
+} catch (e) {
+    if (e instanceof AttributeNotFoundError) {
+        console.error('required attributes missing — create them first:', e.message);
+        process.exit(1);
+    }
+    throw e;
+}
+
+// 3. Encrypt with confidence
+const client = new OpenTDF({ authProvider, platformUrl });
+const ciphertext = await client.createZTDF({
+    source: { type: 'stream', location: dataStream },
+    attributes: required,
+    defaultKASEndpoint: platformUrl,
+});
+console.log('data encrypted successfully');
 ```
 
 </TabItem>
