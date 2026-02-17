@@ -1,0 +1,186 @@
+---
+sidebar_position: 6
+title: Attribute Discovery
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Attribute Discovery
+
+Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
+
+The Go SDK provides four methods to discover and validate attributes without manual platform queries.
+
+:::info Go SDK only
+These convenience methods are currently available in the **Go SDK**. They wrap the lower-level `sdk.Attributes` and `sdk.Authorization` service clients, which are available in all SDKs for direct use.
+:::
+
+---
+
+## ListAttributes
+
+Returns all active attributes on the platform. Use this to see what's available before choosing which attributes to apply to a TDF.
+
+```go
+attrs, err := client.ListAttributes(ctx)
+if err != nil {
+    log.Fatalf("failed to list attributes: %v", err)
+}
+
+for _, a := range attrs {
+    fmt.Printf("  %s (%s)\n", a.GetFqn(), a.GetRule())
+    for _, v := range a.GetValues() {
+        fmt.Printf("    value: %s\n", v.GetValue())
+    }
+}
+```
+
+To filter by namespace:
+
+```go
+attrs, err := client.ListAttributes(ctx, "opentdf.io")
+```
+
+`ListAttributes` paginates automatically — you always get the full list back without needing to manage page tokens.
+
+---
+
+## ValidateAttributes
+
+Checks that a list of attribute value FQNs exist on the platform **before** calling `CreateTDF`. This catches misspellings and missing attributes at the point of use rather than at decryption time.
+
+```go
+fqns := []string{
+    "https://opentdf.io/attr/department/value/marketing",
+    "https://opentdf.io/attr/clearance/value/secret",
+}
+
+if err := client.ValidateAttributes(ctx, fqns); err != nil {
+    log.Fatalf("attribute validation failed: %v", err)
+    // err will name the specific FQNs that are missing, e.g.:
+    // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+}
+
+// Safe to encrypt — all attributes confirmed present
+_, err = client.CreateTDF(encryptedBuffer, dataReader,
+    sdk.WithDataAttributes(fqns...),
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+)
+```
+
+**Why this matters**: `CreateTDF` succeeds even when the attribute doesn't exist on the platform (it embeds the FQN string in the TDF policy). The failure only surfaces later when a decryption client attempts to resolve the attribute through the KAS and gets a `not_found` response. `ValidateAttributes` makes that failure happen immediately, at the point of encryption, with a clear message.
+
+:::tip
+`ValidateAttributes` accepts up to 250 FQNs per call, matching the platform's limit. For larger sets, batch your FQNs across multiple calls.
+:::
+
+---
+
+## ValidateAttributeValue
+
+Single-FQN shorthand for `ValidateAttributes`. Useful for spot-checking one value:
+
+```go
+fqn := "https://opentdf.io/attr/department/value/marketing"
+
+if err := client.ValidateAttributeValue(ctx, fqn); err != nil {
+    log.Fatalf("attribute value not found: %v", err)
+}
+```
+
+This validates both the FQN format and that the value exists on the platform.
+
+---
+
+## GetEntityAttributes
+
+Returns the attribute value FQNs assigned to a specific entity (person entity or non-person entity). Use this to inspect what a user, service account, or other principal has been granted — for example, to understand why someone can or cannot decrypt a TDF.
+
+```go
+import "github.com/opentdf/platform/protocol/go/authorization"
+
+// By email address
+entity := &authorization.Entity{
+    Id:         "e1",
+    EntityType: &authorization.Entity_EmailAddress{EmailAddress: "alice@example.com"},
+}
+
+fqns, err := client.GetEntityAttributes(ctx, entity)
+if err != nil {
+    log.Fatalf("failed to get entity attributes: %v", err)
+}
+
+fmt.Println("alice's entitlements:")
+for _, fqn := range fqns {
+    fmt.Println(" ", fqn)
+}
+```
+
+Other supported entity types:
+
+```go
+// By username
+&authorization.Entity{Id: "e1", EntityType: &authorization.Entity_UserName{UserName: "alice"}}
+
+// By client ID (NPE / service account)
+&authorization.Entity{Id: "e1", EntityType: &authorization.Entity_ClientId{ClientId: "my-service"}}
+
+// By UUID
+&authorization.Entity{Id: "e1", EntityType: &authorization.Entity_Uuid{Uuid: "550e8400-e29b-41d4-a716-446655440000"}}
+```
+
+:::warning Authorization required
+Querying another entity's attributes requires your caller to have appropriate platform permissions on the `GetEntitlements` endpoint. Without this, the call will return a `permission_denied` error. Contact your platform administrator to confirm your service account has the necessary policy access.
+:::
+
+---
+
+## Putting It Together
+
+A common pattern is to validate attributes at application startup and surface helpful errors before any encryption happens:
+
+```go
+func main() {
+    client, err := sdk.New(platformEndpoint,
+        sdk.WithClientCredentials("opentdf", "secret", nil),
+        sdk.WithInsecureSkipVerifyConn(),
+    )
+    if err != nil {
+        log.Fatalf("sdk init failed: %v", err)
+    }
+
+    // 1. See what's available on the platform
+    attrs, err := client.ListAttributes(ctx)
+    if err != nil {
+        log.Fatalf("could not reach platform: %v", err)
+    }
+    log.Printf("platform has %d active attributes", len(attrs))
+
+    // 2. Validate before encrypting
+    required := []string{
+        "https://opentdf.io/attr/department/value/marketing",
+    }
+    if err := client.ValidateAttributes(ctx, required); err != nil {
+        log.Fatalf("required attributes missing — create them first: %v", err)
+    }
+
+    // 3. Encrypt with confidence
+    _, err = client.CreateTDF(encryptedBuffer, dataReader,
+        sdk.WithDataAttributes(required...),
+        sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    )
+    if err != nil {
+        log.Fatalf("encryption failed: %v", err)
+    }
+    log.Println("data encrypted successfully")
+}
+```
+
+---
+
+## Related
+
+- [Managing Policy](/sdks/policy) — create and manage attributes and namespaces
+- [Troubleshooting: Resource Not Found](/sdks/troubleshooting#resource-not-found) — common errors when attributes are missing
+- [Troubleshooting: Permission Denied](/sdks/troubleshooting#permission-denied--insufficient-entitlements) — common errors when entities lack entitlements
