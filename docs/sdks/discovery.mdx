@@ -10,10 +10,10 @@ import TabItem from '@theme/TabItem';
 
 Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
 
-The Go SDK provides four methods to discover and validate attributes without manual platform queries.
+The Go and Java SDKs provide four methods to discover and validate attributes without manual platform queries.
 
-:::info Go SDK only
-These convenience methods are currently available in the **Go SDK**. They wrap the lower-level `sdk.Attributes` and `sdk.Authorization` service clients, which are available in all SDKs for direct use.
+:::info Other SDKs
+These convenience methods are currently available in the **Go** and **Java** SDKs. They wrap the lower-level service clients (`sdk.Attributes` in Go, `sdk.getServices().attributes()` in Java), which are available in all SDKs for direct use.
 :::
 
 ---
@@ -21,6 +21,9 @@ These convenience methods are currently available in the **Go SDK**. They wrap t
 ## ListAttributes
 
 Returns all active attributes on the platform. Use this to see what's available before choosing which attributes to apply to a TDF.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```go
 attrs, err := client.ListAttributes(ctx)
@@ -42,13 +45,39 @@ To filter by namespace:
 attrs, err := client.ListAttributes(ctx, "opentdf.io")
 ```
 
-`ListAttributes` paginates automatically — you always get the full list back without needing to manage page tokens.
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+List<Attribute> attrs = sdk.listAttributes();
+
+for (Attribute a : attrs) {
+    System.out.printf("  %s%n", a.getFqn());
+    for (Value v : a.getValuesList()) {
+        System.out.printf("    value: %s%n", v.getValue());
+    }
+}
+```
+
+To filter by namespace:
+
+```java
+List<Attribute> attrs = sdk.listAttributes("opentdf.io");
+```
+
+</TabItem>
+</Tabs>
+
+`listAttributes` / `ListAttributes` paginates automatically — you always get the full list back without needing to manage page tokens.
 
 ---
 
 ## ValidateAttributes
 
 Checks that a list of attribute value FQNs exist on the platform **before** calling `CreateTDF`. This catches misspellings and missing attributes at the point of use rather than at decryption time.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```go
 fqns := []string{
@@ -69,10 +98,38 @@ _, err = client.CreateTDF(encryptedBuffer, dataReader,
 )
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+List<String> fqns = List.of(
+    "https://opentdf.io/attr/department/value/marketing",
+    "https://opentdf.io/attr/clearance/value/secret"
+);
+
+try {
+    sdk.validateAttributes(fqns);
+} catch (SDK.AttributeNotFoundException e) {
+    System.err.println("attribute validation failed: " + e.getMessage());
+    // getMessage() names the specific FQNs that are missing, e.g.:
+    // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+}
+
+// Safe to encrypt — all attributes confirmed present
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withDataAttributes(fqns),
+    Config.withKasInformation(new Config.KASInfo(platformEndpoint, null))
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+</Tabs>
+
 **Why this matters**: `CreateTDF` succeeds even when the attribute doesn't exist on the platform (it embeds the FQN string in the TDF policy). The failure only surfaces later when a decryption client attempts to resolve the attribute through the KAS and gets a `not_found` response. `ValidateAttributes` makes that failure happen immediately, at the point of encryption, with a clear message.
 
 :::tip
-`ValidateAttributes` accepts up to 250 FQNs per call, matching the platform's limit. For larger sets, batch your FQNs across multiple calls.
+`validateAttributes` / `ValidateAttributes` accepts up to 250 FQNs per call, matching the platform's limit. For larger sets, batch your FQNs across multiple calls.
 :::
 
 ---
@@ -80,6 +137,9 @@ _, err = client.CreateTDF(encryptedBuffer, dataReader,
 ## ValidateAttributeValue
 
 Single-FQN shorthand for `ValidateAttributes`. Useful for spot-checking one value:
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```go
 fqn := "https://opentdf.io/attr/department/value/marketing"
@@ -89,6 +149,22 @@ if err := client.ValidateAttributeValue(ctx, fqn); err != nil {
 }
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+String fqn = "https://opentdf.io/attr/department/value/marketing";
+
+try {
+    sdk.validateAttributeValue(fqn);
+} catch (SDK.AttributeNotFoundException e) {
+    System.err.println("attribute value not found: " + e.getMessage());
+}
+```
+
+</TabItem>
+</Tabs>
+
 This validates both the FQN format and that the value exists on the platform.
 
 ---
@@ -96,6 +172,9 @@ This validates both the FQN format and that the value exists on the platform.
 ## GetEntityAttributes
 
 Returns the attribute value FQNs assigned to a specific entity (person entity or non-person entity). Use this to inspect what a user, service account, or other principal has been granted — for example, to understand why someone can or cannot decrypt a TDF.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/authorization"
@@ -130,6 +209,41 @@ Other supported entity types:
 &authorization.Entity{Id: "e1", EntityType: &authorization.Entity_Uuid{Uuid: "550e8400-e29b-41d4-a716-446655440000"}}
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.authorization.Entity;
+
+// By email address
+Entity entity = Entity.newBuilder()
+    .setId("e1")
+    .setEmailAddress("alice@example.com")
+    .build();
+
+List<String> fqns = sdk.getEntityAttributes(entity);
+System.out.println("alice's entitlements:");
+for (String fqn : fqns) {
+    System.out.println("  " + fqn);
+}
+```
+
+Other supported entity types:
+
+```java
+// By username
+Entity.newBuilder().setId("e1").setUserName("alice").build();
+
+// By client ID (NPE / service account)
+Entity.newBuilder().setId("e1").setClientId("my-service").build();
+
+// By UUID
+Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").build();
+```
+
+</TabItem>
+</Tabs>
+
 :::warning Authorization required
 Querying another entity's attributes requires your caller to have appropriate platform permissions on the `GetEntitlements` endpoint. Without this, the call will return a `permission_denied` error. Contact your platform administrator to confirm your service account has the necessary policy access.
 :::
@@ -139,6 +253,9 @@ Querying another entity's attributes requires your caller to have appropriate pl
 ## Putting It Together
 
 A common pattern is to validate attributes at application startup and surface helpful errors before any encryption happens:
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
 
 ```go
 func main() {
@@ -176,6 +293,41 @@ func main() {
     log.Println("data encrypted successfully")
 }
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+try (SDK sdk = new SDKBuilder()
+        .platformEndpoint(platformEndpoint)
+        .clientSecret("opentdf", "secret")
+        .build()) {
+
+    // 1. See what's available on the platform
+    List<Attribute> attrs = sdk.listAttributes();
+    System.out.printf("platform has %d active attributes%n", attrs.size());
+
+    // 2. Validate before encrypting
+    List<String> required = List.of("https://opentdf.io/attr/department/value/marketing");
+    try {
+        sdk.validateAttributes(required);
+    } catch (SDK.AttributeNotFoundException e) {
+        System.err.println("required attributes missing — create them first: " + e.getMessage());
+        return;
+    }
+
+    // 3. Encrypt with confidence
+    Config.TDFConfig config = Config.newTDFConfig(
+        Config.withDataAttributes(required),
+        Config.withKasInformation(new Config.KASInfo(platformEndpoint, null))
+    );
+    sdk.createTDF(inputStream, outputStream, config);
+    System.out.println("data encrypted successfully");
+}
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
