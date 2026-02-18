@@ -15,6 +15,15 @@ OpenTDF is an open source system for implementing data-centric security that ena
 - **Policy Travels with Data**: Security controls remain attached wherever data goes
 - **Trust Data Format (TDF)**: Open standard for self-protecting data
 
+## Documentation Structure
+
+Our documentation follows a user-needs approach with four main categories:
+
+- **🚀 Tutorials**: Step-by-step learning experiences for hands-on practice
+- **📖 How-To Guides**: Problem-solving recipes for specific tasks and integrations
+- **💡 Explanations**: Conceptual guides covering the "why" behind OpenTDF's design
+- **📚 Reference**: Technical specifications, API docs, and lookup information
+
 ## Contributing
 
 We welcome contributions to improve our documentation! Please see our [Contributing Guide](CONTRIBUTING.md) for guidelines on:
@@ -23,6 +32,8 @@ We welcome contributions to improve our documentation! Please see our [Contribut
 - Style and formatting standards
 - Review and approval process
 - Technical setup for contributors
+
+For style guidelines, please refer to our [Style Guide](STYLE_GUIDE.md).
 
 ## Quick Links
 
@@ -115,6 +126,41 @@ This command starts a local development server and opens up a browser window. Mo
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
 
+### Testing with Feature Branches
+
+The documentation site pulls content from multiple upstream repositories using Docusaurus remote content plugins. By default, content is fetched from the `main` branch of each repository. You can override this behavior using environment variables to test documentation changes from feature branches before they're merged.
+
+**Available Environment Variables:**
+
+- `PLATFORM_BRANCH` - Controls which branch to fetch from `opentdf/platform` (default: `main`)
+- `SPEC_BRANCH` - Controls which branch to fetch from `opentdf/spec` (default: `main`)
+- `OTDFCTL_BRANCH` - Controls which branch to fetch from `opentdf/otdfctl` (default: `main`)
+
+**Examples:**
+
+Test with all feature branches:
+```bash
+PLATFORM_BRANCH=my-platform-feature SPEC_BRANCH=my-spec-feature OTDFCTL_BRANCH=my-cli-feature npm run build
+```
+
+Test with a single feature branch:
+```bash
+SPEC_BRANCH=feature-branch-name npm run build
+```
+
+Test in development mode with feature branches:
+```bash
+PLATFORM_BRANCH=my-feature npm run start
+```
+
+**Use Cases:**
+
+- **Before merging PRs**: Test how documentation changes from upstream repos will look when integrated
+- **Cross-repo changes**: When making coordinated changes across multiple repositories, test the full integration locally
+- **Debugging**: Investigate issues with specific branches without affecting your local main branch
+
+**Note**: The branches must exist in the respective GitHub repositories and be accessible (public or you have access).
+
 ### Preview Deployment
 
 Deploy to a Surge preview domain for testing changes before merging to production. **A free Surge account is required** - you'll be prompted to sign up the first time you deploy.
@@ -155,12 +201,10 @@ This documentation is licensed under the [Creative Commons Attribution 4.0 Inter
 **Effective Date: February 13, 2026**
 
 This project's documentation license has changed from:
-
 - **Previous:** Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 - **New:** Creative Commons Attribution 4.0 International (CC BY 4.0)
 
 **What this means:**
-
 - ✅ You can use, adapt, and share this documentation under any terms
 - ✅ You only need to provide attribution to the original work
 - ✅ No longer required to share derivative works under the same license (ShareAlike requirement removed)
