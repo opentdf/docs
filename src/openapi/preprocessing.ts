@@ -499,7 +499,7 @@ function updateOpenApiIndex() {
 
                 if (parsed.data.id) {
                     const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
-                    return `OpenAPI-clients/${relativePath}/${parsed.data.id}`;
+                    return `OpenAPI-clients/${relativePath}`;
                 }
             }
         } catch (error) {
