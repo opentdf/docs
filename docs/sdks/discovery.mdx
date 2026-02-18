@@ -176,9 +176,9 @@ try {
 
 ---
 
-## ValidateAttributeValue
+## ValidateAttributeExists
 
-Single-FQN shorthand for `ValidateAttributes`. Useful for spot-checking one value:
+Single-FQN shorthand for `ValidateAttributes`. Checks that a complete attribute value FQN (with `/value/`) is registered on the platform. Useful for spot-checking one pre-registered value:
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -186,7 +186,7 @@ Single-FQN shorthand for `ValidateAttributes`. Useful for spot-checking one valu
 ```go
 fqn := "https://opentdf.io/attr/department/value/marketing"
 
-if err := client.ValidateAttributeValue(ctx, fqn); err != nil {
+if err := client.ValidateAttributeExists(ctx, fqn); err != nil {
     log.Fatalf("attribute value not found: %v", err)
 }
 ```
@@ -198,7 +198,7 @@ if err := client.ValidateAttributeValue(ctx, fqn); err != nil {
 String fqn = "https://opentdf.io/attr/department/value/marketing";
 
 try {
-    sdk.validateAttributeValue(fqn);
+    sdk.validateAttributeExists(fqn);
 } catch (SDK.AttributeNotFoundException e) {
     System.err.println("attribute value not found: " + e.getMessage());
 }
@@ -208,12 +208,12 @@ try {
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { validateAttributeValue, AttributeNotFoundError } from '@opentdf/sdk';
+import { validateAttributeExists, AttributeNotFoundError } from '@opentdf/sdk';
 
 const fqn = 'https://opentdf.io/attr/department/value/marketing';
 
 try {
-    await validateAttributeValue(platformUrl, authProvider, fqn);
+    await validateAttributeExists(platformUrl, authProvider, fqn);
 } catch (e) {
     if (e instanceof AttributeNotFoundError) {
         console.error('attribute value not found:', e.message);
@@ -225,6 +225,69 @@ try {
 </Tabs>
 
 This validates both the FQN format and that the value exists on the platform.
+
+---
+
+## ValidateAttributeValue
+
+Checks that a value string is permitted for a given attribute, handling both **enumerated** and **dynamic** attribute types:
+
+- **Enumerated attributes** (with a fixed list of values): the value must match one of the registered values (case-insensitive).
+- **Dynamic attributes** (no registered values): any string is accepted.
+
+Use this instead of `ValidateAttributeExists` when you're working with dynamic attributes, or when you want to validate a value against an attribute's definition without constructing the full value FQN yourself.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+// attributeFqn is the attribute level (no /value/ segment)
+attributeFqn := "https://opentdf.io/attr/clearance"
+value := "secret"
+
+if err := client.ValidateAttributeValue(ctx, attributeFqn, value); err != nil {
+    log.Fatalf("value not permitted: %v", err)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+String attributeFqn = "https://opentdf.io/attr/clearance";
+String value = "secret";
+
+try {
+    sdk.validateAttributeValue(attributeFqn, value);
+} catch (SDK.AttributeNotFoundException e) {
+    System.err.println("value not permitted: " + e.getMessage());
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { validateAttributeValue, AttributeNotFoundError } from '@opentdf/sdk';
+
+const attributeFqn = 'https://opentdf.io/attr/clearance';
+const value = 'secret';
+
+try {
+    await validateAttributeValue(platformUrl, authProvider, attributeFqn, value);
+} catch (e) {
+    if (e instanceof AttributeNotFoundError) {
+        console.error('value not permitted:', e.message);
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::tip Dynamic vs. enumerated attributes
+If an attribute has no registered values (dynamic), `ValidateAttributeValue` always succeeds — use this when the platform administrator controls the allowed values out-of-band. If the attribute has registered values (enumerated), it acts as an allowlist and the call fails for any value not in the list.
+:::
 
 ---
 
