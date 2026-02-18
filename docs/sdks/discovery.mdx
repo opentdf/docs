@@ -48,7 +48,7 @@ attrs, err := client.ListAttributes(ctx, "opentdf.io")
 List<Attribute> attrs = sdk.listAttributes();
 
 for (Attribute a : attrs) {
-    System.out.printf("  %s%n", a.getFqn());
+    System.out.printf("  %s (%s)%n", a.getFqn(), a.getRule());
     for (Value v : a.getValuesList()) {
         System.out.printf("    value: %s%n", v.getValue());
     }

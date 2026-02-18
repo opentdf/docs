@@ -205,7 +205,11 @@ exit status 1
 
 **Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform.
 
-**Prevention (Go SDK)**: Use [`ValidateAttributes`](/sdks/discovery#validateattributes) before calling `CreateTDF` to catch missing attributes immediately instead of at decryption time.
+**Prevention**: Use [`ValidateAttributes`](/sdks/discovery#validateattributes) before calling `CreateTDF` to catch missing attributes immediately instead of at decryption time. Available in all three SDKs:
+
+- **Go**: `client.ValidateAttributes(ctx, fqns)`
+- **Java**: `sdk.validateAttributes(fqns)`
+- **JavaScript**: `await validateAttributes(platformUrl, authProvider, fqns)`
 
 **Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
 
