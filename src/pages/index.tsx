@@ -59,11 +59,13 @@ export default function Home() {
                 </p>
                 <p className="hero-subtitle">
                   OpenTDF inverts this model. Policies travel with the data itself, so you can:
-                  <ul>
-                    <li>Revoke access after sharing — even after data has left your environment</li>
-                    <li>Enforce controls in zero-trust environments — no VPN, no network dependency</li>
-                    <li>Maintain a complete audit trail — know who accessed what, when, and where</li>
-                  </ul>
+                </p>
+                <ul className="hero-list">
+                  <li>Revoke access after sharing — even after data has left your environment</li>
+                  <li>Enforce controls in zero-trust environments — no VPN, no network dependency</li>
+                  <li>Maintain a complete audit trail — know who accessed what, when, and where</li>
+                </ul>
+                <p className="hero-subtitle">
                   This is data-centric security: protection that's embedded, not bolted on.
                 </p>
                 <div className="hero-actions">
@@ -207,15 +209,15 @@ export default function Home() {
         </section>
 
         {/* Final CTA Section */}
-        <section style={{padding: '4rem 0', textAlign: 'center', background: '#f8f9fa'}}>
+        <section className="marketing-cta">
           <div className="container">
-            <h2 style={{fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--ifm-color-primary)'}}>
+            <h2 className="marketing-cta__title">
               Ready to Protect Your Data?
             </h2>
-            <p style={{fontSize: '1.2rem', marginBottom: '2rem', opacity: 0.8}}>
+            <p className="marketing-cta__subtitle">
               Choose your path and start building with OpenTDF today.
             </p>
-            <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
+            <div className="marketing-cta__actions">
               <a href="/getting-started/quickstart" className="hero-button hero-button--solid">
                 
                 Start Tutorial

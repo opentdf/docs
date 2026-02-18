@@ -209,6 +209,43 @@
   }
 }
 
+/* Hero list */
+.hero-list {
+  margin: 0.5rem 0 1rem 1.5rem;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.hero-list li {
+  margin-bottom: 0.4rem;
+}
+
+/* Final CTA section */
+.marketing-cta {
+  padding: 4rem 0;
+  text-align: center;
+  background: #f8f9fa;
+}
+
+.marketing-cta__title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--ifm-color-primary);
+}
+
+.marketing-cta__subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+
+.marketing-cta__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* Visual enhancements */
 .hero-icon-container {
   position: relative;
