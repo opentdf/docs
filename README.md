@@ -140,7 +140,7 @@ The documentation site pulls content from multiple upstream repositories using D
 
 Test with all feature branches:
 ```bash
-PLATFORM_BRANCH=jps-updates SPEC_BRANCH=jps-updates OTDFCTL_BRANCH=jps-updates npm run build
+PLATFORM_BRANCH=my-platform-feature SPEC_BRANCH=my-spec-feature OTDFCTL_BRANCH=my-cli-feature npm run build
 ```
 
 Test with a single feature branch:
