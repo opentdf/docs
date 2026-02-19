@@ -230,12 +230,13 @@ This validates both the FQN format and that the value exists on the platform.
 
 ## ValidateAttributeValue
 
-Checks that a value string is permitted for a given attribute, handling both **enumerated** and **dynamic** attribute types:
+Checks that a value string is registered on a given attribute definition. The provided value must match one of the attribute's registered values (case-insensitive), or the call fails.
 
-- **Enumerated attributes** (with a fixed list of values): the value must match one of the registered values (case-insensitive).
-- **Dynamic attributes** (no registered values): any string is accepted.
+Use this instead of `ValidateAttributeExists` when you want to validate a value against an attribute's definition without constructing the full value FQN yourself.
 
-Use this instead of `ValidateAttributeExists` when you're working with dynamic attributes, or when you want to validate a value against an attribute's definition without constructing the full value FQN yourself.
+:::note
+The attribute rule type (`ANY_OF`, `ALL_OF`, `HIERARCHY`) is not relevant here — it governs access decisions at decryption time, not value registration. `ValidateAttributeValue` only checks whether the value appears in the attribute's registered values list.
+:::
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -285,9 +286,6 @@ try {
 </TabItem>
 </Tabs>
 
-:::tip Dynamic vs. enumerated attributes
-If an attribute has no registered values (dynamic), `ValidateAttributeValue` always succeeds — use this when the platform administrator controls the allowed values out-of-band. If the attribute has registered values (enumerated), it acts as an allowlist and the call fails for any value not in the list.
-:::
 
 ---
 
