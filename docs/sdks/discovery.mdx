@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
 
-The Go, Java, and JavaScript SDKs provide four methods to discover and validate attributes without manual platform queries.
+The Go, Java, and JavaScript SDKs provide five methods to discover and validate attributes without manual platform queries.
 
 ---
 
@@ -90,6 +90,106 @@ const attrs = await listAttributes(platformUrl, authProvider, 'opentdf.io');
 
 ---
 
+## AttributeExists
+
+Reports whether an attribute definition exists on the platform. Returns `true`/`false` — useful for a quick existence check before adding values to an attribute or constructing an access policy.
+
+`attributeFqn` should be an **attribute-level** FQN (no `/value/` segment):
+
+```
+https://<namespace>/attr/<attribute_name>
+```
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+exists, err := client.AttributeExists(ctx, "https://opentdf.io/attr/department")
+if err != nil {
+    log.Fatalf("service error: %v", err)
+}
+if !exists {
+    log.Println("attribute does not exist — create it before use")
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+boolean exists = sdk.attributeExists("https://opentdf.io/attr/department");
+if (!exists) {
+    System.out.println("attribute does not exist — create it before use");
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { attributeExists } from '@opentdf/sdk';
+
+const exists = await attributeExists(platformUrl, authProvider, 'https://opentdf.io/attr/department');
+if (!exists) {
+    console.log('attribute does not exist — create it before use');
+}
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## AttributeValueExists
+
+Reports whether a specific attribute value FQN exists on the platform. Returns `true`/`false` — useful for spot-checking one pre-registered value.
+
+`valueFqn` should be a **full attribute value** FQN (with `/value/` segment):
+
+```
+https://<namespace>/attr/<attribute_name>/value/<value>
+```
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+exists, err := client.AttributeValueExists(ctx, "https://opentdf.io/attr/department/value/finance")
+if err != nil {
+    log.Fatalf("service error: %v", err)
+}
+if !exists {
+    log.Println("value does not exist on this attribute")
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+boolean exists = sdk.attributeValueExists("https://opentdf.io/attr/department/value/finance");
+if (!exists) {
+    System.out.println("value does not exist on this attribute");
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```ts
+import { attributeValueExists } from '@opentdf/sdk';
+
+const exists = await attributeValueExists(platformUrl, authProvider, 'https://opentdf.io/attr/department/value/finance');
+if (!exists) {
+    console.log('value does not exist on this attribute');
+}
+```
+
+</TabItem>
+</Tabs>
+
+---
+
 ## ValidateAttributes
 
 Checks that a list of attribute value FQNs exist on the platform **before** calling `CreateTDF`. This catches misspellings and missing attributes at the point of use rather than at decryption time.
@@ -103,7 +203,7 @@ fqns := []string{
     "https://opentdf.io/attr/clearance/value/secret",
 }
 
-if err := client.ValidateAttributes(ctx, fqns); err != nil {
+if err := client.ValidateAttributes(ctx, fqns...); err != nil {
     log.Fatalf("attribute validation failed: %v", err)
     // err will name the specific FQNs that are missing, e.g.:
     // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
@@ -173,119 +273,6 @@ try {
 :::tip
 `validateAttributes` / `ValidateAttributes` accepts up to 250 FQNs per call, matching the platform's limit. For larger sets, batch your FQNs across multiple calls.
 :::
-
----
-
-## ValidateAttributeExists
-
-Single-FQN shorthand for `ValidateAttributes`. Checks that a complete attribute value FQN (with `/value/`) is registered on the platform. Useful for spot-checking one pre-registered value:
-
-<Tabs groupId="sdk">
-<TabItem value="go" label="Go">
-
-```go
-fqn := "https://opentdf.io/attr/department/value/marketing"
-
-if err := client.ValidateAttributeExists(ctx, fqn); err != nil {
-    log.Fatalf("attribute value not found: %v", err)
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-String fqn = "https://opentdf.io/attr/department/value/marketing";
-
-try {
-    sdk.validateAttributeExists(fqn);
-} catch (SDK.AttributeNotFoundException e) {
-    System.err.println("attribute value not found: " + e.getMessage());
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```ts
-import { validateAttributeExists, AttributeNotFoundError } from '@opentdf/sdk';
-
-const fqn = 'https://opentdf.io/attr/department/value/marketing';
-
-try {
-    await validateAttributeExists(platformUrl, authProvider, fqn);
-} catch (e) {
-    if (e instanceof AttributeNotFoundError) {
-        console.error('attribute value not found:', e.message);
-    }
-}
-```
-
-</TabItem>
-</Tabs>
-
-This validates both the FQN format and that the value exists on the platform.
-
----
-
-## ValidateAttributeValue
-
-Checks that a value string is registered on a given attribute definition. The provided value must match one of the attribute's registered values (case-insensitive), or the call fails.
-
-Use this instead of `ValidateAttributeExists` when you want to validate a value against an attribute's definition without constructing the full value FQN yourself.
-
-:::note
-The attribute rule type (`ANY_OF`, `ALL_OF`, `HIERARCHY`) is not relevant here — it governs access decisions at decryption time, not value registration. `ValidateAttributeValue` only checks whether the value appears in the attribute's registered values list.
-:::
-
-<Tabs groupId="sdk">
-<TabItem value="go" label="Go">
-
-```go
-// attributeFqn is the attribute level (no /value/ segment)
-attributeFqn := "https://opentdf.io/attr/clearance"
-value := "secret"
-
-if err := client.ValidateAttributeValue(ctx, attributeFqn, value); err != nil {
-    log.Fatalf("value not permitted: %v", err)
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-String attributeFqn = "https://opentdf.io/attr/clearance";
-String value = "secret";
-
-try {
-    sdk.validateAttributeValue(attributeFqn, value);
-} catch (SDK.AttributeNotFoundException e) {
-    System.err.println("value not permitted: " + e.getMessage());
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```ts
-import { validateAttributeValue, AttributeNotFoundError } from '@opentdf/sdk';
-
-const attributeFqn = 'https://opentdf.io/attr/clearance';
-const value = 'secret';
-
-try {
-    await validateAttributeValue(platformUrl, authProvider, attributeFqn, value);
-} catch (e) {
-    if (e instanceof AttributeNotFoundError) {
-        console.error('value not permitted:', e.message);
-    }
-}
-```
-
-</TabItem>
-</Tabs>
-
 
 ---
 
@@ -421,15 +408,24 @@ func main() {
     }
     log.Printf("platform has %d active attributes", len(attrs))
 
-    // 2. Validate before encrypting
+    // 2. Check a specific attribute exists before using it
+    exists, err := client.AttributeExists(ctx, "https://opentdf.io/attr/department")
+    if err != nil {
+        log.Fatalf("service error: %v", err)
+    }
+    if !exists {
+        log.Fatalf("attribute missing — create it first")
+    }
+
+    // 3. Validate the specific values before encrypting
     required := []string{
         "https://opentdf.io/attr/department/value/marketing",
     }
-    if err := client.ValidateAttributes(ctx, required); err != nil {
+    if err := client.ValidateAttributes(ctx, required...); err != nil {
         log.Fatalf("required attributes missing — create them first: %v", err)
     }
 
-    // 3. Encrypt with confidence
+    // 4. Encrypt with confidence
     _, err = client.CreateTDF(encryptedBuffer, dataReader,
         sdk.WithDataAttributes(required...),
         sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
@@ -454,7 +450,13 @@ try (SDK sdk = new SDKBuilder()
     List<Attribute> attrs = sdk.listAttributes();
     System.out.printf("platform has %d active attributes%n", attrs.size());
 
-    // 2. Validate before encrypting
+    // 2. Check a specific attribute exists before using it
+    if (!sdk.attributeExists("https://opentdf.io/attr/department")) {
+        System.err.println("attribute missing — create it first");
+        return;
+    }
+
+    // 3. Validate the specific values before encrypting
     List<String> required = List.of("https://opentdf.io/attr/department/value/marketing");
     try {
         sdk.validateAttributes(required);
@@ -463,7 +465,7 @@ try (SDK sdk = new SDKBuilder()
         return;
     }
 
-    // 3. Encrypt with confidence
+    // 4. Encrypt with confidence
     Config.TDFConfig config = Config.newTDFConfig(
         Config.withDataAttributes(required),
         Config.withKasInformation(new Config.KASInfo(platformEndpoint, null))
@@ -477,7 +479,7 @@ try (SDK sdk = new SDKBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { OpenTDF, AuthProviders, listAttributes, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { OpenTDF, AuthProviders, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
 const authProvider = await AuthProviders.clientCredentials({
     clientId: 'opentdf',
@@ -489,7 +491,14 @@ const authProvider = await AuthProviders.clientCredentials({
 const attrs = await listAttributes(platformUrl, authProvider);
 console.log(`platform has ${attrs.length} active attributes`);
 
-// 2. Validate before encrypting
+// 2. Check a specific attribute exists before using it
+const exists = await attributeExists(platformUrl, authProvider, 'https://opentdf.io/attr/department');
+if (!exists) {
+    console.error('attribute missing — create it first');
+    process.exit(1);
+}
+
+// 3. Validate the specific values before encrypting
 const required = ['https://opentdf.io/attr/department/value/marketing'];
 try {
     await validateAttributes(platformUrl, authProvider, required);
@@ -501,7 +510,7 @@ try {
     throw e;
 }
 
-// 3. Encrypt with confidence
+// 4. Encrypt with confidence
 const client = new OpenTDF({ authProvider, platformUrl });
 const ciphertext = await client.createZTDF({
     source: { type: 'stream', location: dataStream },
