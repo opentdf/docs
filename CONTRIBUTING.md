@@ -1,6 +1,10 @@
-# Contributing
+# Contributing to opentdf/docs
 
-The information below is meant for documentation contributors.
+Thank you for contributing to OpenTDF documentation! For general contribution
+guidelines, community feedback channels, and branch/commit conventions, see
+[platform/CONTRIBUTING.md](https://github.com/opentdf/platform/blob/main/CONTRIBUTING.md).
+
+The information below is specific to documentation contributions.
 
 
 ## Prerequisites
