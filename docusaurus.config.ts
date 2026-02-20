@@ -26,7 +26,7 @@ const javaSdkVersion = "0.11.1";
 const config: Config = {
   title: "OpenTDF",
   tagline: "Enabling secure data sharing through open, data-centric security",
-  favicon: "img/OpenTDF-Logo.png",
+  favicon: "img/favicon.svg",
 
   // Set the production url of your site here
   url: "https://docs.opentdf.io",
@@ -92,7 +92,7 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: "./src/css/custom.css",
+          customCss: ["./src/css/custom.css", "./src/css/landing.css"],
         },
       },
     ],
@@ -110,7 +110,7 @@ const config: Config = {
       title: "OpenTDF",
       logo: {
         alt: "OpenTDF - Protect the Data, Build the Future",
-        src: "img/OpenTDF-Logo.png",
+        src: "img/opentdf-icon.svg",
         width: 32,
         height: 32,
       },
@@ -122,85 +122,72 @@ const config: Config = {
           label: "Docs",
         },
         {
-          href: "https://github.com/opentdf",
-          label: "GitHub",
-          position: "right",
+          to: "/quickstart",
+          position: "left",
+          label: "Quickstart",
         },
         {
-          type: "search",
+          to: "/sdks",
+          position: "left",
+          label: "SDKs",
+        },
+        {
+          to: "/spec",
+          position: "left",
+          label: "Specification",
+        },
+        {
+          href: "https://github.com/orgs/opentdf/discussions",
+          position: "left",
+          label: "Community",
+        },
+        {
+          href: "https://github.com/opentdf",
+          label: "GitHub",
           position: "right",
         },
       ],
     },
     footer: {
       style: "dark",
-      logo: {
-        alt: "OpenTDF Logo",
-        src: "img/opentdf-logo-horizontal.png",
-        href: "https://opentdf.io",
-      },
       links: [
         {
-          title: "Sponsors",
+          title: "Project",
           items: [
-            {
-              label: "Virtru",
-              href: "https://virtru.com",
-            },
+            { label: "About", to: "/introduction" },
+            { label: "Architecture", to: "/architecture" },
+            { label: "Specification", to: "/spec" },
+            { label: "License", href: "https://github.com/opentdf/platform/blob/main/LICENSE" },
           ],
         },
         {
-          title: "Support",
+          title: "Developers",
           items: [
-            {
-              label: "Getting Started",
-              to: "/getting-started/configuration",
-            },
-            {
-              label: "Documentation",
-              to: "/introduction",
-            },
-            {
-              label: "GitHub Discussions",
-              href: "https://github.com/orgs/opentdf/discussions",
-            },
+            { label: "Quickstart", to: "/quickstart" },
+            { label: "SDKs", to: "/sdks" },
+            { label: "Platform", href: "https://github.com/opentdf/platform" },
+            { label: "CLI Reference", href: "https://github.com/opentdf/otdfctl" },
           ],
         },
         {
-          title: "More",
+          title: "Community",
           items: [
-            {
-              label: "Showcase",
-              href: "https://github.com/orgs/opentdf/discussions/categories/show-and-tell",
-            },
-            {
-              label: "Roadmap",
-              href: "https://opentdf.io/appendix/matrix",
-            },
+            { label: "GitHub", href: "https://github.com/opentdf" },
+            { label: "Discussions", href: "https://github.com/orgs/opentdf/discussions" },
+            { label: "Contributing", href: "https://github.com/opentdf/platform/blob/main/CONTRIBUTING.md" },
+            { label: "Code of Conduct", href: "https://github.com/opentdf/platform/blob/main/CODE_OF_CONDUCT.md" },
           ],
         },
         {
-          title: "Legal",
+          title: "Sponsor",
           items: [
             {
-              label: "Privacy Policy",
-              to: "/privacy-policy",
-            },
-            {
-              label: "Cookie Policy",
-              to: "/cookie-policy",
-            },
-            {
-              label: "Terms of Service",
-              to: "/terms-of-service",
+              html: `<p class="footer__sponsor-text">OpenTDF is sponsored and maintained by <a href="https://www.virtru.com" target="_blank" rel="noopener noreferrer">Virtru</a>, building data-centric security solutions since 2012.</p>`,
             },
           ],
         },
       ],
-      copyright: `
-          <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
-          <iconify-icon data-icon="mdi:shield-check" style="color: #00FF00;"></iconify-icon>
-        `,
+      copyright: `Copyright © ${new Date().getFullYear()} OpenTDF`,
     },
     prism: {
       theme: prismThemes.vsLight,
