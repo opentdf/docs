@@ -503,13 +503,18 @@ function updateOpenApiIndex() {
                 }
             }
         } catch (error) {
-            // Silently skip if file doesn't exist yet
+            if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+                // File doesn't exist yet — expected during preprocessing phase
+            } else {
+                console.warn(`Could not read or parse info file in ${outputDir}:`, error);
+            }
         }
         return null;
     }
 
     // Build service links dynamically from openApiSpecsArray
     // Track which specs are categorized to find uncategorized ones
+    const specsById = new Map(openApiSpecsArray.map(spec => [spec.id, spec]));
     const categorizedSpecs = new Set<string>();
     let serviceLinksMarkdown = '';
 
@@ -517,7 +522,7 @@ function updateOpenApiIndex() {
         serviceLinksMarkdown += `\n## ${category}\n\n`;
         specIds.forEach(specId => {
             categorizedSpecs.add(specId);
-            const spec = openApiSpecsArray.find(s => s.id === specId);
+            const spec = specsById.get(specId);
             if (spec) {
                 const docId = getDocIdFromInfoFile(spec.outputDir);
                 if (docId) {
