@@ -198,8 +198,13 @@ const config: Config = {
         },
       ],
       copyright: `
-          <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
-          <iconify-icon data-icon="mdi:shield-check" style="color: #00FF00;"></iconify-icon>
+          <div>
+            <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
+          </div>
+          <div style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8;">
+            Documentation licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">CC BY 4.0</a> •
+            Code licensed under <a href="https://github.com/opentdf/platform/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">BSD 3-Clause</a>
+          </div>
         `,
     },
     prism: {
