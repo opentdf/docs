@@ -42,11 +42,8 @@ node_modules
 # Ignore manual test scripts
 manual_tests/
 
-# Design working files
-og-concepts.html
-og-export.html
-color-spec-mock.html
-opentdf-brand-guide.html
+# Design working files (local only — back up to opentdf/brand-assets)
+design/
 
 # Claude instructions (local only)
 CLAUDE.md
