@@ -55,7 +55,7 @@ const config: Config = {
         "@type": "Organization",
         name: "OpenTDF",
         url: "https://opentdf.io",
-        logo: "https://docs.opentdf.io/img/opentdf-social.png",
+        logo: "https://opentdf.io/img/opentdf-icon.svg",
       }),
     },
   ],
