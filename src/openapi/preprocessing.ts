@@ -29,7 +29,7 @@ const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
 
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
-const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
+const OPENAPI_INDEX_PAGE = path.join(OUTPUT_PREFIX, 'index.md');
 
 // Service descriptions and categorization for OpenAPI index generation
 const SERVICE_DESCRIPTIONS: Record<string, string> = {
@@ -64,7 +64,7 @@ const CATEGORY_MAPPING: Record<string, string[]> = {
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
 // Initialize empty samples configuration - will be populated conditionally
-let samplesConfiguration = {};
+let samplesConfiguration: Record<string, OpenApiPlugin.Options> = {};
 
 interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
@@ -438,10 +438,9 @@ async function preprocessOpenApiSpecs() {
             console.error(`❌ Error processing ${sourcePath}:`, error);
         }
 
-        spec.specPath = spec.specPathModified; // Update the original specPath to the modified one
-
-        // Delete the specPathModified property to avoid confusion
-        delete spec.specPathModified;
+        // Rebuild the entry with the processed path, dropping specPathModified cleanly
+        const { specPathModified: _, ...cleanSpec } = spec;
+        openApiSpecs[id] = { ...cleanSpec, specPath: spec.specPathModified! };
     }
 
     console.log('✨ OpenAPI preprocessing complete');
@@ -478,39 +477,34 @@ function renameInfoFilesToIndex() {
 }
 
 /**
+ * Reads the document ID from a generated index.mdx file and returns the doc path,
+ * or null if the file does not exist or has no id in frontmatter.
+ */
+function getDocIdFromInfoFile(outputDir: string): string | null {
+    try {
+        const indexPath = path.join(outputDir, 'index.mdx');
+        const fileContent = fs.readFileSync(indexPath, 'utf8');
+        const parsed = matter(fileContent);
+        if (parsed.data.id) {
+            const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
+            return `OpenAPI-clients/${relativePath}`;
+        }
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            // File doesn't exist yet — expected during preprocessing phase
+        } else {
+            console.warn(`Could not read or parse info file in ${outputDir}:`, error);
+        }
+    }
+    return null;
+}
+
+/**
  * Updates the OpenAPI index page with links to generated docs.
  * This should be called AFTER the OpenAPI docs have been generated.
  */
 function updateOpenApiIndex() {
     console.log('📝 Updating OpenAPI index page with generated doc links...');
-
-    // Helper function to find and read the document ID from a generated index.mdx file
-    function getDocIdFromInfoFile(outputDir: string): string | null {
-        try {
-            if (!fs.existsSync(outputDir)) {
-                return null;
-            }
-
-            const indexPath = path.join(outputDir, 'index.mdx');
-
-            if (fs.existsSync(indexPath)) {
-                const fileContent = fs.readFileSync(indexPath, 'utf8');
-                const parsed = matter(fileContent);
-
-                if (parsed.data.id) {
-                    const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
-                    return `OpenAPI-clients/${relativePath}`;
-                }
-            }
-        } catch (error) {
-            if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-                // File doesn't exist yet — expected during preprocessing phase
-            } else {
-                console.warn(`Could not read or parse info file in ${outputDir}:`, error);
-            }
-        }
-        return null;
-    }
 
     // Build service links dynamically from openApiSpecsArray
     // Track which specs are categorized to find uncategorized ones

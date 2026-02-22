@@ -5,7 +5,12 @@
 
 import { updateOpenApiIndex, renameInfoFilesToIndex } from '../src/openapi/preprocessing';
 
-console.log('🔄 Running post-generation OpenAPI processing...');
-renameInfoFilesToIndex();
-updateOpenApiIndex();
-console.log('✅ OpenAPI post-processing complete');
+try {
+    console.log('🔄 Running post-generation OpenAPI processing...');
+    renameInfoFilesToIndex();
+    updateOpenApiIndex();
+    console.log('✅ OpenAPI post-processing complete');
+} catch (error) {
+    console.error('❌ OpenAPI post-processing failed:', error);
+    process.exit(1);
+}
