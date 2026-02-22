@@ -466,8 +466,12 @@ function renameInfoFilesToIndex() {
                 processDirectory(fullPath);
             } else if (item.name.endsWith('.info.mdx')) {
                 const newPath = path.join(dir, 'index.mdx');
-                fs.renameSync(fullPath, newPath);
-                console.log(`  Renamed: ${fullPath} → ${newPath}`);
+                if (fs.existsSync(newPath)) {
+                    console.warn(`⚠️  Skipping rename of ${fullPath} because destination ${newPath} already exists.`);
+                } else {
+                    fs.renameSync(fullPath, newPath);
+                    console.log(`  Renamed: ${fullPath} → ${newPath}`);
+                }
             }
         }
     }
@@ -491,7 +495,8 @@ function getDocIdFromInfoFile(outputDir: string): string | null {
         }
     } catch (error) {
         if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-            // File doesn't exist yet — expected during preprocessing phase
+            // Missing index file likely means doc generation failed for this spec — link will be skipped.
+            console.warn(`⚠️  Could not find index file for an API spec, so it will be skipped. Path: ${path.join(outputDir, 'index.mdx')}`);
         } else {
             console.warn(`Could not read or parse info file in ${outputDir}:`, error);
         }
@@ -520,7 +525,11 @@ function updateOpenApiIndex() {
             if (spec) {
                 const docId = getDocIdFromInfoFile(spec.outputDir);
                 if (docId) {
-                    const description = SERVICE_DESCRIPTIONS[specId] || 'API documentation';
+                    let description = SERVICE_DESCRIPTIONS[specId];
+                    if (!description) {
+                        console.warn(`⚠️  Missing description for service "${specId}". Using default.`);
+                        description = 'API documentation';
+                    }
                     serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
                 }
             }
@@ -535,7 +544,11 @@ function updateOpenApiIndex() {
         uncategorizedSpecs.forEach(spec => {
             const docId = getDocIdFromInfoFile(spec.outputDir);
             if (docId) {
-                const description = SERVICE_DESCRIPTIONS[spec.id] || 'API documentation';
+                let description = SERVICE_DESCRIPTIONS[spec.id];
+                if (!description) {
+                    console.warn(`⚠️  Missing description for service "${spec.id}". Using default.`);
+                    description = 'API documentation';
+                }
                 serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
             }
         });
