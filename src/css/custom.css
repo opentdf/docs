@@ -502,7 +502,6 @@ html[data-theme='dark'] .navbar__items--right .navbar__item.navbar__link[href*="
 html[data-theme='dark'] .navbar__items--right .navbar__item.navbar__link[href*="github.com"]:hover {
   border-color: #6b7280;
   color: #fff;
-  background: transparent;
 }
 
 /**************
