@@ -108,7 +108,6 @@ const config: Config = {
     navbar: {
       hideOnScroll: true,
       title: "OpenTDF",
-<<<<<<< chore/address-191-comments
       logo: {
         alt: "OpenTDF - Protect the Data, Build the Future",
         src: "img/OpenTDF-Logo.png",
@@ -116,8 +115,6 @@ const config: Config = {
         width: 32,
         height: 32,
       },
-=======
->>>>>>> feat/site-redesign
       items: [
         {
           type: "doc",
@@ -191,7 +188,15 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} OpenTDF`,
+      copyright: `
+          <div>
+            <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
+          </div>
+          <div class="footer__license-info">
+            Documentation licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> •
+            Code licensed under <a href="https://github.com/opentdf/platform/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">BSD 3-Clause</a>
+          </div>
+        `,
     },
     prism: {
       theme: prismThemes.vsLight,

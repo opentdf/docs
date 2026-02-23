@@ -13,8 +13,9 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "gen-api-docs-all": "docusaurus gen-api-docs all --all-versions",
+    "gen-api-docs-all": "docusaurus gen-api-docs all --all-versions && npm run update-openapi-index",
     "gen-api-docs-clean": "docusaurus clean-api-docs all",
+    "update-openapi-index": "tsx scripts/update-openapi-index.ts",
     "check-vendored-yaml": "tsx src/openapi/check-vendored-yaml.ts",
     "update-vendored-yaml": "tsx src/openapi/update-vendored-yaml.ts"
   },

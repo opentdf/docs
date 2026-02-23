@@ -573,3 +573,16 @@ html[data-theme='light'] {
   --otdf-gradient-mesh: radial-gradient(ellipse at 20% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
 }
+
+/**************
+** FOOTER
+***************/
+.footer__license-info {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.footer__license-info a {
+  text-decoration: underline;
+}
