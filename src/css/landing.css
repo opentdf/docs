@@ -80,3 +80,22 @@
   border-color: var(--sdk-color, #22d3ee);
   box-shadow: 0 0 30px color-mix(in srgb, var(--sdk-color, #22d3ee) 15%, transparent);
 }
+
+/* ---- Light mode overrides ---- */
+html[data-theme='light'] .section-dark {
+  background-color: #f8fafc;
+}
+
+html[data-theme='light'] .section-darker {
+  background-color: #ffffff;
+}
+
+html[data-theme='light'] .bg-grid {
+  background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+html[data-theme='light'] .sdk-card {
+  border-color: rgba(0, 0, 0, 0.08);
+}
