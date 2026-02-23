@@ -4,6 +4,7 @@ When making changes to this file, consider: https://virtru.atlassian.net/browse/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import matter from 'gray-matter';
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 
 // Utility to find the repo root (directory containing package.json)
@@ -28,13 +29,42 @@ const ADD_TIMESTAMP_TO_DESCRIPTION = false;
 const OUTPUT_PREFIX = path.join(repoRoot, 'docs', 'OpenAPI-clients');
 
 // The index page for OpenAPI documentation, to support bookmarking & sharing the URL
-const OPENAPI_INDEX_PAGE = `${OUTPUT_PREFIX}/index.md`;
+const OPENAPI_INDEX_PAGE = path.join(OUTPUT_PREFIX, 'index.md');
+
+// Service descriptions and categorization for OpenAPI index generation
+const SERVICE_DESCRIPTIONS: Record<string, string> = {
+    'Well-Known Configuration': 'Platform configuration and service discovery',
+    'kas': 'Key Access Service for TDF encryption/decryption',
+    'V1 Authorization': 'Authorization decisions (v1)',
+    'V2 Authorization': 'Authorization decisions (v2)',
+    'V1 Entity Resolution': 'Entity resolution from JWT tokens (v1)',
+    'V2 Entity Resolution': 'Entity resolution from tokens (v2)',
+    'Policy Objects': 'Core policy objects and management',
+    'Policy Attributes': 'Attribute definitions and values',
+    'Policy Namespaces': 'Namespace management',
+    'Policy Actions': 'Action definitions',
+    'Policy Subject Mapping': 'Map subjects to attributes',
+    'Policy Resource Mapping': 'Map resources to attributes',
+    'Policy Obligations': 'Usage obligations and triggers',
+    'Policy Registered Resources': 'Resource registration',
+    'Policy KAS Registry': 'KAS registration and management',
+    'Key Management': 'Cryptographic key management',
+    'Policy Unsafe Service': 'Administrative operations',
+};
+
+const CATEGORY_MAPPING: Record<string, string[]> = {
+    'Core Services': ['Well-Known Configuration', 'kas'],
+    'Authorization & Entity Resolution': ['V1 Authorization', 'V2 Authorization', 'V1 Entity Resolution', 'V2 Entity Resolution'],
+    'Policy Management': ['Policy Objects', 'Policy Attributes', 'Policy Namespaces', 'Policy Actions',
+                         'Policy Subject Mapping', 'Policy Resource Mapping', 'Policy Obligations',
+                         'Policy Registered Resources', 'Policy KAS Registry', 'Key Management', 'Policy Unsafe Service'],
+};
 
 // Read BUILD_OPENAPI_SAMPLES once
 const BUILD_OPENAPI_SAMPLES = process.env.BUILD_OPENAPI_SAMPLES === '1';
 
 // Initialize empty samples configuration - will be populated conditionally
-let samplesConfiguration = {};
+let samplesConfiguration: Record<string, OpenApiPlugin.Options> = {};
 
 interface ApiSpecDefinition {
     id: string; // Unique key for the API spec, e.g., "authorization"
@@ -408,33 +438,148 @@ async function preprocessOpenApiSpecs() {
             console.error(`❌ Error processing ${sourcePath}:`, error);
         }
 
-        spec.specPath = spec.specPathModified; // Update the original specPath to the modified one
-
-        // Delete the specPathModified property to avoid confusion
-        delete spec.specPathModified;
+        // Rebuild the entry with the processed path, dropping specPathModified cleanly
+        const { specPathModified: _, ...cleanSpec } = spec;
+        openApiSpecs[id] = { ...cleanSpec, specPath: spec.specPathModified! };
     }
 
-    // Create the index page for OpenAPI documentation
+    console.log('✨ OpenAPI preprocessing complete');
+};
+
+
+/**
+ * Renames all .info.mdx files to index.mdx so they become category index pages
+ * instead of appearing as separate items in the sidebar.
+ */
+function renameInfoFilesToIndex() {
+    console.log('🔄 Renaming .info.mdx files to index.mdx...');
+
+    function processDirectory(dir: string) {
+        if (!fs.existsSync(dir)) return;
+
+        const items = fs.readdirSync(dir, { withFileTypes: true });
+
+        for (const item of items) {
+            const fullPath = path.join(dir, item.name);
+
+            if (item.isDirectory()) {
+                processDirectory(fullPath);
+            } else if (item.name.endsWith('.info.mdx')) {
+                const newPath = path.join(dir, 'index.mdx');
+                if (fs.existsSync(newPath)) {
+                    console.warn(`⚠️  Skipping rename of ${fullPath} because destination ${newPath} already exists.`);
+                } else {
+                    fs.renameSync(fullPath, newPath);
+                    console.log(`  Renamed: ${fullPath} → ${newPath}`);
+                }
+            }
+        }
+    }
+
+    processDirectory(OUTPUT_PREFIX);
+    console.log('✅ Renamed all .info.mdx files to index.mdx');
+}
+
+/**
+ * Reads the document ID from a generated index.mdx file and returns the doc path,
+ * or null if the file does not exist or has no id in frontmatter.
+ */
+function getDocIdFromInfoFile(outputDir: string): string | null {
+    try {
+        const indexPath = path.join(outputDir, 'index.mdx');
+        const fileContent = fs.readFileSync(indexPath, 'utf8');
+        const parsed = matter(fileContent);
+        if (parsed.data.id) {
+            const relativePath = path.relative(OUTPUT_PREFIX, outputDir);
+            return `OpenAPI-clients/${relativePath}`;
+        }
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            // Missing index file likely means doc generation failed for this spec — link will be skipped.
+            console.warn(`⚠️  Could not find index file for an API spec, so it will be skipped. Path: ${path.join(outputDir, 'index.mdx')}`);
+        } else {
+            console.warn(`Could not read or parse info file in ${outputDir}:`, error);
+        }
+    }
+    return null;
+}
+
+/**
+ * Updates the OpenAPI index page with links to generated docs.
+ * This should be called AFTER the OpenAPI docs have been generated.
+ */
+function updateOpenApiIndex() {
+    console.log('📝 Updating OpenAPI index page with generated doc links...');
+
+    // Build service links dynamically from openApiSpecsArray
+    // Track which specs are categorized to find uncategorized ones
+    const specsById = new Map(openApiSpecsArray.map(spec => [spec.id, spec]));
+    const categorizedSpecs = new Set<string>();
+    let serviceLinksMarkdown = '';
+
+    Object.entries(CATEGORY_MAPPING).forEach(([category, specIds]) => {
+        serviceLinksMarkdown += `\n## ${category}\n\n`;
+        specIds.forEach(specId => {
+            categorizedSpecs.add(specId);
+            const spec = specsById.get(specId);
+            if (spec) {
+                const docId = getDocIdFromInfoFile(spec.outputDir);
+                if (docId) {
+                    let description = SERVICE_DESCRIPTIONS[specId];
+                    if (!description) {
+                        console.warn(`⚠️  Missing description for service "${specId}". Using default.`);
+                        description = 'API documentation';
+                    }
+                    serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+                }
+            }
+        });
+    });
+
+    // Add uncategorized APIs to a catch-all category
+    const uncategorizedSpecs = openApiSpecsArray.filter(spec => !categorizedSpecs.has(spec.id));
+    if (uncategorizedSpecs.length > 0) {
+        console.warn(`⚠️  Found ${uncategorizedSpecs.length} uncategorized API(s): ${uncategorizedSpecs.map(s => s.id).join(', ')}`);
+        serviceLinksMarkdown += `\n## Other APIs\n\n`;
+        uncategorizedSpecs.forEach(spec => {
+            const docId = getDocIdFromInfoFile(spec.outputDir);
+            if (docId) {
+                let description = SERVICE_DESCRIPTIONS[spec.id];
+                if (!description) {
+                    console.warn(`⚠️  Missing description for service "${spec.id}". Using default.`);
+                    description = 'API documentation';
+                }
+                serviceLinksMarkdown += `- **[${spec.id}](/${docId})** - ${description}\n`;
+            }
+        });
+    }
+
     const indexContent = `---
 title: OpenAPI Clients
 sidebar_position: 7
 ---
 # OpenAPI Clients
 
-OpenAPI client examples are available for platform endpoints.  
+Interactive API documentation for OpenTDF Platform services. Each endpoint includes request/response examples, parameter descriptions, and the ability to try requests directly in your browser.
 
-Expand each section in the navigation panel to access the OpenAPI documentation for each service.
-`
+${serviceLinksMarkdown}
 
-    // Ensure the file 'OPENAPI_INDEX_PAGE' exists
+## Getting Started
+
+1. Select a service from the list above or navigation sidebar
+2. Browse available endpoints and operations
+3. Review request parameters and response schemas
+4. Test endpoints using the "Try it" feature
+
+## Authentication
+
+Most endpoints require authentication. Configure your access token in the API documentation interface before testing endpoints.
+`;
+
     fs.mkdirSync(path.dirname(OPENAPI_INDEX_PAGE), { recursive: true });
-
     fs.writeFileSync(OPENAPI_INDEX_PAGE, indexContent, 'utf8');
-    console.log(`✅ Created OpenAPI index page at ${OPENAPI_INDEX_PAGE}`);
-
-    console.log('✨ OpenAPI preprocessing complete');
-};
-
+    console.log(`✅ Updated OpenAPI index page at ${OPENAPI_INDEX_PAGE}`);
+}
 
 // Export the function and data without automatically executing it
-export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs };
+export { openApiSpecs, openApiSpecsArray, preprocessOpenApiSpecs, updateOpenApiIndex, renameInfoFilesToIndex };

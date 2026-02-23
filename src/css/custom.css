@@ -371,3 +371,16 @@ div[class*="language-shell"] code::before {
 html[data-theme='dark'] div[class*="language-shell"] code::before {
   color: var(--ifm-color-gray-400);
 }
+
+/**************
+** FOOTER
+***************/
+.footer__license-info {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.footer__license-info a {
+  text-decoration: underline;
+}
