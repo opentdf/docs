@@ -41,3 +41,9 @@ node_modules
 
 # Ignore manual test scripts
 manual_tests/
+
+# Design working files (local only — back up to opentdf/brand-assets)
+design/
+
+# Claude instructions (local only)
+CLAUDE.md

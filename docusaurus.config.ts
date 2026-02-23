@@ -55,7 +55,7 @@ const config: Config = {
         "@type": "Organization",
         name: "OpenTDF",
         url: "https://opentdf.io",
-        logo: "https://docs.opentdf.io/img/opentdf-social.png",
+        logo: "https://opentdf.io/img/opentdf-icon.svg",
       }),
     },
   ],
@@ -108,6 +108,7 @@ const config: Config = {
     navbar: {
       hideOnScroll: true,
       title: "OpenTDF",
+<<<<<<< chore/address-191-comments
       logo: {
         alt: "OpenTDF - Protect the Data, Build the Future",
         src: "img/OpenTDF-Logo.png",
@@ -115,6 +116,8 @@ const config: Config = {
         width: 32,
         height: 32,
       },
+=======
+>>>>>>> feat/site-redesign
       items: [
         {
           type: "doc",

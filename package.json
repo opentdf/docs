@@ -51,6 +51,7 @@
     "@docusaurus/tsconfig": "^3.6.3",
     "@docusaurus/types": "^3.6.3",
     "@iconify-icon/react": "^2.1.0",
+    "puppeteer-core": "^24.37.5",
     "sharp": "^0.34.2",
     "tsx": "^4.20.3",
     "typescript": "^5.7.2"
