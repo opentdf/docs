@@ -179,3 +179,21 @@
     font-size: 2.25rem;
   }
 }
+
+/* Light mode overrides — diagram intentionally stays dark */
+:global(html[data-theme='light']) .body,
+:global(html[data-theme='light']) .featureItem {
+  color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btnSecondary {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+:global(html[data-theme='light']) .btnGhost {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:global(html[data-theme='light']) .btnGhost:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+}

@@ -142,3 +142,19 @@
     padding: 0 2rem;
   }
 }
+
+/* Light mode overrides */
+:global(html[data-theme='light']) .card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:global(html[data-theme='light']) .bodyPrimary,
+:global(html[data-theme='light']) .cardBody {
+  color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btn {
+  border-color: rgba(0, 0, 0, 0.15);
+}
