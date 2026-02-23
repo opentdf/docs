@@ -211,3 +211,17 @@
     padding: 0 2rem;
   }
 }
+
+/* Light mode overrides — install cmd and copy button intentionally stay dark (code) */
+:global(html[data-theme='light']) .card {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+:global(html[data-theme='light']) .subheading {
+  color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btnSecondary {
+  border-color: rgba(0, 0, 0, 0.15);
+}

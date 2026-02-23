@@ -210,3 +210,16 @@
     padding: 0 1.5rem;
   }
 }
+
+/* Light mode overrides — code window intentionally stays dark */
+:global(html[data-theme='light']) .bodyPrimary {
+  color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btnSecondary {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+:global(html[data-theme='light']) .btnSecondary:hover {
+  border-color: #22d3ee;
+}
