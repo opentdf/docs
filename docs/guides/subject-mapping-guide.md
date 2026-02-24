@@ -540,6 +540,22 @@ otdfctl policy subject-mappings create \
 Attribute values must match `^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores, no special characters. Email addresses (with `@` and `.`) must be normalized to a valid format (e.g., `alice-at-example-com`).
 :::
 
+:::tip Encrypt before the value exists with `--allow-traversal`
+If your workflow creates the attribute value at encrypt time (or shortly after), set `--allow-traversal` on the attribute definition:
+
+```bash
+otdfctl policy attributes create \
+  --namespace <namespace-id> \
+  --name owner \
+  --rule ANY_OF \
+  --allow-traversal
+```
+
+With `allow_traversal=true`, a TDF can be encrypted referencing `owner/alice-at-example-com` even if that value doesn't exist in policy yet — as long as a KAS key is mapped to the attribute definition. Decryption will fail until the value is created and Subject Mappings are in place. This is useful for "encrypt first, provision access later" workflows.
+
+Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto)
+:::
+
 ## IdP Integration Examples
 
 ### Keycloak
@@ -759,6 +775,13 @@ otdfctl policy subject-condition-sets create \
   ]'
 ```
 
+For complex condition sets, use `--subject-sets-file-json` with a path to a JSON file instead of inline JSON:
+
+```bash
+# scs.json contains the same array as above
+otdfctl policy subject-condition-sets create --subject-sets-file-json scs.json
+```
+
 **Save the ID from output:**
 ```console
 SUCCESS   Created SubjectConditionSet [3c56a6c9-9635-427f-b808-5e8fd395802c]
@@ -912,7 +935,7 @@ Contact your OpenTDF administrator to enable debug logging for Subject Mapping e
 
 ### Error: User Has Entitlement But Still Gets DENY
 
-In `GetDecision` flows, only **`CATEGORY_SUBJECT`** entities participate in the access decision ([source](https://github.com/opentdf/platform/blob/main/service/authorization/authorization.go)). `CATEGORY_ENVIRONMENT` entities (the OIDC client in a user-auth flow) are tracked in audit logs but do NOT affect the decision outcome.
+In `GetDecision` flows, only **`CATEGORY_SUBJECT`** entities participate in the access decision ([source](https://github.com/opentdf/platform/blob/main/service/authorization/authorization.go)). `CATEGORY_ENVIRONMENT` entities (the OIDC client in a user-auth flow) are tracked in audit logs but do NOT affect the decision outcome. This is intentional design — see [ADR: Add typed Entities (#1181)](https://github.com/opentdf/platform/issues/1181) for the rationale.
 
 **If the user (`CATEGORY_SUBJECT`) has the required entitlement and still gets DENY**, check the following:
 
