@@ -26,7 +26,7 @@ const javaSdkVersion = "0.11.1";
 const config: Config = {
   title: "OpenTDF",
   tagline: "Enabling secure data sharing through open, data-centric security",
-  favicon: "img/OpenTDF-Logo.png",
+  favicon: "img/favicon.svg",
 
   // Set the production url of your site here
   url: "https://docs.opentdf.io",
