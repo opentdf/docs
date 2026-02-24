@@ -23,8 +23,8 @@ This guide explains how OpenTDF connects user identities from your Identity Prov
 Many developers expect this direct flow:
 
 ```
-IdP User Attribute → OpenTDF Attribute → Access Decision
-    (role=admin)        (clearance=top_secret)    (PERMIT/DENY)
+IdP User Attribute  → OpenTDF Attribute       → Access Decision
+(role=admin)          (clearance=top_secret)    (PERMIT/DENY)
 ```
 
 **This doesn't work.** OpenTDF attributes define **what can be accessed**, not **who can access it**.
@@ -59,32 +59,59 @@ Subject Mappings answer: "Given this identity, what entitlements should they rec
 ### High-Level Data Flow
 
 ```mermaid
+%%{init: {'sequence': {'boxMargin': 20}}}%%
 sequenceDiagram
     participant User
-    participant IdP as Identity Provider<br/>(Keycloak/Auth0/Okta)
-    participant ERS as Entity Resolution<br/>Service
-    participant Auth as Authorization<br/>Service
-    participant Policy as Policy<br/>Service
+    participant IdP as Identity Provider
+    box OpenTDF Services
+        participant KAS as Key Access Server
+        participant ERS as Entity Resolution Service
+        participant Auth as Authorization Service
+        participant Policy as Policy Service
+    end
 
     User->>IdP: 1. Authenticate
-    IdP->>User: 2. Return JWT token<br/>{email, role, groups}
+    IdP->>User: 2. JWT token
 
-    User->>ERS: 3. Decrypt request + token
-    ERS->>ERS: 4. Parse token into<br/>Entity Representation
+    User->>KAS: 3. Decrypt request + token
+    KAS->>ERS: 4. Resolve entity
+    ERS->>KAS: 5. Entity representation
 
-    ERS->>Auth: 5. GetEntitlements(entity)
-    Auth->>Policy: 6. Which Subject Mappings<br/>match this entity?
+    KAS->>Auth: 6. GetDecision
+    Auth->>Policy: 7. Match Subject Mappings
 
-    Policy->>Policy: 7. Evaluate Subject<br/>Condition Sets
-    Policy->>Auth: 8. Return entitled<br/>attribute values + actions
+    Policy->>Policy: 8. Evaluate conditions
+    Policy->>Auth: 9. Return entitlements
 
-    Auth->>Auth: 9. Compare entitlements<br/>vs resource attributes
-    Auth->>User: 10. PERMIT or DENY
+    Auth->>Auth: 10. Compare vs resource attrs
+    Auth->>KAS: 11. PERMIT or DENY
+    KAS->>User: 12. Release key or deny
 ```
+
+| Service | NIST Role | How to use it |
+|---|---|---|
+| Key Access Server | Policy Enforcement Point (PEP) | [Send a TDF decrypt request](/sdks/tdf) |
+| Entity Resolution Service | Policy Information Point (PIP) | *Used by Key Access Server* |
+| Authorization Service | Policy Decision Point (PDP) | [Get authorization decisions](/sdks/authorization) |
+| Policy Service | Policy Administration Point (PAP) | [Configure subject mappings](/sdks/policy) |
+
+For a detailed look at how these services fit together, see the [Architecture page](/architecture).
 
 ### Detailed Step-by-Step
 
 #### Step 1-2: User Authentication
+
+Your Identity Provider (IdP) — such as Keycloak, Auth0, or Okta — is the source of truth for who a user is; OpenTDF relies on the JWT it issues to evaluate whatever claims you've configured (for example, `email`, `role`, or `groups`) against your policies.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant IdP as Identity Provider
+
+    User->>IdP: 1. Authenticate
+    IdP->>User: 2. Return JWT token<br/>{email, role, groups}
+```
+
 ```json
 // User authenticates with IdP, receives JWT token
 {
@@ -96,8 +123,22 @@ sequenceDiagram
 }
 ```
 
-#### Step 3-4: Entity Resolution
-The token is parsed into an **Entity Representation** - a normalized view of the user's identity:
+#### Step 3-5: KAS & Entity Resolution
+
+When a user requests to decrypt a TDF, the Key Access Server receives the request and asks the Entity Resolution Service to translate the raw JWT claims into a normalized entity representation that the authorization engine can evaluate.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant KAS as Key Access Server (PEP)
+    participant ERS as Entity Resolution Service (PIP)
+
+    User->>KAS: 3. Decrypt request + token
+    KAS->>ERS: 4. Resolve entity from token
+    ERS->>KAS: 5. Return entity representation
+```
+
+The resulting **Entity Representation** looks like this:
 
 ```json
 {
@@ -122,9 +163,23 @@ In `GetDecision` flows, **only `CATEGORY_SUBJECT` entities participate in the ac
 Exception: when using client credentials (service account) flows, the service account is assigned `CATEGORY_SUBJECT` and does need Subject Mappings.
 :::
 
-#### Step 5-8: Subject Mapping Evaluation
+#### Step 6-9: Subject Mapping Evaluation
 
-The Authorization Service queries the Policy Service: "Which Subject Mappings apply to this entity?"
+The Authorization Service asks the Policy Service which Subject Mappings match the entity's claims, evaluates the conditions, and assembles the set of attribute values the entity is entitled to access.
+
+```mermaid
+sequenceDiagram
+    participant KAS as Key Access Server (PEP)
+    participant Auth as Authorization Service (PDP)
+    participant Policy as Policy Service (PAP)
+
+    KAS->>Auth: 6. GetDecision(entity + resource attrs)
+    Auth->>Policy: 7. Which Subject Mappings<br/>match this entity?
+    Policy->>Policy: 8. Evaluate Subject<br/>Condition Sets
+    Policy->>Auth: 9. Return entitled<br/>attribute values + actions
+```
+
+A Subject Mapping says: "grant access to this attribute value if the entity's claims match these conditions." Here's one that grants the `clearance/executive` attribute to anyone whose `.role` claim is `vice_president`, `ceo`, or `cfo`:
 
 **Subject Mapping Example:**
 ```json
@@ -152,7 +207,20 @@ The Authorization Service queries the Policy Service: "Which Subject Mappings ap
 2. Check if `"vice_president"` is IN `["vice_president", "ceo", "cfo"]` → ✅ TRUE
 3. Grant entitlement: `clearance/executive` with `read` action
 
-#### Step 9-10: Authorization Decision
+#### Step 10-12: Authorization Decision
+
+The Authorization Service compares the entity's entitlements against the attributes required by the resource, then sends a PERMIT or DENY back to KAS — which either releases the decryption key or rejects the request.
+
+```mermaid
+sequenceDiagram
+    participant Auth as Authorization Service (PDP)
+    participant KAS as Key Access Server (PEP)
+    participant User
+
+    Auth->>Auth: 10. Compare entitlements<br/>vs resource attributes
+    Auth->>KAS: 11. PERMIT or DENY
+    KAS->>User: 12. Release key (PERMIT)<br/>or deny access (DENY)
+```
 
 ```json
 // Entity's Entitlements:
@@ -200,8 +268,8 @@ graph TD
     E -->|Subject| G[PE + Subject<br/>Human user in auth flow<br/>✅ Attributes checked in decisions]
     E -->|Environment| H[PE + Environment<br/>Logged-in operator<br/>⚠️ Not evaluated in GetDecision]
 
-    F -->|Subject| I[NPE + Subject<br/>Service account (client credentials flow)<br/>✅ Attributes checked in decisions]
-    F -->|Environment| J[NPE + Environment<br/>OIDC client in user-auth flow<br/>⚠️ Not evaluated in GetDecision]
+    F -->|Subject| I["NPE + Subject<br/>Service account (client credentials flow)<br/>✅ Attributes checked in decisions"]
+    F -->|Environment| J["NPE + Environment<br/>OIDC client in user-auth flow<br/>⚠️ Not evaluated in GetDecision"]
 ```
 
 ### Practical Examples
@@ -549,7 +617,9 @@ otdfctl policy subject-mappings create \
 ```
 
 :::note Attribute value naming constraint
-Attribute values must match `^[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores, no special characters. Email addresses (with `@` and `.`) must be normalized to a valid format (e.g., `alice-at-example-com`).
+Attribute values must match `^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,251}[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores (not at start or end), max 253 characters, no special characters. Email addresses (with `@` and `.`) must be normalized to a valid format (e.g., `alice-at-example-com`).
+
+Source: [`opentdf/platform` — `lib/identifier/policyidentifier.go`](https://github.com/opentdf/platform/blob/main/lib/identifier/policyidentifier.go)
 :::
 
 :::tip Encrypt before the value exists with `--allow-traversal`
