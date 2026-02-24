@@ -1,7 +1,7 @@
 Docusaurus
 [Oo]tdfctl
 API
-(?i)tdf
+(?i:tdf)
 [Nn]amespace
 Keycloak
 Virtru
@@ -20,5 +20,8 @@ assertation
 [Dd]issem
 JavaScript
 Autoconfigure
-requester(?('s))
-rewrap(?(s))
+requester('s)?
+rewraps?
+CI
+[Ss]hellcheck
+Okta
