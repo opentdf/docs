@@ -32,7 +32,8 @@ const sdks = [
   {
     name: "CLI",
     lang: "otdfctl",
-    install: "brew install opentdf/tap/otdfctl",
+    install: null,
+    releaseUrl: "https://github.com/opentdf/otdfctl/releases/latest",
     colorClass: "sdk-cli",
     icon: ">_",
     href: "/sdks",
@@ -111,17 +112,30 @@ export default function DeveloperFirst() {
               </div>
 
               <div className={styles.installRow}>
-                <div className={styles.installCmd}>
-                  <span>{sdk.install}</span>
-                </div>
-                <button
-                  className={styles.copyBtn}
-                  onClick={() => handleCopy(sdk.install, sdk.name)}
-                  aria-label="Copy install command"
-                  title="Copy"
-                >
-                  {copied === sdk.name ? <CheckIcon /> : <CopyIcon />}
-                </button>
+                {"releaseUrl" in sdk ? (
+                  <a
+                    href={sdk.releaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.releaseLink}
+                  >
+                    Download latest release →
+                  </a>
+                ) : (
+                  <>
+                    <div className={styles.installCmd}>
+                      <span>{sdk.install}</span>
+                    </div>
+                    <button
+                      className={styles.copyBtn}
+                      onClick={() => handleCopy(sdk.install, sdk.name)}
+                      aria-label="Copy install command"
+                      title="Copy"
+                    >
+                      {copied === sdk.name ? <CheckIcon /> : <CopyIcon />}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
