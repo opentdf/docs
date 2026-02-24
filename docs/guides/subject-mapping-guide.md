@@ -268,6 +268,18 @@ SubjectConditionSet
               └─ SubjectExternalValues         (Values to match)
 ```
 
+### Selectors: Scalar vs. Array Claims
+
+The selector syntax depends on whether the token claim is a **scalar** (string) or an **array**:
+
+| Claim type | Example token | Selector |
+|------------|--------------|---------|
+| Scalar string | `"role": "admin"` | `.role` |
+| Array | `"groups": ["admin", "user"]` | `.groups[]` |
+| Nested scalar | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
+
+**Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
+
 ### Operators Explained
 
 | Operator | Value | Behavior | Example |
@@ -590,7 +602,7 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
     "condition_groups": [{
       "boolean_operator": 1,
       "conditions": [{
-        "subject_external_selector_value": ".realm_access.roles",
+        "subject_external_selector_value": ".realm_access.roles[]",
         "operator": 1,
         "subject_external_values": ["admin"]
       }]
@@ -606,6 +618,10 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
 **IdP Configuration:**
 - User "bob" is in Keycloak group: `/finance/senior`
 
+:::note Keycloak group path format
+When the Keycloak "Group Membership" mapper has **Full Group Path** enabled, group names in the token include a leading slash (e.g., `/finance/senior`). The values in `subject_external_values` must match what is actually in the token. If your Keycloak mapper has Full Group Path disabled, groups appear without slashes (e.g., `finance`). The trailing slash in `/finance/` below makes the `IN_CONTAINS` match more precise, preventing false matches against group names that share a prefix (e.g., `/finance-external`).
+:::
+
 **Subject Condition Set:**
 ```json
 {
@@ -613,7 +629,7 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
     "condition_groups": [{
       "boolean_operator": 1,
       "conditions": [{
-        "subject_external_selector_value": ".groups",
+        "subject_external_selector_value": ".groups[]",
         "operator": 3,
         "subject_external_values": ["/finance/"]
       }]
@@ -636,12 +652,12 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
       "boolean_operator": 1,
       "conditions": [
         {
-          "subject_external_selector_value": ".groups",
+          "subject_external_selector_value": ".groups[]",
           "operator": 3,
           "subject_external_values": ["/finance/"]
         },
         {
-          "subject_external_selector_value": ".realm_access.roles",
+          "subject_external_selector_value": ".realm_access.roles[]",
           "operator": 1,
           "subject_external_values": ["admin"]
         }
@@ -680,7 +696,7 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
     "condition_groups": [{
       "boolean_operator": 1,
       "conditions": [{
-        "subject_external_selector_value": ".groups",
+        "subject_external_selector_value": ".groups[]",
         "operator": 1,
         "subject_external_values": ["Engineering", "Product"]
       }]
@@ -921,12 +937,14 @@ Token:                         Selector:
   "groups": ["admin", "user"]
 }
 
-// Use IN to check array membership:
+// Use .groups[] (not .groups) to match each element:
 {
-  "subject_external_selector_value": ".groups",
+  "subject_external_selector_value": ".groups[]",
   "operator": 1,
   "subject_external_values": ["admin"]
 }
+
+// .groups (without []) matches NOTHING for an array — it only works for scalar strings
 ```
 
 **4. Enable debug logging:**
