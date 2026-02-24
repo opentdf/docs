@@ -129,7 +129,7 @@ export default function DeveloperFirst() {
 
         <div className={styles.ctas}>
           <a href="/quickstart" className={`${styles.btn} ${styles.btnPrimary}`}>
-            JS Quickstart
+            Quickstart
           </a>
           <a href="/sdks" className={`${styles.btn} ${styles.btnSecondary}`}>
             All SDKs
