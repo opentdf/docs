@@ -212,8 +212,28 @@
 }
 
 /* Light mode overrides — code window intentionally stays dark */
+:global(html[data-theme='light']) .badge {
+  color: #0891b2;
+  border-color: rgba(8, 145, 178, 0.2);
+  background: rgba(8, 145, 178, 0.06);
+}
+
+:global(html[data-theme='light']) .badgeDot {
+  background: #16a34a;
+}
+
 :global(html[data-theme='light']) .bodyPrimary {
   color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btnPrimary {
+  background: #0891b2;
+  color: #fff;
+}
+
+:global(html[data-theme='light']) .btnPrimary:hover {
+  background: #0e7490;
+  color: #fff;
 }
 
 :global(html[data-theme='light']) .btnSecondary {
@@ -221,5 +241,6 @@
 }
 
 :global(html[data-theme='light']) .btnSecondary:hover {
-  border-color: #22d3ee;
+  border-color: #0891b2;
+  color: #0891b2;
 }

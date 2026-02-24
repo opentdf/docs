@@ -116,8 +116,23 @@
   color: #4b5563;
 }
 
+:global(html[data-theme='light']) .btnPrimary {
+  background: #0891b2;
+  color: #fff;
+}
+
+:global(html[data-theme='light']) .btnPrimary:hover {
+  background: #0e7490;
+  color: #fff;
+}
+
 :global(html[data-theme='light']) .btnSecondary {
   border-color: rgba(0, 0, 0, 0.15);
+}
+
+:global(html[data-theme='light']) .btnSecondary:hover {
+  border-color: #0891b2;
+  color: #0891b2;
 }
 
 :global(html[data-theme='light']) .btnGhost {

@@ -91,11 +91,38 @@ html[data-theme='light'] .section-darker {
 }
 
 html[data-theme='light'] .bg-grid {
-  background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(8, 145, 178, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.04) 1px, transparent 1px);
   background-size: 64px 64px;
+}
+
+html[data-theme='light'] .bg-mesh {
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(8, 145, 178, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+}
+
+html[data-theme='light'] .bg-mesh-reverse {
+  background-image: radial-gradient(ellipse at 80% 60%, rgba(8, 145, 178, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 30%, rgba(245, 158, 11, 0.02) 0%, transparent 50%);
+}
+
+html[data-theme='light'] .text-gradient {
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #0891b2;
+  background-clip: unset;
+  color: #0891b2;
+}
+
+html[data-theme='light'] .glow-cyan {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 html[data-theme='light'] .sdk-card {
   border-color: rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme='light'] .sdk-card:hover {
+  box-shadow: 0 0 0 1px var(--sdk-color, #0891b2),
+    0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
 }

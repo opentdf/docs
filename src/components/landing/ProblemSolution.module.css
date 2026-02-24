@@ -150,6 +150,18 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+:global(html[data-theme='light']) .card:hover {
+  border-color: rgba(8, 145, 178, 0.2);
+}
+
+:global(html[data-theme='light']) .iconWrap {
+  background: rgba(8, 145, 178, 0.06);
+}
+
+:global(html[data-theme='light']) .cardIcon {
+  color: #0891b2;
+}
+
 :global(html[data-theme='light']) .bodyPrimary,
 :global(html[data-theme='light']) .cardBody {
   color: #4b5563;
@@ -157,4 +169,9 @@
 
 :global(html[data-theme='light']) .btn {
   border-color: rgba(0, 0, 0, 0.15);
+}
+
+:global(html[data-theme='light']) .btn:hover {
+  border-color: #0891b2;
+  color: #0891b2;
 }
