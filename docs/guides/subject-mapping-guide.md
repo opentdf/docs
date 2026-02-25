@@ -336,15 +336,15 @@ SubjectConditionSet
               └─ SubjectExternalValues         (Values to match)
 ```
 
-### Selectors: Scalar vs. Array Claims
+### Selectors: String vs. Array Claims
 
-The selector syntax depends on whether the token claim is a **scalar** (string) or an **array**:
+The selector syntax depends on whether the token claim is a **string** or an **array**:
 
 | Claim type | Example token | Selector |
 |------------|--------------|---------|
-| Scalar string | `"role": "admin"` | `.role` |
+| String | `"role": "admin"` | `.role` |
 | Array | `"groups": ["admin", "user"]` | `.groups[]` |
-| Nested scalar | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
+| Nested string | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
 
 **Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
 
@@ -598,6 +598,7 @@ For use cases like tagging a resource with an owner's identity, you explicitly c
 
 ```bash
 # Create attribute value for a specific user
+# attribute FQN: https://example.com/attr/owner
 otdfctl policy attributes values create \
   --attribute-id <owner-attribute-id> \
   --value "alice-at-example-com"
@@ -610,6 +611,7 @@ otdfctl encrypt file.txt -o file.tdf \
 Then create a Subject Mapping linking Alice's email claim to that value:
 
 ```bash
+# attribute value FQN: https://example.com/attr/owner/value/alice-at-example-com
 otdfctl policy subject-mappings create \
   --attribute-value-id <alice-value-id> \
   --action read \
@@ -617,7 +619,9 @@ otdfctl policy subject-mappings create \
 ```
 
 :::note Attribute value naming constraint
-Attribute values must match `^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,251}[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores (not at start or end), max 253 characters, no special characters. Email addresses (with `@` and `.`) must be normalized to a valid format (e.g., `alice-at-example-com`).
+Attribute values are embedded in a Fully Qualified Name (FQN) — a URL of the form `https://example.com/attr/owner/value/alice-at-example-com`. Because the value becomes part of a URL, special characters like `@` and `.` are not allowed. Values must match `^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,251}[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores (not at start or end), max 253 characters. Email addresses must be normalized (e.g., `alice@example.com` → `alice-at-example-com`).
+
+This constraint only applies to attribute values stored in the Policy Service. JWT claim values used in subject condition sets (e.g., `subject_external_values: ["alice@example.com"]`) are plain strings with no such restriction.
 
 Source: [`opentdf/platform` — `lib/identifier/policyidentifier.go`](https://github.com/opentdf/platform/blob/main/lib/identifier/policyidentifier.go)
 :::
@@ -681,16 +685,33 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
 }
 ```
 
-**Result:** Alice gets entitlement for attribute value (e.g., `clearance/top_secret`)
+**Subject Mapping** (links the condition set to an attribute value):
+```json
+// attribute value FQN: https://example.com/attr/clearance/value/top_secret
+{
+  "attribute_value_id": "<clearance-top-secret-value-id>",
+  "actions": ["read"],
+  "subject_condition_set": {
+    "subject_sets": [{
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".realm_access.roles[]",
+          "operator": 1,
+          "subject_external_values": ["admin"]
+        }]
+      }]
+    }]
+  }
+}
+```
+
+**Result:** Alice's `.realm_access.roles[]` contains `admin` → condition matches → Alice is entitled to `clearance/top_secret` with `read` access
 
 #### Example 2: Map Keycloak Groups
 
 **IdP Configuration:**
 - User "bob" is in Keycloak group: `/finance/senior`
-
-:::note Keycloak group path format
-When the Keycloak "Group Membership" mapper has **Full Group Path** enabled, group names in the token include a leading slash (e.g., `/finance/senior`). The values in `subject_external_values` must match what is actually in the token. If your Keycloak mapper has Full Group Path disabled, groups appear without slashes (e.g., `finance`). The trailing slash in `/finance/` below makes the `IN_CONTAINS` match more precise, preventing false matches against group names that share a prefix (e.g., `/finance-external`).
-:::
 
 **Subject Condition Set:**
 ```json
@@ -707,6 +728,12 @@ When the Keycloak "Group Membership" mapper has **Full Group Path** enabled, gro
   }]
 }
 ```
+
+:::note Keycloak group path format
+When the Keycloak "Group Membership" mapper has **Full Group Path** enabled, group names in the token include a leading slash (e.g., `/finance/senior`). The values in `subject_external_values` must match what is actually in the token. If your Keycloak mapper has Full Group Path disabled, groups appear without slashes (e.g., `finance`).
+
+The trailing slash in `/finance/` makes the `IN_CONTAINS` match more precise — it prevents false matches against groups that share a prefix (e.g., `/finance-external`). However, it also means a user in the `/finance` group exactly (with no sub-group) would **not** match, since `/finance` does not contain the substring `/finance/`. If you need to match both `/finance` and `/finance/senior`, use `/finance` without the trailing slash and accept the risk of prefix collisions, or add a second condition.
+:::
 
 **Result:** Bob gets entitlement for `department/finance` attribute
 
@@ -839,11 +866,13 @@ Add custom claim mapping in Okta:
 
 ### Prerequisites
 
-1. **OpenTDF Platform running** with authentication configured
-2. **otdfctl installed and authenticated**
+1. **[OpenTDF Platform running](/quickstart)** with authentication configured
+2. **[otdfctl installed and authenticated](/quickstart)**
 3. **Attributes and values created** (the resources you're protecting)
 
 ### Step 1: Create Subject Condition Set
+
+This example matches any user whose `.email` claim contains `@example.com`. The numeric values are enum codes — `boolean_operator: 1` = AND (all conditions must be true), `operator: 3` = IN_CONTAINS (substring match). See [Operators Explained](#operators-explained) for the full list.
 
 ```bash
 otdfctl policy subject-condition-sets create \
@@ -876,7 +905,10 @@ SUCCESS   Created SubjectConditionSet [3c56a6c9-9635-427f-b808-5e8fd395802c]
 ### Step 2: Get Attribute Value ID
 
 ```bash
-# List attribute values for an attribute
+# First, find your attribute ID
+otdfctl policy attributes list
+
+# Then list its values
 otdfctl policy attributes values list \
   --attribute-id <your-attribute-id>
 
@@ -893,6 +925,8 @@ otdfctl policy attributes values create \
 
 ### Step 3: Create Subject Mapping
 
+Replace the IDs below with your own from Steps 1 and 2.
+
 ```bash
 otdfctl policy subject-mappings create \
   --attribute-value-id 4c63e72a-2db9-434c-8ef6-e451473dbfe0 \
@@ -902,7 +936,7 @@ otdfctl policy subject-mappings create \
 
 **Success:**
 ```console
-SUCCESS   Created SubjectMapping [sm-789xyz]
+SUCCESS   Created SubjectMapping [b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a]
 ```
 
 ### Step 4: Verify
@@ -911,8 +945,8 @@ SUCCESS   Created SubjectMapping [sm-789xyz]
 # List all subject mappings
 otdfctl policy subject-mappings list
 
-# Get specific mapping details
-otdfctl policy subject-mappings get --id sm-789xyz
+# Get specific mapping details (replace with your subject mapping ID from Step 3)
+otdfctl policy subject-mappings get --id b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a
 ```
 
 ## Troubleshooting
@@ -1014,7 +1048,7 @@ Token:                         Selector:
   "subject_external_values": ["admin"]
 }
 
-// .groups (without []) matches NOTHING for an array — it only works for scalar strings
+// .groups (without []) matches NOTHING for an array — it only works for string claims
 ```
 
 **4. Enable debug logging:**
@@ -1131,11 +1165,13 @@ otdfctl policy subject-condition-sets create \
   ]'
 
 # Reuse for multiple attribute values
+# attribute value FQN: https://example.com/attr/project/value/alpha
 otdfctl policy subject-mappings create \
   --attribute-value-id <project-alpha-id> \
   --action read \
   --subject-condition-set-id <engineering-condition-set-id>
 
+# attribute value FQN: https://example.com/attr/project/value/beta
 otdfctl policy subject-mappings create \
   --attribute-value-id <project-beta-id> \
   --action read \
