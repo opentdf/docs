@@ -59,7 +59,7 @@ Subject Mappings answer: "Given this identity, what entitlements should they rec
 ### High-Level Data Flow
 
 ```mermaid
-%%{init: {'sequence': {'boxMargin': 20}}}%%
+%%{init: {'sequence': {'boxMargin': 20, 'mirrorActors': false}}}%%
 sequenceDiagram
     participant User
     participant IdP as Identity Provider
@@ -864,15 +864,21 @@ Add custom claim mapping in Okta:
 
 ## Creating Subject Mappings: Step-by-Step
 
+This walkthrough assumes basic familiarity with OpenTDF. If you haven't set up OpenTDF yet, complete the [Quickstart](/quickstart) first.
+
 ### Prerequisites
 
-1. **[OpenTDF Platform running](/quickstart)** with authentication configured
-2. **[otdfctl installed and authenticated](/quickstart)**
+1. **[OpenTDF Platform running](/quickstart#step-2-install-opentdf)** with authentication configured
+2. **[otdfctl installed and authenticated](/quickstart#step-3-create-profile--authenticate)**
 3. **Attributes and values created** (the resources you're protecting)
 
 ### Step 1: Create Subject Condition Set
 
 This example matches any user whose `.email` claim contains `@example.com`. The numeric values are enum codes — `boolean_operator: 1` = AND (all conditions must be true), `operator: 3` = IN_CONTAINS (substring match). See [Operators Explained](#operators-explained) for the full list.
+
+`subject_external_selector_value` is a path into the JWT your IdP issues — `.email` selects the top-level `email` claim. If your claim is named differently, use `otdfctl dev selectors generate --subject "<your-jwt>"` to see all available selectors. See [Selectors: String vs. Array Claims](#selectors-string-vs-array-claims) for the full syntax.
+
+`subject_external_values` contains the strings to match against that claim value — in this case, any email address containing `@example.com`.
 
 ```bash
 otdfctl policy subject-condition-sets create \
@@ -905,7 +911,7 @@ SUCCESS   Created SubjectConditionSet [3c56a6c9-9635-427f-b808-5e8fd395802c]
 ### Step 2: Get Attribute Value ID
 
 ```bash
-# First, find your attribute ID
+# First, find your attribute ID (a UUID in the output's id column)
 otdfctl policy attributes list
 
 # Then list its values
@@ -918,7 +924,7 @@ otdfctl policy attributes values create \
   --value "my-value"
 ```
 
-**Save the attribute value ID:**
+**Save the attribute value ID** — the UUID on the left. The `attribute-name/value-name` on the right is just a display label:
 ```console
 4c63e72a-2db9-434c-8ef6-e451473dbfe0  |  clearance/secret
 ```
@@ -934,6 +940,10 @@ otdfctl policy subject-mappings create \
   --subject-condition-set-id 3c56a6c9-9635-427f-b808-5e8fd395802c
 ```
 
+`--action read` is the standard action for TDF data access (decrypt).
+
+This mapping means: any user whose `.email` claim contains `@example.com` will be entitled to `read` access on data tagged with the `clearance/secret` attribute value.
+
 **Success:**
 ```console
 SUCCESS   Created SubjectMapping [b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a]
@@ -948,6 +958,16 @@ otdfctl policy subject-mappings list
 # Get specific mapping details (replace with your subject mapping ID from Step 3)
 otdfctl policy subject-mappings get --id b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a
 ```
+
+A correctly configured mapping will show the attribute value ID, action, and a non-empty `subject_condition_set` with your conditions. If `subject_condition_set` is `null` or missing, the condition set ID was not found — double-check the ID from Step 1.
+
+### Next Steps
+
+Your subject mapping is live. To use it:
+
+- **Encrypt and tag data** with the attribute value you mapped — see [TDF SDK](/sdks/tdf)
+- **Test access** by decrypting as a user whose token matches your condition set
+- **Troubleshoot unexpected DENY** — see [Troubleshooting](#troubleshooting) below
 
 ## Troubleshooting
 
