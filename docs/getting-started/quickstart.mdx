@@ -379,8 +379,11 @@ If you didn't already create a profile during installation, do that now:
 ```shell
 # Create profile (--tls-no-verify skips certificate validation for local development)
 otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443
+```
 
-# Authenticate with test credentials
+Then authenticate with your test credentials:
+
+```shell
 otdfctl auth client-credentials opentdf secret
 ```
 
