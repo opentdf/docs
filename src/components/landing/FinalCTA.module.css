@@ -1,0 +1,129 @@
+.section {
+  position: relative;
+  padding: 6rem 0;
+  overflow: hidden;
+  color: var(--otdf-text-primary);
+}
+
+.glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 37.5rem;
+  height: 37.5rem;
+  background: rgba(34, 211, 238, 0.05);
+  border-radius: 50%;
+  filter: blur(4rem);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.heading {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--otdf-text-primary);
+  margin: 0 0 1rem;
+}
+
+.body {
+  font-size: 1.125rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.ctas {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btnPrimary {
+  background: #22d3ee;
+  color: #0a0c10;
+}
+
+.btnPrimary:hover {
+  background: #67e8f9;
+  color: #0a0c10;
+  text-decoration: none;
+}
+
+.btnSecondary {
+  background: transparent;
+  color: var(--otdf-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btnSecondary:hover {
+  border-color: #22d3ee;
+  color: #22d3ee;
+  text-decoration: none;
+}
+
+.btnGhost {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btnGhost:hover {
+  color: var(--otdf-text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .inner {
+    padding: 0 1.5rem;
+  }
+
+  .heading {
+    font-size: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .inner {
+    padding: 0 2rem;
+  }
+}
+
+/* Light mode overrides */
+:global(html[data-theme='light']) .body {
+  color: #4b5563;
+}
+
+:global(html[data-theme='light']) .btnSecondary {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+:global(html[data-theme='light']) .btnGhost {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:global(html[data-theme='light']) .btnGhost:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+}
