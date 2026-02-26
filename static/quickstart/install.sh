@@ -491,7 +491,7 @@ show_completion() {
     echo "     $OTDFCTL_BIN/otdfctl --version"
     echo ""
     echo "  4. Create an otdfctl profile:"
-    echo "     $OTDFCTL_BIN/otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443"
+    echo "     $OTDFCTL_BIN/otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443"
     echo ""
     echo "🌐 Access points:"
     echo "   Platform: https://platform.opentdf.local:8443"
