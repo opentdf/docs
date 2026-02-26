@@ -439,7 +439,7 @@ import_certificates() {
             echo "    1. Extract root CA: docker exec platform-caddy-1 cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt"
             echo "    2. Open Certificate Manager (certmgr.msc)"
             echo "    3. Import caddy-root.crt to Trusted Root Certification Authorities"
-            echo "  Or skip TLS verification: curl -k (curl) or export OTDFCTL_TLS_NO_VERIFY=true (otdfctl)"
+            echo "  Or use: curl -k (curl) or otdfctl profile create --tls-no-verify (otdfctl)"
         fi
 
         # Clean up temp directory
@@ -449,7 +449,7 @@ import_certificates() {
         echo "  Certificates will be self-signed. You can:"
         echo "    - Accept browser security warnings (safe for local dev)"
         echo "    - Manually extract and trust the root CA"
-        echo "    - Skip TLS verification: curl -k (curl) or export OTDFCTL_TLS_NO_VERIFY=true (otdfctl)"
+        echo "    - Use: curl -k (curl) or otdfctl profile create --tls-no-verify (otdfctl)"
         echo "  See: https://opentdf.io/getting-started#trust-self-signed-certificates"
     fi
 }

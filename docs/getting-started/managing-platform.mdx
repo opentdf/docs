@@ -78,11 +78,11 @@ This is the comprehensive guide for resolving all certificate/TLS issues across 
 
 If you encounter TLS certificate errors like "Failed to validate TLS certificates," "certificate signed by unknown authority," or browser "Not Secure" warnings, you have two options:
 
-1. **Set environment variable** (recommended - works with profiles):
+1. **Use `--tls-no-verify` when creating your profile** (recommended):
    ```shell
-   export OTDFCTL_TLS_NO_VERIFY=true
+   otdfctl profile create --tls-no-verify <profile-name> <url>
    ```
-   Then all subsequent `otdfctl` commands will skip certificate verification.
+   This saves the setting to the profile, so all subsequent `otdfctl` commands using that profile automatically skip certificate verification — no flag needed on `encrypt`, `decrypt`, or other commands.
 
 2. **Trust the SSL certificate**: The install script automatically imports the SSL certificate. If you started the platform manually or the automatic import failed, you can trust the certificate with these steps:
 
@@ -103,8 +103,6 @@ If you encounter TLS certificate errors like "Failed to validate TLS certificate
            sudo update-ca-certificates
            ```
        -   **Windows:** Manually import `caddy-root.crt` into the "Trusted Root Certification Authorities" store using Certificate Manager (`certmgr.msc`).
-
-**Important**: The `--tls-no-verify` flag doesn't work with profiles. Use the environment variable instead.
 
 ### "Address already in use" Error
 

@@ -377,25 +377,22 @@ Expected: version output and `{"status":"SERVING"}` from the healthz check.
 Create a profile to store your connection details, then authenticate:
 
 ```shell
-# Skip TLS certificate verification for local development
-export OTDFCTL_TLS_NO_VERIFY=true
-
-# Create profile
-otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443
+# Create profile (--tls-no-verify skips certificate validation for local development)
+otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443
 
 # Authenticate with test credentials
 otdfctl auth client-credentials opentdf secret
 ```
 
 :::tip TLS Verification
-`OTDFCTL_TLS_NO_VERIFY=true` applies to all subsequent `otdfctl` commands in your session. For persistent use, add it to your shell profile (`~/.zshrc` or `~/.bashrc`). See [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) for how to permanently trust the certificate instead.
+`--tls-no-verify` saves the setting to the profile, so all subsequent `otdfctl` commands — `encrypt`, `decrypt`, etc. — automatically skip certificate verification without needing the flag again. See [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) for how to permanently trust the certificate instead.
 :::
 
 :::note Linux Keyring Limitation
-On Linux systems, you may see a warning: `Warning: Keyring storage is not available on Linux`. This is a known limitation. As a workaround, you can create the profile with credentials in one command (the `OTDFCTL_TLS_NO_VERIFY` env var set above still applies):
+On Linux systems, you may see a warning: `Warning: Keyring storage is not available on Linux`. This is a known limitation. As a workaround, you can create the profile with credentials in one command:
 
 ```shell
-otdfctl profile create \
+otdfctl profile create --tls-no-verify \
   --with-client-creds='{"clientId":"opentdf", "clientSecret":"secret"}' \
   --host=https://platform.opentdf.local:8443 \
   platform-otdf-local
@@ -414,7 +411,7 @@ Your credentials are saved in the profile and persist across commands—no need 
 
 #### Step 4: Trust SSL Certificate (Optional)
 
-The `OTDFCTL_TLS_NO_VERIFY=true` environment variable set in Step 3 skips certificate validation for `otdfctl`, which is fine for CLI quickstart testing. However, if you're using browsers or SDKs, you may see certificate warnings.
+The `--tls-no-verify` flag used in Step 3 saves the setting to your profile, which is fine for CLI quickstart testing. However, if you're using browsers or SDKs, you may see certificate warnings.
 
 **Trust the certificate if you see:**
 - Browser "Not Secure" warnings
