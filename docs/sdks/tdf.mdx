@@ -1,10 +1,234 @@
 ---
 sidebar_position: 4
+title: TDF
 ---
 
 import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
+# TDF Encryption and Decryption
 
-# Creating TDFs
+This page covers TDF encryption/decryption behavior, SDK method usage patterns, and operational checks.
+
+## Overview
+
+TDF combines encrypted payload data with policy metadata so access control can travel with the data itself.
+
+When you create a TDF, you are packaging:
+
+1. Encrypted payload bytes.
+2. Policy metadata (for example attribute value FQNs).
+3. Key access metadata used by the KAS to enforce decryption authorization.
+
+At read time, decryption succeeds only if the caller identity is entitled for the policy encoded in the TDF.
+
+## SDK Method Reference
+
+### Go SDK (platform code)
+
+| Method | Purpose |
+| --- | --- |
+| `SDK.CreateTDF` | Encrypt input and write a TDF artifact. |
+| `SDK.CreateTDFContext` | Context-aware version of `CreateTDF`. |
+| `SDK.LoadTDF` | Load/parse TDF and return a `Reader`. |
+| `TDFObject.Size` | Return generated TDF size. |
+| `TDFObject.Manifest` | Return manifest from created TDF object. |
+| `Reader.Manifest` | Return loaded manifest. |
+| `Reader.Init` | Perform network/key unwrap initialization before reads. |
+| `Reader.Read` | Read decrypted payload bytes sequentially. |
+| `Reader.Seek` | Move read cursor for `Read`/`WriteTo`. |
+| `Reader.WriteTo` | Stream decrypted payload to a writer. |
+| `Reader.ReadAt` | Read decrypted payload bytes at offset. |
+| `Reader.UnencryptedMetadata` | Return decrypted metadata from manifest. |
+| `Reader.Policy` | Return policy object from manifest. |
+| `Reader.DataAttributes` | Return data attribute FQNs in policy. |
+| `Reader.Obligations` | Return required obligations for access. |
+| `Reader.UnsafePayloadKeyRetrieval` | Return payload key (unsafe/debug use). |
+
+### Java and TypeScript (methods currently documented in this repo)
+
+| Operation | Java | TypeScript |
+| --- | --- | --- |
+| Encrypt | `createTDF` | `createZTDF` |
+| Load/read encrypted artifact | `loadTDF` | `read` |
+| Emit decrypted payload | `readPayload` | consume returned `DecoratedStream` |
+
+## Method Details
+
+### `CreateTDF` / `createTDF` / `createZTDF`
+
+Encrypts input data and returns/writes a TDF artifact.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(outputWriter, inputReader /* opts... */)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.createTDF(inputStream, outputStream, tdfConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
+```typescript
+const tdf = await client.createZTDF(opts);
+```
+
+</TabItem>
+</Tabs>
+
+### `LoadTDF` / `loadTDF` / `read`
+
+Loads encrypted TDF content and prepares it for decryption.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(tdfBytes) /* opts... */)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
+```typescript
+const decoratedStream = await client.read(readOptions);
+```
+
+</TabItem>
+</Tabs>
+
+### `WriteTo` / `readPayload` / consume `DecoratedStream`
+
+Produces decrypted payload bytes after key unwrap and policy checks succeed.
+
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
+```go
+_, err = tdfReader.WriteTo(&decryptedBuffer)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+reader.readPayload(decryptedOutput);
+```
+
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
+```typescript
+const decrypted = await new Response(decoratedStream).text();
+```
+
+</TabItem>
+</Tabs>
+
+## Encryption and Decryption Flow
+
+```mermaid
+flowchart TB
+  A["1. Plaintext input"] --> B["2. Create TDF or zTDF"]
+  B --> C["3. Attach ABAC attributes"]
+  C --> D["4. Add KAS key wrapping metadata"]
+  D --> E["5. Encrypted TDF artifact"]
+  E --> F["6. Load artifact for read"]
+  F --> G["7. KAS rewrap and policy check"]
+  G --> H["8. Decrypt payload if entitled"]
+```
+
+## End-to-End Example (Go, Java, TypeScript)
+
+The sample below includes encrypt + decrypt flows for all three SDK ecosystems:
 
 <EncryptionTDF />
+
+## ABAC Attributes
+
+Policy is enforced at decrypt time, so getting attribute values right at encryption time is critical.
+
+Recommended pattern:
+
+1. Validate attribute value FQNs before encryption using `GetAttributeValuesByFqns` (or the equivalent helper exposed by your SDK wrapper).
+2. Encrypt with those validated FQNs.
+3. Ensure a [subject mapping](/components/policy/subject_mappings) exists for identities that should decrypt.
+
+Related guides:
+
+- Attribute validation and discovery: [/sdks/discovery](/sdks/discovery)
+- Subject mappings and actions: [/sdks/policy](/sdks/policy)
+- Permission failure diagnosis: [/sdks/troubleshooting#permission-denied--insufficient-entitlements](/sdks/troubleshooting#permission-denied--insufficient-entitlements)
+
+## Decryption Patterns
+
+### In-memory data
+
+Use in-memory readers/writers when payloads are small and request-scoped.
+Examples include `bytes.Buffer` (Go), `ByteArrayInputStream`/`ByteArrayOutputStream` (Java), and `Buffer`/`ReadableStream` (TypeScript).
+
+### File-based workflow
+
+Use file streams/channels for larger payloads or asynchronous pipelines (encrypt now, decrypt later in another process).
+
+### Offline handoff
+
+You can persist `.tdf` artifacts and decrypt later, as long as the decrypting identity can still reach required platform services (for example KAS and authorization dependencies) and has valid entitlements.
+
+## Encryption Options
+
+For production use, avoid relying on implicit defaults.
+
+1. KAS endpoint configuration.
+2. Attribute value set (policy scope).
+3. Wrapping/encapsulation algorithm choice where supported.
+4. Data handling model: in-memory vs stream/file.
+5. Expected interoperability target (`zTDF` profile vs full container exchange).
+
+You can see concrete option usage in the SDK quickstarts and the multi-language end-to-end example above.
+
+## Error Handling
+
+Treat these as first-class integration paths, not edge cases:
+
+| Failure Class | Typical Symptom | What to Do |
+| --- | --- | --- |
+| Authentication | `Unauthenticated`, `401` | Verify credentials and OIDC/client setup. See [Authentication Failed](/sdks/troubleshooting#authentication-failed). |
+| TLS trust | cert validation failures | Trust local CA correctly; avoid disabling verification in production. See [Certificate Errors](/sdks/troubleshooting#certificate-errors-ssltls). |
+| Missing entitlements | split-key/rewrap failures, `PermissionDenied` | Create/verify subject mappings for required attribute values. See [Permission Denied](/sdks/troubleshooting#permission-denied--insufficient-entitlements). |
+| Missing attributes | `not_found` during policy resolution | Validate attribute value FQNs before encryption and create absent values. If an attribute definition allows traversal, encryption can proceed with definition-level scope while decryption remains blocked until the specific value exists. See [Discovery docs](/sdks/discovery) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
+
+For concrete SDK-specific error text and commands, use [/sdks/troubleshooting](/sdks/troubleshooting).
+
+For the Go SDK specifically, `LoadTDF` parses and prepares the reader. KAS rewrap and policy authorization happen when payload key unwrap is triggered by `Init()`, `Read()`, or `WriteTo()`.
+
+## Best Practices
+
+1. Validate attribute FQNs before every encryption boundary where user input can influence policy.
+2. Keep subject mapping creation idempotent in automation.
+3. Store encrypted artifacts separately from entitlement management logic.
+4. Log policy FQNs and key access identifiers (not plaintext) for observability.
+5. Deactivate attributes instead of deleting them when historical TDF decryptability matters.
+6. Add integration tests that perform both encrypt and decrypt with expected allow/deny identities.
+
+## Related Documentation
+
+- SDK quickstarts: [/sdks/quickstart](/sdks/quickstart)
+- Discovery docs: [/sdks/discovery](/sdks/discovery)
+- Authorization docs: [/sdks/authorization](/sdks/authorization)
+- TDF schema spec: [/spec/schema/opentdf](/spec/schema/opentdf)
