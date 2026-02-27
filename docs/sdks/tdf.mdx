@@ -21,6 +21,16 @@ When you create a TDF, you are packaging:
 
 At read time, decryption succeeds only if the caller identity is entitled for the policy encoded in the TDF.
 
+## SDK Method Reference
+
+The core methods shown in current SDK docs and samples are:
+
+| Operation | Go | Java | TypeScript |
+| --- | --- | --- | --- |
+| Encrypt to TDF | `CreateTDF` | `createTDF` | `createZTDF` |
+| Load/read encrypted artifact | `LoadTDF` | `loadTDF` | `read` |
+| Emit decrypted payload | `WriteTo` (reader) | `readPayload` (reader) | consume returned `DecoratedStream` |
+
 ## Encryption and Decryption Flow
 
 ```mermaid
