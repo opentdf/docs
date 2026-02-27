@@ -23,13 +23,34 @@ At read time, decryption succeeds only if the caller identity is entitled for th
 
 ## SDK Method Reference
 
-The core methods shown in current SDK docs and samples are:
+### Go SDK (platform code)
 
-| Operation | Go | Java | TypeScript |
-| --- | --- | --- | --- |
-| Encrypt to TDF | `CreateTDF` | `createTDF` | `createZTDF` |
-| Load/read encrypted artifact | `LoadTDF` | `loadTDF` | `read` |
-| Emit decrypted payload | `WriteTo` (reader) | `readPayload` (reader) | consume returned `DecoratedStream` |
+| Method | Purpose |
+| --- | --- |
+| `SDK.CreateTDF` | Encrypt input and write a TDF artifact. |
+| `SDK.CreateTDFContext` | Context-aware version of `CreateTDF`. |
+| `SDK.LoadTDF` | Load/parse TDF and return a `Reader`. |
+| `TDFObject.Size` | Return generated TDF size. |
+| `TDFObject.Manifest` | Return manifest from created TDF object. |
+| `Reader.Manifest` | Return loaded manifest. |
+| `Reader.Init` | Perform network/key unwrap initialization before reads. |
+| `Reader.Read` | Read decrypted payload bytes sequentially. |
+| `Reader.Seek` | Move read cursor for `Read`/`WriteTo`. |
+| `Reader.WriteTo` | Stream decrypted payload to a writer. |
+| `Reader.ReadAt` | Read decrypted payload bytes at offset. |
+| `Reader.UnencryptedMetadata` | Return decrypted metadata from manifest. |
+| `Reader.Policy` | Return policy object from manifest. |
+| `Reader.DataAttributes` | Return data attribute FQNs in policy. |
+| `Reader.Obligations` | Return required obligations for access. |
+| `Reader.UnsafePayloadKeyRetrieval` | Return payload key (unsafe/debug use). |
+
+### Java and TypeScript (methods currently documented in this repo)
+
+| Operation | Java | TypeScript |
+| --- | --- | --- |
+| Encrypt | `createTDF` | `createZTDF` |
+| Load/read encrypted artifact | `loadTDF` | `read` |
+| Emit decrypted payload | `readPayload` | consume returned `DecoratedStream` |
 
 ## Encryption and Decryption Flow
 
