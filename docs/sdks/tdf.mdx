@@ -21,16 +21,6 @@ When you create a TDF, you are packaging:
 
 At read time, decryption succeeds only if the caller identity is entitled for the policy encoded in the TDF.
 
-## Formats and SDK Methods
-
-In current documentation and code you may see both `zTDF` and TDF terminology.
-
-| Format | Common method names | When to Use |
-| --- | --- | --- |
-| TDF / zTDF workflows | `CreateTDF` / `LoadTDF` | Use for encryption/decryption workflows; behavior differs by policy/profile configuration. |
-
-If your team says "TDF3", in practice this typically maps to the full container workflow (`CreateTDF`/`LoadTDF`) in the current SDKs.
-
 ## Encryption and Decryption Flow
 
 ```mermaid
