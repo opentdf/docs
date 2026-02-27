@@ -7,7 +7,7 @@ import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
 
 # TDF Encryption and Decryption
 
-This guide explains how to work with Trusted Data Format (TDF) objects using the OpenTDF SDKs, and when to choose `zTDF` versus the full OpenTDF container format.
+This guide explains how to work with Trusted Data Format (TDF) objects using the SDKs, and when to choose `zTDF` versus the full TDF container format.
 
 It is intended for developers who need to encrypt data with ABAC policy, decrypt data with entitlement checks, and debug common integration failures.
 
@@ -25,14 +25,14 @@ At read time, decryption succeeds only if the caller identity is entitled for th
 
 ## Choose the Right Format
 
-In OpenTDF documentation and code you may see both `zTDF` and TDF terminology.
+In current documentation and code you may see both `zTDF` and TDF terminology.
 
 | Format | Typical SDK API | When to Use |
 | --- | --- | --- |
-| Full OpenTDF container (`.tdf`, zip + manifest) | `CreateTDF` / `LoadTDF` | General purpose file/data encryption, richer manifest metadata, cross-system interchange. |
+| Full TDF container (`.tdf`, zip + manifest) | `CreateTDF` / `LoadTDF` | General purpose file/data encryption, richer manifest metadata, cross-system interchange. |
 | `zTDF` profile | `createZTDF` (JavaScript naming) and CLI `otdfctl encrypt/decrypt` zTDF flow | Streamlined profile used in many current workflows and examples. |
 
-If your team says "TDF3", in practice this typically maps to the full OpenTDF container workflow (`CreateTDF`/`LoadTDF`) in the current SDKs.
+If your team says "TDF3", in practice this typically maps to the full container workflow (`CreateTDF`/`LoadTDF`) in the current SDKs.
 
 ## Encryption and Decryption Flow
 
@@ -122,4 +122,4 @@ For concrete SDK-specific error text and commands, use [/sdks/troubleshooting](/
 - SDK quickstarts: [/sdks/quickstart](/sdks/quickstart)
 - Discovery APIs: [/sdks/discovery](/sdks/discovery)
 - Authorization APIs: [/sdks/authorization](/sdks/authorization)
-- OpenTDF spec structure: [/spec/schema/opentdf](/spec/schema/opentdf)
+- TDF schema spec: [/spec/schema/opentdf](/spec/schema/opentdf)
