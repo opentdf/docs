@@ -52,6 +52,56 @@ At read time, decryption succeeds only if the caller identity is entitled for th
 | Load/read encrypted artifact | `loadTDF` | `read` |
 | Emit decrypted payload | `readPayload` | consume returned `DecoratedStream` |
 
+## Method Details
+
+### `CreateTDF` / `createTDF` / `createZTDF`
+
+Encrypts input data and returns/writes a TDF artifact.
+
+```go
+manifest, err := client.CreateTDF(outputWriter, inputReader /* opts... */)
+```
+
+```java
+sdk.createTDF(inputStream, outputStream, tdfConfig);
+```
+
+```typescript
+const tdf = await client.createZTDF(opts);
+```
+
+### `LoadTDF` / `loadTDF` / `read`
+
+Loads encrypted TDF content and prepares it for decryption.
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(tdfBytes) /* opts... */)
+```
+
+```java
+var reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+```typescript
+const decoratedStream = await client.read(readOptions);
+```
+
+### `WriteTo` / `readPayload` / consume `DecoratedStream`
+
+Produces decrypted payload bytes after key unwrap and policy checks succeed.
+
+```go
+_, err = tdfReader.WriteTo(&decryptedBuffer)
+```
+
+```java
+reader.readPayload(decryptedOutput);
+```
+
+```typescript
+const decrypted = await new Response(decoratedStream).text();
+```
+
 ## Encryption and Decryption Flow
 
 ```mermaid
