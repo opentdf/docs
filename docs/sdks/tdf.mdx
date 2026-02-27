@@ -101,10 +101,10 @@ Treat these as first-class integration paths, not edge cases:
 
 | Failure Class | Typical Symptom | What to Do |
 | --- | --- | --- |
-| Authentication | `Unauthenticated`, `401` | Verify credentials and OIDC/client setup. |
-| TLS trust | cert validation failures | Trust local CA correctly; avoid disabling verification in production. |
-| Missing entitlements | split-key/rewrap failures, `PermissionDenied` | Create/verify subject mappings for required attribute values. |
-| Missing attributes | `not_found` during policy resolution | Validate attributes before encryption and create absent values. |
+| Authentication | `Unauthenticated`, `401` | Verify credentials and OIDC/client setup. See [Authentication Failed](/sdks/troubleshooting#authentication-failed). |
+| TLS trust | cert validation failures | Trust local CA correctly; avoid disabling verification in production. See [Certificate Errors](/sdks/troubleshooting#certificate-errors-ssltls). |
+| Missing entitlements | split-key/rewrap failures, `PermissionDenied` | Create/verify subject mappings for required attribute values. See [Permission Denied](/sdks/troubleshooting#permission-denied--insufficient-entitlements). |
+| Missing attributes | `not_found` during policy resolution | Validate attributes before encryption and create absent values. See [ValidateAttributes](/sdks/discovery#validateattributes) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
 
 For concrete SDK-specific error text and commands, use [/sdks/troubleshooting](/sdks/troubleshooting).
 
