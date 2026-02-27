@@ -29,8 +29,7 @@ In current documentation and code you may see both `zTDF` and TDF terminology.
 
 | Format | Common method names | When to Use |
 | --- | --- | --- |
-| Full TDF container (`.tdf`, zip + manifest) | `CreateTDF` / `LoadTDF` | General purpose file/data encryption, richer manifest metadata, cross-system interchange. |
-| `zTDF` profile | `createZTDF` (JavaScript naming) and CLI `otdfctl encrypt/decrypt` zTDF flow | Streamlined profile used in many current workflows and examples. |
+| TDF / zTDF workflows | `CreateTDF` / `LoadTDF` | Use for encryption/decryption workflows in the current Go SDK; behavior differs by policy/profile configuration. |
 
 If your team says "TDF3", in practice this typically maps to the full container workflow (`CreateTDF`/`LoadTDF`) in the current SDKs.
 
@@ -59,7 +58,7 @@ Policy is enforced at decrypt time, so getting attribute values right at encrypt
 
 Recommended pattern:
 
-1. Validate attribute values before encryption using [`ValidateAttributes`](/sdks/discovery#validateattributes).
+1. Validate attribute value FQNs before encryption using `GetAttributeValuesByFqns` (or the equivalent helper exposed by your SDK wrapper).
 2. Encrypt with those validated FQNs.
 3. Ensure a [subject mapping](/components/policy/subject_mappings) exists for identities that should decrypt.
 
@@ -105,9 +104,11 @@ Treat these as first-class integration paths, not edge cases:
 | Authentication | `Unauthenticated`, `401` | Verify credentials and OIDC/client setup. See [Authentication Failed](/sdks/troubleshooting#authentication-failed). |
 | TLS trust | cert validation failures | Trust local CA correctly; avoid disabling verification in production. See [Certificate Errors](/sdks/troubleshooting#certificate-errors-ssltls). |
 | Missing entitlements | split-key/rewrap failures, `PermissionDenied` | Create/verify subject mappings for required attribute values. See [Permission Denied](/sdks/troubleshooting#permission-denied--insufficient-entitlements). |
-| Missing attributes | `not_found` during policy resolution | Validate attributes before encryption and create absent values. See [ValidateAttributes](/sdks/discovery#validateattributes) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
+| Missing attributes | `not_found` during policy resolution | Validate attribute value FQNs before encryption and create absent values. If an attribute definition allows traversal, encryption can proceed with definition-level scope while decryption remains blocked until the specific value exists. See [Discovery APIs](/sdks/discovery) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
 
 For concrete SDK-specific error text and commands, use [/sdks/troubleshooting](/sdks/troubleshooting).
+
+For the Go SDK specifically, `LoadTDF` parses and prepares the reader. KAS rewrap and policy authorization happen when payload key unwrap is triggered by `Init()`, `Read()`, or `WriteTo()`.
 
 ## Best Practices
 
