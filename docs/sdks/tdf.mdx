@@ -4,6 +4,8 @@ title: TDF
 ---
 
 import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # TDF Encryption and Decryption
 
@@ -58,49 +60,85 @@ At read time, decryption succeeds only if the caller identity is entitled for th
 
 Encrypts input data and returns/writes a TDF artifact.
 
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
 ```go
 manifest, err := client.CreateTDF(outputWriter, inputReader /* opts... */)
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
 
 ```java
 sdk.createTDF(inputStream, outputStream, tdfConfig);
 ```
 
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
 ```typescript
 const tdf = await client.createZTDF(opts);
 ```
+
+</TabItem>
+</Tabs>
 
 ### `LoadTDF` / `loadTDF` / `read`
 
 Loads encrypted TDF content and prepares it for decryption.
 
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
 ```go
 tdfReader, err := client.LoadTDF(bytes.NewReader(tdfBytes) /* opts... */)
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
 
 ```java
 var reader = sdk.loadTDF(fileChannel, readerConfig);
 ```
 
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
 ```typescript
 const decoratedStream = await client.read(readOptions);
 ```
+
+</TabItem>
+</Tabs>
 
 ### `WriteTo` / `readPayload` / consume `DecoratedStream`
 
 Produces decrypted payload bytes after key unwrap and policy checks succeed.
 
+<Tabs groupId="sdk">
+<TabItem value="go" label="Go">
+
 ```go
 _, err = tdfReader.WriteTo(&decryptedBuffer)
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
 
 ```java
 reader.readPayload(decryptedOutput);
 ```
 
+</TabItem>
+<TabItem value="js" label="TypeScript">
+
 ```typescript
 const decrypted = await new Response(decoratedStream).text();
 ```
+
+</TabItem>
+</Tabs>
 
 ## Encryption and Decryption Flow
 
