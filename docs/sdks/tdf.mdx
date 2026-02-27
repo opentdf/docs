@@ -37,14 +37,14 @@ If your team says "TDF3", in practice this typically maps to the full container 
 ## Encryption and Decryption Flow
 
 ```mermaid
-flowchart LR
-  A["Plaintext Input"] --> B["Create TDF / zTDF"]
-  B --> C["Attach ABAC Policy (Attributes)"]
-  C --> D["KAS Key Wrapping Metadata"]
-  D --> E["Encrypted TDF Artifact"]
-  E --> F["Load TDF"]
-  F --> G["KAS Rewrap + Policy Decision"]
-  G --> H["Decrypt Payload (if entitled)"]
+flowchart TB
+  A["1. Plaintext input"] --> B["2. Create TDF or zTDF"]
+  B --> C["3. Attach ABAC attributes"]
+  C --> D["4. Add KAS key wrapping metadata"]
+  D --> E["5. Encrypted TDF artifact"]
+  E --> F["6. Load artifact for read"]
+  F --> G["7. KAS rewrap and policy check"]
+  G --> H["8. Decrypt payload if entitled"]
 ```
 
 ## End-to-End Example (Go, Java, TypeScript)
