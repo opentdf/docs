@@ -7,11 +7,9 @@ import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
 
 # TDF Encryption and Decryption
 
-This guide explains how to work with Trusted Data Format (TDF) objects using the SDKs, and when to choose `zTDF` versus the full TDF container format.
+This page covers TDF encryption/decryption behavior, SDK method usage patterns, and operational checks.
 
-It is intended for developers who need to encrypt data with ABAC policy, decrypt data with entitlement checks, and debug common integration failures.
-
-## What TDF Gives You
+## Overview
 
 TDF combines encrypted payload data with policy metadata so access control can travel with the data itself.
 
@@ -23,13 +21,13 @@ When you create a TDF, you are packaging:
 
 At read time, decryption succeeds only if the caller identity is entitled for the policy encoded in the TDF.
 
-## Choose the Right Format
+## Formats and SDK Methods
 
 In current documentation and code you may see both `zTDF` and TDF terminology.
 
 | Format | Common method names | When to Use |
 | --- | --- | --- |
-| TDF / zTDF workflows | `CreateTDF` / `LoadTDF` | Use for encryption/decryption workflows in the current Go SDK; behavior differs by policy/profile configuration. |
+| TDF / zTDF workflows | `CreateTDF` / `LoadTDF` | Use for encryption/decryption workflows; behavior differs by policy/profile configuration. |
 
 If your team says "TDF3", in practice this typically maps to the full container workflow (`CreateTDF`/`LoadTDF`) in the current SDKs.
 
@@ -52,7 +50,7 @@ The sample below includes encrypt + decrypt flows for all three SDK ecosystems:
 
 <EncryptionTDF />
 
-## Adding ABAC Attributes at Encryption Time
+## ABAC Attributes
 
 Policy is enforced at decrypt time, so getting attribute values right at encryption time is critical.
 
@@ -83,7 +81,7 @@ Use file streams/channels for larger payloads or asynchronous pipelines (encrypt
 
 You can persist `.tdf` artifacts and decrypt later, as long as the decrypting identity can still reach required platform services (for example KAS and authorization dependencies) and has valid entitlements.
 
-## Encryption Options You Should Decide Explicitly
+## Encryption Options
 
 For production use, avoid relying on implicit defaults.
 
@@ -95,7 +93,7 @@ For production use, avoid relying on implicit defaults.
 
 You can see concrete option usage in the SDK quickstarts and the multi-language end-to-end example above.
 
-## Error Handling Patterns
+## Error Handling
 
 Treat these as first-class integration paths, not edge cases:
 
@@ -104,7 +102,7 @@ Treat these as first-class integration paths, not edge cases:
 | Authentication | `Unauthenticated`, `401` | Verify credentials and OIDC/client setup. See [Authentication Failed](/sdks/troubleshooting#authentication-failed). |
 | TLS trust | cert validation failures | Trust local CA correctly; avoid disabling verification in production. See [Certificate Errors](/sdks/troubleshooting#certificate-errors-ssltls). |
 | Missing entitlements | split-key/rewrap failures, `PermissionDenied` | Create/verify subject mappings for required attribute values. See [Permission Denied](/sdks/troubleshooting#permission-denied--insufficient-entitlements). |
-| Missing attributes | `not_found` during policy resolution | Validate attribute value FQNs before encryption and create absent values. If an attribute definition allows traversal, encryption can proceed with definition-level scope while decryption remains blocked until the specific value exists. See [Discovery APIs](/sdks/discovery) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
+| Missing attributes | `not_found` during policy resolution | Validate attribute value FQNs before encryption and create absent values. If an attribute definition allows traversal, encryption can proceed with definition-level scope while decryption remains blocked until the specific value exists. See [Discovery docs](/sdks/discovery) and [Resource Not Found](/sdks/troubleshooting#resource-not-found). |
 
 For concrete SDK-specific error text and commands, use [/sdks/troubleshooting](/sdks/troubleshooting).
 
@@ -122,6 +120,6 @@ For the Go SDK specifically, `LoadTDF` parses and prepares the reader. KAS rewra
 ## Related Documentation
 
 - SDK quickstarts: [/sdks/quickstart](/sdks/quickstart)
-- Discovery APIs: [/sdks/discovery](/sdks/discovery)
-- Authorization APIs: [/sdks/authorization](/sdks/authorization)
+- Discovery docs: [/sdks/discovery](/sdks/discovery)
+- Authorization docs: [/sdks/authorization](/sdks/authorization)
 - TDF schema spec: [/spec/schema/opentdf](/spec/schema/opentdf)
