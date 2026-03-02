@@ -63,9 +63,7 @@ curl https://<idp-endpoint>/
 
 **Solution**:
 
-1. **Restart your browser and terminal** after trusting a new certificate — applications must reload their certificate stores to pick up the change.
-
-2. **Trust the platform's CA certificate** on your system:
+1. **Trust the platform's CA certificate** on your system:
 
    ```bash
    # macOS
@@ -83,6 +81,8 @@ curl https://<idp-endpoint>/
    ```
 
    Obtain the CA certificate from your platform administrator or deployment documentation.
+
+2. **Restart your browser and terminal** after trusting the certificate — applications must reload their certificate stores to pick up the change.
 
 3. **Skip certificate verification** (quick workaround for CLI only, not recommended for production):
    ```bash
