@@ -470,7 +470,7 @@ function renameInfoFilesToIndex() {
                     // Keep index.mdx as the canonical category index and remove stale
                     // *.info.mdx duplicates that can conflict with sidebar category routing.
                     fs.unlinkSync(fullPath);
-                    console.log(`  Removed duplicate info file: ${fullPath}`);
+                    console.log(`  Removed stale duplicate (index.mdx already exists): ${fullPath}`);
                 } else {
                     fs.renameSync(fullPath, newPath);
                     console.log(`  Renamed: ${fullPath} → ${newPath}`);

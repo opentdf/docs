@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
 
 :::note Troubleshooting Scope
-This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, refer to your platform's deployment documentation.
+This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://docs.opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
 :::
 
 ## Authentication Failed
@@ -49,7 +49,7 @@ curl https://<idp-endpoint>/
      clientId: 'your-client-id',
      exchange: 'client_credentials',
      clientSecret: 'your-client-secret',
-     oidcOrigin: 'https://<idp-endpoint>/realms/<realm>',
+     oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
    });
    ```
 
@@ -75,6 +75,11 @@ curl https://<idp-endpoint>/
    # Linux
    sudo cp ca-cert.pem /usr/local/share/ca-certificates/platform-ca.crt
    sudo update-ca-certificates
+   ```
+
+   ```powershell
+   # Windows (PowerShell as Administrator)
+   Import-Certificate -FilePath ca-cert.pem -CertStoreLocation Cert:\LocalMachine\Root
    ```
 
    Obtain the CA certificate from your platform administrator or deployment documentation.
@@ -215,7 +220,7 @@ otdfctl policy subject-mappings create \
 # Create a subject condition set matching your identity
 # (replace the selector with the claim from your OIDC token, e.g. clientId, email, group)
 otdfctl policy subject-condition-sets create \
-    --subject-set '[".clientId == \"your-client-id\""]' \
+    --subject-set '[".clientId == \"<your-client-id>\""]' \
     --label "Your App Service Account"
 
 export SCS_ID=<id-from-output>
@@ -268,9 +273,9 @@ exit status 1
 
 ## Resource Not Found
 
-**Error**: `not_found: resource not found` or `attribute not found`
+**Error**: `not_found: resource not found`, `attribute not found`, or `attribute does not exist`
 
-**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform.
+**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform. This commonly happens when an attribute FQN is passed to `CreateTDF` before the attribute has been created.
 
 **Prevention**: Use [`ValidateAttributes`](/sdks/discovery#validateattributes) before calling `CreateTDF` to catch missing attributes immediately instead of at decryption time. Available in all three SDKs:
 
@@ -310,11 +315,7 @@ otdfctl policy attributes values create --attribute-id $DEPT_ATTRIBUTE_ID --valu
 
 If you can't resolve an issue using this guide, here are the next steps:
 
-1. **Check platform health first**:
-   ```bash
-   curl https://<platform-endpoint>/healthz
-   ```
-   Should return `{"status":"SERVING"}`. If not, refer to your platform's deployment documentation.
+1. **Check platform health** — verify the platform is reachable and serving (see [Connection Refused](#connection-refused) above). If the platform is down, resolve that first.
 
 2. **Search existing GitHub Discussions** — many common questions are already answered in the [opentdf/platform discussions](https://github.com/opentdf/platform/discussions).
 
