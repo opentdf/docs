@@ -26,36 +26,50 @@ export default function Standards() {
               <div className={styles.diagramBody}>
                 <div className={styles.diagramRow}>
                   <span className={styles.cCyan}>┌</span>
-                  <span className={styles.cLight}>TDF Object</span>
+                  <span className={styles.cLight}>TDF</span>
+                  <span className={styles.cFaint}>.tdf zip archive</span>
                 </div>
                 <div className={`${styles.diagramRow} ${styles.pl4}`}>
                   <span className={styles.cCyan}>├─</span>
                   <span className={styles.cGreen}>manifest.json</span>
-                  <span className={styles.cFaint}>policy + key access</span>
                 </div>
                 <div className={`${styles.diagramRow} ${styles.pl8}`}>
                   <span className={styles.cFaint2}>├─</span>
-                  <span className={styles.cAmber}>encryptionMethod</span>
-                  <span className={styles.cFaint}>AES-256-GCM</span>
+                  <span className={styles.cAmber}>payload</span>
+                  <span className={styles.cFaint}>reference to payload file</span>
                 </div>
                 <div className={`${styles.diagramRow} ${styles.pl8}`}>
+                  <span className={styles.cFaint2}>├─</span>
+                  <span className={styles.cAmber}>encryptionInformation</span>
+                </div>
+                <div className={`${styles.diagramRow} ${styles.pl12}`}>
                   <span className={styles.cFaint2}>├─</span>
                   <span className={styles.cAmber}>keyAccess[]</span>
                   <span className={styles.cFaint}>wrapped DEK + KAS URL</span>
                 </div>
-                <div className={`${styles.diagramRow} ${styles.pl8}`}>
+                <div className={`${styles.diagramRow} ${styles.pl12}`}>
                   <span className={styles.cFaint2}>├─</span>
+                  <span className={styles.cAmber}>method</span>
+                  <span className={styles.cFaint}>AES-256-GCM</span>
+                </div>
+                <div className={`${styles.diagramRow} ${styles.pl12}`}>
+                  <span className={styles.cFaint2}>├─</span>
+                  <span className={styles.cAmber}>integrityInformation</span>
+                  <span className={styles.cFaint}>hashes / signatures</span>
+                </div>
+                <div className={`${styles.diagramRow} ${styles.pl12}`}>
+                  <span className={styles.cFaint2}>└─</span>
                   <span className={styles.cAmber}>policy</span>
-                  <span className={styles.cFaint}>ABAC attributes</span>
+                  <span className={styles.cFaint}>ABAC attributes (Base64)</span>
                 </div>
                 <div className={`${styles.diagramRow} ${styles.pl8}`}>
                   <span className={styles.cFaint2}>└─</span>
                   <span className={styles.cAmber}>assertions[]</span>
-                  <span className={styles.cFaint}>signed bindings</span>
+                  <span className={styles.cFaint}>optional signed statements</span>
                 </div>
                 <div className={`${styles.diagramRow} ${styles.pl4}`}>
                   <span className={styles.cCyan}>└─</span>
-                  <span className={styles.cPurple}>payload</span>
+                  <span className={styles.cPurple}>0.payload</span>
                   <span className={styles.cFaint}>encrypted content</span>
                 </div>
                 <div className={styles.diagramRow}>

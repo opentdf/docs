@@ -8,7 +8,7 @@ const sdks = [
     install: "npm install @opentdf/sdk",
     colorClass: "sdk-js",
     icon: "TS",
-    href: "/sdks",
+    href: "https://www.npmjs.com/package/@opentdf/sdk",
     recommended: true,
   },
   {
@@ -17,16 +17,16 @@ const sdks = [
     install: "go get github.com/opentdf/platform/sdk",
     colorClass: "sdk-go",
     icon: "Go",
-    href: "/sdks",
+    href: "https://pkg.go.dev/github.com/opentdf/platform/sdk",
     recommended: false,
   },
   {
     name: "Java SDK",
     lang: "Java",
-    install: "implementation 'io.opentdf:sdk:latest'",
+    install: "implementation 'io.opentdf.platform:sdk:<version>'",
     colorClass: "sdk-java",
     icon: "Jv",
-    href: "/sdks",
+    href: "https://central.sonatype.com/artifact/io.opentdf.platform/sdk-pom",
     recommended: false,
   },
   {
@@ -36,7 +36,7 @@ const sdks = [
     releaseUrl: "https://github.com/opentdf/otdfctl/releases/latest",
     colorClass: "sdk-cli",
     icon: ">_",
-    href: "/sdks",
+    href: "https://opentdf.io/components/cli",
     recommended: false,
   },
 ];
@@ -100,7 +100,7 @@ export default function DeveloperFirst() {
                     {sdk.icon}
                   </div>
                   <div>
-                    <a href={sdk.href} className={styles.sdkName}>
+                    <a href={sdk.href} className={styles.sdkName} target="_blank" rel="noopener noreferrer">
                       {sdk.name}
                     </a>
                     <div className={styles.sdkLang}>{sdk.lang}</div>
@@ -143,7 +143,7 @@ export default function DeveloperFirst() {
 
         <div className={styles.ctas}>
           <a href="/quickstart" className={`${styles.btn} ${styles.btnPrimary}`}>
-            JS Quickstart
+            Quickstart
           </a>
           <a href="/sdks" className={`${styles.btn} ${styles.btnSecondary}`}>
             All SDKs
