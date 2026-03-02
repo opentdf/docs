@@ -467,7 +467,10 @@ function renameInfoFilesToIndex() {
             } else if (item.name.endsWith('.info.mdx')) {
                 const newPath = path.join(dir, 'index.mdx');
                 if (fs.existsSync(newPath)) {
-                    console.warn(`⚠️  Skipping rename of ${fullPath} because destination ${newPath} already exists.`);
+                    // Keep index.mdx as the canonical category index and remove stale
+                    // *.info.mdx duplicates that can conflict with sidebar category routing.
+                    fs.unlinkSync(fullPath);
+                    console.log(`  Removed duplicate info file: ${fullPath}`);
                 } else {
                     fs.renameSync(fullPath, newPath);
                     console.log(`  Renamed: ${fullPath} → ${newPath}`);
