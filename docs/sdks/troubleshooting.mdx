@@ -178,8 +178,9 @@ For example, if you encrypted data with `https://example.com/attr/department/val
 **Quick fix using the CLI:**
 
 ```bash
-# List your attributes to get the attribute value ID
-otdfctl policy attributes list --namespace <your-namespace>
+# Get the ID of the attribute value you want to grant
+export ATTRIBUTE_VALUE_ID=$(otdfctl policy attributes list --json | \
+    jq -r '[.attributes[] | select(.name=="department") | .values[] | select(.value=="marketing")][0].id')
 
 # Create a subject condition set (if needed)
 otdfctl policy subject-condition-sets create \
@@ -191,7 +192,7 @@ export SUBJECT_CONDITION_SET_ID=<id-from-output>
 # Create the subject mapping to grant the entitlement
 otdfctl policy subject-mappings create \
     --action read \
-    --attribute-value-fqn https://example.com/attr/department/value/marketing \
+    --attribute-value-id $ATTRIBUTE_VALUE_ID \
     --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
 
@@ -225,10 +226,14 @@ otdfctl policy subject-condition-sets create \
 
 export SCS_ID=<id-from-output>
 
-# Map the condition set to an attribute value
+# Get the ID of the attribute value to grant
+export ATTRIBUTE_VALUE_ID=$(otdfctl policy attributes list --json | \
+    jq -r '[.attributes[] | select(.name=="department") | .values[] | select(.value=="engineering")][0].id')
+
+# Map the condition set to the attribute value
 otdfctl policy subject-mappings create \
     --action read \
-    --attribute-value-fqn https://example.com/attr/department/value/engineering \
+    --attribute-value-id $ATTRIBUTE_VALUE_ID \
     --subject-condition-set-id $SCS_ID
 ```
 
