@@ -75,7 +75,7 @@ export default function DeveloperFirst() {
   }
 
   return (
-    <section className={`${styles.section} section-dark bg-mesh`}>
+    <section className={`${styles.section} section-dark bg-grid bg-mesh`}>
       <div className={styles.inner}>
         <div className={styles.header}>
           <h2 className={styles.heading}>Built for Developers</h2>

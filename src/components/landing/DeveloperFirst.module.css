@@ -224,16 +224,64 @@
   }
 }
 
-/* Light mode overrides — install cmd and copy button intentionally stay dark (code) */
+/* Light mode overrides */
 :global(html[data-theme='light']) .card {
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
 }
 
 :global(html[data-theme='light']) .subheading {
-  color: #4b5563;
+  color: #475569;
+}
+
+:global(html[data-theme='light']) .sdkName {
+  color: #0f172a;
+}
+
+:global(html[data-theme='light']) .sdkLang {
+  color: #94a3b8;
+}
+
+:global(html[data-theme='light']) .badge {
+  border-color: rgba(8, 145, 178, 0.3);
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.1);
+}
+
+:global(html[data-theme='light']) .installCmd {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+:global(html[data-theme='light']) .copyBtn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+}
+
+:global(html[data-theme='light']) .copyBtn:hover {
+  color: #0891b2;
+  border-color: rgba(8, 145, 178, 0.2);
+}
+
+:global(html[data-theme='light']) .btnPrimary {
+  background: #0891b2;
+  color: #fff;
+}
+
+:global(html[data-theme='light']) .btnPrimary:hover {
+  background: #0e7490;
+  color: #fff;
 }
 
 :global(html[data-theme='light']) .btnSecondary {
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+:global(html[data-theme='light']) .btnSecondary:hover {
+  border-color: #0891b2;
+  color: #0891b2;
 }

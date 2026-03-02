@@ -112,18 +112,44 @@
 }
 
 /* Light mode overrides */
+:global(html[data-theme='light']) .section {
+  background: linear-gradient(180deg, #f8fafc 0%, #ecfeff 50%, #f8fafc 100%);
+}
+
+:global(html[data-theme='light']) .glow {
+  background: rgba(8, 145, 178, 0.04);
+}
+
 :global(html[data-theme='light']) .body {
-  color: #4b5563;
+  color: #475569;
+}
+
+:global(html[data-theme='light']) .btnPrimary {
+  background: #0891b2;
+  color: #fff;
+}
+
+:global(html[data-theme='light']) .btnPrimary:hover {
+  background: #0e7490;
+  color: #fff;
 }
 
 :global(html[data-theme='light']) .btnSecondary {
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+:global(html[data-theme='light']) .btnSecondary:hover {
+  border-color: #0891b2;
+  color: #0891b2;
 }
 
 :global(html[data-theme='light']) .btnGhost {
-  border-color: rgba(0, 0, 0, 0.08);
+  border-color: #f1f5f9;
+  color: #64748b;
 }
 
 :global(html[data-theme='light']) .btnGhost:hover {
-  border-color: rgba(0, 0, 0, 0.2);
+  color: #0f172a;
+  border-color: #e2e8f0;
 }

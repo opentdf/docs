@@ -112,14 +112,31 @@
 /* Light mode overrides */
 :global(html[data-theme='light']) .card {
   background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.07);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+:global(html[data-theme='light']) .card:hover {
+  border-color: rgba(8, 145, 178, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+:global(html[data-theme='light']) .card:hover .cardIcon {
+  color: #0891b2;
+}
+
+:global(html[data-theme='light']) .card:hover .cardTitle {
+  color: #0891b2;
 }
 
 :global(html[data-theme='light']) .body {
-  color: #4b5563;
+  color: #475569;
 }
 
 :global(html[data-theme='light']) .cardIcon {
-  color: #6b7280;
+  color: #94a3b8;
+}
+
+:global(html[data-theme='light']) .cardDesc {
+  color: #64748b;
 }

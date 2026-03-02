@@ -126,6 +126,7 @@
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: #0f1117;
+  color: #e8eaf0;
   overflow: hidden;
 }
 
@@ -211,15 +212,46 @@
   }
 }
 
-/* Light mode overrides — code window intentionally stays dark */
+/* Light mode overrides ��� code window intentionally stays dark */
 :global(html[data-theme='light']) .bodyPrimary {
-  color: #4b5563;
+  color: #475569;
+}
+
+:global(html[data-theme='light']) .bodySecondary {
+  color: #64748b;
+}
+
+:global(html[data-theme='light']) .badge {
+  border-color: rgba(8, 145, 178, 0.2);
+  background: rgba(8, 145, 178, 0.06);
+  color: #0891b2;
+}
+
+:global(html[data-theme='light']) .badgeDot {
+  background: #16a34a;
+}
+
+:global(html[data-theme='light']) .btnPrimary {
+  background: #0891b2;
+  color: #fff;
+}
+
+:global(html[data-theme='light']) .btnPrimary:hover {
+  background: #0e7490;
+  color: #fff;
 }
 
 :global(html[data-theme='light']) .btnSecondary {
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: #e2e8f0;
+  color: #0f172a;
 }
 
 :global(html[data-theme='light']) .btnSecondary:hover {
-  border-color: #22d3ee;
+  border-color: #0891b2;
+  color: #0891b2;
+}
+
+:global(html[data-theme='light']) .codeWindow {
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
