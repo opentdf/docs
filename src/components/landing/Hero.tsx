@@ -73,37 +73,114 @@ export default function Hero() {
                   {" "}
                   <span className={styles.cBlue}>client</span>
                   {" = "}
-                  <span className={styles.cPurple}>await</span>
+                  <span className={styles.cPurple}>new</span>
                   {" "}
                   <span className={styles.cYellow}>OpenTDF</span>
-                  {"."}<span className={styles.cGreen}>connect</span>
-                  {"("}
-                  <span className={styles.cCyan}>'http://localhost:8080'</span>
-                  {");"}
+                  {"({"}
                 </div>
+                <div className="code-line">
+                  <span className={styles.indent}>
+                    <span className={styles.cBlue}>authProvider</span>,
+                  </span>
+                </div>
+                <div className="code-line">
+                  <span className={styles.indent}>
+                    <span className={styles.cBlue}>platformUrl</span>
+                    {": "}
+                    <span className={styles.cCyan}>'https://platform.example.com'</span>,
+                  </span>
+                </div>
+                <div className="code-line">{"});"}</div>
                 <div className={`code-line ${styles.mt}`}>
                   <span className={styles.cGray}>{"// Encrypt with attribute-based policy"}</span>
                 </div>
                 <div className="code-line">
                   <span className={styles.cPurple}>const</span>
                   {" "}
-                  <span className={styles.cBlue}>ciphertext</span>
+                  <span className={styles.cBlue}>encrypted</span>
                   {" = "}
                   <span className={styles.cPurple}>await</span>
                   {" "}
                   <span className={styles.cBlue}>client</span>
-                  {"."}<span className={styles.cGreen}>encrypt</span>
-                  {"(data, {"}
+                  {"."}<span className={styles.cGreen}>createTDF</span>
+                  {"({"}
+                </div>
+                <div className="code-line">
+                  <span className={styles.indent}>
+                    <span className={styles.cBlue}>source</span>
+                    {": { "}
+                    <span className={styles.cBlue}>type</span>
+                    {": "}
+                    <span className={styles.cCyan}>'buffer'</span>
+                    {", "}
+                    <span className={styles.cBlue}>location</span>
+                    {": "}
+                    <span className={styles.cPurple}>new</span>
+                    {" "}
+                    <span className={styles.cYellow}>TextEncoder</span>
+                    {"()."}
+                    <span className={styles.cGreen}>encode</span>
+                    {"("}
+                    <span className={styles.cCyan}>'Hello, OpenTDF!'</span>
+                    {") },"}
+                  </span>
                 </div>
                 <div className="code-line">
                   <span className={styles.indent}>
                     <span className={styles.cBlue}>attributes</span>
                     {": ["}
-                    <span className={styles.cCyan}>'https://example.com/attr/class/value/secret'</span>
+                    <span className={styles.cCyan}>'https://example.com/attr/classification/value/secret'</span>
                     {"],"}
                   </span>
                 </div>
                 <div className="code-line">{"});"}</div>
+                <div className={`code-line ${styles.mt}`}>
+                  <span className={styles.cGray}>{"// Only entities whose entitlements satisfy"}</span>
+                </div>
+                <div className="code-line">
+                  <span className={styles.cGray}>{"// the policy will be able to decrypt."}</span>
+                </div>
+                <div className="code-line">
+                  <span className={styles.cPurple}>const</span>
+                  {" "}
+                  <span className={styles.cBlue}>decrypted</span>
+                  {" = "}
+                  <span className={styles.cPurple}>await</span>
+                  {" "}
+                  <span className={styles.cBlue}>client</span>
+                  {"."}<span className={styles.cGreen}>read</span>
+                  {"({"}
+                </div>
+                <div className="code-line">
+                  <span className={styles.indent}>
+                    <span className={styles.cBlue}>source</span>
+                    {": { "}
+                    <span className={styles.cBlue}>type</span>
+                    {": "}
+                    <span className={styles.cCyan}>'stream'</span>
+                    {", "}
+                    <span className={styles.cBlue}>location</span>
+                    {": "}
+                    <span className={styles.cBlue}>encrypted</span>
+                    {" },"}
+                  </span>
+                </div>
+                <div className="code-line">{"});"}</div>
+                <div className={`code-line ${styles.mt}`}>
+                  <span className={styles.cBlue}>console</span>
+                  {"."}<span className={styles.cGreen}>log</span>
+                  {"("}
+                  <span className={styles.cPurple}>await</span>
+                  {" "}
+                  <span className={styles.cPurple}>new</span>
+                  {" "}
+                  <span className={styles.cYellow}>Response</span>
+                  {"("}
+                  <span className={styles.cBlue}>decrypted</span>
+                  {")."}
+                  <span className={styles.cGreen}>text</span>
+                  {"());"}
+                </div>
               </div>
             </div>
           </div>

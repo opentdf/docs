@@ -107,12 +107,10 @@ const config: Config = {
     image: "img/opentdf-social.png",
     navbar: {
       hideOnScroll: true,
-      title: "OpenTDF",
       logo: {
         alt: "OpenTDF - Protect the Data, Build the Future",
-        src: "img/opentdf-mark-light.svg",
-        srcDark: "img/opentdf-mark-dark.svg",
-        width: 32,
+        src: "img/opentdf-lockup-light.svg",
+        srcDark: "img/opentdf-lockup-dark.svg",
         height: 32,
       },
       items: [
