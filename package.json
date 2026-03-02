@@ -35,7 +35,7 @@
     "docusaurus-theme-github-codeblock": "^2.0.2",
     "docusaurus-theme-openapi-docs": "^4.7.1",
     "gray-matter": "^4.0.3",
-    "minimatch": "^10.2.1",
+    "minimatch": "^10.2.3",
     "octokit": "^4.0.2",
     "plugin-image-zoom": "^1.2.0",
     "prism-react-renderer": "^2.4.0",
