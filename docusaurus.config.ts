@@ -110,8 +110,7 @@ const config: Config = {
       title: "OpenTDF",
       logo: {
         alt: "OpenTDF - Protect the Data, Build the Future",
-        src: "img/OpenTDF-Logo.png",
-        srcDark: "img/OpenTDF-Logo-White.png",
+        src: "img/favicon.svg",
         width: 32,
         height: 32,
       },
