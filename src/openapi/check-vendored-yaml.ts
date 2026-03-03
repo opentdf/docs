@@ -9,17 +9,6 @@ import { openApiSpecsArray } from './preprocessing';
 const PLATFORM_API_BASE = 'https://api.github.com/repos/opentdf/platform';
 const PLATFORM_RAW_BASE = 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main';
 
-function githubHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'User-Agent': 'opentdf-docs-check-vendored-yaml',
-    'Accept': 'application/vnd.github+json',
-  };
-  if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  }
-  return headers;
-}
-
 function fileHash(filePath: string): string {
   if (!fs.existsSync(filePath)) return '';
   const data = fs.readFileSync(filePath);
@@ -50,14 +39,10 @@ function downloadFile(url: string, dest: string): Promise<void> {
 function fetchJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
-      https.get(url, { headers: githubHeaders() } as any, (response: any) => {
+      https.get(url, { headers: { 'User-Agent': 'opentdf-docs-check-vendored-yaml' } } as any, (response: any) => {
         let data = '';
         response.on('data', (chunk: string) => { data += chunk; });
         response.on('end', () => {
-          if (response.statusCode && response.statusCode >= 400) {
-            reject(new Error(`GitHub API request failed (${response.statusCode}) for ${url}: ${data}`));
-            return;
-          }
           try { resolve(JSON.parse(data)); }
           catch (e) { reject(new Error(`Failed to parse JSON from ${url}: ${e}`)); }
         });
@@ -69,16 +54,10 @@ function fetchJson(url: string): Promise<any> {
 function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
-      https.get(url, { headers: githubHeaders() } as any, (response: any) => {
+      https.get(url, { headers: { 'User-Agent': 'opentdf-docs-check-vendored-yaml' } } as any, (response: any) => {
         let data = '';
         response.on('data', (chunk: string) => { data += chunk; });
-        response.on('end', () => {
-          if (response.statusCode && response.statusCode >= 400) {
-            reject(new Error(`Failed to fetch text from ${url} (${response.statusCode}): ${data}`));
-            return;
-          }
-          resolve(data);
-        });
+        response.on('end', () => resolve(data));
       }).on('error', reject);
     }).catch(reject);
   });
@@ -90,11 +69,6 @@ function fetchText(url: string): Promise<string> {
 async function fetchRemoteSpecPaths(dirPath = 'docs/openapi'): Promise<string[]> {
   const specPaths: string[] = [];
   const contents = await fetchJson(`${PLATFORM_API_BASE}/contents/${dirPath}`);
-  if (!Array.isArray(contents)) {
-    const message = typeof contents?.message === 'string' ? contents.message : JSON.stringify(contents);
-    console.warn(`⚠️  Unexpected GitHub API response for ${dirPath}; skipping unregistered spec scan. Response: ${message}`);
-    return specPaths;
-  }
 
   for (const item of contents) {
     if (item.type === 'file' && item.name.endsWith('.yaml')) {
