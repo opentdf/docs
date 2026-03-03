@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  padding: 6rem 0;
+  padding: 4rem 0; /* R-08: was 6rem — reduced for mobile */
   overflow: hidden;
   color: var(--otdf-text-primary);
 }
@@ -22,7 +22,7 @@
   position: relative;
   max-width: 48rem;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
   text-align: center;
 }
 
@@ -31,7 +31,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--otdf-text-primary);
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
 }
 
 .body {
@@ -96,16 +96,25 @@
 
 /* Responsive */
 @media (min-width: 640px) {
+  .section {
+    padding: 5rem 0;
+  }
+
   .inner {
     padding: 0 1.5rem;
   }
 
   .heading {
     font-size: 2.25rem;
+    margin-bottom: 1.25rem;
   }
 }
 
 @media (min-width: 1024px) {
+  .section {
+    padding: 6rem 0; /* R-08: restore desktop */
+  }
+
   .inner {
     padding: 0 2rem;
   }
