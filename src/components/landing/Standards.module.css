@@ -1,13 +1,13 @@
 .section {
   position: relative;
-  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
+  padding: 4rem 0;
   color: var(--otdf-text-primary);
 }
 
 .inner {
   max-width: 80rem;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
 }
 
 .grid {
@@ -76,7 +76,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--otdf-text-primary);
-  margin: 0 0 1.5rem;
+  margin: 0 0 0.75rem;
 }
 
 .body {
@@ -174,7 +174,7 @@
 
 @media (min-width: 640px) {
   .section {
-    padding: 4rem 0; /* R-08: tablet */
+    padding: 5rem 0;
   }
 
   .inner {

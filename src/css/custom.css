@@ -220,6 +220,21 @@ a[class*="embed_documentation_footer-"] {
   word-wrap: break-word;
 }
 
+/* Footer link columns: 2×2 grid on mobile */
+@media (max-width: 768px) {
+  .footer__links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  /* Sponsor text: match link-item sizing for consistency */
+  .footer__sponsor-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
+
 /* R-10: Footer bottom bar stacks vertically on mobile */
 @media (max-width: 768px) {
   .footer__bottom {
@@ -383,28 +398,6 @@ Breakpoints:
   }
 }
 
-/* R-05: Reset the 3-column absolute-positioning layout on mobile so
-   Docusaurus's built-in hamburger sidebar works correctly */
-@media (max-width: 996px) {
-  .navbar__inner {
-    justify-content: space-between;
-  }
-
-  .navbar .navbar__brand {
-    position: static;
-    transform: none;
-  }
-
-  .navbar .navbar__items--right {
-    position: static;
-    transform: none;
-  }
-
-  .navbar__inner > .navbar__items:not(.navbar__items--right) {
-    max-width: none;
-  }
-}
-
 /**************
 ** NAVBAR — THEME-AWARE (light + dark)
 ***************/
@@ -550,6 +543,64 @@ html[data-theme='dark'] .navbar__items--right .navbar__item.navbar__link[href*="
 html[data-theme='dark'] .navbar__items--right .navbar__item.navbar__link[href*="github.com"]:hover {
   border-color: #6b7280;
   color: #fff;
+}
+
+/**************
+** NAVBAR — MOBILE: reset 3-column layout for hamburger
+** MUST come after desktop layout rules above so overrides win
+***************/
+@media (max-width: 996px) {
+  /* R-05: Undo the 3-column absolute layout so hamburger sidebar works */
+  .navbar__inner {
+    justify-content: space-between !important;
+  }
+
+  .navbar .navbar__brand {
+    position: static !important;
+    transform: none !important;
+  }
+
+  /* Hide right container — color mode toggle + GitHub are in the sidebar */
+  .navbar .navbar__items--right {
+    display: none !important;
+  }
+
+  /* Left container takes full width: logo left, hamburger right */
+  .navbar__inner > .navbar__items:not(.navbar__items--right) {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    justify-content: space-between !important;
+    width: 100%;
+  }
+
+  /* Push hamburger to the far right */
+  .navbar__toggle {
+    order: 1;
+    margin-right: 0;
+  }
+
+  /* Remove backdrop-filter on mobile — it creates a containing block
+     that traps the position:fixed navbar-sidebar inside the navbar */
+  .navbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(255, 255, 255, 0.97);
+  }
+
+  html[data-theme='dark'] .navbar {
+    background-color: rgba(10, 12, 16, 0.97);
+  }
+
+  /* Slide sidebar in from the right instead of left */
+  .navbar-sidebar {
+    left: auto !important;
+    right: 0;
+    transform: translate3d(100%, 0, 0) !important;
+  }
+
+  .navbar-sidebar--show .navbar-sidebar {
+    transform: translate3d(0, 0, 0) !important;
+  }
 }
 
 /**************

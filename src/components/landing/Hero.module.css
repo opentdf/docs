@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
+  padding: 4rem 0;
   min-height: auto; /* R-08: fit content naturally on mobile */
   color: var(--otdf-text-primary);
 }
@@ -13,7 +13,7 @@
   width: 100%;
   max-width: 80rem;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
   box-sizing: border-box;
   overflow-wrap: break-word;
   word-wrap: break-word;
@@ -57,12 +57,12 @@
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--otdf-text-primary);
-  margin: 0 0 1.5rem;
+  margin: 0 0 0.75rem;
 }
 
 /* Body */
 .bodyPrimary {
-  margin-top: 1.5rem;
+  margin-top: 0;
   font-size: 1rem; /* R-04: was 1.125rem — reduced for mobile */
   color: #9ca3af;
   line-height: 1.7;
@@ -72,7 +72,7 @@
 }
 
 .bodySecondary {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
   font-size: 1rem;
   color: #6b7280;
   line-height: 1.7;
@@ -83,7 +83,7 @@
 
 /* CTAs */
 .ctas {
-  margin-top: 2rem;
+  margin-top: 2.5rem;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -138,6 +138,7 @@
   background: #0f1117;
   color: #e8eaf0;
   overflow: hidden;
+  text-align: left; /* R-13: override inherited center from .inner on mobile */
 }
 
 .windowChrome {
@@ -209,11 +210,11 @@
 /* Responsive — mobile-first: smallest breakpoint first (R-06 fix) */
 @media (min-width: 640px) {
   .section {
-    padding: 4rem 0; /* R-08: tablet */
+    padding: 5rem 0;
   }
 
   .heading {
-    font-size: 2.5rem; /* R-04: was 3rem */
+    font-size: 2.5rem;
   }
 
   .inner {
