@@ -122,7 +122,7 @@ public class GetNamespaceExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -230,7 +230,7 @@ public class UpdateNamespaceExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -318,7 +318,7 @@ public class DeactivateNamespaceExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -431,7 +431,7 @@ public class GetAttributeExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -532,7 +532,7 @@ public class UpdateAttributeExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -620,7 +620,7 @@ public class DeactivateAttributeExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -712,7 +712,7 @@ public class CreateAttributeValueExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -803,7 +803,7 @@ public class ListAttributeValuesExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -894,7 +894,7 @@ public class GetAttributeValueExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -989,7 +989,7 @@ public class GetAttributeValuesByFqnsExample {
         var resp = sdk.getServices().attributes()
             .getAttributeValuesByFqnsBlocking(req, Collections.emptyMap()).execute();
         resp.getFqnAttributeValuesMap().forEach((fqn, entry) ->
-            System.out.println("FQN: " + fqn + " -> " + entry.getValue().getValue())
+            System.out.println("FQN: " + fqn + " -> Attribute: " + entry.getAttribute().getName() + ", Value: " + entry.getValue().getValue())
         );
 
         sdk.close();
@@ -998,7 +998,7 @@ public class GetAttributeValuesByFqnsExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1100,7 +1100,7 @@ public class UpdateAttributeValueExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1188,7 +1188,7 @@ public class DeactivateAttributeValueExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1290,7 +1290,7 @@ public class GetSubjectMappingExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1395,7 +1395,7 @@ public class UpdateSubjectMappingExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1482,7 +1482,7 @@ public class DeleteSubjectMappingExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1586,7 +1586,7 @@ public class MatchSubjectMappingsExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1688,7 +1688,7 @@ public class ListSubjectConditionSetsExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1779,7 +1779,7 @@ public class GetSubjectConditionSetExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -1903,7 +1903,7 @@ public class UpdateSubjectConditionSetExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -2005,7 +2005,7 @@ public class DeleteSubjectConditionSetExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
@@ -2069,7 +2069,7 @@ import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest;
 import java.util.Collections;
 
-public class DeleteAllUnmappedScsExample {
+public class DeleteAllUnmappedSubjectConditionSetsExample {
     public static void main(String[] args) throws Exception {
         SDK sdk = SDKBuilder.newBuilder()
             .platformEndpoint("http://localhost:8080")
@@ -2080,7 +2080,7 @@ public class DeleteAllUnmappedScsExample {
         var req = DeleteAllUnmappedSubjectConditionSetsRequest.newBuilder().build();
         var resp = sdk.getServices().subjectMappings()
             .deleteAllUnmappedSubjectConditionSetsBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deleted " + resp.getSubjectConditionSetsList().size() + " unmapped SCSs.");
+        System.out.println("Deleted " + resp.getSubjectConditionSetsList().size() + " unmapped subject condition sets.");
 
         sdk.close();
     }
@@ -2088,7 +2088,7 @@ public class DeleteAllUnmappedScsExample {
 ```
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
 import { PlatformClient } from '@opentdf/sdk/platform';
