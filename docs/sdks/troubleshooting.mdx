@@ -11,46 +11,83 @@ import TabItem from '@theme/TabItem';
 This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
 
 :::note Troubleshooting Scope
-This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [Managing the Platform Troubleshooting](/getting-started/managing-platform#troubleshooting).
+This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://docs.opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
 :::
 
 ## Authentication Failed
 
 **Error**: `rpc error: code = Unauthenticated` or `401 Unauthorized`
 
-**Solution**: Verify your credentials are correct (replace `opentdf` with your client ID and `secret` with your client secret):
+**Solution**: Verify your credentials are correct:
 ```bash
-otdfctl auth client-credentials opentdf secret
+otdfctl auth client-credentials <client-id> <client-secret>
 ```
 
-Check that Keycloak is running:
+Check that your identity provider is accessible:
 ```bash
-curl https://keycloak.opentdf.local:9443/
+curl https://<idp-endpoint>/
 ```
+
+## Token Expired
+
+**Error**: `token expired`, `invalid token`, or `jwt expired`
+
+**Cause**: The authentication token's lifetime has been exceeded. OIDC tokens are short-lived by default.
+
+**Solution**:
+
+1. **Re-authenticate** (CLI):
+   ```bash
+   otdfctl auth client-credentials <client-id> <client-secret>
+   ```
+
+2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
+   ```js
+   import { AuthProviders } from '@opentdf/client';
+
+   const authProvider = AuthProviders.refreshAuthProvider({
+     clientId: 'your-client-id',
+     exchange: 'client_credentials',
+     clientSecret: 'your-client-secret',
+     oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
+   });
+   ```
+
+3. **Re-instantiate the SDK**: For Go and Java, create a new SDK instance with fresh credentials when a token error occurs.
 
 ## Certificate Errors (SSL/TLS)
 
 **Error**: `x509: certificate signed by unknown authority` or `Failed to validate TLS certificates`
 
-**Cause**: The platform uses self-signed certificates for local development. During installation, the [setup script](/quickstart#step-2-install-opentdf) automatically imports the Caddy root CA certificate to your system keychain.
+**Cause**: The platform is using a self-signed or privately-issued certificate that your system doesn't trust.
 
-**Solution**: If you're seeing certificate errors, the certificate import may have failed during installation. Try these steps:
+**Solution**:
 
-1. **Restart your browser and terminal** - The certificate import requires applications to reload their certificate stores. Close and reopen your browser and terminal windows.
+1. **Trust the platform's CA certificate** on your system:
 
-2. **Verify the certificate was imported** - During the [installation process](/quickstart#step-2-install-opentdf), you should have been prompted twice for your password:
-   - Once to add entries to /etc/hosts
-   - Once to import the SSL certificate
+   ```bash
+   # macOS
+   sudo security add-trusted-cert -d -r trustRoot \
+     -k /Library/Keychains/System.keychain ca-cert.pem
 
-   If you don't remember seeing both prompts, the certificate import may have failed.
+   # Linux
+   sudo cp ca-cert.pem /usr/local/share/ca-certificates/platform-ca.crt
+   sudo update-ca-certificates
+   ```
 
-3. **Skip certificate verification** (quick workaround for CLI):
+   ```powershell
+   # Windows (PowerShell as Administrator)
+   Import-Certificate -FilePath ca-cert.pem -CertStoreLocation Cert:\LocalMachine\Root
+   ```
+
+   Obtain the CA certificate from your platform administrator or deployment documentation.
+
+2. **Restart your browser and terminal** after trusting the certificate — applications must reload their certificate stores to pick up the change.
+
+3. **Skip certificate verification** (quick workaround for CLI only, not recommended for production):
    ```bash
    export OTDFCTL_TLS_NO_VERIFY=true
    ```
-   This allows `otdfctl` commands to work without validating certificates.
-
-4. **Manually trust the certificate** - For SDKs and applications, you'll need to properly trust the certificate. See the [TLS Certificate Verification](/getting-started/managing-platform#tls-certificate-verification) guide for detailed steps on extracting and trusting the Caddy root CA certificate on macOS, Linux, or Windows.
 
 ## Connection Refused
 
@@ -58,16 +95,12 @@ curl https://keycloak.opentdf.local:9443/
 
 **Solution**: Verify your platform is running:
 ```bash
-curl https://platform.opentdf.local:8443/healthz
+curl https://<platform-endpoint>/healthz
 ```
 
 Should return: `{"status":"SERVING"}`
 
-If not running, restart the platform:
-```bash
-cd ~/.opentdf/platform
-docker compose up -d
-```
+If not running, restart your platform services according to your deployment documentation.
 
 ## Import Errors
 
@@ -95,8 +128,8 @@ npm install @opentdf/client
 <TabItem value="go" label="Go">
 
 ```
-reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://platform.opentdf.local:8443 }:tdf: rewrap request 403
-kao unwrap failed for split {https://platform.opentdf.local:8443 }: permission_denied: request error
+reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://<kas-endpoint> }:tdf: rewrap request 403
+kao unwrap failed for split {https://<kas-endpoint> }: permission_denied: request error
 rpc error: code = PermissionDenied desc = forbidden]
 ```
 
@@ -110,7 +143,7 @@ rpc error: code = PermissionDenied desc = forbidden]
 
 ```
 io.opentdf.platform.sdk.SDK$SplitKeyException: splitKey.unable to reconstruct split key:
-{KeySplitStep{kas='https://platform.opentdf.local:8443/kas', splitID=''}=io.opentdf.platform.sdk.SDKException: error unwrapping key}
+{KeySplitStep{kas='https://<kas-endpoint>/kas', splitID=''}=io.opentdf.platform.sdk.SDKException: error unwrapping key}
 error unwrapping key
 ```
 
@@ -134,33 +167,77 @@ error unwrapping key
 </TabItem>
 </Tabs>
 
-These errors indicate an authorization failure, not a cryptographic or network issue.
+These errors indicate an authorization failure, not a cryptographic or network issue. You may also see `key access denied` from the KAS directly.
 
 **Cause**: Your identity lacks the required entitlements (attribute values) to decrypt the TDF. This is ABAC (Attribute-Based Access Control) working correctly.
 
-For example, if you encrypted data with `https://opentdf.io/attr/department/value/marketing`, you need a subject mapping that grants you the `marketing` entitlement.
+For example, if you encrypted data with `https://example.com/attr/department/value/marketing`, you need a subject mapping that grants you the `marketing` entitlement.
 
 **Solution**: Grant yourself (or the entity) entitlements by [creating a subject mapping](/sdks/policy#create-subject-mapping).
 
 **Quick fix using the CLI:**
 
 ```bash
-# List your attributes to get the attribute value ID
-otdfctl policy attributes list --namespace opentdf.io
+# Get the ID of the attribute value you want to grant
+export ATTRIBUTE_VALUE_ID=$(otdfctl policy attributes list --json | \
+    jq -r '[.attributes[] | select(.name=="department") | .values[] | select(.value=="marketing")][0].id')
 
 # Create a subject condition set (if needed)
 otdfctl policy subject-condition-sets create \
-    --subject-set '[".clientId == \"opentdf\""]' \
-    --label "OpenTDF Service Account"
+    --subject-set '[".clientId == \"<your-client-id>\""]' \
+    --label "My Service Account"
 
 export SUBJECT_CONDITION_SET_ID=<id-from-output>
 
 # Create the subject mapping to grant the entitlement
 otdfctl policy subject-mappings create \
     --action read \
-    --attribute-value-fqn https://opentdf.io/attr/department/value/marketing \
+    --attribute-value-id $ATTRIBUTE_VALUE_ID \
     --subject-condition-set-id $SUBJECT_CONDITION_SET_ID
 ```
+
+## TDF Format Error
+
+**Error**: `invalid TDF format`, `malformed TDF`, or `tamper detected`
+
+**Cause**: The file was corrupted during transfer, modified after encryption, or was created with an incompatible TDF version.
+
+**Solution**:
+
+1. **Re-encrypt the original file** — if you have access to the plaintext, create a fresh TDF
+2. **Check SDK version compatibility** — the SDK used to decrypt must support the TDF format version used to encrypt (e.g., TDF3 vs nanoTDF)
+3. **Verify file integrity** — TDFs are tamper-evident; any modification after encryption will cause decryption to fail
+4. **Check file transfer** — binary TDF files can be corrupted by text-mode transfers; ensure files are transferred in binary mode
+
+## Entity Resolution Failed
+
+**Error**: `entity resolution failed` or `failed to resolve entity`
+
+**Cause**: The platform cannot map your identity (from the OIDC token) to an entity with attributes. This happens when subject mappings are not configured for your identity provider claims.
+
+**Solution**: Create a subject mapping that connects your IdP identity to the appropriate attribute entitlements:
+
+```bash
+# Create a subject condition set matching your identity
+# (replace the selector with the claim from your OIDC token, e.g. clientId, email, group)
+otdfctl policy subject-condition-sets create \
+    --subject-set '[".clientId == \"<your-client-id>\""]' \
+    --label "Your App Service Account"
+
+export SCS_ID=<id-from-output>
+
+# Get the ID of the attribute value to grant
+export ATTRIBUTE_VALUE_ID=$(otdfctl policy attributes list --json | \
+    jq -r '[.attributes[] | select(.name=="department") | .values[] | select(.value=="engineering")][0].id')
+
+# Map the condition set to the attribute value
+otdfctl policy subject-mappings create \
+    --action read \
+    --attribute-value-id $ATTRIBUTE_VALUE_ID \
+    --subject-condition-set-id $SCS_ID
+```
+
+For more detail on configuring subject mappings, see [Policy Management](/sdks/policy#create-subject-mapping).
 
 ## Resource Already Exists
 
@@ -201,9 +278,9 @@ exit status 1
 
 ## Resource Not Found
 
-**Error**: `not_found: resource not found` or `attribute not found`
+**Error**: `not_found: resource not found`, `attribute not found`, or `attribute does not exist`
 
-**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform.
+**Cause**: You're trying to use a resource (namespace, attribute, or attribute value) that doesn't exist on the platform. This commonly happens when an attribute FQN is passed to `CreateTDF` before the attribute has been created.
 
 **Prevention**: Use [`ValidateAttributes`](/sdks/discovery#validateattributes) before calling `CreateTDF` to catch missing attributes immediately instead of at decryption time. Available in all three SDKs:
 
@@ -216,8 +293,7 @@ exit status 1
 **Quick fix using the CLI:**
 
 ```bash
-# Get the namespace ID for opentdf.io
-# (Namespace should exist from platform initialization - see /quickstart)
+# Get the namespace ID (replace 'example.com' with your namespace)
 export NAMESPACE_ID=$(otdfctl policy attributes list --json | jq -r '.attributes[0].namespace.id // empty')
 
 # Create the attribute definition with initial values
@@ -233,9 +309,23 @@ otdfctl policy attributes create \
 Alternatively, to add values after creating the attribute:
 
 ```bash
-# Get the attribute ID for 'department' in the 'opentdf.io' namespace
-export DEPT_ATTRIBUTE_ID=$(otdfctl policy attributes list --json | jq -r '[.attributes[] | select(.name=="department" and .namespace.name=="opentdf.io")][0].id')
+# Get the attribute ID for 'department' in your namespace
+export DEPT_ATTRIBUTE_ID=$(otdfctl policy attributes list --json | jq -r '[.attributes[] | select(.name=="department" and .namespace.name=="<your-namespace>")][0].id')
 
 # Add individual value(s)
 otdfctl policy attributes values create --attribute-id $DEPT_ATTRIBUTE_ID --value marketing
 ```
+
+## Getting Help
+
+If you can't resolve an issue using this guide, here are the next steps:
+
+1. **Check platform health** — verify the platform is reachable and serving (see [Connection Refused](#connection-refused) above). If the platform is down, resolve that first.
+
+2. **Search existing GitHub Discussions** — many common questions are already answered in the [opentdf/platform discussions](https://github.com/opentdf/platform/discussions).
+
+3. **Open a GitHub issue** with:
+   - SDK language and version
+   - Full error message (including stack trace if available)
+   - Minimal code that reproduces the issue
+   - Platform version and how it's deployed

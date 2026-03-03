@@ -33,6 +33,19 @@ Docs-only checks:
 - There is no dedicated unit test runner; CI primarily validates `npm run build` and Vale.
 - If you touch `docs/getting-started/` Docker Compose instructions, sanity-check them locally when feasible.
 
+## Preview Deployment
+
+After opening a PR, deploy a Surge preview so reviewers can see the changes live. Use the ticket number as the identifier.
+
+```bash
+npm run build
+npx surge build opentdf-docs-preview-<ticket-number>.surge.sh
+```
+
+Preview URL: `https://opentdf-docs-preview-<ticket-number>.surge.sh/`
+
+A free Surge account is required — first run will prompt to sign up or log in.
+
 ## Commit & Pull Request Guidelines
 
 - Commits follow Conventional Commits as seen in history: `feat(docs): …`, `fix(docs): …`, `chore(deps): …`.
