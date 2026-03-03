@@ -439,7 +439,7 @@ import_certificates() {
             echo "    1. Extract root CA: docker exec platform-caddy-1 cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt"
             echo "    2. Open Certificate Manager (certmgr.msc)"
             echo "    3. Import caddy-root.crt to Trusted Root Certification Authorities"
-            echo "  Or use: curl -k or otdfctl --tls-no-verify"
+            echo "  Or use: curl -k (curl) or otdfctl profile create --tls-no-verify (otdfctl)"
         fi
 
         # Clean up temp directory
@@ -449,7 +449,7 @@ import_certificates() {
         echo "  Certificates will be self-signed. You can:"
         echo "    - Accept browser security warnings (safe for local dev)"
         echo "    - Manually extract and trust the root CA"
-        echo "    - Use: curl -k or otdfctl --tls-no-verify"
+        echo "    - Use: curl -k (curl) or otdfctl profile create --tls-no-verify (otdfctl)"
         echo "  See: https://opentdf.io/getting-started#trust-self-signed-certificates"
     fi
 }
@@ -491,7 +491,7 @@ show_completion() {
     echo "     $OTDFCTL_BIN/otdfctl --version"
     echo ""
     echo "  4. Create an otdfctl profile:"
-    echo "     $OTDFCTL_BIN/otdfctl profile create platform-otdf-local https://platform.opentdf.local:8443"
+    echo "     $OTDFCTL_BIN/otdfctl profile create --tls-no-verify platform-otdf-local https://platform.opentdf.local:8443"
     echo ""
     echo "🌐 Access points:"
     echo "   Platform: https://platform.opentdf.local:8443"

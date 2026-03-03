@@ -47,6 +47,19 @@ If you modify quickstart scripts or Docker Compose instructions:
 - Run BATS tests if available: `bats tests/quickstart.bats`
 - Test the Docker Compose stack if feasible: Follow steps in `docs/getting-started/quickstart.mdx`
 
+## Preview Deployment
+
+After opening a PR, deploy a Surge preview so reviewers can see the changes live. Use the ticket number as the identifier.
+
+```bash
+npm run build
+npx surge build opentdf-docs-preview-<ticket-number>.surge.sh
+```
+
+Preview URL: `https://opentdf-docs-preview-<ticket-number>.surge.sh/`
+
+A free Surge account is required — first run will prompt to sign up or log in.
+
 ## Commit & Pull Request Guidelines
 
 - Commits follow Conventional Commits as seen in history: `feat(docs): …`, `fix(docs): …`, `chore(deps): …`.
