@@ -124,7 +124,7 @@ html[data-theme='light'] .text-gradient {
 }
 
 html[data-theme='light'] .glow-cyan {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 20px rgba(8, 145, 178, 0.3), 0 0 60px rgba(8, 145, 178, 0.15), 0 0 100px rgba(8, 145, 178, 0.08);
 }
 
 html[data-theme='light'] .sdk-card {

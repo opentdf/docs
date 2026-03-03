@@ -102,7 +102,7 @@ export default function Standards() {
                 View Specification
               </a>
               <a href="/architecture" className={`${styles.btn} ${styles.btnGhost}`}>
-                Architecture<span className={styles.btnSuffix}> Overview</span>
+                Architecture
               </a>
             </div>
           </div>

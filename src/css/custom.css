@@ -212,7 +212,7 @@ a[class*="embed_documentation_footer-"] {
 }
 
 .footer__sponsor-text {
-  font-size: 0.875rem;
+  font-size: 0.875rem !important;
   color: #6b7280;
   line-height: 1.6;
   margin: 0;
