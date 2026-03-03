@@ -207,7 +207,7 @@ a[class*="embed_documentation_footer-"] {
 
 .footer__copyright {
   font-size: 0.75rem;
-  color: #374151;
+  color: #6b7280; /* R-10: was #374151 — upgraded for WCAG AA (4.7:1 on #0a0c10) */
   display: block;
 }
 
@@ -216,6 +216,19 @@ a[class*="embed_documentation_footer-"] {
   color: #6b7280;
   line-height: 1.6;
   margin: 0;
+  overflow-wrap: break-word; /* R-10: prevent overflow on mobile */
+  word-wrap: break-word;
+}
+
+/* R-10: Footer bottom bar stacks vertically on mobile */
+@media (max-width: 768px) {
+  .footer__bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+    justify-content: center;
+  }
 }
 
 .footer__sponsor-text a {
@@ -355,6 +368,41 @@ Breakpoints:
 .homepage p {
   font-size: var(--vds-homepage-body-font-size);
   line-height: var(--vds-homepage-body-line-height);
+}
+
+/**************
+** NAVBAR — MOBILE: hide search, reset layout for hamburger
+***************/
+
+/* R-01: Hide search field on mobile (below Docusaurus hamburger breakpoint) */
+@media (max-width: 996px) {
+  .navbar .react-autocomplete,
+  .navbar [class*="searchBox"],
+  .navbar .navbar__search {
+    display: none !important;
+  }
+}
+
+/* R-05: Reset the 3-column absolute-positioning layout on mobile so
+   Docusaurus's built-in hamburger sidebar works correctly */
+@media (max-width: 996px) {
+  .navbar__inner {
+    justify-content: space-between;
+  }
+
+  .navbar .navbar__brand {
+    position: static;
+    transform: none;
+  }
+
+  .navbar .navbar__items--right {
+    position: static;
+    transform: none;
+  }
+
+  .navbar__inner > .navbar__items:not(.navbar__items--right) {
+    max-width: none;
+  }
 }
 
 /**************

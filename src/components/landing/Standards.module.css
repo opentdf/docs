@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  padding: 6rem 0;
+  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
   color: var(--otdf-text-primary);
 }
 
@@ -37,6 +37,8 @@
   padding: 1.5rem;
   font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.875rem;
+  overflow-x: auto; /* R-09: allow horizontal scroll on narrow screens */
+  -webkit-overflow-scrolling: touch;
 }
 
 .diagramComment {
@@ -114,17 +116,23 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  justify-content: center; /* R-11: centered on mobile */
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem; /* R-12: compact on mobile */
   border-radius: 0.5rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem; /* R-12: compact on mobile */
   text-decoration: none;
   transition: all 0.2s ease;
+}
+
+/* R-12: Hide "Overview" suffix on mobile to keep buttons side-by-side */
+.btnSuffix {
+  display: none;
 }
 
 .btnSecondary {
@@ -152,13 +160,33 @@
 }
 
 /* Responsive */
+
+/* R-09: Reduce diagram size on narrow screens */
+@media (max-width: 639px) {
+  .diagram {
+    font-size: 0.75rem;
+    padding: 1rem;
+  }
+  .pl4  { padding-left: 0.75rem; }
+  .pl8  { padding-left: 1.5rem; }
+  .pl12 { padding-left: 2.25rem; }
+}
+
 @media (min-width: 640px) {
+  .section {
+    padding: 4rem 0; /* R-08: tablet */
+  }
+
   .inner {
     padding: 0 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
+  .section {
+    padding: 6rem 0; /* R-08: restore desktop */
+  }
+
   .grid {
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
@@ -178,6 +206,21 @@
 
   .heading {
     font-size: 2.25rem;
+  }
+
+  /* R-11: Left-align CTAs in 2-column layout */
+  .ctas {
+    justify-content: flex-start;
+  }
+
+  /* R-12: Restore button sizing and show full label on desktop */
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
+  .btnSuffix {
+    display: inline;
   }
 }
 

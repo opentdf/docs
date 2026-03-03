@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  padding: 6rem 0;
+  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
   color: var(--otdf-text-primary);
 }
 
@@ -201,6 +201,10 @@
 
 /* Responsive */
 @media (min-width: 640px) {
+  .section {
+    padding: 4rem 0; /* R-08: tablet */
+  }
+
   .cards {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -215,6 +219,10 @@
 }
 
 @media (min-width: 1024px) {
+  .section {
+    padding: 6rem 0; /* R-08: restore desktop */
+  }
+
   .cards {
     grid-template-columns: repeat(4, 1fr);
   }

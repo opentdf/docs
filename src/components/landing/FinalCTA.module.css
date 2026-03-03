@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  padding: 6rem 0;
+  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
   overflow: hidden;
   color: var(--otdf-text-primary);
 }
@@ -96,6 +96,10 @@
 
 /* Responsive */
 @media (min-width: 640px) {
+  .section {
+    padding: 4rem 0; /* R-08: tablet */
+  }
+
   .inner {
     padding: 0 1.5rem;
   }
@@ -106,6 +110,10 @@
 }
 
 @media (min-width: 1024px) {
+  .section {
+    padding: 6rem 0; /* R-08: restore desktop */
+  }
+
   .inner {
     padding: 0 2rem;
   }

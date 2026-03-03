@@ -3,8 +3,8 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 6rem 0 6rem;
-  min-height: 100vh;
+  padding: 3rem 0; /* R-08: was 6rem — reduced for mobile */
+  min-height: auto; /* R-08: fit content naturally on mobile */
   color: var(--otdf-text-primary);
 }
 
@@ -14,6 +14,10 @@
   max-width: 80rem;
   margin: 0 auto;
   padding: 0 1rem;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  text-align: center; /* R-13: centered in single-column mobile */
 }
 
 .grid {
@@ -48,7 +52,7 @@
 
 /* Heading */
 .heading {
-  font-size: 2.5rem;
+  font-size: 2rem; /* R-04: was 2.5rem — reduced for mobile */
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -59,10 +63,12 @@
 /* Body */
 .bodyPrimary {
   margin-top: 1.5rem;
-  font-size: 1.125rem;
+  font-size: 1rem; /* R-04: was 1.125rem — reduced for mobile */
   color: #9ca3af;
   line-height: 1.7;
-  max-width: 36rem;
+  max-width: min(36rem, 100%);
+  margin-left: auto; /* R-13: center in single-column */
+  margin-right: auto;
 }
 
 .bodySecondary {
@@ -70,7 +76,9 @@
   font-size: 1rem;
   color: #6b7280;
   line-height: 1.7;
-  max-width: 36rem;
+  max-width: min(36rem, 100%);
+  margin-left: auto; /* R-13: center in single-column */
+  margin-right: auto;
 }
 
 /* CTAs */
@@ -79,16 +87,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  justify-content: center; /* R-03: centered on mobile */
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem; /* R-12: compact on mobile */
   border-radius: 0.5rem;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.8125rem; /* R-12: compact on mobile */
   text-decoration: none;
   transition: all 0.2s ease;
 }
@@ -119,6 +128,7 @@
 /* Code window */
 .codeWrap {
   position: relative;
+  min-width: 0; /* R-07: allow grid item to shrink below content size */
 }
 
 .codeWindow {
@@ -157,12 +167,26 @@
 }
 
 .code {
+  position: relative;
   padding: 1rem 1.25rem;
   font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem; /* R-07: 11px on mobile — fits ~45 chars */
   line-height: 1.7;
   overflow-x: auto;
   white-space: nowrap;
+}
+
+/* R-07: Fade gradient indicating horizontal scroll on mobile */
+.code::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2rem;
+  background: linear-gradient(90deg, transparent, #0f1117);
+  pointer-events: none;
+  opacity: 0.6;
 }
 
 .mt {
@@ -182,10 +206,41 @@
 .cGreen  { color: #86efac; }
 .cGray   { color: #6b7280; }
 
-/* Responsive */
+/* Responsive — mobile-first: smallest breakpoint first (R-06 fix) */
+@media (min-width: 640px) {
+  .section {
+    padding: 4rem 0; /* R-08: tablet */
+  }
+
+  .heading {
+    font-size: 2.5rem; /* R-04: was 3rem */
+  }
+
+  .inner {
+    padding: 0 1.5rem;
+  }
+
+  /* R-04: Restore body font at tablet */
+  .bodyPrimary {
+    font-size: 1.125rem;
+  }
+
+  /* R-07: Restore code font size at tablet+ */
+  .code {
+    font-size: 0.8125rem;
+  }
+}
+
 @media (min-width: 1024px) {
+  .section {
+    padding: 6rem 0; /* R-08: restore desktop */
+    min-height: 100vh;  /* R-08: fallback for older browsers */
+    min-height: 100svh; /* R-08: modern browsers — excludes browser chrome */
+  }
+
   .inner {
     padding: 0 2rem;
+    text-align: left; /* R-13: left-align in 2-column grid */
   }
 
   .grid {
@@ -197,18 +252,26 @@
     font-size: 3.75rem;
   }
 
-  .section {
-    padding-top: 6rem;
-  }
-}
-
-@media (min-width: 640px) {
-  .heading {
-    font-size: 3rem;
+  /* R-03/R-13: Left-align CTAs and body text in 2-column layout */
+  .ctas {
+    justify-content: flex-start;
   }
 
-  .inner {
-    padding: 0 1.5rem;
+  .bodyPrimary,
+  .bodySecondary {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* R-12: Restore button sizing on desktop */
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
+  /* R-07: Hide scroll fade on desktop — not needed */
+  .code::after {
+    display: none;
   }
 }
 
