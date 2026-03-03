@@ -84,8 +84,8 @@
 
 .btnGhost {
   background: transparent;
-  color: #6b7280;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--otdf-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .btnGhost:hover {
@@ -144,7 +144,7 @@
 }
 
 :global(html[data-theme='light']) .btnSecondary {
-  border-color: #e2e8f0;
+  border-color: #cbd5e1;
   color: #0f172a;
 }
 
@@ -154,8 +154,8 @@
 }
 
 :global(html[data-theme='light']) .btnGhost {
-  border-color: #f1f5f9;
-  color: #64748b;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 :global(html[data-theme='light']) .btnGhost:hover {
