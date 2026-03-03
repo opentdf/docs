@@ -9,7 +9,7 @@ const sdks = [
     colorClass: "sdk-js",
     icon: "TS",
     href: "https://www.npmjs.com/package/@opentdf/sdk",
-    recommended: true,
+    recommended: false,
   },
   {
     name: "Platform SDK",
