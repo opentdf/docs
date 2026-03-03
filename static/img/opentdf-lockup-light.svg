@@ -1,0 +1,10 @@
+<svg viewBox="0 0 128 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <mask id="pm">
+    <rect width="128" height="32" fill="white"/>
+    <circle cx="24" cy="16" r="8.5" fill="black"/>
+  </mask>
+  <circle cx="12" cy="16" r="11" stroke="#0891B2" stroke-width="1.5" opacity="0.3" fill="none" stroke-dasharray="3 2" mask="url(#pm)"/>
+  <circle cx="24" cy="16" r="7" stroke="#0891B2" stroke-width="2" fill="none"/>
+  <circle cx="24" cy="16" r="2.5" fill="#0891B2"/>
+  <text x="40" y="16" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.5" fill="#0f172a" dominant-baseline="central">OpenTDF</text>
+</svg>

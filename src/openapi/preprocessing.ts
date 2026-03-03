@@ -467,10 +467,11 @@ function renameInfoFilesToIndex() {
             } else if (item.name.endsWith('.info.mdx')) {
                 const newPath = path.join(dir, 'index.mdx');
                 if (fs.existsSync(newPath)) {
-                    // Keep index.mdx as the canonical category index and remove stale
-                    // *.info.mdx duplicates that can conflict with sidebar category routing.
+                    // Plugin now generates both index.mdx and *.info.mdx with the same ID.
+                    // The duplicate causes Docusaurus to lose the category index association.
+                    // Remove the .info.mdx since index.mdx already has identical content.
                     fs.unlinkSync(fullPath);
-                    console.log(`  Removed stale duplicate (index.mdx already exists): ${fullPath}`);
+                    console.log(`  Removed duplicate: ${fullPath} (index.mdx already exists)`);
                 } else {
                     fs.renameSync(fullPath, newPath);
                     console.log(`  Renamed: ${fullPath} → ${newPath}`);
