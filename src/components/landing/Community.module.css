@@ -1,6 +1,6 @@
 .section {
   position: relative;
-  padding: 4rem 0; /* R-08: was 6rem ��� reduced for mobile */
+  padding: 4rem 0; /* R-08: was 6rem - reduced for mobile */
   color: var(--otdf-text-primary);
 }
 
