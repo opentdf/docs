@@ -251,6 +251,11 @@
 
   .heading {
     font-size: 3.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .bodyPrimary {
+    margin-top: 0;
   }
 
   /* R-03/R-13: Left-align CTAs and body text in 2-column layout */

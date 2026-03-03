@@ -206,6 +206,7 @@
 
   .heading {
     font-size: 2.25rem;
+    margin-bottom: 1.25rem;
   }
 
   /* R-11: Left-align CTAs in 2-column layout */
