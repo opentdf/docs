@@ -307,6 +307,7 @@ console.log(text);
 
 See [Decrypt Options](#decrypt-options) for the full list of configuration options.
 See [TDF Reader](#tdf-reader) for all methods on the reader object.
+See [PolicyObject](#policyobject) and [Manifest Object](#manifest-object) for the types returned by reader methods.
 
 ---
 
@@ -752,6 +753,134 @@ async manifest(): Promise<Manifest>
 
 ```typescript
 const manifest = await reader.manifest();
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## KASInfo
+
+`KASInfo` is the input type passed to `WithKasInformation` (Go) or used to build a `Config.KASInfo` (Java). It identifies a KAS endpoint and the key configuration to use when wrapping the data encryption key.
+
+### Fields
+
+| Field | Go | Java | Required | Description |
+|-------|-----|------|----------|-------------|
+| URL | `URL string` | `String URL` | Required | The KAS endpoint URL. |
+| Algorithm | `Algorithm string` | `String Algorithm` | Optional | Wrapping key algorithm (e.g. `"ec:secp256r1"`). Defaults to `"rsa:2048"` if empty. |
+| KID | `KID string` | `String KID` | Optional | Key identifier on the KAS, used when the KAS hosts multiple keys. |
+| PublicKey | `PublicKey string` | `String PublicKey` | Optional | PEM-encoded public key. If empty, the SDK fetches it from the KAS. |
+| Default | `Default bool` | — | Optional | Go only. If `true`, this KAS is used as the default for encrypt calls when no KAS is explicitly specified. |
+
+### Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/sdk"
+
+kas := sdk.KASInfo{
+    URL:       "https://kas.example.com",
+    Algorithm: "ec:secp256r1",
+    KID:       "my-key-1",
+}
+
+manifest, err := client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(kas),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.Config;
+
+var kasInfo = new Config.KASInfo();
+kasInfo.URL       = "https://kas.example.com";
+kasInfo.Algorithm = "ec:secp256r1";
+kasInfo.KID       = "my-key-1";
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo)
+);
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## PolicyObject
+
+`PolicyObject` is returned by `tdfReader.Policy()` (Go) and `reader.readPolicyObject()` (Java). It contains the decoded access control policy embedded in the TDF — including the UUID, the list of data attribute FQNs, and the dissemination list.
+
+### Fields
+
+| Field | Go | Java | Description |
+|-------|-----|------|-------------|
+| UUID | `UUID string` | `String uuid` | Unique identifier for this policy. |
+| Body.DataAttributes | `[]attributeObject` | `List<AttributeObject>` | Data attribute FQNs governing access. Each entry has an `Attribute` (FQN string) and `KasURL`. |
+| Body.Dissem | `[]string` | `List<String>` | Dissemination list — entity identifiers explicitly granted access. |
+
+### Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+policy, err := tdfReader.Policy()
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("Policy UUID:", policy.UUID)
+for _, attr := range policy.Body.DataAttributes {
+    fmt.Printf("  Attribute: %s (KAS: %s)\n", attr.Attribute, attr.KasURL)
+}
+for _, entity := range policy.Body.Dissem {
+    fmt.Println("  Dissem:", entity)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.PolicyObject;
+import io.opentdf.platform.sdk.TDF;
+
+PolicyObject policy = reader.readPolicyObject();
+System.out.println("Policy UUID: " + policy.uuid);
+
+for (var attr : policy.body.dataAttributes) {
+    System.out.println("  Attribute: " + attr.attribute + " (KAS: " + attr.kasURL + ")");
+}
+for (var entity : policy.body.dissem) {
+    System.out.println("  Dissem: " + entity);
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+The policy is embedded in the manifest. Use `reader.manifest()` on a `TDFReader` from `client.open()`:
+
+```typescript
+const manifest = await reader.manifest();
+const policy = JSON.parse(atob(manifest.encryptionInformation.policy));
+console.log('Policy UUID:', policy.uuid);
+console.log('Attributes:', policy.body.dataAttributes);
 ```
 
 </TabItem>
