@@ -244,7 +244,9 @@ const plaintext = await client.read({
 
 ### Session Key Type
 
-Override the algorithm used for the ephemeral session key when unwrapping the data encryption key from the KAS. The default is `rsa:2048`.
+During decryption, the SDK generates a short-lived (ephemeral) asymmetric key pair and sends the public half to the KAS. The KAS uses it to securely return the unwrapped Data Encryption Key back to the SDK. This option controls the algorithm used for that ephemeral key pair.
+
+The default is `rsa:2048`. Use `ec:secp256r1` (or another EC variant) for smaller messages and faster key exchange. Must match an algorithm supported by the KAS.
 
 <Tabs>
 <TabItem value="go" label="Go">

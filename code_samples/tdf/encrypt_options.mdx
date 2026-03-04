@@ -464,7 +464,9 @@ To sign assertions with a key so that they can be verified on decrypt, add a `si
 
 ### Wrapping Key Algorithm
 
-Override the algorithm used to wrap the data encryption key when sending it to the KAS. The default is `rsa:2048`. Use an EC algorithm for smaller key access objects and faster wrapping operations.
+When a TDF is created, the SDK generates a random symmetric Data Encryption Key (DEK) to encrypt the payload. The DEK is then asymmetrically encrypted ("wrapped") using the KAS's public key, so that only the KAS can unwrap it during decryption. This option controls which asymmetric algorithm is used for that wrapping step.
+
+The default is `rsa:2048` — RSA with a 2048-bit key. EC (elliptic curve) algorithms such as `ec:secp256r1` offer equivalent security with smaller key material stored in the TDF manifest and faster wrap/unwrap operations.
 
 <Tabs>
 <TabItem value="go" label="Go">
