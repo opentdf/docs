@@ -14,8 +14,8 @@ Some SDK functionality — including policy management, authorization decisions,
 
 | | Core SDK | Platform Service Client |
 |---|---|---|
-| **What it does** | Encrypts and decrypts data locally | Manages resources on a running platform |
-| **Network required** | No (local operations) | Yes (gRPC calls to a platform endpoint) |
+| **What it does** | Wraps and unwraps TDF-protected data | Manages platform resources (policy, keys, authorization) |
+| **Calls platform** | Some operations (e.g. key unwrap, service discovery) | Always — all methods are remote gRPC calls |
 | **Examples** | `CreateTdf`, `LoadTdf` | `GetNamespace`, `GetDecision`, `ListKeyAccessServers` |
 
 This is the same pattern used by cloud provider SDKs — you instantiate a typed client once (analogous to `new S3Client()` in AWS), then call methods on it to manage remote resources.
