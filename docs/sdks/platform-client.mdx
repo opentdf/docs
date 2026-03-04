@@ -1,0 +1,76 @@
+---
+sidebar_position: 2
+title: Platform Service Client
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Platform Service Client
+
+Some OpenTDF SDK functionality — including policy management, authorization decisions, and KAS registry operations — is provided through a **platform service client** rather than through the core SDK.
+
+## Core SDK vs. Platform Service Client
+
+| | Core SDK | Platform Service Client |
+|---|---|---|
+| **What it does** | Encrypts and decrypts data locally | Manages resources on a running OpenTDF platform |
+| **Network required** | No (local operations) | Yes (gRPC calls to a platform endpoint) |
+| **Examples** | `CreateTdf`, `LoadTdf` | `GetNamespace`, `GetDecision`, `ListKeyAccessServers` |
+| **Pages** | [TDF Operations](/sdks/tdf) | [Policy](/sdks/policy), [Authorization](/sdks/authorization), [KAS Registry](/sdks/kas-registry) |
+
+This is the same pattern used by cloud provider SDKs — you instantiate a typed client once (analogous to `new S3Client()` in AWS), then call methods on it to manage remote resources.
+
+## Setup
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "github.com/opentdf/platform/sdk"
+    // Plus the service-specific package for each call, e.g.:
+    "github.com/opentdf/platform/protocol/go/policy/namespaces"
+    "github.com/opentdf/platform/protocol/go/authorization"
+)
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("client-id", "client-secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("client-id", "client-secret")
+    .useInsecurePlaintextConnection(true) // dev only — remove in production
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+const platform = new PlatformClient({
+    authProvider,
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+For credential configuration, see the [Auth Providers](/sdks/authorization) guide.

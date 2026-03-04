@@ -7,6 +7,10 @@ import TabItem from '@theme/TabItem';
 
 # Making Authorization Decisions
 
+:::note
+The methods on this page are provided through the [platform service client](/sdks/platform-client).
+:::
+
 OpenTDF's authorization system provides two primary methods for access control: **Entitlements** and **Authorization Decisions**. Understanding when and how to use each is crucial for implementing effective data security.
 
 ## Overview
@@ -21,100 +25,6 @@ OpenTDF's authorization system provides two primary methods for access control: 
 1. **During Resource Discovery**: Use `GetEntitlements` to show users what data they can access
 2. **During Resource Access**: Use `GetDecision` to enforce access controls when accessing specific resources
 3. **For Bulk Operations**: Use `GetDecisionBulk` for efficient batch authorization
-
-## Authentication Setup
-
-All authorization calls require proper authentication. Here's how to set up the SDK client:
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "log"
-    
-    "github.com/opentdf/platform/protocol/go/authorization"
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/entity"
-    "github.com/opentdf/platform/protocol/go/policy"
-    "github.com/opentdf/platform/sdk"
-    "google.golang.org/protobuf/proto"
-)
-
-func main() {
-    platformEndpoint := "http://localhost:8080"
-    
-    // Create authenticated client
-    client, err := sdk.New(
-        platformEndpoint,
-        sdk.WithClientCredentials("opentdf", "secret", nil),
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Client is ready for authorization calls
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.authorization.*;
-import io.opentdf.platform.entity.*;
-import io.opentdf.platform.policy.*;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-public class AuthorizationSetup {
-    public static void main(String[] args) {
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:8080";
-        
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-            .clientSecret(clientId, clientSecret)
-            .useInsecurePlaintextConnection(true)
-            .build();
-                
-        // SDK is ready for authorization calls
-    }
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```javascript
-import { PlatformClient } from '@opentdf/sdk/platform';
-import { AuthProviders } from '@opentdf/sdk';
-
-// Assume you have an existing access token
-const accessToken = 'your-access-token-here';
-
-// Create auth provider with existing token
-const authProvider = await AuthProviders.accessTokenAuthProvider({
-  accessToken: accessToken
-});
-
-// Create platform client
-const platformClient = new PlatformClient({
-  platformUrl: 'http://localhost:8080',
-  authProvider
-});
-
-// Client is ready for authorization calls
-```
-
-</TabItem>
-</Tabs>
 
 ## Getting Entitlements
 

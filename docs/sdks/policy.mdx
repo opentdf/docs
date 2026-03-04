@@ -14,66 +14,8 @@ import ListSubjectMapping from '../../code_samples/policy_code/list_subject_mapp
 
 # Managing Policy
 
-:::info Platform Service Client API
-The methods on this page are **not** native to the core OpenTDF SDK. They are remote procedure calls made through a **platform service client** — a typed client that connects to your running OpenTDF platform over gRPC. All calls require a live platform endpoint and appropriate credentials.
-
-This is the same pattern used by cloud provider SDKs (e.g., `new S3Client()` in AWS). You instantiate a client once, then call methods on it to manage resources on the platform.
-
-**Required imports by language:**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-import (
-    "github.com/opentdf/platform/sdk"
-    // Plus the service-specific package for each method, e.g.:
-    "github.com/opentdf/platform/protocol/go/policy/namespaces"
-    "github.com/opentdf/platform/protocol/go/policy/attributes"
-    "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-)
-
-// Instantiate once:
-client, err := sdk.New("http://localhost:8080",
-    sdk.WithClientCredentials("client-id", "client-secret", nil),
-)
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-// Add the platform SDK to your dependencies, then:
-import io.opentdf.platform.sdk.SDK;
-import io.opentdf.platform.sdk.SDKBuilder;
-
-// Instantiate once:
-SDK sdk = SDKBuilder.newBuilder()
-    .platformEndpoint("http://localhost:8080")
-    .clientSecret("client-id", "client-secret")
-    .useInsecurePlaintextConnection(true) // dev only
-    .build();
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-// Install: npm install @opentdf/sdk
-import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
-
-// Instantiate once:
-const platform = new PlatformClient({
-    authProvider,
-    platformUrl: 'http://localhost:8080',
-});
-```
-
-</TabItem>
-</Tabs>
-
-See the [Auth Providers](/sdks/authorization) guide for credential setup.
+:::note
+The methods on this page are provided through the [platform service client](/sdks/platform-client).
 :::
 
 Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**.
