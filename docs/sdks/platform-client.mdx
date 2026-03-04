@@ -8,16 +8,15 @@ import TabItem from '@theme/TabItem';
 
 # Platform Service Client
 
-Some OpenTDF SDK functionality — including policy management, authorization decisions, and KAS registry operations — is provided through a **platform service client** rather than through the core SDK.
+Some SDK functionality — including policy management, authorization decisions, and KAS registry operations — is provided through a **platform service client** rather than through the core SDK.
 
 ## Core SDK vs. Platform Service Client
 
 | | Core SDK | Platform Service Client |
 |---|---|---|
-| **What it does** | Encrypts and decrypts data locally | Manages resources on a running OpenTDF platform |
+| **What it does** | Encrypts and decrypts data locally | Manages resources on a running platform |
 | **Network required** | No (local operations) | Yes (gRPC calls to a platform endpoint) |
 | **Examples** | `CreateTdf`, `LoadTdf` | `GetNamespace`, `GetDecision`, `ListKeyAccessServers` |
-| **Pages** | [TDF Operations](/sdks/tdf) | [Policy](/sdks/policy), [Authorization](/sdks/authorization), [KAS Registry](/sdks/kas-registry) |
 
 This is the same pattern used by cloud provider SDKs — you instantiate a typed client once (analogous to `new S3Client()` in AWS), then call methods on it to manage remote resources.
 
@@ -73,4 +72,4 @@ const platform = new PlatformClient({
 </TabItem>
 </Tabs>
 
-For credential configuration, see the [Auth Providers](/sdks/authorization) guide.
+For credential configuration, see the Auth Providers guide.
