@@ -20,7 +20,7 @@ import "github.com/opentdf/platform/sdk"
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithDataAttributes(
-        "https://example.com/attr/classification/value/secret",
+        "https://example.com/attr/clearance/value/executive",
         "https://example.com/attr/department/value/engineering",
     ),
 )
@@ -37,7 +37,7 @@ import io.opentdf.platform.sdk.Config;
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.withDataAttributes(
-        "https://example.com/attr/classification/value/secret",
+        "https://example.com/attr/clearance/value/executive",
         "https://example.com/attr/department/value/engineering"
     )
 );
@@ -54,7 +54,7 @@ const tdf = await client.createZTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     attributes: [
-        'https://example.com/attr/classification/value/secret',
+        'https://example.com/attr/clearance/value/executive',
         'https://example.com/attr/department/value/engineering',
     ],
 });
@@ -112,7 +112,7 @@ sdk.createTDF(inputStream, outputStream, config);
 const tdf = await client.createZTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
-    attributes: ['https://example.com/attr/classification/value/secret'],
+    attributes: ['https://example.com/attr/clearance/value/executive'],
 });
 ```
 
@@ -134,7 +134,7 @@ When enabled, the SDK queries the platform's attribute service to automatically 
 import "github.com/opentdf/platform/sdk"
 
 manifest, err := client.CreateTDF(buf, str,
-    sdk.WithDataAttributes("https://example.com/attr/classification/value/secret"),
+    sdk.WithDataAttributes("https://example.com/attr/clearance/value/executive"),
     sdk.WithAutoconfigure(true),
 )
 ```
@@ -146,7 +146,7 @@ manifest, err := client.CreateTDF(buf, str,
 import io.opentdf.platform.sdk.Config;
 
 Config.TDFConfig config = Config.newTDFConfig(
-    Config.withDataAttributes("https://example.com/attr/classification/value/secret"),
+    Config.withDataAttributes("https://example.com/attr/clearance/value/executive"),
     Config.withAutoconfigure(true)
 );
 sdk.createTDF(inputStream, outputStream, config);
@@ -158,7 +158,7 @@ sdk.createTDF(inputStream, outputStream, config);
 ```typescript
 const tdf = await client.createZTDF({
     source: { type: 'buffer', location: data },
-    attributes: ['https://example.com/attr/classification/value/secret'],
+    attributes: ['https://example.com/attr/clearance/value/executive'],
     autoconfigure: true,
 });
 ```
