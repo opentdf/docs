@@ -432,6 +432,8 @@ Individual TDF failures are collected into a single bulk error. Use `sdk.FromBul
 ### Example
 
 ```go
+ctx := context.Background()
+
 tdfs := []*sdk.BulkTDF{
     {Reader: bytes.NewReader(tdf1Bytes), Writer: &buf1},
     {Reader: bytes.NewReader(tdf2Bytes), Writer: &buf2},
@@ -455,6 +457,8 @@ if err != nil {
 To inspect the prepared request before executing:
 
 ```go
+ctx := context.Background()
+
 prepared, err := client.PrepareBulkDecrypt(ctx, sdk.WithTDFs(tdfs...))
 if err != nil {
     log.Fatal(err)

@@ -413,10 +413,6 @@ System.out.println("Metadata: " + metadata);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const reader = client.open({
-    source: { type: 'buffer', location: encryptedBytes },
-});
-// Metadata is available on the stream returned by read()
 const stream = await client.read({
     source: { type: 'buffer', location: encryptedBytes },
 });
