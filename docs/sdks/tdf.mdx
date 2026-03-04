@@ -161,7 +161,7 @@ See [Encrypt Options](#encrypt-options) for the full list of configuration optio
 
 ## LoadTDF
 
-Opens an encrypted TDF and returns a reader that provides access to the plaintext payload and manifest data.
+Opens an encrypted TDF and returns a [TDF reader](#tdf-reader) that provides access to the plaintext payload and manifest data.
 
 ### Signature
 
@@ -216,7 +216,7 @@ open(options: ReadOptions): TDFReader
 <TabItem value="js" label="JavaScript">
 
 - `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
-- `open()` → `TDFReader` — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
+- `open()` → [`TDFReader`](#tdf-reader) — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
 
 </TabItem>
 </Tabs>
@@ -531,7 +531,7 @@ err = prepared.BulkDecrypt(ctx)
 
 ## TDF Reader
 
-`LoadTDF` (Go) and `loadTDF` (Java) return a reader object. In JavaScript, the equivalent is the `TDFReader` returned by `client.open()`. You can call manifest and policy methods on the reader without reading the payload, which is useful for routing, auditing, or display.
+[`LoadTDF`](#loadtdf) (Go) and [`loadTDF`](#loadtdf) (Java) return a reader object. In JavaScript, the equivalent is the [`TDFReader`](#tdf-reader) returned by `client.open()`. You can call manifest and policy methods on the reader without reading the payload, which is useful for routing, auditing, or display.
 
 ### Payload
 
@@ -569,7 +569,7 @@ reader.readPayload(output);
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-Use `client.read()` for direct payload access, or `.decrypt()` on a `TDFReader`:
+Use `client.read()` for direct payload access, or `.decrypt()` on a [`TDFReader`](#tdf-reader):
 
 ```typescript
 const stream = await reader.decrypt();
@@ -623,7 +623,7 @@ const metadata = await stream.metadata;
 
 ### Policy
 
-Returns the TDF policy object containing the UUID, data attributes, and dissemination list.
+Returns the [`PolicyObject`](#policyobject) containing the UUID, data attributes, and dissemination list.
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -656,7 +656,7 @@ System.out.println("Policy UUID: " + policy.uuid);
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-Policy is embedded in the manifest. Use `reader.manifest()` on a `TDFReader`:
+Policy is embedded in the manifest. Use `reader.manifest()` on a [`TDFReader`](#tdf-reader):
 
 ```typescript
 const manifest = await reader.manifest();
@@ -668,7 +668,7 @@ const manifest = await reader.manifest();
 
 ### Data Attributes
 
-Returns the list of data attribute FQN strings attached to the TDF policy.
+Returns the list of data attribute FQN strings attached to the [TDF policy](#policyobject).
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -716,7 +716,7 @@ const attrs = await reader.attributes();
 
 ### Manifest
 
-Returns the raw TDF manifest, including encryption information, key access objects, and assertions.
+Returns the raw [TDF manifest](#manifest-object), including encryption information, key access objects, and assertions.
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -816,15 +816,15 @@ Config.TDFConfig config = Config.newTDFConfig(
 
 ## PolicyObject
 
-`PolicyObject` is returned by `tdfReader.Policy()` (Go) and `reader.readPolicyObject()` (Java). It contains the decoded access control policy embedded in the TDF — including the UUID, the list of data attribute FQNs, and the dissemination list.
+`PolicyObject` is returned by [`tdfReader.Policy()`](#policy) (Go) and `reader.readPolicyObject()` (Java). It contains the decoded access control policy embedded in the TDF — including the UUID, the list of data attribute FQNs, and the dissemination list.
 
 ### Fields
 
 | Field | Go | Java | Description |
 |-------|-----|------|-------------|
 | UUID | `UUID string` | `String uuid` | Unique identifier for this policy. |
-| Body.DataAttributes | `[]attributeObject` | `List<AttributeObject>` | Data attribute FQNs governing access. Each entry has an `Attribute` (FQN string) and `KasURL`. |
-| Body.Dissem | `[]string` | `List<String>` | Dissemination list — entity identifiers explicitly granted access. |
+| Body.DataAttributes | `[]attributeObject` | `List&lt;AttributeObject&gt;` | Data attribute FQNs governing access. Each entry has an `Attribute` (FQN string) and `KasURL`. |
+| Body.Dissem | `[]string` | `List&lt;String&gt;` | Dissemination list — entity identifiers explicitly granted access. |
 
 ### Example
 
@@ -874,7 +874,7 @@ for (var entity : policy.body.dissem) {
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-The policy is embedded in the manifest. Use `reader.manifest()` on a `TDFReader` from `client.open()`:
+The policy is embedded in the [manifest](#manifest-object). Use `reader.manifest()` on a [`TDFReader`](#tdf-reader) from `client.open()`:
 
 ```typescript
 const manifest = await reader.manifest();
@@ -890,7 +890,7 @@ console.log('Attributes:', policy.body.dataAttributes);
 
 ## Manifest Object
 
-The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via [`tdfReader.Manifest()`](#manifest--getmanifest--access-the-raw-manifest). It describes the full TDF structure — encryption method, key access configuration, payload metadata, and any attached assertions — without requiring decryption.
+The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via [`tdfReader.Manifest()`](#manifest). It describes the full TDF structure — encryption method, key access configuration, payload metadata, and any attached assertions — without requiring decryption.
 
 ### Top-Level Fields
 
@@ -907,7 +907,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 |-------|------|-------------|
 | `KeyAccessObjs` | `[]KeyAccess` | One entry per KAS holding a key grant. Split TDFs have multiple entries. |
 | `Method.Algorithm` | `string` | Encryption algorithm (e.g. `"AES-256-GCM"`). |
-| `Policy` | `string` | Base64-encoded policy object. Use `tdfReader.Policy()` to decode. |
+| `Policy` | `string` | Base64-encoded policy object. Use [`tdfReader.Policy()`](#policy) to decode. |
 
 ### KeyAccess Fields
 
