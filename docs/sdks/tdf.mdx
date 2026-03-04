@@ -57,7 +57,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 <Tabs>
 <TabItem value="go" label="Go">
 
-`(*Manifest, error)` — The manifest of the created TDF on success; a non-nil `error` on failure.
+`(*Manifest, error)` — The manifest of the created TDF on success. See [Manifest Object](#manifest-object) for field reference. Returns a non-nil `error` on failure.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -756,6 +756,73 @@ const manifest = await reader.manifest();
 
 </TabItem>
 </Tabs>
+
+---
+
+## Manifest Object
+
+The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via [`tdfReader.Manifest()`](#manifest--getmanifest--access-the-raw-manifest). It describes the full TDF structure — encryption method, key access configuration, payload metadata, and any attached assertions — without requiring decryption.
+
+### Top-Level Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `TDFVersion` | `string` | TDF spec version (e.g. `"4.3.0"`). Serialized as `schemaVersion` in the manifest JSON. |
+| `EncryptionInformation` | `EncryptionInformation` | Encryption method, key access objects, and integrity information. |
+| `Payload` | `Payload` | Metadata about the encrypted payload. |
+| `Assertions` | `[]Assertion` | Cryptographically bound or signed statements attached to the TDF. Empty if none were added at encrypt time. |
+
+### EncryptionInformation Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `KeyAccessObjs` | `[]KeyAccess` | One entry per KAS holding a key grant. Split TDFs have multiple entries. |
+| `Method.Algorithm` | `string` | Encryption algorithm (e.g. `"AES-256-GCM"`). |
+| `Policy` | `string` | Base64-encoded policy object. Use `tdfReader.Policy()` to decode. |
+
+### KeyAccess Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `KasURL` | `string` | URL of the KAS holding the key grant. |
+| `KeyType` | `string` | Key access type (`"wrapped"` or `"remote"`). |
+| `SplitID` | `string` | Key split identifier. Entries sharing the same ID share a key segment; different IDs represent independent splits. |
+| `KID` | `string` | Key identifier on the KAS, if set. |
+
+### Payload Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `MimeType` | `string` | MIME type of the plaintext payload. Empty string if not set at encrypt time. |
+| `IsEncrypted` | `bool` | Always `true` in a valid TDF. |
+| `Protocol` | `string` | Protocol identifier (e.g. `"zip"`). |
+
+### Example
+
+```go
+import (
+    "fmt"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+manifest := tdfReader.Manifest()
+fmt.Println("TDF version:", manifest.TDFVersion)
+fmt.Println("Algorithm:", manifest.EncryptionInformation.Method.Algorithm)
+fmt.Println("MIME type:", manifest.Payload.MimeType)
+
+for _, ka := range manifest.EncryptionInformation.KeyAccessObjs {
+    fmt.Printf("KAS: %s (split: %s)\n", ka.KasURL, ka.SplitID)
+}
+
+for _, a := range manifest.Assertions {
+    fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
+}
+```
+
+:::note Cross-language
+In Java, `reader.getManifest()` returns a `Manifest` object with equivalent fields. In JavaScript, `reader.manifest()` returns the manifest as a parsed JSON object matching the TDF spec's `manifest.json` structure.
+:::
 
 ---
 
