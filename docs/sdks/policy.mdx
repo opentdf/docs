@@ -14,6 +14,68 @@ import ListSubjectMapping from '../../code_samples/policy_code/list_subject_mapp
 
 # Managing Policy
 
+:::info Platform Service Client API
+The methods on this page are **not** native to the core OpenTDF SDK. They are remote procedure calls made through a **platform service client** — a typed client that connects to your running OpenTDF platform over gRPC. All calls require a live platform endpoint and appropriate credentials.
+
+This is the same pattern used by cloud provider SDKs (e.g., `new S3Client()` in AWS). You instantiate a client once, then call methods on it to manage resources on the platform.
+
+**Required imports by language:**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "github.com/opentdf/platform/sdk"
+    // Plus the service-specific package for each method, e.g.:
+    "github.com/opentdf/platform/protocol/go/policy/namespaces"
+    "github.com/opentdf/platform/protocol/go/policy/attributes"
+    "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
+
+// Instantiate once:
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("client-id", "client-secret", nil),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+// Add the platform SDK to your dependencies, then:
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+
+// Instantiate once:
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("client-id", "client-secret")
+    .useInsecurePlaintextConnection(true) // dev only
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Install: npm install @opentdf/sdk
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+// Instantiate once:
+const platform = new PlatformClient({
+    authProvider,
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+See the [Auth Providers](/sdks/authorization) guide for credential setup.
+:::
+
 Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**.
 
 ---
@@ -1208,409 +1270,6 @@ console.log(`Deactivated value: ${resp.value?.id}`);
 
 ---
 
-## Subject Mappings
-
-A **subject mapping** links a subject condition set to a specific attribute value and a set of permitted actions (e.g., `DECRYPT`). It answers the question: *"which entities are allowed to do what with data carrying this attribute value?"*
-
-:::note Hard-delete
-Subject mappings are permanently deleted (not deactivated). There is no restore operation.
-:::
-
-<CreateSubjectMapping />
-
-<ListSubjectMapping />
-
-<details id="get-subject-mapping">
-<summary>Get a Subject Mapping</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
-		&subjectmapping.GetSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sm := resp.GetSubjectMapping()
-	log.Printf("Subject Mapping ID: %s, Attribute Value ID: %s\n",
-		sm.GetId(), sm.GetAttributeValue().GetId())
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.GetSubjectMappingRequest;
-import java.util.Collections;
-
-public class GetSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = GetSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .getSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
-
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
-
-const resp = await platform.v1.subjectMapping.getSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
-});
-console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="update-subject-mapping">
-<summary>Update a Subject Mapping</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy"
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Replace the actions list on an existing subject mapping
-	resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
-		&subjectmapping.UpdateSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-			Actions: []*policy.Action{
-				{
-					Value: &policy.Action_Standard{
-						Standard: policy.Action_STANDARD_ACTION_DECRYPT,
-					},
-				},
-			},
-			// Optionally replace the subject condition set:
-			// SubjectConditionSetId: "new-scs-uuid",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-}
-```
-
-Providing `Actions` replaces the entire actions list. Omit it to leave actions unchanged. Providing `SubjectConditionSetId` swaps the linked condition set.
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.Action;
-import io.opentdf.platform.policy.subjectmapping.UpdateSubjectMappingRequest;
-import java.util.Collections;
-
-public class UpdateSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var decryptAction = Action.newBuilder()
-            .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT)
-            .build();
-
-        var req = UpdateSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .addActions(decryptAction)
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .updateSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
-
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
-
-const resp = await platform.v1.subjectMapping.updateSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
-  actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
-});
-console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="delete-subject-mapping">
-<summary>Delete a Subject Mapping</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
-		&subjectmapping.DeleteSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deleted subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.DeleteSubjectMappingRequest;
-import java.util.Collections;
-
-public class DeleteSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = DeleteSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .deleteSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
-
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
-
-const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
-});
-console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="match-subject-mappings">
-<summary>Match Subject Mappings</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-Given a list of subject properties (key-value pairs from an entity's claims or attributes), return all subject mappings whose condition sets match. This is used to determine which access grants apply to a given entity.
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy"
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
-		&subjectmapping.MatchSubjectMappingsRequest{
-			SubjectProperties: []*policy.SubjectProperty{
-				{ExternalSelectorValue: ".clientId", ExternalValue: "my-service"},
-				{ExternalSelectorValue: ".realm_access.roles", ExternalValue: "developer"},
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, sm := range resp.GetSubjectMappings() {
-		log.Printf("Matched subject mapping ID: %s\n", sm.GetId())
-	}
-}
-```
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.SubjectProperty;
-import io.opentdf.platform.policy.subjectmapping.MatchSubjectMappingsRequest;
-import java.util.Collections;
-
-public class MatchSubjectMappingsExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = MatchSubjectMappingsRequest.newBuilder()
-            .addSubjectProperties(SubjectProperty.newBuilder()
-                .setExternalSelectorValue(".clientId")
-                .setExternalValue("my-service")
-                .build())
-            .addSubjectProperties(SubjectProperty.newBuilder()
-                .setExternalSelectorValue(".realm_access.roles")
-                .setExternalValue("developer")
-                .build())
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .matchSubjectMappingsBlocking(req, Collections.emptyMap()).execute();
-        for (var sm : resp.getSubjectMappingsList()) {
-            System.out.println("Matched subject mapping ID: " + sm.getId());
-        }
-
-        sdk.close();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
-
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
-
-const resp = await platform.v1.subjectMapping.matchSubjectMappings({
-  subjectProperties: [
-    { externalSelectorValue: '.clientId', externalValue: 'my-service' },
-    { externalSelectorValue: '.realm_access.roles', externalValue: 'developer' },
-  ],
-});
-for (const sm of resp.subjectMappings) {
-  console.log(`Matched subject mapping ID: ${sm.id}`);
-}
-```
-
-</TabItem>
-</Tabs>
-</details>
-
----
-
 ## Subject Condition Sets
 
 A **subject condition set** (SCS) is a reusable, named set of conditions that evaluate claims from an entity's token. Multiple subject mappings can reference the same SCS.
@@ -2103,3 +1762,406 @@ console.log(`Deleted ${resp.subjectConditionSets.length} unmapped subject condit
 </TabItem>
 </Tabs>
 </details>
+## Subject Mappings
+
+A **subject mapping** links a subject condition set to a specific attribute value and a set of permitted actions (e.g., `DECRYPT`). It answers the question: *"which entities are allowed to do what with data carrying this attribute value?"*
+
+:::note Hard-delete
+Subject mappings are permanently deleted (not deactivated). There is no restore operation.
+:::
+
+<CreateSubjectMapping />
+
+<ListSubjectMapping />
+
+<details id="get-subject-mapping">
+<summary>Get a Subject Mapping</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
+		&subjectmapping.GetSubjectMappingRequest{
+			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sm := resp.GetSubjectMapping()
+	log.Printf("Subject Mapping ID: %s, Attribute Value ID: %s\n",
+		sm.GetId(), sm.GetAttributeValue().GetId())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+package io.opentdf.platform;
+
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.subjectmapping.GetSubjectMappingRequest;
+import java.util.Collections;
+
+public class GetSubjectMappingExample {
+    public static void main(String[] args) throws Exception {
+        SDK sdk = SDKBuilder.newBuilder()
+            .platformEndpoint("http://localhost:8080")
+            .clientSecret("opentdf", "secret")
+            .useInsecurePlaintextConnection(true)
+            .build();
+
+        var req = GetSubjectMappingRequest.newBuilder()
+            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+            .build();
+
+        var resp = sdk.getServices().subjectMappings()
+            .getSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+        System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
+
+        sdk.close();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+
+const resp = await platform.v1.subjectMapping.getSubjectMapping({
+  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+});
+console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="update-subject-mapping">
+<summary>Update a Subject Mapping</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Replace the actions list on an existing subject mapping
+	resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
+		&subjectmapping.UpdateSubjectMappingRequest{
+			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+			Actions: []*policy.Action{
+				{
+					Value: &policy.Action_Standard{
+						Standard: policy.Action_STANDARD_ACTION_DECRYPT,
+					},
+				},
+			},
+			// Optionally replace the subject condition set:
+			// SubjectConditionSetId: "new-scs-uuid",
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Updated subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
+}
+```
+
+Providing `Actions` replaces the entire actions list. Omit it to leave actions unchanged. Providing `SubjectConditionSetId` swaps the linked condition set.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+package io.opentdf.platform;
+
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.subjectmapping.UpdateSubjectMappingRequest;
+import java.util.Collections;
+
+public class UpdateSubjectMappingExample {
+    public static void main(String[] args) throws Exception {
+        SDK sdk = SDKBuilder.newBuilder()
+            .platformEndpoint("http://localhost:8080")
+            .clientSecret("opentdf", "secret")
+            .useInsecurePlaintextConnection(true)
+            .build();
+
+        var decryptAction = Action.newBuilder()
+            .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT)
+            .build();
+
+        var req = UpdateSubjectMappingRequest.newBuilder()
+            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+            .addActions(decryptAction)
+            .build();
+
+        var resp = sdk.getServices().subjectMappings()
+            .updateSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+        System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().getId());
+
+        sdk.close();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+
+const resp = await platform.v1.subjectMapping.updateSubjectMapping({
+  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+  actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
+});
+console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="delete-subject-mapping">
+<summary>Delete a Subject Mapping</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
+		&subjectmapping.DeleteSubjectMappingRequest{
+			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Deleted subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+package io.opentdf.platform;
+
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.subjectmapping.DeleteSubjectMappingRequest;
+import java.util.Collections;
+
+public class DeleteSubjectMappingExample {
+    public static void main(String[] args) throws Exception {
+        SDK sdk = SDKBuilder.newBuilder()
+            .platformEndpoint("http://localhost:8080")
+            .clientSecret("opentdf", "secret")
+            .useInsecurePlaintextConnection(true)
+            .build();
+
+        var req = DeleteSubjectMappingRequest.newBuilder()
+            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+            .build();
+
+        var resp = sdk.getServices().subjectMappings()
+            .deleteSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+        System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().getId());
+
+        sdk.close();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+
+const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
+  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+});
+console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="match-subject-mappings">
+<summary>Match Subject Mappings</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+Given a list of subject properties (key-value pairs from an entity's claims or attributes), return all subject mappings whose condition sets match. This is used to determine which access grants apply to a given entity.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
+		&subjectmapping.MatchSubjectMappingsRequest{
+			SubjectProperties: []*policy.SubjectProperty{
+				{ExternalSelectorValue: ".clientId", ExternalValue: "my-service"},
+				{ExternalSelectorValue: ".realm_access.roles", ExternalValue: "developer"},
+			},
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, sm := range resp.GetSubjectMappings() {
+		log.Printf("Matched subject mapping ID: %s\n", sm.GetId())
+	}
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+package io.opentdf.platform;
+
+import io.opentdf.platform.sdk.*;
+import io.opentdf.platform.policy.SubjectProperty;
+import io.opentdf.platform.policy.subjectmapping.MatchSubjectMappingsRequest;
+import java.util.Collections;
+
+public class MatchSubjectMappingsExample {
+    public static void main(String[] args) throws Exception {
+        SDK sdk = SDKBuilder.newBuilder()
+            .platformEndpoint("http://localhost:8080")
+            .clientSecret("opentdf", "secret")
+            .useInsecurePlaintextConnection(true)
+            .build();
+
+        var req = MatchSubjectMappingsRequest.newBuilder()
+            .addSubjectProperties(SubjectProperty.newBuilder()
+                .setExternalSelectorValue(".clientId")
+                .setExternalValue("my-service")
+                .build())
+            .addSubjectProperties(SubjectProperty.newBuilder()
+                .setExternalSelectorValue(".realm_access.roles")
+                .setExternalValue("developer")
+                .build())
+            .build();
+
+        var resp = sdk.getServices().subjectMappings()
+            .matchSubjectMappingsBlocking(req, Collections.emptyMap()).execute();
+        for (var sm : resp.getSubjectMappingsList()) {
+            System.out.println("Matched subject mapping ID: " + sm.getId());
+        }
+
+        sdk.close();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+// See the Auth Providers guide for authProvider setup.
+
+const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+
+const resp = await platform.v1.subjectMapping.matchSubjectMappings({
+  subjectProperties: [
+    { externalSelectorValue: '.clientId', externalValue: 'my-service' },
+    { externalSelectorValue: '.realm_access.roles', externalValue: 'developer' },
+  ],
+});
+for (const sm of resp.subjectMappings) {
+  console.log(`Matched subject mapping ID: ${sm.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+---
+
