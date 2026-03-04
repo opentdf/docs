@@ -13,6 +13,129 @@ A **TDF (Trusted Data Format)** wraps a payload in a cryptographic envelope that
 
 ---
 
+## Quick Start
+
+Initialize a client and run an end-to-end encrypt/decrypt in one block.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+    "strings"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+client, err := sdk.New(
+    "https://platform.example.com",
+    sdk.WithClientCredentials("client-id", "client-secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+
+// Encrypt
+var buf bytes.Buffer
+_, err = client.CreateTDF(&buf, strings.NewReader("hello, world"),
+    sdk.WithKasInformation(sdk.KASInfo{URL: "https://platform.example.com"}),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Decrypt
+tdfReader, err := client.LoadTDF(bytes.NewReader(buf.Bytes()))
+if err != nil {
+    log.Fatal(err)
+}
+var plaintext bytes.Buffer
+if _, err = tdfReader.WriteTo(&plaintext); err != nil {
+    log.Fatal(err)
+}
+fmt.Println(plaintext.String()) // "hello, world"
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+import io.opentdf.platform.sdk.Config;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("https://platform.example.com")
+    .clientSecret("client-id", "client-secret")
+    .build();
+
+// Encrypt
+var kasInfo = new Config.KASInfo();
+kasInfo.URL = "https://platform.example.com/kas";
+var config = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+
+var input = new ByteArrayInputStream("hello, world".getBytes(StandardCharsets.UTF_8));
+var output = new ByteArrayOutputStream();
+sdk.createTDF(input, output, config);
+
+// Decrypt
+Path tmp = Files.createTempFile("example", ".tdf");
+Files.write(tmp, output.toByteArray());
+try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
+    var reader = sdk.loadTDF(ch, Config.newTDFReaderConfig());
+    var result = new ByteArrayOutputStream();
+    reader.readPayload(result);
+    System.out.println(result.toString(StandardCharsets.UTF_8)); // "hello, world"
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { OpenTDF, AuthProviders } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.clientCredentials({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+});
+
+const client = new OpenTDF({ authProvider, platformUrl: 'https://platform.example.com' });
+
+// Encrypt
+const enc = new TextEncoder();
+const tdfStream = await client.createZTDF({
+    source: { type: 'buffer', location: enc.encode('hello, world') },
+    defaultKASEndpoint: 'https://platform.example.com/kas',
+});
+
+// Decrypt
+const encrypted = new Uint8Array(await new Response(tdfStream).arrayBuffer());
+const stream = await client.read({
+    source: { type: 'buffer', location: encrypted },
+});
+console.log(await new Response(stream).text()); // "hello, world"
+```
+
+</TabItem>
+</Tabs>
+
+For credential configuration and auth provider setup, see the [Auth Providers](/sdks/platform-client) guide.
+
+---
+
 ## CreateTDF
 
 Encrypts a plaintext payload and writes a TDF to the provided output destination.
@@ -197,8 +320,15 @@ open(options: ReadOptions): TDFReader
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `ReadableByteChannel`. In JavaScript: `source` in the options object. |
+| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `ReadableByteChannel`. In JavaScript: `source` in the options object (see below). |
 | Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
+
+**JavaScript `source` types**
+
+| `type` | `location` | Description |
+|--------|-----------|-------------|
+| `'buffer'` | `Uint8Array` | In-memory bytes. Use when you have already loaded the TDF into memory. |
+| `'stream'` | `ReadableStream` | A Web Streams API `ReadableStream`. Use for large files or piped data. |
 
 **Returns**
 
@@ -236,9 +366,7 @@ open(options: ReadOptions): TDFReader
 </TabItem>
 <TabItem value="java" label="Java">
 
-| Exception | Cause |
-|-----------|-------|
-| `IOException` | Invalid TDF, unreachable KAS, access denied, or I/O failure. |
+Java throws `IOException` for all failure modes. Inspect `e.getMessage()` to distinguish between access denied, unreachable KAS, and malformed TDF — the message text reflects the underlying cause.
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -760,7 +888,11 @@ const manifest = await reader.manifest();
 
 ---
 
-## KASInfo
+## Type Reference
+
+The following types are returned by or passed to the methods above.
+
+### KASInfo
 
 `KASInfo` is the input type passed to `WithKasInformation` (Go) or used to build a `Config.KASInfo` (Java). It identifies a KAS endpoint and the key configuration to use when wrapping the data encryption key.
 
@@ -814,7 +946,7 @@ Config.TDFConfig config = Config.newTDFConfig(
 
 ---
 
-## PolicyObject
+### PolicyObject
 
 `PolicyObject` is returned by [`tdfReader.Policy()`](#policy) (Go) and `reader.readPolicyObject()` (Java). It contains the decoded access control policy embedded in the TDF — including the UUID, the list of data attribute FQNs, and the dissemination list.
 
@@ -888,7 +1020,7 @@ console.log('Attributes:', policy.body.dataAttributes);
 
 ---
 
-## Manifest Object
+### Manifest Object
 
 The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via [`tdfReader.Manifest()`](#manifest). It describes the full TDF structure — encryption method, key access configuration, payload metadata, and any attached assertions — without requiring decryption.
 

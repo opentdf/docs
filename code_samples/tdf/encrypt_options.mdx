@@ -71,7 +71,7 @@ Use [`validateAttributes`](/sdks/discovery#validate-attributes) to confirm that 
 
 ### KAS Configuration
 
-Specify which Key Access Server (KAS) will hold the key grants for this TDF. The KAS URL must be reachable by anyone who needs to decrypt the file.
+Specify which [Key Access Server (KAS)](/components/key_access) will hold the key grants for this TDF. KAS is the service that enforces access policy by controlling who can unwrap the data encryption key. The KAS URL must be reachable by anyone who needs to decrypt the file.
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -380,7 +380,7 @@ const tdf = await client.createZTDF({
 
 ### Assertions
 
-Assertions are cryptographically bound or signed statements attached to the TDF. They can carry structured metadata (e.g., classification markings, handling instructions) and can optionally be verified on decrypt.
+Assertions are signed statements attached to the TDF that carry structured metadata — audit labels, handling instructions, content identifiers — and can be cryptographically verified on decrypt.
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -394,9 +394,8 @@ assertionCfg := sdk.AssertionConfig{
     Scope:          sdk.TrustedDataObj,
     AppliesToState: sdk.Unencrypted,
     Statement: sdk.Statement{
-        Format: "json+stanag5636",
-        Schema: "urn:nato:stanag:5636:A:1:elements:json",
-        Value:  `{"classif":"SECRET"}`,
+        Format: "application/json",
+        Value:  `{"owner":"alice","sensitivity":"high"}`,
     },
 }
 
@@ -404,6 +403,31 @@ manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithAssertions(assertionCfg),
 )
+```
+
+To sign the assertion so it can be verified on decrypt, add a `SigningKey`:
+
+```go
+import (
+    "crypto/rsa"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+assertionCfg := sdk.AssertionConfig{
+    ID:             "assertion-1",
+    Type:           sdk.HandlingAssertion,
+    Scope:          sdk.TrustedDataObj,
+    AppliesToState: sdk.Unencrypted,
+    Statement: sdk.Statement{
+        Format: "application/json",
+        Value:  `{"owner":"alice","sensitivity":"high"}`,
+    },
+    SigningKey: sdk.AssertionKey{
+        Alg: sdk.AssertionKeyAlgRS256,
+        Key: rsaPrivateKey, // *rsa.PrivateKey
+    },
+}
 ```
 
 </TabItem>
@@ -414,9 +438,8 @@ import io.opentdf.platform.sdk.AssertionConfig;
 import io.opentdf.platform.sdk.Config;
 
 var statement = new AssertionConfig.Statement();
-statement.format = "json+stanag5636";
-statement.schema = "urn:nato:stanag:5636:A:1:elements:json";
-statement.value  = "{\"classif\":\"SECRET\"}";
+statement.format = "application/json";
+statement.value  = "{\"owner\":\"alice\",\"sensitivity\":\"high\"}";
 
 var assertionCfg = new AssertionConfig();
 assertionCfg.id             = "assertion-1";
@@ -430,6 +453,18 @@ Config.TDFConfig config = Config.newTDFConfig(
     Config.withAssertionConfig(assertionCfg)
 );
 sdk.createTDF(inputStream, outputStream, config);
+```
+
+To sign the assertion, set `assertionCfg.signingKey`:
+
+```java
+import io.opentdf.platform.sdk.AssertionConfig;
+
+var signingKey = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    rsaPrivateKey // java.security.PrivateKey
+);
+assertionCfg.signingKey = signingKey;
 ```
 
 </TabItem>
@@ -446,19 +481,39 @@ const tdf = await client.createZTDF({
             scope:          'TrustedDataObj',
             appliesToState: 'Unencrypted',
             statement: {
-                format: 'json+stanag5636',
-                schema: 'urn:nato:stanag:5636:A:1:elements:json',
-                value:  '{"classif":"SECRET"}',
+                format: 'application/json',
+                value:  '{"owner":"alice","sensitivity":"high"}',
             },
         },
     ],
 });
 ```
 
+To sign the assertion, add a `signers` map keyed by assertion ID:
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    assertionConfigs: [
+        {
+            id:    'assertion-1',
+            type:  'HandlingAssertion',
+            scope: 'TrustedDataObj',
+            appliesToState: 'Unencrypted',
+            statement: { format: 'application/json', value: '{"owner":"alice"}' },
+        },
+    ],
+    signers: {
+        'assertion-1': rsaPrivateKey, // CryptoKey (RS256)
+    },
+});
+```
+
 </TabItem>
 </Tabs>
 
-To sign assertions with a key so that they can be verified on decrypt, add a `signingKey` (Go/Java) or `signers` map (JavaScript) to the assertion configuration.
+Signed assertions can be verified on decrypt using [Assertion Verification Keys](#assertion-verification-keys).
 
 ---
 
