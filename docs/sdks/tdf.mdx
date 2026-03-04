@@ -17,7 +17,7 @@ A **TDF (Trusted Data Format)** wraps a payload in a cryptographic envelope that
 
 Encrypts a plaintext payload and writes a TDF to the provided output destination.
 
-### Signature
+**Signature**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -44,7 +44,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 </TabItem>
 </Tabs>
 
-### Parameters
+**Parameters**
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
@@ -52,7 +52,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 | Plaintext source | Required | The data to encrypt. In Go: `io.Reader`. In Java: `InputStream`. In JavaScript: `source` in the options object. |
 | Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
 
-### Returns
+**Returns**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -72,7 +72,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 </TabItem>
 </Tabs>
 
-### Errors
+**Errors**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -99,7 +99,7 @@ Rejects with `Error` if the KAS is unreachable, authentication fails, or the sou
 </TabItem>
 </Tabs>
 
-### Example
+**Example**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -163,7 +163,7 @@ See [Encrypt Options](#encrypt-options) for the full list of configuration optio
 
 Opens an encrypted TDF and returns a [TDF reader](#tdf-reader) that provides access to the plaintext payload and manifest data.
 
-### Signature
+**Signature**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -193,14 +193,14 @@ open(options: ReadOptions): TDFReader
 </TabItem>
 </Tabs>
 
-### Parameters
+**Parameters**
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `ReadableByteChannel`. In JavaScript: `source` in the options object. |
 | Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
 
-### Returns
+**Returns**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -221,7 +221,7 @@ open(options: ReadOptions): TDFReader
 </TabItem>
 </Tabs>
 
-### Errors
+**Errors**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -248,7 +248,7 @@ Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is de
 </TabItem>
 </Tabs>
 
-### Example
+**Example**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -315,7 +315,7 @@ See [PolicyObject](#policyobject) and [Manifest Object](#manifest-object) for th
 
 Checks whether a byte stream contains a valid TDF without decrypting it. The stream position is restored after the check.
 
-### Signature
+**Signature**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -341,13 +341,13 @@ Not available as a standalone function. Pass the source to `client.open()` and c
 </TabItem>
 </Tabs>
 
-### Parameters
+**Parameters**
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `reader` / `channel` | Required | The data to inspect. The stream position is reset after the check, so the same reader can be passed directly to `LoadTDF`. |
 
-### Returns
+**Returns**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -362,7 +362,7 @@ Not available as a standalone function. Pass the source to `client.open()` and c
 </TabItem>
 </Tabs>
 
-### Example
+**Example**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -443,14 +443,14 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
 
-### Signature
+**Signature**
 
 ```go
 func (client *SDK) BulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) error
 func (client *SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) (*PreparedBulkDecrypt, error)
 ```
 
-### Parameters
+**Parameters**
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
@@ -466,16 +466,16 @@ func (client *SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOp
 
 Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
 
-### Returns
+**Returns**
 
 - `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
 - `PrepareBulkDecrypt` returns `(*PreparedBulkDecrypt, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
 
-### Errors
+**Errors**
 
 Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
 
-### Example
+**Example**
 
 ```go
 import (
@@ -764,7 +764,7 @@ const manifest = await reader.manifest();
 
 `KASInfo` is the input type passed to `WithKasInformation` (Go) or used to build a `Config.KASInfo` (Java). It identifies a KAS endpoint and the key configuration to use when wrapping the data encryption key.
 
-### Fields
+**Fields**
 
 | Field | Go | Java | Required | Description |
 |-------|-----|------|----------|-------------|
@@ -774,7 +774,7 @@ const manifest = await reader.manifest();
 | PublicKey | `PublicKey string` | `String PublicKey` | Optional | PEM-encoded public key. If empty, the SDK fetches it from the KAS. |
 | Default | `Default bool` | — | Optional | Go only. If `true`, this KAS is used as the default for encrypt calls when no KAS is explicitly specified. |
 
-### Example
+**Example**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -818,7 +818,7 @@ Config.TDFConfig config = Config.newTDFConfig(
 
 `PolicyObject` is returned by [`tdfReader.Policy()`](#policy) (Go) and `reader.readPolicyObject()` (Java). It contains the decoded access control policy embedded in the TDF — including the UUID, the list of data attribute FQNs, and the dissemination list.
 
-### Fields
+**Fields**
 
 | Field | Go | Java | Description |
 |-------|-----|------|-------------|
@@ -826,7 +826,7 @@ Config.TDFConfig config = Config.newTDFConfig(
 | Body.DataAttributes | `[]attributeObject` | `List&lt;AttributeObject&gt;` | Data attribute FQNs governing access. Each entry has an `Attribute` (FQN string) and `KasURL`. |
 | Body.Dissem | `[]string` | `List&lt;String&gt;` | Dissemination list — entity identifiers explicitly granted access. |
 
-### Example
+**Example**
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -892,7 +892,7 @@ console.log('Attributes:', policy.body.dataAttributes);
 
 The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via [`tdfReader.Manifest()`](#manifest). It describes the full TDF structure — encryption method, key access configuration, payload metadata, and any attached assertions — without requiring decryption.
 
-### Top-Level Fields
+**Top-Level Fields**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -901,7 +901,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | `Payload` | `Payload` | Metadata about the encrypted payload. |
 | `Assertions` | `[]Assertion` | Cryptographically bound or signed statements attached to the TDF. Empty if none were added at encrypt time. |
 
-### EncryptionInformation Fields
+**EncryptionInformation Fields**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -909,7 +909,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | `Method.Algorithm` | `string` | Encryption algorithm (e.g. `"AES-256-GCM"`). |
 | `Policy` | `string` | Base64-encoded policy object. Use [`tdfReader.Policy()`](#policy) to decode. |
 
-### KeyAccess Fields
+**KeyAccess Fields**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -918,7 +918,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | `SplitID` | `string` | Key split identifier. Entries sharing the same ID share a key segment; different IDs represent independent splits. |
 | `KID` | `string` | Key identifier on the KAS, if set. |
 
-### Payload Fields
+**Payload Fields**
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -926,7 +926,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | `IsEncrypted` | `bool` | Always `true` in a valid TDF. |
 | `Protocol` | `string` | Protocol identifier (e.g. `"zip"`). |
 
-### Example
+**Example**
 
 ```go
 import (
