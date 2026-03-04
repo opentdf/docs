@@ -4,97 +4,380 @@ sidebar_position: 4
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-import EncryptionTDF from '../../code_samples/tdf/encryption_ztdf.mdx'
 import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
 
-# Creating TDFs
+# TDF
 
 A **TDF (Trusted Data Format)** wraps a payload in a cryptographic envelope that binds access control policy directly to the data. The TDF contains an encrypted payload, a manifest describing the policy and key access configuration, and optional assertions.
 
-This page covers how to encrypt and decrypt TDFs, and the full set of options available for both operations.
-
 ---
 
-## Basic Encrypt & Decrypt
+## CreateTDF
 
-The examples below show the minimal configuration needed to wrap a payload in a TDF and unwrap it. Use these as a starting point before exploring the full option sets below.
+Encrypts a plaintext payload and writes a TDF to the provided output destination.
 
-<EncryptionTDF />
-
----
-
-<EncryptOptions />
-
----
-
-<DecryptOptions />
-
----
-
-## Inspecting a TDF Without Decrypting
-
-You can read the manifest and policy of a TDF without performing a key access request or decrypting the payload. This is useful for routing, auditing, or UI display.
+### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-import (
-    "bytes"
-    "fmt"
-    "os"
-
-    "github.com/opentdf/platform/sdk"
-)
-
-data, _ := os.ReadFile("sensitive.tdf")
-
-// isTDF check (package-level function)
-reader := bytes.NewReader(data)
-valid, err := sdk.IsValidTdf(reader)
-if err != nil || !valid {
-    fmt.Println("Not a valid TDF")
-    return
-}
-
-// Load and inspect without decrypting payload
-reader.Seek(0, 0)
-tdfReader, err := client.LoadTDF(reader)
-if err != nil {
-    log.Fatal(err)
-}
-
-manifest := tdfReader.Manifest()
-fmt.Printf("TDF version: %s\n", manifest.TDFVersion)
-
-attrs, _ := tdfReader.DataAttributes()
-fmt.Printf("Data attributes: %v\n", attrs)
-
-policy, _ := tdfReader.Policy()
-fmt.Printf("Policy UUID: %s\n", policy.UUID)
+func (client *SDK) CreateTDF(out io.Writer, plaintext io.Reader, opts ...TDFOption) (*Manifest, error)
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+void SDK.createTDF(InputStream plaintext, OutputStream out, TDFConfig config)
+    throws IOException, AutoConfigureException
+```
 
-Path tdfPath = Path.of("sensitive.tdf");
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-// Check if file is a valid TDF without decrypting
+```typescript
+async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
+```
+
+</TabItem>
+</Tabs>
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| Output destination | Required | Where the encrypted TDF bytes are written. In Go and Java, pass an explicit writer/stream. In JavaScript, the encrypted stream is returned from the call. |
+| Plaintext source | Required | The data to encrypt. In Go: `io.Reader`. In Java: `InputStream`. In JavaScript: `source` in the options object. |
+| Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
+
+### Returns
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(*Manifest, error)` — The manifest of the created TDF on success; a non-nil `error` on failure.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`void` — Encrypted bytes are written to the output stream. Throws on failure.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+`Promise<ReadableStream>` — A readable stream of encrypted TDF bytes.
+
+</TabItem>
+</Tabs>
+
+### Errors
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| KAS unreachable | The KAS could not be contacted to wrap the encryption key. |
+| No KAS configured | No KAS was provided and autoconfigure is disabled or could not resolve one. |
+| Write failure | An I/O error occurred writing to `out`. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Exception | Cause |
+|-----------|-------|
+| `IOException` | I/O failure reading from the input stream or writing to the output stream. |
+| `AutoConfigureException` | The SDK could not resolve a KAS from the attribute service. |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the KAS is unreachable, authentication fails, or the source data cannot be read.
+
+</TabItem>
+</Tabs>
+
+### Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+var buf bytes.Buffer
+manifest, err := client.CreateTDF(&buf, strings.NewReader("Sensitive data"),
+    sdk.WithKasInformation(sdk.KASInfo{URL: "https://kas.example.com"}),
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var kasInfo = new Config.KASInfo();
+kasInfo.URL = "https://kas.example.com";
+
+var config = Config.newTDFConfig(Config.withKasInformation(kasInfo));
+
+var in  = new ByteArrayInputStream("Sensitive data".getBytes(StandardCharsets.UTF_8));
+var out = new ByteArrayOutputStream();
+sdk.createTDF(in, out, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: new TextEncoder().encode('Sensitive data') },
+    defaultKASEndpoint: 'https://kas.example.com',
+});
+const encrypted = await new Response(tdf).bytes();
+```
+
+</TabItem>
+</Tabs>
+
+See [Encrypt Options](#encrypt-options) for the full list of configuration options.
+
+---
+
+## LoadTDF
+
+Opens an encrypted TDF and returns a reader that provides access to the plaintext payload and manifest data.
+
+### Signature
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (client *SDK) LoadTDF(reader io.ReadSeeker, opts ...TDFReaderOption) (*Reader, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader SDK.loadTDF(ReadableByteChannel channel, TDFReaderConfig config) throws IOException
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Returns the plaintext payload directly:
+async read(options: ReadOptions): Promise<DecoratedStream>
+
+// Returns a reader for lazy inspection or decryption:
+open(options: ReadOptions): TDFReader
+```
+
+</TabItem>
+</Tabs>
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `ReadableByteChannel`. In JavaScript: `source` in the options object. |
+| Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
+
+### Returns
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(*Reader, error)` — A TDF reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`TDF.Reader` — A reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+- `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
+- `open()` → `TDFReader` — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
+
+</TabItem>
+</Tabs>
+
+### Errors
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| Invalid TDF | The input is not a valid TDF. Use [`IsValidTdf`](#isvalidtdf) to pre-validate. |
+| KAS unreachable | The KAS referenced in the manifest cannot be contacted. |
+| Access denied | The caller's credentials do not satisfy the TDF policy. |
+| KAS not allowlisted | The TDF references a KAS endpoint not on the allowlist. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Exception | Cause |
+|-----------|-------|
+| `IOException` | Invalid TDF, unreachable KAS, access denied, or I/O failure. |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is denied, or the endpoint is not allowlisted.
+
+</TabItem>
+</Tabs>
+
+### Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+var plaintext bytes.Buffer
+if _, err = tdfReader.WriteTo(&plaintext); err != nil {
+    log.Fatal(err)
+}
+fmt.Println(plaintext.String())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
 try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
-    boolean isTdf = SDK.isTDF(channel);
-    if (!isTdf) {
+    TDF.Reader reader = sdk.loadTDF(channel, Config.newTDFReaderConfig());
+    var output = new ByteArrayOutputStream();
+    reader.readPayload(output);
+    System.out.println(output.toString(StandardCharsets.UTF_8));
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const stream = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const text = await new Response(stream).text();
+console.log(text);
+```
+
+</TabItem>
+</Tabs>
+
+See [Decrypt Options](#decrypt-options) for the full list of configuration options.
+See [TDF Reader](#tdf-reader) for all methods on the reader object.
+
+---
+
+## IsValidTdf
+
+Checks whether a byte stream contains a valid TDF without decrypting it. The stream position is restored after the check.
+
+### Signature
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func IsValidTdf(reader io.ReadSeeker) (bool, error)
+```
+
+This is a package-level function in the `sdk` package, not a method on the client.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+static boolean SDK.isTDF(ReadableByteChannel channel) throws IOException
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available as a standalone function. Pass the source to `client.open()` and catch the error on `.manifest()` or `.decrypt()`.
+
+</TabItem>
+</Tabs>
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `reader` / `channel` | Required | The data to inspect. The stream position is reset after the check, so the same reader can be passed directly to `LoadTDF`. |
+
+### Returns
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(bool, error)` — `true` if the data is a valid TDF, `false` if it is not. A non-nil `error` indicates an I/O failure, not an invalid TDF.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`boolean` — `true` if the channel contains a valid TDF. Throws `IOException` on read failure.
+
+</TabItem>
+</Tabs>
+
+### Example
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+reader := bytes.NewReader(data)
+valid, err := sdk.IsValidTdf(reader)
+if err != nil {
+    log.Fatal(err)
+}
+if !valid {
+    fmt.Println("Not a valid TDF")
+    return
+}
+// reader position is reset — pass directly to LoadTDF
+tdfReader, err := client.LoadTDF(reader)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
+    if (!SDK.isTDF(channel)) {
         System.out.println("Not a valid TDF");
         return;
     }
 }
+// Open a fresh channel for decryption
+try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
+    TDF.Reader reader = sdk.loadTDF(channel, Config.newTDFReaderConfig());
+    // ...
+}
+```
 
-// Read manifest without decrypting
+</TabItem>
+</Tabs>
+
+:::note Java: inspect manifest without decrypting
+Java provides static methods to read the manifest and policy from a TDF without performing key access or decrypting the payload:
+
+```java
 try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
     Manifest manifest = SDK.readManifest(channel);
     System.out.println("TDF version: " + manifest.tdfVersion);
@@ -106,58 +389,60 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
     }
 }
 ```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const reader = client.open({
-    source: { type: 'buffer', location: encryptedBytes },
-});
-
-// Read manifest and attributes without decrypting
-const manifest = await reader.manifest();
-const attrs    = await reader.attributes();
-
-console.log('Manifest:', manifest);
-console.log('Attributes:', attrs);
-
-// Decrypt only if you need the payload
-const stream = await reader.decrypt();
-await reader.close();
-```
-
-</TabItem>
-</Tabs>
+:::
 
 ---
 
-## Bulk Decrypt (Go)
+## BulkDecrypt (Go)
 
-When decrypting many TDFs in a single operation, use `BulkDecrypt` to batch the KAS rewrap requests and reduce round-trip overhead.
+Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
+
+### Signature
 
 ```go
-import (
-    "bytes"
-    "github.com/opentdf/platform/sdk"
-)
+func (client *SDK) BulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) error
+func (client *SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) (*PreparedBulkDecrypt, error)
+```
 
-// Prepare sources
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `ctx` | Required | Context for the operation, used for cancellation and deadlines. |
+| `opts` | Required | At minimum, `sdk.WithTDFs(tdfs...)` must be provided. |
+
+`sdk.WithTDFs` accepts one or more `*sdk.BulkTDF` structs:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Reader` | `io.ReadSeeker` | Source of the encrypted TDF. |
+| `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
+
+Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
+
+### Returns
+
+- `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
+- `PrepareBulkDecrypt` returns `(*PreparedBulkDecrypt, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
+
+### Errors
+
+Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
+
+### Example
+
+```go
 tdfs := []*sdk.BulkTDF{
     {Reader: bytes.NewReader(tdf1Bytes), Writer: &buf1},
     {Reader: bytes.NewReader(tdf2Bytes), Writer: &buf2},
-    {Reader: bytes.NewReader(tdf3Bytes), Writer: &buf3},
 }
 
-err := client.BulkDecrypt(
-    ctx,
+err := client.BulkDecrypt(ctx,
     sdk.WithTDFs(tdfs...),
     sdk.WithBulkKasAllowlist([]string{"https://kas.example.com"}),
 )
 if err != nil {
-    // Individual errors per TDF can be extracted:
-    errs, ok := sdk.FromBulkErrors(err)
-    if ok {
+    if errs, ok := sdk.FromBulkErrors(err); ok {
         for i, e := range errs {
             if e != nil {
                 fmt.Printf("TDF %d failed: %v\n", i, e)
@@ -167,13 +452,235 @@ if err != nil {
 }
 ```
 
-For cases where you need to inspect the prepared request before executing, use `PrepareBulkDecrypt`:
+To inspect the prepared request before executing:
 
 ```go
 prepared, err := client.PrepareBulkDecrypt(ctx, sdk.WithTDFs(tdfs...))
 if err != nil {
     log.Fatal(err)
 }
-// Inspect or modify `prepared` before executing
 err = prepared.BulkDecrypt(ctx)
 ```
+
+---
+
+## TDF Reader
+
+`LoadTDF` (Go) and `loadTDF` (Java) return a reader object. In JavaScript, the equivalent is the `TDFReader` returned by `client.open()`. You can call manifest and policy methods on the reader without reading the payload, which is useful for routing, auditing, or display.
+
+### Payload
+
+Write the full plaintext to any destination, or read incrementally.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) WriteTo(w io.Writer) (int64, error)
+func (r *Reader) Read(p []byte) (int, error)  // implements io.Reader
+```
+
+```go
+var plaintext bytes.Buffer
+_, err := tdfReader.WriteTo(&plaintext)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+void reader.readPayload(OutputStream out) throws IOException
+```
+
+```java
+var output = new ByteArrayOutputStream();
+reader.readPayload(output);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Use `client.read()` for direct payload access, or `.decrypt()` on a `TDFReader`:
+
+```typescript
+const stream = await reader.decrypt();
+const text = await new Response(stream).text();
+```
+
+</TabItem>
+</Tabs>
+
+### Metadata
+
+Returns the plaintext metadata string attached at encryption time. Returns `nil` / empty string if no metadata was set.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) UnencryptedMetadata() ([]byte, error)
+```
+
+```go
+meta, err := tdfReader.UnencryptedMetadata()
+fmt.Printf("Metadata: %s\n", meta)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+String reader.getMetadata()
+```
+
+```java
+String metadata = reader.getMetadata();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+`.metadata` on the `DecoratedStream` returned by `client.read()`:
+
+```typescript
+const stream = await client.read({ source: { type: 'buffer', location: encryptedBytes } });
+const metadata = await stream.metadata;
+```
+
+</TabItem>
+</Tabs>
+
+### Policy
+
+Returns the TDF policy object containing the UUID, data attributes, and dissemination list.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) Policy() (*policy.PolicyObject, error)
+```
+
+```go
+policy, err := tdfReader.Policy()
+fmt.Printf("Policy UUID: %s\n", policy.UUID)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+PolicyObject reader.readPolicyObject() throws IOException
+```
+
+```java
+PolicyObject policy = reader.readPolicyObject();
+System.out.println("Policy UUID: " + policy.uuid);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Policy is embedded in the manifest. Use `reader.manifest()` on a `TDFReader`:
+
+```typescript
+const manifest = await reader.manifest();
+// Policy is at manifest.encryptionInformation.policy
+```
+
+</TabItem>
+</Tabs>
+
+### Data Attributes
+
+Returns the list of data attribute FQN strings attached to the TDF policy.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) DataAttributes() ([]string, error)
+```
+
+```go
+attrs, err := tdfReader.DataAttributes()
+for _, a := range attrs {
+    fmt.Println(a)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Access via `readPolicyObject()`:
+
+```java
+PolicyObject policy = reader.readPolicyObject();
+for (var attr : policy.body.dataAttributes) {
+    System.out.println(attr.attribute);
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+async attributes(): Promise<string[]>
+```
+
+```typescript
+const attrs = await reader.attributes();
+```
+
+</TabItem>
+</Tabs>
+
+### Manifest
+
+Returns the raw TDF manifest, including encryption information, key access objects, and assertions.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) Manifest() *Manifest
+```
+
+```go
+manifest := tdfReader.Manifest()
+fmt.Printf("TDF version: %s\n", manifest.TDFVersion)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Manifest reader.getManifest()
+```
+
+```java
+Manifest manifest = reader.getManifest();
+System.out.println("TDF version: " + manifest.tdfVersion);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+async manifest(): Promise<Manifest>
+```
+
+```typescript
+const manifest = await reader.manifest();
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+<EncryptOptions />
+
+---
+
+<DecryptOptions />
