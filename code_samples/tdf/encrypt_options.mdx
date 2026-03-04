@@ -1,0 +1,523 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Encrypt Options
+
+The following options can be passed to the encrypt call to control how the TDF is constructed.
+
+---
+
+### Data Attributes
+
+Attach one or more attribute value FQNs to the TDF policy. Access to the data will be governed by these attributes — only entities that hold matching attribute values will be permitted to decrypt.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithDataAttributes(
+        "https://example.com/attr/classification/value/secret",
+        "https://example.com/attr/department/value/engineering",
+    ),
+)
+```
+
+Multiple calls to `WithDataAttributes` are additive.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withDataAttributes(
+        "https://example.com/attr/classification/value/secret",
+        "https://example.com/attr/department/value/engineering"
+    )
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+To pass fully resolved `Value` objects instead of FQN strings, use `Config.withDataAttributeValues(Value...)`.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    attributes: [
+        'https://example.com/attr/classification/value/secret',
+        'https://example.com/attr/department/value/engineering',
+    ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+:::tip Validating attributes before encrypt
+Use [`validateAttributes`](/sdks/discovery#validate-attributes) to confirm that all FQNs exist on the platform before creating a TDF. This prevents silent policy mismatches.
+:::
+
+---
+
+### KAS Configuration
+
+Specify which Key Access Server (KAS) will hold the key grants for this TDF. The KAS URL must be reachable by anyone who needs to decrypt the file.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(
+        sdk.KASInfo{
+            URL:       "https://kas.example.com",
+            Algorithm: "ec:secp256r1", // optional; defaults to rsa:2048
+        },
+    ),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var kasInfo = new Config.KASInfo();
+kasInfo.URL = "https://kas.example.com";
+kasInfo.Algorithm = "ec:secp256r1"; // optional; defaults to rsa:2048
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo)
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    attributes: ['https://example.com/attr/classification/value/secret'],
+});
+```
+
+The `defaultKASEndpoint` is used when `autoconfigure` is `false` or when no KAS is resolved from the attribute policy.
+
+</TabItem>
+</Tabs>
+
+---
+
+### Autoconfigure
+
+When enabled, the SDK queries the platform's attribute service to automatically determine which KAS endpoints should hold grants for the given data attributes. This eliminates the need to hardcode KAS URLs per encrypt call.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithDataAttributes("https://example.com/attr/classification/value/secret"),
+    sdk.WithAutoconfigure(true),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withDataAttributes("https://example.com/attr/classification/value/secret"),
+    Config.withAutoconfigure(true)
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    attributes: ['https://example.com/attr/classification/value/secret'],
+    autoconfigure: true,
+});
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+Autoconfigure requires the SDK to be connected to a platform with the attribute service running. If the platform is unavailable or the attribute has no KAS binding, the encrypt call will fail.
+:::
+
+---
+
+### Key Splitting
+
+Split the data encryption key across multiple KAS instances. The key can only be reconstructed when all participating KAS endpoints respond. This is used for multi-party access control or defence-in-depth key custody.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+Provide multiple `KASInfo` entries with distinct `URL` values. The SDK splits the key across all provided KAS endpoints.
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(
+        sdk.KASInfo{URL: "https://kas-a.example.com"},
+        sdk.KASInfo{URL: "https://kas-b.example.com"},
+    ),
+)
+```
+
+To share a key segment (i.e., not split), provide the same `URL` more than once or use `WithAutoconfigure`.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Use `Config.withSplitPlan` to declare explicit key-split steps. Each step names a KAS URL and a split ID.
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfoA, kasInfoB),
+    Config.withSplitPlan(
+        new Autoconfigure.KeySplitStep("https://kas-a.example.com", "split-1"),
+        new Autoconfigure.KeySplitStep("https://kas-b.example.com", "split-2")
+    )
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    splitPlan: [
+        { kas: 'https://kas-a.example.com', sid: 'split-1' },
+        { kas: 'https://kas-b.example.com', sid: 'split-2' },
+    ],
+});
+```
+
+Steps with the same `sid` share a key segment. Steps with different `sid` values represent independent splits that are all required for decryption.
+
+</TabItem>
+</Tabs>
+
+---
+
+### Metadata
+
+Attach a plaintext metadata string to the TDF. Metadata is stored unencrypted in the TDF manifest and is readable by anyone with access to the file — do not store sensitive values here. Common uses include audit labels, content identifiers, or application-specific tags.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithMetaData(`{"owner":"alice","sensitivity":"high"}`),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withMetaData("{\"owner\":\"alice\",\"sensitivity\":\"high\"}")
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    metadata: { owner: 'alice', sensitivity: 'high' },
+});
+```
+
+:::warning Deprecated
+The `metadata` field is deprecated in the JavaScript SDK. Use `assertionConfigs` for bound, verifiable metadata instead.
+:::
+
+</TabItem>
+</Tabs>
+
+---
+
+### MIME Type
+
+Declare the content type of the plaintext payload. This is stored in the TDF manifest and can help receiving applications handle the decrypted content correctly.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithMimeType("application/pdf"),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withMimeType("application/pdf")
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    mimeType: 'application/pdf',
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Segment Size
+
+TDF payloads are split into encrypted segments. The segment size controls the trade-off between memory use and seek performance during decryption. The default is **2 MB**. Larger segments reduce overhead for streaming workloads; smaller segments allow faster random access.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+const oneMB = 1 * 1024 * 1024
+
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithSegmentSize(oneMB),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+int oneMB = 1 * 1024 * 1024;
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withSegmentSize(oneMB)
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const oneMB = 1 * 1024 * 1024;
+
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    windowSize: oneMB,
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Assertions
+
+Assertions are cryptographically bound or signed statements attached to the TDF. They can carry structured metadata (e.g., classification markings, handling instructions) and can optionally be verified on decrypt.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+assertionCfg := sdk.AssertionConfig{
+    ID:             "assertion-1",
+    Type:           sdk.HandlingAssertion,
+    Scope:          sdk.TrustedDataObj,
+    AppliesToState: sdk.Unencrypted,
+    Statement: sdk.Statement{
+        Format: "json+stanag5636",
+        Schema: "urn:nato:stanag:5636:A:1:elements:json",
+        Value:  `{"classif":"SECRET"}`,
+    },
+}
+
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithAssertions(assertionCfg),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var statement = new AssertionConfig.Statement();
+statement.format = "json+stanag5636";
+statement.schema = "urn:nato:stanag:5636:A:1:elements:json";
+statement.value  = "{\"classif\":\"SECRET\"}";
+
+var assertionCfg = new AssertionConfig();
+assertionCfg.id             = "assertion-1";
+assertionCfg.type           = AssertionConfig.Type.HandlingAssertion;
+assertionCfg.scope          = AssertionConfig.Scope.TrustedDataObj;
+assertionCfg.appliesToState = AssertionConfig.AppliesToState.Unencrypted;
+assertionCfg.statement      = statement;
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withAssertionConfig(assertionCfg)
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    assertionConfigs: [
+        {
+            id:             'assertion-1',
+            type:           'HandlingAssertion',
+            scope:          'TrustedDataObj',
+            appliesToState: 'Unencrypted',
+            statement: {
+                format: 'json+stanag5636',
+                schema: 'urn:nato:stanag:5636:A:1:elements:json',
+                value:  '{"classif":"SECRET"}',
+            },
+        },
+    ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+To sign assertions with a key so that they can be verified on decrypt, add a `signingKey` (Go/Java) or `signers` map (JavaScript) to the assertion configuration.
+
+---
+
+### Wrapping Key Algorithm
+
+Override the algorithm used to wrap the data encryption key when sending it to the KAS. The default is `rsa:2048`. Use an EC algorithm for smaller key access objects and faster wrapping operations.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/lib/ocrypto"
+
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithWrappingKeyAlg(ocrypto.EC256Key),
+)
+```
+
+Valid values: `ocrypto.RSA2048Key`, `ocrypto.EC256Key`, `ocrypto.EC384Key`, `ocrypto.EC521Key`.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.WithWrappingKeyAlg(KeyType.EC256Key)
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+Valid values: `KeyType.RSA2048Key`, `KeyType.EC256Key`, `KeyType.EC384Key`, `KeyType.EC521Key`.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    wrappingKeyAlgorithm: 'ec:secp256r1',
+});
+```
+
+Valid values: `'rsa:2048'`, `'rsa:4096'`, `'ec:secp256r1'`, `'ec:secp384r1'`, `'ec:secp521r1'`.
+
+</TabItem>
+</Tabs>
+
+:::note KAS support required
+The KAS must support the chosen algorithm. Check your platform's KAS public key endpoint to confirm which algorithms are available.
+:::
+
+---
+
+### TDF Spec Version
+
+Target a specific TDF specification version. Use this to maintain compatibility with older decoders or to opt in to newer features. The current default is `4.3.0`.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+manifest, err := client.CreateTDF(buf, str,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithTargetMode("4.3.0"),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withTargetMode("4.3.0")
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const tdf = await client.createZTDF({
+    source: { type: 'buffer', location: data },
+    defaultKASEndpoint: 'https://kas.example.com',
+    tdfSpecVersion: '4.3.0',
+});
+```
+
+Valid values: `'4.2.2'`, `'4.3.0'`.
+
+</TabItem>
+</Tabs>

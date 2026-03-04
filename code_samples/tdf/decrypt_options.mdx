@@ -1,0 +1,568 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Decrypt Options
+
+The following options can be passed to the decrypt call to control how the TDF is opened and validated.
+
+---
+
+### KAS Allowlist
+
+Restrict decryption to only contact KAS endpoints on an explicit allowlist. If the TDF references a KAS not on the list, decryption will fail. This is a security control to prevent credential exfiltration to a rogue KAS.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithKasAllowlist([]string{
+        "https://kas.example.com",
+        "https://kas-backup.example.com",
+    }),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.WithKasAllowlist(
+        "https://kas.example.com",
+        "https://kas-backup.example.com"
+    )
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    allowedKASEndpoints: [
+        'https://kas.example.com',
+        'https://kas-backup.example.com',
+    ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Ignore KAS Allowlist
+
+Disable the KAS allowlist check entirely. The SDK will contact any KAS referenced in the TDF manifest without restriction.
+
+:::warning Security consideration
+Only use this in controlled environments (e.g., integration tests, airgapped deployments where all KAS endpoints are trusted). In production, the allowlist is an important defence against credential forwarding attacks.
+:::
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithIgnoreAllowlist(true),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.WithIgnoreKasAllowlist(true)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    ignoreAllowlist: true,
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Assertion Verification Keys
+
+Provide public keys used to verify signed assertions embedded in the TDF. If an assertion was signed during encryption, you must supply the corresponding verification key here or verification will fail.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+verificationKeys := sdk.AssertionVerificationKeys{
+    Keys: map[string]sdk.AssertionKey{
+        "assertion-1": {
+            Alg: sdk.AssertionKeyAlgRS256,
+            Key: rsaPublicKey, // *rsa.PublicKey
+        },
+    },
+}
+
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithAssertionVerificationKeys(verificationKeys),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var assertionKey = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    rsaPublicKey
+);
+
+var verificationKeys = new Config.AssertionVerificationKeys();
+verificationKeys.keys = Map.of("assertion-1", assertionKey);
+
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.withAssertionVerificationKeys(verificationKeys)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    assertionVerificationKeys: {
+        keys: {
+            'assertion-1': {
+                alg: 'RS256',
+                key: rsaPublicKey, // CryptoKey
+            },
+        },
+    },
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Disable Assertion Verification
+
+Skip cryptographic verification of all assertions in the TDF. The assertions will still be read and returned, but their signatures will not be checked.
+
+:::warning
+Disabling assertion verification removes a tamper-detection layer. Only use this when you have explicitly verified the TDF's integrity through another mechanism.
+:::
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithDisableAssertionVerification(true),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.withDisableAssertionVerification(true)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    noVerify: true,
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Session Key Type
+
+Override the algorithm used for the ephemeral session key when unwrapping the data encryption key from the KAS. The default is `rsa:2048`.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/lib/ocrypto"
+
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithSessionKeyType(ocrypto.EC256Key),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.WithSessionKeyType(KeyType.EC256Key)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    wrappingKeyAlgorithm: 'ec:secp256r1',
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Fulfillable Obligations
+
+Declare which obligation FQNs the calling application is prepared to fulfil. The platform may attach obligations to an access decision — if an obligation is not declared as fulfillable, decryption may be denied.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithTDFFulfillableObligationFQNs([]string{
+        "https://example.com/obl/audit/value/log",
+        "https://example.com/obl/watermark/value/apply",
+    }),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Fulfillable obligations are not yet supported in the Java SDK TDF reader config. Configure them at the SDK level via `SDKBuilder` if available, or handle obligation enforcement in your application logic after reading the policy object.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const plaintext = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+    fulfillableObligationFQNs: [
+        'https://example.com/obl/audit/value/log',
+        'https://example.com/obl/watermark/value/apply',
+    ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Max Manifest Size (Go only)
+
+Limit the maximum size of the TDF manifest that the SDK will parse. This is a defence against malformed or malicious TDFs with abnormally large manifests.
+
+```go
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(encryptedBytes),
+    sdk.WithMaxManifestSize(1 * 1024 * 1024), // 1 MB limit
+)
+```
+
+---
+
+## Reading the Decrypted Payload
+
+After opening a TDF, the reader object provides access to both the plaintext payload and metadata embedded in the TDF manifest.
+
+### Payload
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+Write the full payload to any `io.Writer`:
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+var plaintext bytes.Buffer
+if _, err = tdfReader.WriteTo(&plaintext); err != nil {
+    log.Fatal(err)
+}
+fmt.Println(plaintext.String())
+```
+
+Or read incrementally via `io.Reader`:
+
+```go
+buf := make([]byte, 4096)
+for {
+    n, err := tdfReader.Read(buf)
+    if n > 0 {
+        // process buf[:n]
+    }
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+
+var output = new ByteArrayOutputStream();
+reader.readPayload(output);
+String plaintext = output.toString(StandardCharsets.UTF_8);
+System.out.println(plaintext);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Use `client.read()` for direct payload access:
+
+```typescript
+const stream = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const text = await new Response(stream).text();
+console.log(text);
+```
+
+Or use `client.open()` to inspect the TDF before decrypting:
+
+```typescript
+const reader = client.open({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const stream = await reader.decrypt();
+const text = await new Response(stream).text();
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Unencrypted Metadata
+
+Read the plaintext metadata string that was attached to the TDF at encryption time.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+meta, err := tdfReader.UnencryptedMetadata()
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Metadata: %s\n", meta)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+String metadata = reader.getMetadata();
+System.out.println("Metadata: " + metadata);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const reader = client.open({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+// Metadata is available on the stream returned by read()
+const stream = await client.read({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const metadata = await stream.metadata;
+console.log('Metadata:', metadata);
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Policy Object
+
+Inspect the TDF's embedded policy, including the UUID, data attributes, and dissemination list.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+policy, err := tdfReader.Policy()
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Policy UUID: %s\n", policy.UUID)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+PolicyObject policy = reader.readPolicyObject();
+System.out.println("Policy UUID: " + policy.uuid);
+for (var attr : policy.body.dataAttributes) {
+    System.out.println("Attribute: " + attr.attribute);
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+The policy is embedded in the manifest. Access it via `reader.manifest()`:
+
+```typescript
+const reader = client.open({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const manifest = await reader.manifest();
+// Policy details are in manifest.encryptionInformation.policy
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Data Attributes
+
+Retrieve the list of data attribute FQNs attached to the TDF policy.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+attrs, err := tdfReader.DataAttributes()
+if err != nil {
+    log.Fatal(err)
+}
+for _, a := range attrs {
+    fmt.Println(a)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+PolicyObject policy = reader.readPolicyObject();
+for (var attr : policy.body.dataAttributes) {
+    System.out.println(attr.attribute);
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const reader = client.open({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const attrs = await reader.attributes();
+console.log(attrs); // string[]
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Manifest
+
+Access the raw TDF manifest object.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
+if err != nil {
+    log.Fatal(err)
+}
+manifest := tdfReader.Manifest()
+fmt.Printf("TDF version: %s\n", manifest.TDFVersion)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
+Manifest manifest = reader.getManifest();
+System.out.println("TDF version: " + manifest.tdfVersion);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const reader = client.open({
+    source: { type: 'buffer', location: encryptedBytes },
+});
+const manifest = await reader.manifest();
+console.log(manifest);
+```
+
+</TabItem>
+</Tabs>
