@@ -286,7 +286,7 @@
 }
 
 :global(html[data-theme='light']) .btnSecondary {
-  border-color: #e2e8f0;
+  border-color: #cbd5e1;
   color: #0f172a;
 }
 
