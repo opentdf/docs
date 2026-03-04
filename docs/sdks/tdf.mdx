@@ -105,6 +105,14 @@ Rejects with `Error` if the KAS is unreachable, authentication fails, or the sou
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "log"
+    "strings"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 var buf bytes.Buffer
 manifest, err := client.CreateTDF(&buf, strings.NewReader("Sensitive data"),
     sdk.WithKasInformation(sdk.KASInfo{URL: "https://kas.example.com"}),
@@ -118,6 +126,11 @@ if err != nil {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+
 var kasInfo = new Config.KASInfo();
 kasInfo.URL = "https://kas.example.com";
 
@@ -241,6 +254,12 @@ Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is de
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -257,6 +276,13 @@ fmt.Println(plaintext.String())
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+import java.io.ByteArrayOutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
+
 try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
     TDF.Reader reader = sdk.loadTDF(channel, Config.newTDFReaderConfig());
     var output = new ByteArrayOutputStream();
@@ -341,6 +367,14 @@ Not available as a standalone function. Pass the source to `client.open()` and c
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 reader := bytes.NewReader(data)
 valid, err := sdk.IsValidTdf(reader)
 if err != nil {
@@ -358,6 +392,12 @@ tdfReader, err := client.LoadTDF(reader)
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.TDF;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
 try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
     if (!SDK.isTDF(channel)) {
         System.out.println("Not a valid TDF");
@@ -378,6 +418,11 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 Java provides static methods to read the manifest and policy from a TDF without performing key access or decrypting the payload:
 
 ```java
+import io.opentdf.platform.sdk.PolicyObject;
+import io.opentdf.platform.sdk.SDK;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+
 try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
     Manifest manifest = SDK.readManifest(channel);
     System.out.println("TDF version: " + manifest.tdfVersion);
@@ -432,6 +477,14 @@ Individual TDF failures are collected into a single bulk error. Use `sdk.FromBul
 ### Example
 
 ```go
+import (
+    "bytes"
+    "context"
+    "fmt"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 ctx := context.Background()
 
 tdfs := []*sdk.BulkTDF{
@@ -457,6 +510,13 @@ if err != nil {
 To inspect the prepared request before executing:
 
 ```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 ctx := context.Background()
 
 prepared, err := client.PrepareBulkDecrypt(ctx, sdk.WithTDFs(tdfs...))
@@ -485,6 +545,8 @@ func (r *Reader) Read(p []byte) (int, error)  // implements io.Reader
 ```
 
 ```go
+import "bytes"
+
 var plaintext bytes.Buffer
 _, err := tdfReader.WriteTo(&plaintext)
 ```
@@ -497,6 +559,8 @@ void reader.readPayload(OutputStream out) throws IOException
 ```
 
 ```java
+import java.io.ByteArrayOutputStream;
+
 var output = new ByteArrayOutputStream();
 reader.readPayload(output);
 ```
@@ -526,6 +590,8 @@ func (r *Reader) UnencryptedMetadata() ([]byte, error)
 ```
 
 ```go
+import "fmt"
+
 meta, err := tdfReader.UnencryptedMetadata()
 fmt.Printf("Metadata: %s\n", meta)
 ```
@@ -566,6 +632,8 @@ func (r *Reader) Policy() (*policy.PolicyObject, error)
 ```
 
 ```go
+import "fmt"
+
 policy, err := tdfReader.Policy()
 fmt.Printf("Policy UUID: %s\n", policy.UUID)
 ```
@@ -578,6 +646,8 @@ PolicyObject reader.readPolicyObject() throws IOException
 ```
 
 ```java
+import io.opentdf.platform.sdk.PolicyObject;
+
 PolicyObject policy = reader.readPolicyObject();
 System.out.println("Policy UUID: " + policy.uuid);
 ```
@@ -607,6 +677,8 @@ func (r *Reader) DataAttributes() ([]string, error)
 ```
 
 ```go
+import "fmt"
+
 attrs, err := tdfReader.DataAttributes()
 for _, a := range attrs {
     fmt.Println(a)
@@ -619,6 +691,8 @@ for _, a := range attrs {
 Access via `readPolicyObject()`:
 
 ```java
+import io.opentdf.platform.sdk.PolicyObject;
+
 PolicyObject policy = reader.readPolicyObject();
 for (var attr : policy.body.dataAttributes) {
     System.out.println(attr.attribute);
@@ -651,6 +725,8 @@ func (r *Reader) Manifest() *Manifest
 ```
 
 ```go
+import "fmt"
+
 manifest := tdfReader.Manifest()
 fmt.Printf("TDF version: %s\n", manifest.TDFVersion)
 ```

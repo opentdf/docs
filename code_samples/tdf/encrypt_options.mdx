@@ -15,6 +15,8 @@ Attach one or more attribute value FQNs to the TDF policy. Access to the data wi
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithDataAttributes(
@@ -30,6 +32,8 @@ Multiple calls to `WithDataAttributes` are additive.
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.withDataAttributes(
@@ -73,6 +77,8 @@ Specify which Key Access Server (KAS) will hold the key grants for this TDF. The
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(
         sdk.KASInfo{
@@ -87,6 +93,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 var kasInfo = new Config.KASInfo();
 kasInfo.URL = "https://kas.example.com";
 kasInfo.Algorithm = "ec:secp256r1"; // optional; defaults to rsa:2048
@@ -123,6 +131,8 @@ When enabled, the SDK queries the platform's attribute service to automatically 
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithDataAttributes("https://example.com/attr/classification/value/secret"),
     sdk.WithAutoconfigure(true),
@@ -133,6 +143,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withDataAttributes("https://example.com/attr/classification/value/secret"),
     Config.withAutoconfigure(true)
@@ -170,6 +182,8 @@ Split the data encryption key across multiple KAS instances. The key can only be
 Provide multiple `KASInfo` entries with distinct `URL` values. The SDK splits the key across all provided KAS endpoints.
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(
         sdk.KASInfo{URL: "https://kas-a.example.com"},
@@ -186,6 +200,9 @@ To share a key segment (i.e., not split), provide the same `URL` more than once 
 Use `Config.withSplitPlan` to declare explicit key-split steps. Each step names a KAS URL and a split ID.
 
 ```java
+import io.opentdf.platform.sdk.Autoconfigure;
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfoA, kasInfoB),
     Config.withSplitPlan(
@@ -224,6 +241,8 @@ Attach a plaintext metadata string to the TDF. Metadata is stored unencrypted in
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithMetaData(`{"owner":"alice","sensitivity":"high"}`),
@@ -234,6 +253,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.withMetaData("{\"owner\":\"alice\",\"sensitivity\":\"high\"}")
@@ -269,6 +290,8 @@ Declare the content type of the plaintext payload. This is stored in the TDF man
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithMimeType("application/pdf"),
@@ -279,6 +302,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.withMimeType("application/pdf")
@@ -310,6 +335,8 @@ TDF payloads are split into encrypted segments. The segment size controls the tr
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 const oneMB = 1 * 1024 * 1024
 
 manifest, err := client.CreateTDF(buf, str,
@@ -322,6 +349,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 int oneMB = 1 * 1024 * 1024;
 
 Config.TDFConfig config = Config.newTDFConfig(
@@ -357,6 +386,8 @@ Assertions are cryptographically bound or signed statements attached to the TDF.
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 assertionCfg := sdk.AssertionConfig{
     ID:             "assertion-1",
     Type:           sdk.HandlingAssertion,
@@ -379,6 +410,9 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.AssertionConfig;
+import io.opentdf.platform.sdk.Config;
+
 var statement = new AssertionConfig.Statement();
 statement.format = "json+stanag5636";
 statement.schema = "urn:nato:stanag:5636:A:1:elements:json";
@@ -436,7 +470,10 @@ Override the algorithm used to wrap the data encryption key when sending it to t
 <TabItem value="go" label="Go">
 
 ```go
-import "github.com/opentdf/platform/lib/ocrypto"
+import (
+    "github.com/opentdf/platform/lib/ocrypto"
+    "github.com/opentdf/platform/sdk"
+)
 
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
@@ -450,6 +487,8 @@ Valid values: `ocrypto.RSA2048Key`, `ocrypto.EC256Key`, `ocrypto.EC384Key`, `ocr
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.WithWrappingKeyAlg(KeyType.EC256Key)
@@ -489,6 +528,8 @@ Target a specific TDF specification version. Use this to maintain compatibility 
 <TabItem value="go" label="Go">
 
 ```go
+import "github.com/opentdf/platform/sdk"
+
 manifest, err := client.CreateTDF(buf, str,
     sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
     sdk.WithTargetMode("4.3.0"),
@@ -499,6 +540,8 @@ manifest, err := client.CreateTDF(buf, str,
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+
 Config.TDFConfig config = Config.newTDFConfig(
     Config.withKasInformation(kasInfo),
     Config.withTargetMode("4.3.0")

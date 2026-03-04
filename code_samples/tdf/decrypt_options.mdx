@@ -15,6 +15,12 @@ Restrict decryption to only contact KAS endpoints on an explicit allowlist. If t
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
     sdk.WithKasAllowlist([]string{
@@ -28,6 +34,9 @@ tdfReader, err := client.LoadTDF(
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
     Config.WithKasAllowlist(
         "https://kas.example.com",
@@ -67,6 +76,12 @@ Only use this in controlled environments (e.g., integration tests, airgapped dep
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
     sdk.WithIgnoreAllowlist(true),
@@ -77,6 +92,9 @@ tdfReader, err := client.LoadTDF(
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
     Config.WithIgnoreKasAllowlist(true)
 );
@@ -106,6 +124,12 @@ Provide public keys used to verify signed assertions embedded in the TDF. If an 
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 verificationKeys := sdk.AssertionVerificationKeys{
     Keys: map[string]sdk.AssertionKey{
         "assertion-1": {
@@ -125,6 +149,11 @@ tdfReader, err := client.LoadTDF(
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.AssertionConfig;
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+import java.util.Map;
+
 var assertionKey = new AssertionConfig.AssertionKey(
     AssertionConfig.AssertionKeyAlg.RS256,
     rsaPublicKey
@@ -173,6 +202,12 @@ Disabling assertion verification removes a tamper-detection layer. Only use this
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
     sdk.WithDisableAssertionVerification(true),
@@ -183,6 +218,9 @@ tdfReader, err := client.LoadTDF(
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
     Config.withDisableAssertionVerification(true)
 );
@@ -212,7 +250,12 @@ Override the algorithm used for the ephemeral session key when unwrapping the da
 <TabItem value="go" label="Go">
 
 ```go
-import "github.com/opentdf/platform/lib/ocrypto"
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/lib/ocrypto"
+    "github.com/opentdf/platform/sdk"
+)
 
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
@@ -224,6 +267,9 @@ tdfReader, err := client.LoadTDF(
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
     Config.WithSessionKeyType(KeyType.EC256Key)
 );
@@ -253,6 +299,12 @@ Declare which obligation FQNs the calling application is prepared to fulfil. The
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
     sdk.WithTDFFulfillableObligationFQNs([]string{
@@ -290,6 +342,12 @@ const plaintext = await client.read({
 Limit the maximum size of the TDF manifest that the SDK will parse. This is a defence against malformed or malicious TDFs with abnormally large manifests.
 
 ```go
+import (
+    "bytes"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 tdfReader, err := client.LoadTDF(
     bytes.NewReader(encryptedBytes),
     sdk.WithMaxManifestSize(1 * 1024 * 1024), // 1 MB limit
@@ -310,6 +368,12 @@ After opening a TDF, the reader object provides access to both the plaintext pay
 Write the full payload to any `io.Writer`:
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -325,6 +389,11 @@ fmt.Println(plaintext.String())
 Or read incrementally via `io.Reader`:
 
 ```go
+import (
+    "io"
+    "log"
+)
+
 buf := make([]byte, 4096)
 for {
     n, err := tdfReader.Read(buf)
@@ -344,6 +413,11 @@ for {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+
 TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
 
 var output = new ByteArrayOutputStream();
@@ -388,6 +462,12 @@ Read the plaintext metadata string that was attached to the TDF at encryption ti
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -404,6 +484,9 @@ fmt.Printf("Metadata: %s\n", meta)
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
 String metadata = reader.getMetadata();
 System.out.println("Metadata: " + metadata);
@@ -433,6 +516,12 @@ Inspect the TDF's embedded policy, including the UUID, data attributes, and diss
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -449,6 +538,10 @@ fmt.Printf("Policy UUID: %s\n", policy.UUID)
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.PolicyObject;
+import io.opentdf.platform.sdk.TDF;
+
 TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
 PolicyObject policy = reader.readPolicyObject();
 System.out.println("Policy UUID: " + policy.uuid);
@@ -483,6 +576,12 @@ Retrieve the list of data attribute FQNs attached to the TDF policy.
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -501,6 +600,10 @@ for _, a := range attrs {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.PolicyObject;
+import io.opentdf.platform.sdk.TDF;
+
 TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
 PolicyObject policy = reader.readPolicyObject();
 for (var attr : policy.body.dataAttributes) {
@@ -532,6 +635,12 @@ Access the raw TDF manifest object.
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "bytes"
+    "fmt"
+    "log"
+)
+
 tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBytes))
 if err != nil {
     log.Fatal(err)
@@ -544,6 +653,9 @@ fmt.Printf("TDF version: %s\n", manifest.TDFVersion)
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+
 TDF.Reader reader = sdk.loadTDF(fileChannel, Config.newTDFReaderConfig());
 Manifest manifest = reader.getManifest();
 System.out.println("TDF version: " + manifest.tdfVersion);
