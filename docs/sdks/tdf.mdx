@@ -11,6 +11,17 @@ import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
 
 A **TDF (Trusted Data Format)** wraps a payload in a cryptographic envelope that binds access control policy directly to the data. The TDF contains an encrypted payload, a manifest describing the policy and key access configuration, and optional assertions.
 
+This page covers the core TDF operations:
+
+- **[CreateTDF](#createtdf)** — encrypt a payload and write a TDF
+- **[LoadTDF](#loadtdf)** — open a TDF and access the plaintext
+- **[IsValidTdf](#isvalidtdf)** — check whether a stream is a valid TDF without decrypting
+- **[BulkDecrypt](#bulkdecrypt-go)** — decrypt multiple TDFs in one call *(Go only)*
+- **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
+- **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
+- **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
+- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+
 ---
 
 ## Quick Start
@@ -131,8 +142,6 @@ console.log(await new Response(stream).text()); // "hello, world"
 
 </TabItem>
 </Tabs>
-
-For credential configuration and auth provider setup, see the [Auth Providers](/sdks/platform-client) guide.
 
 ---
 
