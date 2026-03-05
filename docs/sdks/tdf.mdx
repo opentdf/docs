@@ -155,7 +155,7 @@ Encrypts a plaintext payload and writes a TDF to the provided output destination
 <TabItem value="go" label="Go">
 
 ```go
-func (client *SDK) CreateTDF(out io.Writer, plaintext io.Reader, opts ...TDFOption) (*Manifest, error)
+func (s SDK) CreateTDF(writer io.Writer, reader io.ReadSeeker, opts ...TDFOption) (*TDFObject, error)
 ```
 
 </TabItem>
@@ -181,7 +181,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | Output destination | Required | Where the encrypted TDF bytes are written. In Go and Java, pass an explicit writer/stream. In JavaScript, the encrypted stream is returned from the call. |
-| Plaintext source | Required | The data to encrypt. In Go: `io.Reader`. In Java: `InputStream`. In JavaScript: `source` in the options object. |
+| Plaintext source | Required | The data to encrypt. In Go: `io.ReadSeeker` (must support seeking). In Java: `InputStream`. In JavaScript: `source` in the options object. |
 | Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
 
 **Returns**
@@ -189,7 +189,7 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 <Tabs>
 <TabItem value="go" label="Go">
 
-`(*Manifest, error)` — The manifest of the created TDF on success. See [Manifest Object](#manifest-object) for field reference. Returns a non-nil `error` on failure.
+`(*TDFObject, error)` — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -498,6 +498,10 @@ Not available as a standalone function. Pass the source to `client.open()` and c
 
 </TabItem>
 </Tabs>
+
+**Errors**
+
+A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
 
 **Example**
 
