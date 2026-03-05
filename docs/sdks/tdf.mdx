@@ -162,15 +162,15 @@ func (s SDK) CreateTDF(writer io.Writer, reader io.ReadSeeker, opts ...TDFOption
 <TabItem value="java" label="Java">
 
 ```java
-void SDK.createTDF(InputStream plaintext, OutputStream out, TDFConfig config)
-    throws IOException, AutoConfigureException
+Manifest SDK.createTDF(InputStream plaintext, OutputStream out, TDFConfig config)
+    throws SDKException, IOException
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
+async createZTDF(options: CreateZTDFOptions): Promise<DecoratedStream>
 ```
 
 </TabItem>
@@ -194,12 +194,12 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 </TabItem>
 <TabItem value="java" label="Java">
 
-`void` — Encrypted bytes are written to the output stream. Throws on failure.
+`Manifest` — The manifest written to the TDF, containing key access and encryption metadata. Encrypted bytes are written to the output stream.
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-`Promise<ReadableStream>` — A readable stream of encrypted TDF bytes.
+`Promise<DecoratedStream>` — A decorated stream of encrypted TDF bytes. Pipe or consume it like any `ReadableStream`.
 
 </TabItem>
 </Tabs>
@@ -220,8 +220,8 @@ async createZTDF(options: CreateZTDFOptions): Promise<ReadableStream>
 
 | Exception | Cause |
 |-----------|-------|
+| `SDKException` | KAS unreachable, policy invalid, or the SDK could not resolve a KAS from the attribute service. |
 | `IOException` | I/O failure reading from the input stream or writing to the output stream. |
-| `AutoConfigureException` | The SDK could not resolve a KAS from the attribute service. |
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -259,6 +259,7 @@ if err != nil {
 
 ```java
 import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.Manifest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -270,7 +271,7 @@ var config = Config.newTDFConfig(Config.withKasInformation(kasInfo));
 
 var in  = new ByteArrayInputStream("Sensitive data".getBytes(StandardCharsets.UTF_8));
 var out = new ByteArrayOutputStream();
-sdk.createTDF(in, out, config);
+Manifest manifest = sdk.createTDF(in, out, config);
 ```
 
 </TabItem>
@@ -301,14 +302,14 @@ Opens an encrypted TDF and returns a [TDF reader](#tdf-reader) that provides acc
 <TabItem value="go" label="Go">
 
 ```go
-func (client *SDK) LoadTDF(reader io.ReadSeeker, opts ...TDFReaderOption) (*Reader, error)
+func (s SDK) LoadTDF(reader io.ReadSeeker, opts ...TDFReaderOption) (*Reader, error)
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-TDF.Reader SDK.loadTDF(ReadableByteChannel channel, TDFReaderConfig config) throws IOException
+TDF.Reader SDK.loadTDF(SeekableByteChannel channel, TDFReaderConfig config) throws SDKException, IOException
 ```
 
 </TabItem>
@@ -329,7 +330,7 @@ open(options: ReadOptions): TDFReader
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `ReadableByteChannel`. In JavaScript: `source` in the options object (see below). |
+| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `SeekableByteChannel`. In JavaScript: `source` in the options object (see below). |
 | Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
 
 **JavaScript `source` types**
@@ -467,7 +468,7 @@ This is a package-level function in the `sdk` package, not a method on the clien
 <TabItem value="java" label="Java">
 
 ```java
-static boolean SDK.isTDF(ReadableByteChannel channel) throws IOException
+static boolean SDK.isTDF(SeekableByteChannel channel)
 ```
 
 </TabItem>
@@ -494,7 +495,7 @@ Not available as a standalone function. Pass the source to `client.open()` and c
 </TabItem>
 <TabItem value="java" label="Java">
 
-`boolean` — `true` if the channel contains a valid TDF. Throws `IOException` on read failure.
+`boolean` — `true` if the channel contains a valid TDF, `false` otherwise.
 
 </TabItem>
 </Tabs>
@@ -587,8 +588,8 @@ Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests t
 **Signature**
 
 ```go
-func (client *SDK) BulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) error
-func (client *SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) (*PreparedBulkDecrypt, error)
+func (s SDK) BulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) error
+func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) (*BulkDecryptPrepared, error)
 ```
 
 **Parameters**
@@ -610,7 +611,7 @@ Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints ma
 **Returns**
 
 - `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
-- `PrepareBulkDecrypt` returns `(*PreparedBulkDecrypt, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
+- `PrepareBulkDecrypt` returns `(*BulkDecryptPrepared, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
 
 **Errors**
 
@@ -784,7 +785,7 @@ fmt.Printf("Policy UUID: %s\n", policy.UUID)
 <TabItem value="java" label="Java">
 
 ```java
-PolicyObject reader.readPolicyObject() throws IOException
+PolicyObject reader.readPolicyObject()
 ```
 
 ```java
@@ -863,7 +864,7 @@ Returns the raw [TDF manifest](#manifest-object), including encryption informati
 <TabItem value="go" label="Go">
 
 ```go
-func (r *Reader) Manifest() *Manifest
+func (r *Reader) Manifest() Manifest
 ```
 
 ```go
