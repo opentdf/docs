@@ -162,7 +162,7 @@ func (s SDK) CreateTDF(writer io.Writer, reader io.ReadSeeker, opts ...TDFOption
 <TabItem value="java" label="Java">
 
 ```java
-Manifest SDK.createTDF(InputStream plaintext, OutputStream out, TDFConfig config)
+Manifest SDK.createTDF(InputStream plaintext, OutputStream out, Config.TDFConfig config)
     throws SDKException, IOException
 ```
 
@@ -309,7 +309,7 @@ func (s SDK) LoadTDF(reader io.ReadSeeker, opts ...TDFReaderOption) (*Reader, er
 <TabItem value="java" label="Java">
 
 ```java
-TDF.Reader SDK.loadTDF(SeekableByteChannel channel, TDFReaderConfig config) throws SDKException, IOException
+TDF.Reader SDK.loadTDF(SeekableByteChannel channel, Config.TDFReaderConfig config) throws SDKException, IOException
 ```
 
 </TabItem>
@@ -698,7 +698,7 @@ _, err := tdfReader.WriteTo(&plaintext)
 <TabItem value="java" label="Java">
 
 ```java
-void reader.readPayload(OutputStream out) throws IOException
+void reader.readPayload(OutputStream out) throws SDK.SegmentSignatureMismatch, IOException
 ```
 
 ```java
@@ -771,7 +771,7 @@ Returns the [`PolicyObject`](#policyobject) containing the UUID, data attributes
 <TabItem value="go" label="Go">
 
 ```go
-func (r *Reader) Policy() (*policy.PolicyObject, error)
+func (r *Reader) Policy() (PolicyObject, error)
 ```
 
 ```go
