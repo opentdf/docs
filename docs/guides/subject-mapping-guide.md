@@ -65,8 +65,8 @@ sequenceDiagram
     participant IdP as Identity Provider
     box OpenTDF Services
         participant KAS as Key Access Server
-        participant ERS as Entity Resolution Service
         participant Auth as Authorization Service
+        participant ERS as Entity Resolution Service
         participant Policy as Policy Service
     end
 
@@ -74,24 +74,23 @@ sequenceDiagram
     IdP->>User: 2. JWT token
 
     User->>KAS: 3. Decrypt request + token
-    KAS->>ERS: 4. Resolve entity
-    ERS->>KAS: 5. Entity representation
+    KAS->>Auth: 4. GetDecision
 
-    KAS->>Auth: 6. GetDecision
-    Auth->>Policy: 7. Match Subject Mappings
+    Auth->>ERS: 5. Resolve entity
+    ERS->>Auth: 6. Entity representation
 
-    Policy->>Policy: 8. Evaluate conditions
-    Policy->>Auth: 9. Return entitlements
+    Auth->>Policy: 7. Fetch Subject Mappings + Attribute rules
+    Policy->>Auth: 8. Return Subject Mappings + Attribute rules
 
-    Auth->>Auth: 10. Compare vs resource attrs
-    Auth->>KAS: 11. PERMIT or DENY
-    KAS->>User: 12. Release key or deny
+    Auth->>Auth: 9. Evaluate entitlements & compare vs resource attrs
+    Auth->>KAS: 10. PERMIT or DENY
+    KAS->>User: 11. Release key or deny
 ```
 
 | Service | NIST Role | How to use it |
 |---|---|---|
 | Key Access Server | Policy Enforcement Point (PEP) | [Send a TDF decrypt request](/sdks/tdf) |
-| Entity Resolution Service | Policy Information Point (PIP) | *Used by Key Access Server* |
+| Entity Resolution Service | Policy Information Point (PIP) | *Used by Authorization Service* |
 | Authorization Service | Policy Decision Point (PDP) | [Get authorization decisions](/sdks/authorization) |
 | Policy Service | Policy Administration Point (PAP) | [Configure subject mappings](/sdks/policy) |
 
@@ -123,19 +122,21 @@ sequenceDiagram
 }
 ```
 
-#### Step 3-5: KAS & Entity Resolution
+#### Steps 3-6: KAS, Authorization Service & Entity Resolution
 
-When a user requests to decrypt a TDF, the Key Access Server receives the request and asks the Entity Resolution Service to translate the raw JWT claims into a normalized entity representation that the authorization engine can evaluate.
+When a user requests to decrypt a TDF, the Key Access Server receives the request and immediately forwards the authorization decision to the Authorization Service (O Service). The Authorization Service then orchestrates the handshake with the Entity Resolution Service to translate the raw JWT claims into a normalized entity representation.
 
 ```mermaid
 sequenceDiagram
     participant User
     participant KAS as Key Access Server (PEP)
+    participant Auth as Authorization Service (PDP)
     participant ERS as Entity Resolution Service (PIP)
 
     User->>KAS: 3. Decrypt request + token
-    KAS->>ERS: 4. Resolve entity from token
-    ERS->>KAS: 5. Return entity representation
+    KAS->>Auth: 4. GetDecision
+    Auth->>ERS: 5. Resolve entity from token
+    ERS->>Auth: 6. Return entity representation
 ```
 
 The resulting **Entity Representation** looks like this:
@@ -153,30 +154,28 @@ The resulting **Entity Representation** looks like this:
 }
 ```
 
-:::warning Entity Types in Authorization Logs
-You may see TWO entities in authorization logs. When using the Keycloak ERS, the IDs follow this format:
-- `jwtentity-0-clientid-{id}`: The **OIDC client application** — assigned `CATEGORY_ENVIRONMENT`
-- `jwtentity-1-username-{name}`: The **authenticated user** — assigned `CATEGORY_SUBJECT`
+:::warning Two entities in authorization logs
+When using the Keycloak ERS, you may see TWO entities in authorization logs:
+- `jwtentity-0-clientid-{id}`: The **OIDC client application** — tracked in audit logs but not evaluated in access decisions
+- `jwtentity-1-username-{name}`: The **authenticated user** — this is the entity whose entitlements are evaluated
 
-In `GetDecision` flows, **only `CATEGORY_SUBJECT` entities participate in the access decision**. The environment entity (client) is tracked in audit logs but its entitlements are not evaluated. For standard TDF decrypt flows, only the user (`CATEGORY_SUBJECT`) needs Subject Mappings.
+For standard TDF decrypt flows, only the user entity (`jwtentity-1-*`) needs Subject Mappings.
 
-Exception: when using client credentials (service account) flows, the service account is assigned `CATEGORY_SUBJECT` and does need Subject Mappings.
+Exception: when using client credentials (service account) flows, the service account is the entity being evaluated and does need Subject Mappings.
 :::
 
-#### Step 6-9: Subject Mapping Evaluation
+#### Steps 7-9: Subject Mapping Evaluation
 
-The Authorization Service asks the Policy Service which Subject Mappings match the entity's claims, evaluates the conditions, and assembles the set of attribute values the entity is entitled to access.
+With the entity representation in hand, the Authorization Service fetches Subject Mappings and Attribute rules from the Policy Service, evaluates the conditions against the entity's claims, and determines which attribute values the entity is entitled to access.
 
 ```mermaid
 sequenceDiagram
-    participant KAS as Key Access Server (PEP)
     participant Auth as Authorization Service (PDP)
     participant Policy as Policy Service (PAP)
 
-    KAS->>Auth: 6. GetDecision(entity + resource attrs)
-    Auth->>Policy: 7. Which Subject Mappings<br/>match this entity?
-    Policy->>Policy: 8. Evaluate Subject<br/>Condition Sets
-    Policy->>Auth: 9. Return entitled<br/>attribute values + actions
+    Auth->>Policy: 7. Fetch Subject Mappings<br/>+ Attribute rules
+    Policy->>Auth: 8. Return Subject Mappings<br/>+ Attribute rules
+    Auth->>Auth: 9. Evaluate entitlements<br/>& compare vs resource attrs
 ```
 
 A Subject Mapping says: "grant access to this attribute value if the entity's claims match these conditions." Here's one that grants the `clearance/executive` attribute to anyone whose `.role` claim is `vice_president`, `ceo`, or `cfo`:
@@ -207,9 +206,9 @@ A Subject Mapping says: "grant access to this attribute value if the entity's cl
 2. Check if `"vice_president"` is IN `["vice_president", "ceo", "cfo"]` → ✅ TRUE
 3. Grant entitlement: `clearance/executive` with `read` action
 
-#### Step 10-12: Authorization Decision
+#### Steps 10-11: Authorization Decision
 
-The Authorization Service compares the entity's entitlements against the attributes required by the resource, then sends a PERMIT or DENY back to KAS — which either releases the decryption key or rejects the request.
+The Authorization Service sends the PERMIT or DENY back to KAS — which either releases the decryption key or rejects the request.
 
 ```mermaid
 sequenceDiagram
@@ -217,9 +216,8 @@ sequenceDiagram
     participant KAS as Key Access Server (PEP)
     participant User
 
-    Auth->>Auth: 10. Compare entitlements<br/>vs resource attributes
-    Auth->>KAS: 11. PERMIT or DENY
-    KAS->>User: 12. Release key (PERMIT)<br/>or deny access (DENY)
+    Auth->>KAS: 10. PERMIT or DENY
+    KAS->>User: 11. Release key (PERMIT)<br/>or deny access (DENY)
 ```
 
 ```json
@@ -242,83 +240,6 @@ sequenceDiagram
 
 // Decision: PERMIT (entitlements satisfy requirements)
 ```
-
-## Entity Types and Categories
-
-Understanding entity types is critical for Subject Mapping configuration.
-
-### Entity Type vs. Entity Category
-
-| Dimension | Options | Meaning |
-|-----------|---------|---------|
-| **Entity Type** | PE (Person)<br/>NPE (Non-Person) | WHO the entity is |
-| **Entity Category** | Subject<br/>Environment | HOW it's used in decisions |
-
-### The Four Combinations
-
-```mermaid
-graph TD
-    A[Entity] --> B{Entity Type}
-    B -->|PE| C[Person Entity]
-    B -->|NPE| D[Non-Person Entity]
-
-    C --> E{Category}
-    D --> F{Category}
-
-    E -->|Subject| G[PE + Subject<br/>Human user in auth flow<br/>✅ Attributes checked in decisions]
-    E -->|Environment| H[PE + Environment<br/>Logged-in operator<br/>⚠️ Not evaluated in GetDecision]
-
-    F -->|Subject| I["NPE + Subject<br/>Service account (client credentials flow)<br/>✅ Attributes checked in decisions"]
-    F -->|Environment| J["NPE + Environment<br/>OIDC client in user-auth flow<br/>⚠️ Not evaluated in GetDecision"]
-```
-
-### Practical Examples
-
-**Person Entity + Subject Category (Most Common)**
-```json
-{
-  "type": "PE",
-  "category": "CATEGORY_SUBJECT",
-  "claims": {
-    "email": "alice@example.com",
-    "role": "engineer"
-  }
-}
-```
-→ Subject Mapping checks: Does Alice have the right entitlements?
-
-**Non-Person Entity + Subject Category (SDK Clients)**
-```json
-{
-  "type": "NPE",
-  "category": "CATEGORY_SUBJECT",
-  "claims": {
-    "clientId": "data-processing-service",
-    "scope": "tdf:decrypt"
-  }
-}
-```
-→ Subject Mapping checks: Does this service account have the right entitlements?
-
-**Environment Category (Excluded from Decision)**
-```json
-{
-  "type": "NPE",
-  "category": "CATEGORY_ENVIRONMENT",
-  "claims": {
-    "clientId": "my-app-client"
-  }
-}
-```
-→ Entitlements are tracked in audit logs but **not evaluated** in `GetDecision` flows. This is the standard category for the OIDC client in a user-authenticated request.
-
-:::note Environment vs Subject
-In a typical TDF flow with user authentication:
-- The OIDC **client** (the app calling the SDK) → `CATEGORY_ENVIRONMENT` → not checked in decisions
-- The **user** (who authenticated via the client) → `CATEGORY_SUBJECT` → checked in decisions
-
-Only create Subject Mappings for `CATEGORY_SUBJECT` entities. Environment entities do not need Subject Mappings for TDF decrypt to succeed.
-:::
 
 ## Subject Condition Sets: The Matching Engine
 
@@ -532,17 +453,17 @@ The selector syntax depends on whether the token claim is a **string** or an **a
 - ❌ `{"level": "senior", "department": "engineering"}` (not finance)
 - ❌ `{"level": "junior", "department": "finance"}` (not senior)
 
-## Scaling Subject Mappings: Exact Match vs. Pattern-Based
+## Scaling Subject Mappings: Entitle Kinds of Users, Not Individual Users
 
-:::info Common Question
-**Question:** "Do I need a separate Subject Mapping for every user, or can one mapping cover many users?"
+:::warning Avoid one Subject Mapping per user
+Creating a separate Subject Mapping for every individual user is a **performance anti-pattern** that will cause problems at scale. Subject Mappings implement ABAC — the goal is to entitle *kinds* of users (roles, departments, groups), not individual users.
 
-**Answer:** One Subject Mapping can cover many users by using pattern-based condition operators (`IN_CONTAINS`) rather than exact matches.
+Instead of thinking "grant Alice access", think "grant anyone in the finance team access."
 :::
 
 All attribute values in OpenTDF must be explicitly created before they can be used — there is no "freeform" or "dynamic" attribute value type. Each `attribute_value_id` in a Subject Mapping must reference an existing, named value. The flexibility comes from how Subject Condition Sets match entity claims.
 
-### Option 1: Exact Match (One Mapping Per User)
+### ❌ Anti-Pattern: One Mapping Per User
 
 ```json
 {
@@ -563,9 +484,9 @@ All attribute values in OpenTDF must be explicitly created before they can be us
 }
 ```
 
-**Limitation:** Requires creating a new Subject Mapping (and a corresponding attribute value) for every user. Not scalable for large user sets.
+**Why this fails at scale:** Requires creating a new Subject Mapping (and a corresponding attribute value) for every user. Performance degrades significantly as the number of mappings grows.
 
-### Option 2: Pattern-Based Access (Recommended)
+### ✅ Recommended: Pattern-Based Access
 
 Use `IN_CONTAINS` (operator `3`) to match token claim substrings, covering many users with one Subject Mapping:
 
@@ -591,6 +512,10 @@ Use `IN_CONTAINS` (operator `3`) to match token claim substrings, covering many 
 → Anyone whose token contains an email with `@example.com` receives entitlement for the `company/employees` attribute value.
 
 **Key:** One Subject Mapping covers all matching users. The condition evaluates the claim value at decision time — no per-user configuration needed.
+
+:::tip Prefer group/role-based conditions
+Where possible, use role or group membership claims rather than email patterns. This keeps access control in your IdP (where it belongs) and makes Subject Mappings simpler and more maintainable.
+:::
 
 ### Pre-Creating Attribute Values for Specific Identities
 
