@@ -186,8 +186,8 @@ func getEntitlementsV1(client *sdk.SDK) {
         // Query with multiple resource attributes to understand scope
         ResourceAttributes: []*authorization.ResourceAttribute{{
             AttributeValueFqns: []string{
-                "https://company.com/attr/classification/value/public",
-                "https://company.com/attr/classification/value/confidential",
+                "https://company.com/attr/clearance/value/public",
+                "https://company.com/attr/clearance/value/confidential",
             },
         }},
     }}
@@ -411,7 +411,7 @@ func getDecisionV2(client *sdk.SDK) {
             Resource: &authorizationv2.Resource_AttributeValues_{
                 AttributeValues: &authorizationv2.Resource_AttributeValues{
                     Fqns: []string{
-                        "https://company.com/attr/classification/value/confidential",
+                        "https://company.com/attr/clearance/value/confidential",
                         "https://company.com/attr/department/value/finance",
                     },
                 },
@@ -457,7 +457,7 @@ func getDecisionV1(client *sdk.SDK) {
         }},
         ResourceAttributes: []*authorization.ResourceAttribute{{
             AttributeValueFqns: []string{
-                "https://company.com/attr/classification/value/confidential",
+                "https://company.com/attr/clearance/value/confidential",
                 "https://company.com/attr/department/value/finance",
             },
         }},
@@ -514,7 +514,7 @@ public void getDecision(SDK sdk) throws ExecutionException, InterruptedException
             Resource.newBuilder()
                 .setAttributeValues(
                     Resource.AttributeValues.newBuilder()
-                        .addFqns("https://company.com/attr/classification/value/confidential")
+                        .addFqns("https://company.com/attr/clearance/value/confidential")
                         .addFqns("https://company.com/attr/department/value/finance")
                 )
         )
@@ -558,7 +558,7 @@ async function getDecision(sdk) {
     resource: {
       attributeValues: {
         fqns: [
-          'https://company.com/attr/classification/value/confidential',
+          'https://company.com/attr/clearance/value/confidential',
           'https://company.com/attr/department/value/finance'
         ]
       }
@@ -856,7 +856,7 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
         Resource: &authorizationv2.Resource{
             Resource: &authorizationv2.Resource_AttributeValues_{
                 AttributeValues: &authorizationv2.Resource_AttributeValues{
-                    Fqns: []string{"https://company.com/attr/classification/value/public"},
+                    Fqns: []string{"https://company.com/attr/clearance/value/public"},
                 },
             },
         },
@@ -895,7 +895,7 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
             }},
         }},
         ResourceAttributes: []*authorization.ResourceAttribute{{
-            AttributeValueFqns: []string{"https://company.com/attr/classification/value/public"},
+            AttributeValueFqns: []string{"https://company.com/attr/clearance/value/public"},
         }},
     }}
     
@@ -942,7 +942,7 @@ public void getDecisionWithToken(SDK sdk, String jwtToken) throws ExecutionExcep
             Resource.newBuilder()
                 .setAttributeValues(
                     Resource.AttributeValues.newBuilder()
-                        .addFqns("https://company.com/attr/classification/value/public")
+                        .addFqns("https://company.com/attr/clearance/value/public")
                 )
         )
         .build();
@@ -973,7 +973,7 @@ async function getDecisionWithToken(sdk, jwtToken) {
     },
     resource: {
       attributeValues: {
-        fqns: ['https://company.com/attr/classification/value/public']
+        fqns: ['https://company.com/attr/clearance/value/public']
       }
     }
   };
