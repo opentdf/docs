@@ -1,0 +1,1354 @@
+---
+title: Subject Mapping Comprehensive Guide
+sidebar_position: 1
+---
+
+<!-- vale Vale.Terms = NO -->
+<!-- vale Vale.Spelling = NO -->
+
+# Subject Mapping: Comprehensive Guide
+
+:::info What You'll Learn
+This guide explains how OpenTDF connects user identities from your Identity Provider (IdP) to attribute-based access control. You'll understand:
+- **Why** Subject Mappings exist (vs. direct IdP attribute mapping)
+- **How** authentication flows through Entity Resolution to authorization decisions
+- **How** to scale Subject Mappings from exact-match to pattern-based conditions
+- **How to troubleshoot** common Subject Mapping errors
+:::
+
+## The Core Problem: Why Subject Mappings Exist
+
+### ❌ Common Misconception
+
+Many developers expect this direct flow:
+
+```
+IdP User Attribute  → OpenTDF Attribute       → Access Decision
+(role=admin)          (clearance=top_secret)    (PERMIT/DENY)
+```
+
+**This doesn't work.** OpenTDF attributes define **what can be accessed**, not **who can access it**.
+
+### ✅ How It Actually Works
+
+OpenTDF uses a three-layer architecture:
+
+```
+1. IdP Attributes       →  User has role=admin, department=finance
+                          (Identity Claims)
+
+2. Subject Mappings     →  IF role=admin THEN grant clearance/top_secret
+                          (Entitlement Rules)
+
+3. OpenTDF Attributes   →  Document requires clearance/top_secret
+                          (Resource Protection)
+```
+
+**Subject Mappings** are the bridge: they convert **identity claims** into **access entitlements**.
+
+:::tip Key Insight
+- **IdP attributes** describe WHO the user is
+- **Subject Mappings** determine WHAT the user can access
+- **OpenTDF attributes** define WHAT protects the resource
+
+Subject Mappings answer: "Given this identity, what entitlements should they receive?"
+:::
+
+## Architecture: The Complete Flow
+
+### High-Level Data Flow
+
+```mermaid
+%%{init: {'sequence': {'boxMargin': 20, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant User
+    participant IdP as Identity Provider
+    box OpenTDF Services
+        participant KAS as Key Access Server
+        participant ERS as Entity Resolution Service
+        participant Auth as Authorization Service
+        participant Policy as Policy Service
+    end
+
+    User->>IdP: 1. Authenticate
+    IdP->>User: 2. JWT token
+
+    User->>KAS: 3. Decrypt request + token
+    KAS->>ERS: 4. Resolve entity
+    ERS->>KAS: 5. Entity representation
+
+    KAS->>Auth: 6. GetDecision
+    Auth->>Policy: 7. Match Subject Mappings
+
+    Policy->>Policy: 8. Evaluate conditions
+    Policy->>Auth: 9. Return entitlements
+
+    Auth->>Auth: 10. Compare vs resource attrs
+    Auth->>KAS: 11. PERMIT or DENY
+    KAS->>User: 12. Release key or deny
+```
+
+| Service | NIST Role | How to use it |
+|---|---|---|
+| Key Access Server | Policy Enforcement Point (PEP) | [Send a TDF decrypt request](/sdks/tdf) |
+| Entity Resolution Service | Policy Information Point (PIP) | *Used by Key Access Server* |
+| Authorization Service | Policy Decision Point (PDP) | [Get authorization decisions](/sdks/authorization) |
+| Policy Service | Policy Administration Point (PAP) | [Configure subject mappings](/sdks/policy) |
+
+For a detailed look at how these services fit together, see the [Architecture page](/architecture).
+
+### Detailed Step-by-Step
+
+#### Step 1-2: User Authentication
+
+Your Identity Provider (IdP) — such as Keycloak, Auth0, or Okta — is the source of truth for who a user is; OpenTDF relies on the JWT it issues to evaluate whatever claims you've configured (for example, `email`, `role`, or `groups`) against your policies.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant IdP as Identity Provider
+
+    User->>IdP: 1. Authenticate
+    IdP->>User: 2. Return JWT token<br/>{email, role, groups}
+```
+
+```json
+// User authenticates with IdP, receives JWT token
+{
+  "sub": "alice@example.com",
+  "email": "alice@example.com",
+  "role": "vice_president",
+  "department": "finance",
+  "groups": ["executives", "finance-team"]
+}
+```
+
+#### Step 3-5: KAS & Entity Resolution
+
+When a user requests to decrypt a TDF, the Key Access Server receives the request and asks the Entity Resolution Service to translate the raw JWT claims into a normalized entity representation that the authorization engine can evaluate.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant KAS as Key Access Server (PEP)
+    participant ERS as Entity Resolution Service (PIP)
+
+    User->>KAS: 3. Decrypt request + token
+    KAS->>ERS: 4. Resolve entity from token
+    ERS->>KAS: 5. Return entity representation
+```
+
+The resulting **Entity Representation** looks like this:
+
+```json
+{
+  "ephemeral_id": "jwtentity-1",
+  "category": "CATEGORY_SUBJECT",
+  "claims": {
+    "email": "alice@example.com",
+    "role": "vice_president",
+    "department": "finance",
+    "groups": ["executives", "finance-team"]
+  }
+}
+```
+
+:::warning Entity Types in Authorization Logs
+You may see TWO entities in authorization logs. When using the Keycloak ERS, the IDs follow this format:
+- `jwtentity-0-clientid-{id}`: The **OIDC client application** — assigned `CATEGORY_ENVIRONMENT`
+- `jwtentity-1-username-{name}`: The **authenticated user** — assigned `CATEGORY_SUBJECT`
+
+In `GetDecision` flows, **only `CATEGORY_SUBJECT` entities participate in the access decision**. The environment entity (client) is tracked in audit logs but its entitlements are not evaluated. For standard TDF decrypt flows, only the user (`CATEGORY_SUBJECT`) needs Subject Mappings.
+
+Exception: when using client credentials (service account) flows, the service account is assigned `CATEGORY_SUBJECT` and does need Subject Mappings.
+:::
+
+#### Step 6-9: Subject Mapping Evaluation
+
+The Authorization Service asks the Policy Service which Subject Mappings match the entity's claims, evaluates the conditions, and assembles the set of attribute values the entity is entitled to access.
+
+```mermaid
+sequenceDiagram
+    participant KAS as Key Access Server (PEP)
+    participant Auth as Authorization Service (PDP)
+    participant Policy as Policy Service (PAP)
+
+    KAS->>Auth: 6. GetDecision(entity + resource attrs)
+    Auth->>Policy: 7. Which Subject Mappings<br/>match this entity?
+    Policy->>Policy: 8. Evaluate Subject<br/>Condition Sets
+    Policy->>Auth: 9. Return entitled<br/>attribute values + actions
+```
+
+A Subject Mapping says: "grant access to this attribute value if the entity's claims match these conditions." Here's one that grants the `clearance/executive` attribute to anyone whose `.role` claim is `vice_president`, `ceo`, or `cfo`:
+
+**Subject Mapping Example:**
+```json
+{
+  "id": "sm-001",
+  "attribute_value_id": "attr-clearance-executive",
+  "actions": ["read"],
+  "subject_condition_set": {
+    "subject_sets": [{
+      "condition_groups": [{
+        "boolean_operator": "AND",
+        "conditions": [{
+          "subject_external_selector_value": ".role",
+          "operator": "IN",
+          "subject_external_values": ["vice_president", "ceo", "cfo"]
+        }]
+      }]
+    }]
+  }
+}
+```
+
+**Evaluation Logic:**
+1. Extract `.role` from entity representation → `"vice_president"`
+2. Check if `"vice_president"` is IN `["vice_president", "ceo", "cfo"]` → ✅ TRUE
+3. Grant entitlement: `clearance/executive` with `read` action
+
+#### Step 10-12: Authorization Decision
+
+The Authorization Service compares the entity's entitlements against the attributes required by the resource, then sends a PERMIT or DENY back to KAS — which either releases the decryption key or rejects the request.
+
+```mermaid
+sequenceDiagram
+    participant Auth as Authorization Service (PDP)
+    participant KAS as Key Access Server (PEP)
+    participant User
+
+    Auth->>Auth: 10. Compare entitlements<br/>vs resource attributes
+    Auth->>KAS: 11. PERMIT or DENY
+    KAS->>User: 12. Release key (PERMIT)<br/>or deny access (DENY)
+```
+
+```json
+// Entity's Entitlements:
+{
+  "attribute_values": [
+    {
+      "attribute": "https://example.com/attr/clearance/value/executive",
+      "actions": ["read"]
+    }
+  ]
+}
+
+// Resource Requirements:
+{
+  "attributes": [
+    "https://example.com/attr/clearance/value/executive"
+  ]
+}
+
+// Decision: PERMIT (entitlements satisfy requirements)
+```
+
+## Entity Types and Categories
+
+Understanding entity types is critical for Subject Mapping configuration.
+
+### Entity Type vs. Entity Category
+
+| Dimension | Options | Meaning |
+|-----------|---------|---------|
+| **Entity Type** | PE (Person)<br/>NPE (Non-Person) | WHO the entity is |
+| **Entity Category** | Subject<br/>Environment | HOW it's used in decisions |
+
+### The Four Combinations
+
+```mermaid
+graph TD
+    A[Entity] --> B{Entity Type}
+    B -->|PE| C[Person Entity]
+    B -->|NPE| D[Non-Person Entity]
+
+    C --> E{Category}
+    D --> F{Category}
+
+    E -->|Subject| G[PE + Subject<br/>Human user in auth flow<br/>✅ Attributes checked in decisions]
+    E -->|Environment| H[PE + Environment<br/>Logged-in operator<br/>⚠️ Not evaluated in GetDecision]
+
+    F -->|Subject| I["NPE + Subject<br/>Service account (client credentials flow)<br/>✅ Attributes checked in decisions"]
+    F -->|Environment| J["NPE + Environment<br/>OIDC client in user-auth flow<br/>⚠️ Not evaluated in GetDecision"]
+```
+
+### Practical Examples
+
+**Person Entity + Subject Category (Most Common)**
+```json
+{
+  "type": "PE",
+  "category": "CATEGORY_SUBJECT",
+  "claims": {
+    "email": "alice@example.com",
+    "role": "engineer"
+  }
+}
+```
+→ Subject Mapping checks: Does Alice have the right entitlements?
+
+**Non-Person Entity + Subject Category (SDK Clients)**
+```json
+{
+  "type": "NPE",
+  "category": "CATEGORY_SUBJECT",
+  "claims": {
+    "clientId": "data-processing-service",
+    "scope": "tdf:decrypt"
+  }
+}
+```
+→ Subject Mapping checks: Does this service account have the right entitlements?
+
+**Environment Category (Excluded from Decision)**
+```json
+{
+  "type": "NPE",
+  "category": "CATEGORY_ENVIRONMENT",
+  "claims": {
+    "clientId": "my-app-client"
+  }
+}
+```
+→ Entitlements are tracked in audit logs but **not evaluated** in `GetDecision` flows. This is the standard category for the OIDC client in a user-authenticated request.
+
+:::note Environment vs Subject
+In a typical TDF flow with user authentication:
+- The OIDC **client** (the app calling the SDK) → `CATEGORY_ENVIRONMENT` → not checked in decisions
+- The **user** (who authenticated via the client) → `CATEGORY_SUBJECT` → checked in decisions
+
+Only create Subject Mappings for `CATEGORY_SUBJECT` entities. Environment entities do not need Subject Mappings for TDF decrypt to succeed.
+:::
+
+## Subject Condition Sets: The Matching Engine
+
+A **Subject Condition Set** is a logical expression that evaluates an entity representation to `true` or `false`.
+
+### Structure Hierarchy
+
+```
+SubjectConditionSet
+  └─ SubjectSets[]           (OR'd together - ANY set can match)
+      └─ ConditionGroups[]   (Combined by boolean operator)
+          └─ Conditions[]    (Combined by boolean operator)
+              ├─ SubjectExternalSelectorValue  (flattening-syntax selector to extract claim)
+              ├─ Operator                      (IN, NOT_IN, IN_CONTAINS)
+              └─ SubjectExternalValues         (Values to match)
+```
+
+### Selectors: String vs. Array Claims
+
+The selector syntax depends on whether the token claim is a **string** or an **array**:
+
+| Claim type | Example token | Selector |
+|------------|--------------|---------|
+| String | `"role": "admin"` | `.role` |
+| Array | `"groups": ["admin", "user"]` | `.groups[]` |
+| Nested string | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
+
+**Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
+
+### Operators Explained
+
+| Operator | Value | Behavior | Example |
+|----------|-------|----------|---------|
+| **IN** | `1` | Exact match: value is IN list | `.role` IN `["admin", "editor"]` |
+| **NOT_IN** | `2` | Exclusion: value is NOT IN list | `.department` NOT_IN `["sales"]` |
+| **IN_CONTAINS** | `3` | Substring match | `.email` IN_CONTAINS `["@example.com"]` |
+
+### Boolean Operators
+
+| Operator | Value | Behavior |
+|----------|-------|----------|
+| **AND** | `1` | All conditions must be TRUE |
+| **OR** | `2` | At least one condition must be TRUE |
+
+### Example 1: Simple Role Match
+
+**Goal:** Grant access to users with role "admin"
+
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".role",
+        "operator": 1,
+        "subject_external_values": ["admin"]
+      }]
+    }]
+  }]
+}
+```
+
+**Matches:**
+- ✅ `{"role": "admin"}`
+- ❌ `{"role": "editor"}`
+
+### Example 2: Multiple Roles (OR)
+
+**Goal:** Grant access to admins OR editors
+
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 2,
+      "conditions": [
+        {
+          "subject_external_selector_value": ".role",
+          "operator": 1,
+          "subject_external_values": ["admin"]
+        },
+        {
+          "subject_external_selector_value": ".role",
+          "operator": 1,
+          "subject_external_values": ["editor"]
+        }
+      ]
+    }]
+  }]
+}
+```
+
+**Simpler Alternative (Same Logic):**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".role",
+        "operator": 1,
+        "subject_external_values": ["admin", "editor"]
+      }]
+    }]
+  }]
+}
+```
+
+### Example 3: Multiple Conditions (AND)
+
+**Goal:** Grant access to senior engineers only
+
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [
+        {
+          "subject_external_selector_value": ".level",
+          "operator": 1,
+          "subject_external_values": ["senior", "staff", "principal"]
+        },
+        {
+          "subject_external_selector_value": ".department",
+          "operator": 1,
+          "subject_external_values": ["engineering"]
+        }
+      ]
+    }]
+  }]
+}
+```
+
+**Matches:**
+- ✅ `{"level": "senior", "department": "engineering"}`
+- ✅ `{"level": "staff", "department": "engineering"}`
+- ❌ `{"level": "senior", "department": "sales"}`
+- ❌ `{"level": "junior", "department": "engineering"}`
+
+### Example 4: Domain Email Match (Substring)
+
+**Goal:** Grant access to anyone with company email
+
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".email",
+        "operator": 3,
+        "subject_external_values": ["@example.com"]
+      }]
+    }]
+  }]
+}
+```
+
+**Matches:**
+- ✅ `{"email": "alice@example.com"}`
+- ✅ `{"email": "bob@example.com"}`
+- ❌ `{"email": "charlie@external.com"}`
+
+### Example 5: Complex Multi-Group Logic
+
+**Goal:** Grant access to:
+- Executives (any department), OR
+- Senior finance staff
+
+```json
+{
+  "subject_sets": [
+    {
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".role",
+          "operator": 1,
+          "subject_external_values": ["ceo", "cfo", "cto", "vp"]
+        }]
+      }]
+    },
+    {
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [
+          {
+            "subject_external_selector_value": ".level",
+            "operator": 1,
+            "subject_external_values": ["senior", "staff"]
+          },
+          {
+            "subject_external_selector_value": ".department",
+            "operator": 1,
+            "subject_external_values": ["finance"]
+          }
+        ]
+      }]
+    }
+  ]
+}
+```
+
+**Logic:** `(role IN executives) OR (level IN senior-staff AND department=finance)`
+
+**Matches:**
+- ✅ `{"role": "ceo", "department": "engineering"}` (executive)
+- ✅ `{"level": "senior", "department": "finance"}` (senior finance)
+- ❌ `{"level": "senior", "department": "engineering"}` (not finance)
+- ❌ `{"level": "junior", "department": "finance"}` (not senior)
+
+## Scaling Subject Mappings: Exact Match vs. Pattern-Based
+
+:::info Common Question
+**Question:** "Do I need a separate Subject Mapping for every user, or can one mapping cover many users?"
+
+**Answer:** One Subject Mapping can cover many users by using pattern-based condition operators (`IN_CONTAINS`) rather than exact matches.
+:::
+
+All attribute values in OpenTDF must be explicitly created before they can be used — there is no "freeform" or "dynamic" attribute value type. Each `attribute_value_id` in a Subject Mapping must reference an existing, named value. The flexibility comes from how Subject Condition Sets match entity claims.
+
+### Option 1: Exact Match (One Mapping Per User)
+
+```json
+{
+  "attribute_value_id": "attr-owner-alice",
+  "actions": ["read"],
+  "subject_condition_set": {
+    "subject_sets": [{
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".email",
+          "operator": 1,
+          "subject_external_values": ["alice@example.com"]
+        }]
+      }]
+    }]
+  }
+}
+```
+
+**Limitation:** Requires creating a new Subject Mapping (and a corresponding attribute value) for every user. Not scalable for large user sets.
+
+### Option 2: Pattern-Based Access (Recommended)
+
+Use `IN_CONTAINS` (operator `3`) to match token claim substrings, covering many users with one Subject Mapping:
+
+```json
+{
+  "attribute_value_id": "attr-company-employees",
+  "actions": ["read"],
+  "subject_condition_set": {
+    "subject_sets": [{
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".email",
+          "operator": 3,
+          "subject_external_values": ["@example.com"]
+        }]
+      }]
+    }]
+  }
+}
+```
+
+→ Anyone whose token contains an email with `@example.com` receives entitlement for the `company/employees` attribute value.
+
+**Key:** One Subject Mapping covers all matching users. The condition evaluates the claim value at decision time — no per-user configuration needed.
+
+### Pre-Creating Attribute Values for Specific Identities
+
+For use cases like tagging a resource with an owner's identity, you explicitly create the attribute value before encrypting:
+
+```bash
+# Create attribute value for a specific user
+# attribute FQN: https://example.com/attr/owner
+otdfctl policy attributes values create \
+  --attribute-id <owner-attribute-id> \
+  --value "alice-at-example-com"
+
+# Encrypt, binding the resource to that value
+otdfctl encrypt file.txt -o file.tdf \
+  --attr https://example.com/attr/owner/value/alice-at-example-com
+```
+
+Then create a Subject Mapping linking Alice's email claim to that value:
+
+```bash
+# attribute value FQN: https://example.com/attr/owner/value/alice-at-example-com
+otdfctl policy subject-mappings create \
+  --attribute-value-id <alice-value-id> \
+  --action read \
+  --subject-condition-set-new '[{"condition_groups":[{"boolean_operator":1,"conditions":[{"subject_external_selector_value":".email","operator":1,"subject_external_values":["alice@example.com"]}]}]}]'
+```
+
+:::note Attribute value naming constraint
+Attribute values are embedded in a Fully Qualified Name (FQN) — a URL of the form `https://example.com/attr/owner/value/alice-at-example-com`. Because the value becomes part of a URL, special characters like `@` and `.` are not allowed. Values must match `^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,251}[a-zA-Z0-9])?$` — alphanumeric with hyphens and underscores (not at start or end), max 253 characters. Email addresses must be normalized (e.g., `alice@example.com` → `alice-at-example-com`).
+
+This constraint only applies to attribute values stored in the Policy Service. JWT claim values used in subject condition sets (e.g., `subject_external_values: ["alice@example.com"]`) are plain strings with no such restriction.
+
+Source: [`opentdf/platform` — `lib/identifier/policyidentifier.go`](https://github.com/opentdf/platform/blob/main/lib/identifier/policyidentifier.go)
+:::
+
+:::tip Encrypt before the value exists with `--allow-traversal`
+If your workflow creates the attribute value at encrypt time (or shortly after), set `--allow-traversal` on the attribute definition:
+
+```bash
+otdfctl policy attributes create \
+  --namespace <namespace-id> \
+  --name owner \
+  --rule ANY_OF \
+  --allow-traversal
+```
+
+With `allow_traversal=true`, a TDF can be encrypted referencing `owner/alice-at-example-com` even if that value doesn't exist in policy yet — as long as a KAS key is mapped to the attribute definition. Decryption will fail until the value is created and Subject Mappings are in place. This is useful for "encrypt first, provision access later" workflows.
+
+Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto)
+:::
+
+## IdP Integration Examples
+
+### Keycloak
+
+**Common Keycloak Token Claims:**
+```json
+{
+  "sub": "f4d3c2b1-a098-7654-3210-fedcba098765",
+  "email": "alice@example.com",
+  "preferred_username": "alice",
+  "realm_access": {
+    "roles": ["admin", "user"]
+  },
+  "resource_access": {
+    "opentdf-app": {
+      "roles": ["tdf-admin"]
+    }
+  },
+  "groups": ["/finance/senior", "/engineering/platform"]
+}
+```
+
+#### Example 1: Map Keycloak Realm Roles
+
+**IdP Configuration:**
+- User "alice" has Keycloak role: `admin`
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".realm_access.roles[]",
+        "operator": 1,
+        "subject_external_values": ["admin"]
+      }]
+    }]
+  }]
+}
+```
+
+**Subject Mapping** (links the condition set to an attribute value):
+```json
+// attribute value FQN: https://example.com/attr/clearance/value/top_secret
+{
+  "attribute_value_id": "<clearance-top-secret-value-id>",
+  "actions": ["read"],
+  "subject_condition_set": {
+    "subject_sets": [{
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".realm_access.roles[]",
+          "operator": 1,
+          "subject_external_values": ["admin"]
+        }]
+      }]
+    }]
+  }
+}
+```
+
+**Result:** Alice's `.realm_access.roles[]` contains `admin` → condition matches → Alice is entitled to `clearance/top_secret` with `read` access
+
+#### Example 2: Map Keycloak Groups
+
+**IdP Configuration:**
+- User "bob" is in Keycloak group: `/finance/senior`
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".groups[]",
+        "operator": 3,
+        "subject_external_values": ["/finance/"]
+      }]
+    }]
+  }]
+}
+```
+
+:::note Keycloak group path format
+When the Keycloak "Group Membership" mapper has **Full Group Path** enabled, group names in the token include a leading slash (e.g., `/finance/senior`). The values in `subject_external_values` must match what is actually in the token. If your Keycloak mapper has Full Group Path disabled, groups appear without slashes (e.g., `finance`).
+
+The trailing slash in `/finance/` makes the `IN_CONTAINS` match more precise — it prevents false matches against groups that share a prefix (e.g., `/finance-external`). However, it also means a user in the `/finance` group exactly (with no sub-group) would **not** match, since `/finance` does not contain the substring `/finance/`. If you need to match both `/finance` and `/finance/senior`, use `/finance` without the trailing slash and accept the risk of prefix collisions, or add a second condition.
+:::
+
+**Result:** Bob gets entitlement for `department/finance` attribute
+
+#### Example 3: Combine Multiple Keycloak Claims
+
+**Goal:** Grant access to finance admins
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [
+        {
+          "subject_external_selector_value": ".groups[]",
+          "operator": 3,
+          "subject_external_values": ["/finance/"]
+        },
+        {
+          "subject_external_selector_value": ".realm_access.roles[]",
+          "operator": 1,
+          "subject_external_values": ["admin"]
+        }
+      ]
+    }]
+  }]
+}
+```
+
+**Logic:** `(group contains "/finance/") AND (role is "admin")`
+
+### Okta
+
+**Common Okta Token Claims:**
+```json
+{
+  "sub": "00u1a2b3c4d5e6f7g8h9",
+  "email": "alice@example.com",
+  "email_verified": true,
+  "groups": ["Engineering", "Senior-Staff"],
+  "department": "engineering",
+  "title": "Senior Engineer",
+  "clearanceLevel": "confidential"
+}
+```
+
+#### Example 1: Map Okta Groups
+
+**IdP Configuration:**
+- User is member of Okta group: "Engineering"
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".groups[]",
+        "operator": 1,
+        "subject_external_values": ["Engineering", "Product"]
+      }]
+    }]
+  }]
+}
+```
+
+#### Example 2: Map Okta Profile Attributes
+
+**IdP Configuration:**
+- User profile has custom attribute: `clearanceLevel: "confidential"`
+
+**Okta Configuration (Claims):**
+Add custom claim mapping in Okta:
+- Claim name: `clearanceLevel`
+- Value: `user.clearanceLevel`
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [{
+        "subject_external_selector_value": ".clearanceLevel",
+        "operator": 1,
+        "subject_external_values": ["confidential", "secret"]
+      }]
+    }]
+  }]
+}
+```
+
+#### Example 3: Combine Okta Claims
+
+**Goal:** Grant access to senior engineers with confidential clearance
+
+**Subject Condition Set:**
+```json
+{
+  "subject_sets": [{
+    "condition_groups": [{
+      "boolean_operator": 1,
+      "conditions": [
+        {
+          "subject_external_selector_value": ".department",
+          "operator": 1,
+          "subject_external_values": ["engineering"]
+        },
+        {
+          "subject_external_selector_value": ".title",
+          "operator": 3,
+          "subject_external_values": ["Senior", "Staff", "Principal"]
+        },
+        {
+          "subject_external_selector_value": ".clearanceLevel",
+          "operator": 1,
+          "subject_external_values": ["confidential", "secret", "top_secret"]
+        }
+      ]
+    }]
+  }]
+}
+```
+
+**Logic:** `(department="engineering") AND (title contains "Senior"/"Staff"/"Principal") AND (clearance >= confidential)`
+
+## Creating Subject Mappings: Step-by-Step
+
+This walkthrough assumes basic familiarity with OpenTDF. If you haven't set up OpenTDF yet, complete the [Quickstart](/quickstart) first.
+
+### Prerequisites
+
+1. **[OpenTDF Platform running](/quickstart#step-2-install-opentdf)** with authentication configured
+2. **[otdfctl installed and authenticated](/quickstart#step-3-create-profile--authenticate)**
+3. **Attributes and values created** (the resources you're protecting)
+
+### Step 1: Create Subject Condition Set
+
+This example matches any user whose `.email` claim contains `@example.com`. The numeric values are enum codes — `boolean_operator: 1` = AND (all conditions must be true), `operator: 3` = IN_CONTAINS (substring match). See [Operators Explained](#operators-explained) for the full list.
+
+`subject_external_selector_value` is a path into the JWT your IdP issues — `.email` selects the top-level `email` claim. If your claim is named differently, use `otdfctl dev selectors generate --subject "<your-jwt>"` to see all available selectors. See [Selectors: String vs. Array Claims](#selectors-string-vs-array-claims) for the full syntax.
+
+`subject_external_values` contains the strings to match against that claim value — in this case, any email address containing `@example.com`.
+
+```bash
+otdfctl policy subject-condition-sets create \
+  --subject-sets '[
+    {
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".email",
+          "operator": 3,
+          "subject_external_values": ["@example.com"]
+        }]
+      }]
+    }
+  ]'
+```
+
+For complex condition sets, use `--subject-sets-file-json` with a path to a JSON file instead of inline JSON:
+
+```bash
+# scs.json contains the same array as above
+otdfctl policy subject-condition-sets create --subject-sets-file-json scs.json
+```
+
+**Save the ID from output:**
+```console
+SUCCESS   Created SubjectConditionSet [3c56a6c9-9635-427f-b808-5e8fd395802c]
+```
+
+### Step 2: Get Attribute Value ID
+
+```bash
+# First, find your attribute ID (a UUID in the output's id column)
+otdfctl policy attributes list
+
+# Then list its values
+otdfctl policy attributes values list \
+  --attribute-id <your-attribute-id>
+
+# Or create a new value
+otdfctl policy attributes values create \
+  --attribute-id <your-attribute-id> \
+  --value "my-value"
+```
+
+**Save the attribute value ID** — the UUID on the left. The `attribute-name/value-name` on the right is just a display label:
+```console
+4c63e72a-2db9-434c-8ef6-e451473dbfe0  |  clearance/secret
+```
+
+### Step 3: Create Subject Mapping
+
+Replace the IDs below with your own from Steps 1 and 2.
+
+```bash
+otdfctl policy subject-mappings create \
+  --attribute-value-id 4c63e72a-2db9-434c-8ef6-e451473dbfe0 \
+  --action read \
+  --subject-condition-set-id 3c56a6c9-9635-427f-b808-5e8fd395802c
+```
+
+`--action read` is the standard action for TDF data access (decrypt).
+
+This mapping means: any user whose `.email` claim contains `@example.com` will be entitled to `read` access on data tagged with the `clearance/secret` attribute value.
+
+**Success:**
+```console
+SUCCESS   Created SubjectMapping [b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a]
+```
+
+### Step 4: Verify
+
+```bash
+# List all subject mappings
+otdfctl policy subject-mappings list
+
+# Get specific mapping details (replace with your subject mapping ID from Step 3)
+otdfctl policy subject-mappings get --id b7e2f1a4-3c8d-4e9b-a5f2-1d6c8b3e7f9a
+```
+
+A correctly configured mapping will show the attribute value ID, action, and a non-empty `subject_condition_set` with your conditions. If `subject_condition_set` is `null` or missing, the condition set ID was not found — double-check the ID from Step 1.
+
+### Next Steps
+
+Your subject mapping is live. To use it:
+
+- **Encrypt and tag data** with the attribute value you mapped — see [TDF SDK](/sdks/tdf)
+- **Test access** by decrypting as a user whose token matches your condition set
+- **Troubleshoot unexpected DENY** — see [Troubleshooting](#troubleshooting) below
+
+## Troubleshooting
+
+### Error: "resource relation invalid"
+
+**Full Error:**
+```
+rpc error: code = InvalidArgument desc = resource relation invalid
+```
+
+**Causes:**
+1. **Invalid Attribute Value ID**: The attribute value doesn't exist
+2. **Invalid Subject Condition Set ID**: The condition set doesn't exist
+3. **Action mismatch**: Using incompatible action types
+
+**Solutions:**
+
+**Verify attribute value exists:**
+```bash
+otdfctl policy attributes values list --attribute-id <attribute-id>
+```
+
+**Verify subject condition set exists:**
+```bash
+otdfctl policy subject-condition-sets list
+```
+
+**Check action format:**
+```bash
+# Correct: use --action with a standard action name
+--action read
+
+# Also correct: use action ID (UUID)
+--action 891cfe85-b381-4f85-9699-5f7dbfe2a9ab
+
+# Deprecated flags (still accepted but migrate away from these)
+# --action-standard DECRYPT  →  use --action read
+# --action-custom "download"  →  use --action download
+```
+
+### Error: Token Claim Not Appearing in Entitlements
+
+**Symptom:** User has claim in JWT, but Subject Mapping doesn't match
+
+**Debug Steps:**
+
+**1. Verify token claims:**
+```bash
+# Decode your JWT token
+echo "<your-jwt>" | base64 -d
+```
+
+**2. Check selector with `otdfctl dev selectors`:**
+
+OpenTDF uses a custom [flattening syntax](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go): keys are prefixed with `.`, nested paths use `.key.subkey`, and list items use `[0]` or `[]` for any index.
+
+Use `otdfctl dev selectors generate` to see all valid selectors for a given JSON or JWT:
+
+```bash
+# From a JSON object
+otdfctl dev selectors generate --subject '{"role":"admin","groups":["engineering","senior-staff"]}'
+
+# From a JWT token
+otdfctl dev selectors generate --subject "<your-jwt-token>"
+```
+
+Then test a specific selector against your token with `otdfctl dev selectors test`:
+
+```bash
+otdfctl dev selectors test \
+  --subject '{"role":"admin","groups":["engineering"]}' \
+  --selector '.role' \
+  --selector '.groups[]'
+```
+
+The flattening syntax for nested structures:
+
+```
+Token:                         Selector:
+{"user":{"profile":            ".user.profile.department"  ✅
+    {"department":"finance"}}}
+{"department":"finance"}       ".department"              ✅
+                               ".user.department"          ❌ (wrong nesting)
+```
+
+**3. Check operator type:**
+
+```json
+// If claim is an array:
+{
+  "groups": ["admin", "user"]
+}
+
+// Use .groups[] (not .groups) to match each element:
+{
+  "subject_external_selector_value": ".groups[]",
+  "operator": 1,
+  "subject_external_values": ["admin"]
+}
+
+// .groups (without []) matches NOTHING for an array — it only works for string claims
+```
+
+**4. Enable debug logging:**
+
+Contact your OpenTDF administrator to enable debug logging for Subject Mapping evaluation.
+
+### Error: User Has Entitlement But Still Gets DENY
+
+In `GetDecision` flows, only **`CATEGORY_SUBJECT`** entities participate in the access decision ([source](https://github.com/opentdf/platform/blob/main/service/authorization/authorization.go)). `CATEGORY_ENVIRONMENT` entities (the OIDC client in a user-auth flow) are tracked in audit logs but do NOT affect the decision outcome. This is intentional design — see [ADR: Add typed Entities (#1181)](https://github.com/opentdf/platform/issues/1181) for the rationale.
+
+**If the user (`CATEGORY_SUBJECT`) has the required entitlement and still gets DENY**, check the following:
+
+**Cause 1: Subject Condition Set doesn't match the token**
+
+The selector or operator doesn't match the actual claim structure. Use `otdfctl dev selectors generate` to inspect your token:
+
+```bash
+otdfctl dev selectors generate --subject '{"role":"admin","email":"alice@example.com"}'
+```
+
+**Cause 2: Service account flow — the client IS the subject**
+
+In **client credentials (service account) flows**, there is no separate user — the client itself is assigned `CATEGORY_SUBJECT` and needs Subject Mappings. This is the case when using NPEs (Non-Person Entities) authenticating directly with client credentials:
+
+```bash
+# Create Subject Mapping for a service account client
+otdfctl policy subject-condition-sets create \
+  --subject-sets '[
+    {
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".clientId",
+          "operator": 1,
+          "subject_external_values": ["my-service-account-client-id"]
+        }]
+      }]
+    }
+  ]'
+
+otdfctl policy subject-mappings create \
+  --attribute-value-id <attribute-value-id> \
+  --action read \
+  --subject-condition-set-id <client-condition-set-id>
+```
+
+### Error: Subject Condition Set Not Found
+
+**Symptom:**
+```
+subject-condition-set not found: <id>
+```
+
+**Cause:** The Subject Condition Set was deleted or never created.
+
+**Solution:**
+
+**List existing condition sets:**
+```bash
+otdfctl policy subject-condition-sets list
+```
+
+**If missing, recreate:**
+```bash
+otdfctl policy subject-condition-sets create \
+  --subject-sets '<your-condition-json>'
+```
+
+**Update Subject Mapping to use correct ID:**
+```bash
+otdfctl policy subject-mappings update \
+  --id <subject-mapping-id> \
+  --subject-condition-set-id <correct-id>
+```
+
+### Debugging Checklist
+
+When Subject Mappings aren't working:
+
+- [ ] Verify OpenTDF platform is running and accessible
+- [ ] Confirm user is authenticated (valid JWT token)
+- [ ] Check token contains expected claims (decode JWT)
+- [ ] Verify Subject Condition Set exists (`list` command)
+- [ ] Verify Attribute Value exists (`attributes values list`)
+- [ ] Verify Subject Mapping exists (`subject-mappings list`)
+- [ ] Check selector expression matches token structure (use `otdfctl dev selectors generate` to verify)
+- [ ] Confirm operator type (IN vs IN_CONTAINS)
+- [ ] Test with simple condition first (single claim match)
+- [ ] For service account (client credentials) flows: Verify the client has a Subject Mapping (it's `CATEGORY_SUBJECT` in this case)
+- [ ] Check attribute definition rule (HIERARCHY, ANY_OF, ALL_OF)
+- [ ] Verify action matches operation (`read` for TDF decryption)
+
+## Best Practices
+
+### 1. Reusable Condition Sets
+
+Create **generic Subject Condition Sets** that can be shared across multiple Subject Mappings:
+
+**Example: "Engineering Department" Condition Set**
+```bash
+# Create once
+otdfctl policy subject-condition-sets create \
+  --subject-sets '[
+    {
+      "condition_groups": [{
+        "boolean_operator": 1,
+        "conditions": [{
+          "subject_external_selector_value": ".department",
+          "operator": 1,
+          "subject_external_values": ["engineering"]
+        }]
+      }]
+    }
+  ]'
+
+# Reuse for multiple attribute values
+# attribute value FQN: https://example.com/attr/project/value/alpha
+otdfctl policy subject-mappings create \
+  --attribute-value-id <project-alpha-id> \
+  --action read \
+  --subject-condition-set-id <engineering-condition-set-id>
+
+# attribute value FQN: https://example.com/attr/project/value/beta
+otdfctl policy subject-mappings create \
+  --attribute-value-id <project-beta-id> \
+  --action read \
+  --subject-condition-set-id <engineering-condition-set-id>
+```
+
+### 2. Use Hierarchical Attributes
+
+Leverage `HIERARCHY` rule for implicit access:
+
+```json
+{
+  "name": "clearance",
+  "rule": "HIERARCHY",
+  "values": [
+    {"value": "public"},
+    {"value": "confidential"},
+    {"value": "secret"},
+    {"value": "top_secret"}
+  ]
+}
+```
+
+:::note Hierarchy ordering
+For `HIERARCHY` attributes, precedence is determined by the **order values appear in the array** — first element is lowest, last is highest. There is no `order` field; array position is authoritative.
+:::
+
+**Subject Mapping for top_secret:**
+- User gets entitlement: `clearance/top_secret`
+- Can access: `top_secret`, `secret`, `confidential`, `public` (all lower levels)
+
+### 3. Minimize Dynamic Mappings
+
+**Avoid:** Creating one Subject Mapping per user
+```bash
+# Don't do this for 1000s of users
+create-subject-mapping --for-user alice
+create-subject-mapping --for-user bob
+create-subject-mapping --for-user charlie
+```
+
+**Instead:** Use pattern-based conditions
+```json
+{
+  "conditions": [{
+    "subject_external_selector_value": ".email",
+    "operator": 3,
+    "subject_external_values": ["@company.com"]
+  }]
+}
+```
+
+### 4. Subject Mappings for Service Accounts (NPE)
+
+In a standard user-authenticated flow, only the **user** (`CATEGORY_SUBJECT`) needs Subject Mappings. The OIDC client is `CATEGORY_ENVIRONMENT` and is not evaluated in access decisions.
+
+For **client credentials flows** (service accounts authenticating directly, with no human user), the client is assigned `CATEGORY_SUBJECT` and does need Subject Mappings. The selector to use depends on your IdP — for Keycloak, it is typically `.clientId`:
+
+```bash
+# For service accounts (client credentials flow, Keycloak ERS)
+otdfctl policy subject-mappings create \
+  --attribute-value-id <attr-id> \
+  --action read \
+  --subject-condition-set-id <service-account-condition-set>
+```
+
+The exact claim key for the client ID varies by IdP and ERS configuration — use `otdfctl dev selectors generate` with your actual token to find the right selector.
+
+### 5. Test in Isolation
+
+When debugging, test Subject Mappings individually:
+
+**1. Create test user with minimal claims:**
+```json
+{
+  "email": "test@example.com",
+  "role": "test-role"
+}
+```
+
+**2. Create simple Subject Mapping:**
+```json
+{
+  "conditions": [{
+    "subject_external_selector_value": ".role",
+    "operator": 1,
+    "subject_external_values": ["test-role"]
+  }]
+}
+```
+
+**3. Test decryption:**
+```bash
+otdfctl decrypt test.tdf
+```
+
+**4. Gradually add complexity** once basic mapping works.
+
+## Next Steps
+
+### Essential Reading
+
+- [Authorization Service](/components/authorization) - Understand GetEntitlements and GetDecision APIs
+- [Entity Resolution](/components/entity_resolution) - Learn how tokens become entity representations
+- [Policy: Subject Mappings](/components/policy/subject_mappings) - API reference
+- [Quickstart: ABAC Scenario](/quickstart#attribute-based-access-control-abac) - Hands-on example
+
+### Common Workflows
+
+**Set up RBAC (Role-Based Access Control):**
+1. Define attributes for roles (`role/admin`, `role/editor`, `role/viewer`)
+2. Create Subject Condition Sets matching IdP roles
+3. Create Subject Mappings granting role-based entitlements
+
+**Set up ABAC (Attribute-Based Access Control):**
+1. Define attributes for multiple dimensions (`department`, `clearance`, `region`)
+2. Create Subject Condition Sets with multi-condition logic
+3. Encrypt resources with multiple attributes (`--attr X --attr Y`)
+4. Subject Mappings grant partial entitlements; decision evaluates all attributes
+
+**Scale Subject Mappings with pattern matching:**
+1. Define attribute and its values
+2. Encrypt with the relevant attribute value FQN
+3. Create pattern-based Subject Mappings using `IN_CONTAINS` (substring match) to cover many users with one condition
+
+## FAQ
+
+**Q: Do I need to add roles in my IdP that match OpenTDF attributes?**
+
+**A:** No. IdP roles/claims describe WHO the user is. Subject Mappings convert those claims into OpenTDF entitlements (WHAT they can access). They are separate concerns.
+
+**Q: Can I use the same Subject Condition Set for multiple Subject Mappings?**
+
+**A:** Yes! This is recommended for reusability. One condition set (e.g., "engineering department") can grant entitlements to multiple attribute values.
+
+**Q: What's the difference between IN and IN_CONTAINS?**
+
+**A:**
+- `IN` (operator=1): Exact match. Value must be IN the list.
+  - `"admin" IN ["admin", "editor"]` → TRUE
+  - `"administrator" IN ["admin", "editor"]` → FALSE
+- `IN_CONTAINS` (operator=3): Substring match. Value must CONTAIN substring.
+  - `"administrator" IN_CONTAINS ["admin"]` → TRUE
+  - `"admin" IN_CONTAINS ["admin"]` → TRUE
+
+**Q: Why do I see both jwtentity-0 and jwtentity-1 in authorization logs?**
+
+**A:** When using the Keycloak ERS, two entities are created from a JWT token: the OIDC client (`jwtentity-0-clientid-{id}`, `CATEGORY_ENVIRONMENT`) and the authenticated user (`jwtentity-1-username-{name}`, `CATEGORY_SUBJECT`). In `GetDecision` flows, only `CATEGORY_SUBJECT` entities are evaluated. The client entity is logged for audit purposes but does not affect the decision. Only the user entity needs Subject Mappings for standard TDF decrypt flows. See [authorization.go](https://github.com/opentdf/platform/blob/main/service/authorization/authorization.go) for the implementation.
+
+**Q: Can I update a Subject Mapping without recreating it?**
+
+**A:** Yes, use `otdfctl policy subject-mappings update --id <id> --subject-condition-set-id <new-set-id>` to change the condition set or other properties.
+
+**Q: How do I handle users in multiple groups?**
+
+**A:** Create multiple Subject Mappings (one per group) that grant different entitlements. A user can receive entitlements from multiple mappings simultaneously.
+
+**Q: What happens if no Subject Mappings match a user?**
+
+**A:** Authorization returns DENY. The user has no entitlements, so they cannot access any protected resources.
