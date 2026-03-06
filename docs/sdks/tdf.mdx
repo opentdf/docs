@@ -451,7 +451,7 @@ See [PolicyObject](#policyobject) and [Manifest Object](#manifest-object) for th
 
 ## IsValidTdf
 
-Checks whether a byte stream contains a valid TDF without decrypting it. The stream position is restored after the check.
+Checks whether a byte stream contains a valid TDF without decrypting it. Specifically, it validates the ZIP container structure and parses the embedded manifest JSON against the TDF schema. No key access, HMAC verification, or payload decryption is performed. The stream position is restored after the check.
 
 **Signature**
 
@@ -557,8 +557,8 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 </TabItem>
 </Tabs>
 
-:::note Java: inspect manifest without decrypting
-Java provides static methods to read the manifest and policy from a TDF without performing key access or decrypting the payload:
+:::note Inspecting a TDF without decrypting
+**Java** provides static methods to read the manifest and policy without performing key access or decrypting the payload:
 
 ```java
 import io.opentdf.platform.sdk.PolicyObject;
@@ -576,6 +576,14 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
         System.out.println("Attribute: " + attr.attribute);
     }
 }
+```
+
+**JavaScript / TypeScript** exposes the same capability through the `TDFReader` returned by `client.open()`. Calling `.manifest()` or `.attributes()` does not trigger payload decryption or a KAS round-trip:
+
+```typescript
+const reader = client.open({ source: { type: 'buffer', location: encryptedBytes } });
+const manifest = await reader.manifest();
+const attrs = await reader.attributes();
 ```
 :::
 
