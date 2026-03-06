@@ -1,0 +1,41 @@
+name: SDK example compile check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/sdks/**'
+      - 'code_samples/**'
+      - 'tests/sdk-examples/**'
+      - '.github/workflows/sdk-examples.yaml'
+
+jobs:
+  go-compile:
+    name: Go signatures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+          cache-dependency-path: tests/sdk-examples/go/go.sum
+      - run: go mod tidy
+        working-directory: tests/sdk-examples/go
+      - run: go build ./...
+        working-directory: tests/sdk-examples/go
+
+  ts-compile:
+    name: TypeScript signatures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/sdk-examples/ts/package-lock.json
+      - run: npm install
+        working-directory: tests/sdk-examples/ts
+      - run: npx tsc --noEmit
+        working-directory: tests/sdk-examples/ts
