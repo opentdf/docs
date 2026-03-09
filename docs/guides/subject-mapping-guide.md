@@ -271,7 +271,7 @@ The selector syntax depends on whether the token claim is a **string** or an **a
 
 ### ERS Mode and What Selectors Target
 
-Selectors are evaluated against the **entity representation** produced by the Entity Resolution Service (ERS) — not directly against your JWT. The format of that representation depends on which ERS mode your platform is configured to use.
+Selectors are evaluated against the **entity representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against your JWT. The format of that representation depends on which ERS mode your platform is configured to use.
 
 **[Keycloak ERS](/components/entity_resolution) (default, `mode: keycloak`)**
 
