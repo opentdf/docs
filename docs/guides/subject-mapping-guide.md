@@ -79,8 +79,8 @@ sequenceDiagram
     Auth->>ERS: 5. Resolve entity
     ERS->>Auth: 6. Entity representation
 
-    Auth->>Policy: 7. Fetch Subject Mappings + Attribute rules
-    Policy->>Auth: 8. Return Subject Mappings + Attribute rules
+    Auth->>Policy: 7. Get policies
+    Policy-->>Auth: 8. Subject Mappings & Attribute rules
 
     Auth->>Auth: 9. Evaluate entitlements & compare vs resource attrs
     Auth->>KAS: 10. PERMIT or DENY
@@ -173,8 +173,8 @@ sequenceDiagram
     participant Auth as Authorization Service (PDP)
     participant Policy as Policy Service (PAP)
 
-    Auth->>Policy: 7. Fetch Subject Mappings<br/>+ Attribute rules
-    Policy->>Auth: 8. Return Subject Mappings<br/>+ Attribute rules
+    Auth->>Policy: 7. Get policies
+    Policy-->>Auth: 8. Subject Mappings & Attribute rules
     Auth->>Auth: 9. Evaluate entitlements<br/>& compare vs resource attrs
 ```
 
