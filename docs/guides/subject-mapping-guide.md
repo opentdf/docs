@@ -77,25 +77,9 @@ sequenceDiagram
 
 For a detailed look at how these services fit together, see the [Architecture page](/architecture).
 
-## Subject Condition Sets: The Matching Engine
+## ERS Mode and What Selectors Target
 
-A **Subject Condition Set** is a logical expression that evaluates an entity representation to `true` or `false`.
-
-### Structure Hierarchy
-
-```
-SubjectConditionSet
-  └─ SubjectSets[]           (OR'd together - ANY set can match)
-      └─ ConditionGroups[]   (Combined by boolean operator)
-          └─ Conditions[]    (Combined by boolean operator)
-              ├─ SubjectExternalSelectorValue  (flattening-syntax selector to extract claim)
-              ├─ Operator                      (IN, NOT_IN, IN_CONTAINS)
-              └─ SubjectExternalValues         (Values to match)
-```
-
-### Selectors: String vs. Array Claims
-
-Selectors are evaluated against the **entity representation** produced by the Entity Resolution Service (ERS) — for example:
+Selectors are evaluated against the **entity representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — for example:
 
 ```json
 {
@@ -110,21 +94,9 @@ Selectors are evaluated against the **entity representation** produced by the En
 }
 ```
 
-The selector syntax depends on whether the token claim is a **string** or an **array**:
+The platform supports two ERS modes, and the correct selector format depends on [which one is configured](https://github.com/opentdf/platform/blob/main/docs/Configuring.md?plain=1#L479).
 
-| Claim type | Example token | Selector |
-|------------|--------------|---------|
-| String | `"role": "admin"` | `.role` |
-| Array | `"groups": ["admin", "user"]` | `.groups[]` |
-| Nested string | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
-
-**Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
-
-### ERS Mode and What Selectors Target
-
-Selectors are evaluated against the **entity representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against your JWT. The format of that representation depends on which ERS mode your platform is configured to use.
-
-**[Keycloak ERS](/components/entity_resolution) (default, `mode: keycloak`)**
+### Mode 1: [Keycloak ERS](/components/entity_resolution) (default, `mode: keycloak`)
 
 The ERS calls the Keycloak Admin API to fetch the full user object. Custom Keycloak user attributes are nested under `.attributes.<name>[]` and are **always an array**, regardless of whether the Keycloak attribute is configured as multi-valued:
 
@@ -139,7 +111,7 @@ A selector like `.department` will **never** match a custom Keycloak user attrib
 This is a frequent source of confusion because the JWT claim name and the entity representation key are different.
 :::
 
-**Claims ERS (`mode: claims`)**
+### Mode 2: Claims ERS (`mode: claims`)
 
 The ERS passes JWT private claims through as-is, so selectors match JWT claim names directly. In this mode, the correct selector also depends on the **multi-valued** setting of your Keycloak User Attribute mapper:
 
@@ -157,6 +129,34 @@ services:
 ```
 
 Trade-off: claims mode can only access what is in the token — it cannot look up Keycloak groups, roles, or other data from the user store that is not included in the JWT.
+
+## Subject Condition Sets: The Matching Engine
+
+A [**Subject Condition Set**](/components/policy/subject_mappings#subject-condition-set) is a logical expression that evaluates an entity representation to `true` or `false`.
+
+### Structure Hierarchy
+
+```
+SubjectConditionSet
+  └─ SubjectSets[]           (OR'd together - ANY set can match)
+      └─ ConditionGroups[]   (Combined by boolean operator)
+          └─ Conditions[]    (Combined by boolean operator)
+              ├─ SubjectExternalSelectorValue  (flattening-syntax selector to extract claim)
+              ├─ Operator                      (IN, NOT_IN, IN_CONTAINS)
+              └─ SubjectExternalValues         (Values to match)
+```
+
+### Selectors: String vs. Array Claims
+
+The selector syntax depends on whether the token claim is a **string** or an **array**:
+
+| Claim type | Example token | Selector |
+|------------|--------------|---------|
+| String | `"role": "admin"` | `.role` |
+| Array | `"groups": ["admin", "user"]` | `.groups[]` |
+| Nested string | `"realm_access": {"roles": [...]}` | `.realm_access.roles[]` |
+
+**Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
 
 ### Operators Explained
 
