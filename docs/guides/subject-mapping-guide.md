@@ -18,17 +18,6 @@ This guide explains how OpenTDF connects user identities from your Identity Prov
 
 ## The Core Problem: Why Subject Mappings Exist
 
-### ❌ Common Misconception
-
-Many developers expect this direct flow:
-
-```
-IdP User Attribute  → OpenTDF Attribute       → Access Decision
-(role=admin)          (clearance=top_secret)    (PERMIT/DENY)
-```
-
-**This doesn't work.** OpenTDF attributes define **what can be accessed**, not **who can access it**.
-
 ### ✅ How It Actually Works
 
 OpenTDF uses a three-layer architecture:
@@ -45,14 +34,6 @@ OpenTDF uses a three-layer architecture:
 ```
 
 **Subject Mappings** are the bridge: they convert **identity claims** into **access entitlements**.
-
-:::tip Key Insight
-- **IdP attributes** describe WHO the user is
-- **Subject Mappings** determine WHAT the user can access
-- **OpenTDF attributes** define WHAT protects the resource
-
-Subject Mappings answer: "Given this identity, what entitlements should they receive?"
-:::
 
 ## Architecture: The Complete Flow
 
@@ -96,151 +77,6 @@ sequenceDiagram
 
 For a detailed look at how these services fit together, see the [Architecture page](/architecture).
 
-### Detailed Step-by-Step
-
-#### Step 1-2: User Authentication
-
-Your Identity Provider (IdP) — such as Keycloak, Auth0, or Okta — is the source of truth for who a user is; OpenTDF relies on the JWT it issues to evaluate whatever claims you've configured (for example, `email`, `role`, or `groups`) against your policies.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant IdP as Identity Provider
-
-    User->>IdP: 1. Authenticate
-    IdP->>User: 2. Return JWT token<br/>{email, role, groups}
-```
-
-```json
-// User authenticates with IdP, receives JWT token
-{
-  "sub": "alice@example.com",
-  "email": "alice@example.com",
-  "role": "vice_president",
-  "department": "finance",
-  "groups": ["executives", "finance-team"]
-}
-```
-
-#### Steps 3-6: KAS, Authorization Service & Entity Resolution
-
-When a user requests to decrypt a TDF, the Key Access Server receives the request and immediately forwards the authorization decision to the Authorization Service (O Service). The Authorization Service then orchestrates the handshake with the Entity Resolution Service to translate the raw JWT claims into a normalized entity representation.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant KAS as Key Access Server (PEP)
-    participant Auth as Authorization Service (PDP)
-    participant ERS as Entity Resolution Service (PIP)
-
-    User->>KAS: 3. Decrypt request + token
-    KAS->>Auth: 4. GetDecision
-    Auth->>ERS: 5. Resolve entity from token
-    ERS->>Auth: 6. Return entity representation
-```
-
-The resulting **Entity Representation** looks like this:
-
-```json
-{
-  "ephemeral_id": "jwtentity-1",
-  "category": "CATEGORY_SUBJECT",
-  "claims": {
-    "email": "alice@example.com",
-    "role": "vice_president",
-    "department": "finance",
-    "groups": ["executives", "finance-team"]
-  }
-}
-```
-
-:::warning Two entities in authorization logs
-When using the [Keycloak ERS](/components/entity_resolution), you may see TWO entities in authorization logs:
-- `jwtentity-0-clientid-{id}`: The **OIDC client application** — tracked in audit logs but not evaluated in access decisions
-- `jwtentity-1-username-{name}`: The **authenticated user** — this is the entity whose entitlements are evaluated
-
-For standard TDF decrypt flows, only the user entity (`jwtentity-1-*`) needs Subject Mappings.
-
-Exception: when using client credentials (service account) flows, the service account is the entity being evaluated and does need Subject Mappings.
-:::
-
-#### Steps 7-9: Subject Mapping Evaluation
-
-With the entity representation in hand, the Authorization Service fetches Subject Mappings and Attribute rules from the Policy Service, evaluates the conditions against the entity's claims, and determines which attribute values the entity is entitled to access.
-
-```mermaid
-sequenceDiagram
-    participant Auth as Authorization Service (PDP)
-    participant Policy as Policy Service (PAP)
-
-    Auth->>Policy: 7. Get policies
-    Policy-->>Auth: 8. Subject Mappings & Attribute rules
-    Auth->>Auth: 9. Evaluate entitlements<br/>& compare vs resource attrs
-```
-
-A Subject Mapping says: "grant access to this attribute value if the entity's claims match these conditions." Here's one that grants the `clearance/executive` attribute to anyone whose `.role` claim is `vice_president`, `ceo`, or `cfo`:
-
-**Subject Mapping Example:**
-```json
-{
-  "id": "sm-001",
-  "attribute_value_id": "attr-clearance-executive",
-  "actions": ["read"],
-  "subject_condition_set": {
-    "subject_sets": [{
-      "condition_groups": [{
-        "boolean_operator": "AND",
-        "conditions": [{
-          "subject_external_selector_value": ".role",
-          "operator": "IN",
-          "subject_external_values": ["vice_president", "ceo", "cfo"]
-        }]
-      }]
-    }]
-  }
-}
-```
-
-**Evaluation Logic:**
-1. Extract `.role` from entity representation → `"vice_president"`
-2. Check if `"vice_president"` is IN `["vice_president", "ceo", "cfo"]` → ✅ TRUE
-3. Grant entitlement: `clearance/executive` with `read` action
-
-#### Steps 10-11: Authorization Decision
-
-The Authorization Service sends the PERMIT or DENY back to KAS — which either releases the decryption key or rejects the request.
-
-```mermaid
-sequenceDiagram
-    participant Auth as Authorization Service (PDP)
-    participant KAS as Key Access Server (PEP)
-    participant User
-
-    Auth->>KAS: 10. PERMIT or DENY
-    KAS->>User: 11. Release key (PERMIT)<br/>or deny access (DENY)
-```
-
-```json
-// Entity's Entitlements:
-{
-  "attribute_values": [
-    {
-      "attribute": "https://example.com/attr/clearance/value/executive",
-      "actions": ["read"]
-    }
-  ]
-}
-
-// Resource Requirements:
-{
-  "attributes": [
-    "https://example.com/attr/clearance/value/executive"
-  ]
-}
-
-// Decision: PERMIT (entitlements satisfy requirements)
-```
-
 ## Subject Condition Sets: The Matching Engine
 
 A **Subject Condition Set** is a logical expression that evaluates an entity representation to `true` or `false`.
@@ -258,6 +94,21 @@ SubjectConditionSet
 ```
 
 ### Selectors: String vs. Array Claims
+
+Selectors are evaluated against the **entity representation** produced by the Entity Resolution Service (ERS) — for example:
+
+```json
+{
+  "ephemeral_id": "jwtentity-1",
+  "category": "CATEGORY_SUBJECT",
+  "claims": {
+    "email": "alice@example.com",
+    "role": "vice_president",
+    "department": "finance",
+    "groups": ["executives", "finance-team"]
+  }
+}
+```
 
 The selector syntax depends on whether the token claim is a **string** or an **array**:
 
@@ -322,30 +173,7 @@ Trade-off: claims mode can only access what is in the token — it cannot look u
 | **AND** | `1` | All conditions must be TRUE |
 | **OR** | `2` | At least one condition must be TRUE |
 
-### Example 1: Simple Role Match
-
-**Goal:** Grant access to users with role "admin"
-
-```json
-{
-  "subject_sets": [{
-    "condition_groups": [{
-      "boolean_operator": 1,
-      "conditions": [{
-        "subject_external_selector_value": ".role",
-        "operator": 1,
-        "subject_external_values": ["admin"]
-      }]
-    }]
-  }]
-}
-```
-
-**Matches:**
-- ✅ `{"role": "admin"}`
-- ❌ `{"role": "editor"}`
-
-### Example 2: Multiple Roles (OR)
+### Example 1: Multiple Roles (OR)
 
 **Goal:** Grant access to admins OR editors
 
@@ -387,7 +215,7 @@ Trade-off: claims mode can only access what is in the token — it cannot look u
 }
 ```
 
-### Example 3: Multiple Conditions (AND)
+### Example 2: Multiple Conditions (AND)
 
 **Goal:** Grant access to senior engineers only
 
@@ -419,7 +247,7 @@ Trade-off: claims mode can only access what is in the token — it cannot look u
 - ❌ `{"level": "senior", "department": "sales"}`
 - ❌ `{"level": "junior", "department": "engineering"}`
 
-### Example 4: Domain Email Match (Substring)
+### Example 3: Domain Email Match (Substring)
 
 **Goal:** Grant access to anyone with company email
 
@@ -443,7 +271,7 @@ Trade-off: claims mode can only access what is in the token — it cannot look u
 - ✅ `{"email": "bob@example.com"}`
 - ❌ `{"email": "charlie@external.com"}`
 
-### Example 5: Complex Multi-Group Logic
+### Example 4: Complex Multi-Group Logic
 
 **Goal:** Grant access to:
 - Executives (any department), OR
@@ -589,21 +417,7 @@ This constraint only applies to attribute values stored in the Policy Service. J
 Source: [`opentdf/platform` — `lib/identifier/policyidentifier.go`](https://github.com/opentdf/platform/blob/main/lib/identifier/policyidentifier.go)
 :::
 
-:::tip Encrypt before the value exists with `--allow-traversal`
-If your workflow creates the attribute value at encrypt time (or shortly after), set `--allow-traversal` on the attribute definition:
-
-```bash
-otdfctl policy attributes create \
-  --namespace <namespace-id> \
-  --name owner \
-  --rule ANY_OF \
-  --allow-traversal
-```
-
-With `allow_traversal=true`, a TDF can be encrypted referencing `owner/alice-at-example-com` even if that value doesn't exist in policy yet — as long as a KAS key is mapped to the attribute definition. Decryption will fail until the value is created and Subject Mappings are in place. This is useful for "encrypt first, provision access later" workflows.
-
-Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto)
-:::
+For attribute traversal configuration, see the Policy Service reference.
 
 ## IdP Integration Examples
 
@@ -632,22 +446,6 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
 **IdP Configuration:**
 - User "alice" has Keycloak role: `admin`
 
-**Subject Condition Set:**
-```json
-{
-  "subject_sets": [{
-    "condition_groups": [{
-      "boolean_operator": 1,
-      "conditions": [{
-        "subject_external_selector_value": ".realm_access.roles[]",
-        "operator": 1,
-        "subject_external_values": ["admin"]
-      }]
-    }]
-  }]
-}
-```
-
 **Subject Mapping** (links the condition set to an attribute value):
 ```json
 // attribute value FQN: https://example.com/attr/clearance/value/top_secret
@@ -668,8 +466,6 @@ Source: [`attributes.proto:149-155`](https://github.com/opentdf/platform/blob/ma
   }
 }
 ```
-
-**Result:** Alice's `.realm_access.roles[]` contains `admin` → condition matches → Alice is entitled to `clearance/top_secret` with `read` access
 
 #### Example 2: Map Keycloak Groups
 
@@ -728,102 +524,6 @@ The trailing slash in `/finance/` makes the `IN_CONTAINS` match more precise —
 ```
 
 **Logic:** `(group contains "/finance/") AND (role is "admin")`
-
-### Okta
-
-**Common Okta Token Claims:**
-```json
-{
-  "sub": "00u1a2b3c4d5e6f7g8h9",
-  "email": "alice@example.com",
-  "email_verified": true,
-  "groups": ["Engineering", "Senior-Staff"],
-  "department": "engineering",
-  "title": "Senior Engineer",
-  "clearanceLevel": "confidential"
-}
-```
-
-#### Example 1: Map Okta Groups
-
-**IdP Configuration:**
-- User is member of Okta group: "Engineering"
-
-**Subject Condition Set:**
-```json
-{
-  "subject_sets": [{
-    "condition_groups": [{
-      "boolean_operator": 1,
-      "conditions": [{
-        "subject_external_selector_value": ".groups[]",
-        "operator": 1,
-        "subject_external_values": ["Engineering", "Product"]
-      }]
-    }]
-  }]
-}
-```
-
-#### Example 2: Map Okta Profile Attributes
-
-**IdP Configuration:**
-- User profile has custom attribute: `clearanceLevel: "confidential"`
-
-**Okta Configuration (Claims):**
-Add custom claim mapping in Okta:
-- Claim name: `clearanceLevel`
-- Value: `user.clearanceLevel`
-
-**Subject Condition Set:**
-```json
-{
-  "subject_sets": [{
-    "condition_groups": [{
-      "boolean_operator": 1,
-      "conditions": [{
-        "subject_external_selector_value": ".clearanceLevel",
-        "operator": 1,
-        "subject_external_values": ["confidential", "secret"]
-      }]
-    }]
-  }]
-}
-```
-
-#### Example 3: Combine Okta Claims
-
-**Goal:** Grant access to senior engineers with confidential clearance
-
-**Subject Condition Set:**
-```json
-{
-  "subject_sets": [{
-    "condition_groups": [{
-      "boolean_operator": 1,
-      "conditions": [
-        {
-          "subject_external_selector_value": ".department",
-          "operator": 1,
-          "subject_external_values": ["engineering"]
-        },
-        {
-          "subject_external_selector_value": ".title",
-          "operator": 3,
-          "subject_external_values": ["Senior", "Staff", "Principal"]
-        },
-        {
-          "subject_external_selector_value": ".clearanceLevel",
-          "operator": 1,
-          "subject_external_values": ["confidential", "secret", "top_secret"]
-        }
-      ]
-    }]
-  }]
-}
-```
-
-**Logic:** `(department="engineering") AND (title contains "Senior"/"Staff"/"Principal") AND (clearance >= confidential)`
 
 ## Creating Subject Mappings: Step-by-Step
 
@@ -985,8 +685,6 @@ echo "<your-jwt>" | base64 -d
 
 **2. Check selector with `otdfctl dev selectors`:**
 
-OpenTDF uses a custom [flattening syntax](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go): keys are prefixed with `.`, nested paths use `.key.subkey`, and list items use `[0]` or `[]` for any index.
-
 Use `otdfctl dev selectors generate` to see all valid selectors for a given JSON or JWT:
 
 ```bash
@@ -1006,15 +704,7 @@ otdfctl dev selectors test \
   --selector '.groups[]'
 ```
 
-The flattening syntax for nested structures:
-
-```
-Token:                         Selector:
-{"user":{"profile":            ".user.profile.department"  ✅
-    {"department":"finance"}}}
-{"department":"finance"}       ".department"              ✅
-                               ".user.department"          ❌ (wrong nesting)
-```
+See [Selectors: String vs. Array Claims](#selectors-string-vs-array-claims) for the full selector syntax.
 
 **3. Check operator type:**
 
@@ -1186,28 +876,7 @@ For `HIERARCHY` attributes, precedence is determined by the **order values appea
 - User gets entitlement: `clearance/top_secret`
 - Can access: `top_secret`, `secret`, `confidential`, `public` (all lower levels)
 
-### 3. Minimize Dynamic Mappings
-
-**Avoid:** Creating one Subject Mapping per user
-```bash
-# Don't do this for 1000s of users
-create-subject-mapping --for-user alice
-create-subject-mapping --for-user bob
-create-subject-mapping --for-user charlie
-```
-
-**Instead:** Use pattern-based conditions
-```json
-{
-  "conditions": [{
-    "subject_external_selector_value": ".email",
-    "operator": 3,
-    "subject_external_values": ["@company.com"]
-  }]
-}
-```
-
-### 4. Subject Mappings for Service Accounts (NPE)
+### 3. Subject Mappings for Service Accounts (NPE)
 
 In a standard user-authenticated flow, only the **user** (`CATEGORY_SUBJECT`) needs Subject Mappings. The OIDC client is `CATEGORY_ENVIRONMENT` and is not evaluated in access decisions.
 
@@ -1222,36 +891,6 @@ otdfctl policy subject-mappings create \
 ```
 
 The exact claim key for the client ID varies by IdP and ERS configuration — use `otdfctl dev selectors generate` with your actual token to find the right selector.
-
-### 5. Test in Isolation
-
-When debugging, test Subject Mappings individually:
-
-**1. Create test user with minimal claims:**
-```json
-{
-  "email": "test@example.com",
-  "role": "test-role"
-}
-```
-
-**2. Create simple Subject Mapping:**
-```json
-{
-  "conditions": [{
-    "subject_external_selector_value": ".role",
-    "operator": 1,
-    "subject_external_values": ["test-role"]
-  }]
-}
-```
-
-**3. Test decryption:**
-```bash
-otdfctl decrypt test.tdf
-```
-
-**4. Gradually add complexity** once basic mapping works.
 
 ## Next Steps
 
@@ -1286,10 +925,6 @@ otdfctl decrypt test.tdf
 
 **A:** No. IdP roles/claims describe WHO the user is. Subject Mappings convert those claims into OpenTDF entitlements (WHAT they can access). They are separate concerns.
 
-**Q: Can I use the same Subject Condition Set for multiple Subject Mappings?**
-
-**A:** Yes! This is recommended for reusability. One condition set (e.g., "engineering department") can grant entitlements to multiple attribute values.
-
 **Q: What's the difference between IN and IN_CONTAINS?**
 
 **A:**
@@ -1299,10 +934,6 @@ otdfctl decrypt test.tdf
 - `IN_CONTAINS` (operator=3): Substring match. Value must CONTAIN substring.
   - `"administrator" IN_CONTAINS ["admin"]` → TRUE
   - `"admin" IN_CONTAINS ["admin"]` → TRUE
-
-**Q: Why do I see both jwtentity-0 and jwtentity-1 in authorization logs?**
-
-**A:** When using the Keycloak ERS, two entities are created from a JWT token: the OIDC client (`jwtentity-0-clientid-{id}`, `CATEGORY_ENVIRONMENT`) and the authenticated user (`jwtentity-1-username-{name}`, `CATEGORY_SUBJECT`). In `GetDecision` flows, only `CATEGORY_SUBJECT` entities are evaluated. The client entity is logged for audit purposes but does not affect the decision. Only the user entity needs Subject Mappings for standard TDF decrypt flows. See [authorization.go](https://github.com/opentdf/platform/blob/main/service/authorization/authorization.go) for the implementation.
 
 **Q: Can I update a Subject Mapping without recreating it?**
 
