@@ -155,7 +155,7 @@ The resulting **Entity Representation** looks like this:
 ```
 
 :::warning Two entities in authorization logs
-When using the Keycloak ERS, you may see TWO entities in authorization logs:
+When using the [Keycloak ERS](/components/entity_resolution), you may see TWO entities in authorization logs:
 - `jwtentity-0-clientid-{id}`: The **OIDC client application** — tracked in audit logs but not evaluated in access decisions
 - `jwtentity-1-username-{name}`: The **authenticated user** — this is the entity whose entitlements are evaluated
 
@@ -273,7 +273,7 @@ The selector syntax depends on whether the token claim is a **string** or an **a
 
 Selectors are evaluated against the **entity representation** produced by the Entity Resolution Service (ERS) — not directly against your JWT. The format of that representation depends on which ERS mode your platform is configured to use.
 
-**Keycloak ERS (default, `mode: keycloak`)**
+**[Keycloak ERS](/components/entity_resolution) (default, `mode: keycloak`)**
 
 The ERS calls the Keycloak Admin API to fetch the full user object. Custom Keycloak user attributes are nested under `.attributes.<name>[]` and are **always an array**, regardless of whether the Keycloak attribute is configured as multi-valued:
 
