@@ -269,6 +269,44 @@ The selector syntax depends on whether the token claim is a **string** or an **a
 
 **Using `.groups` (without `[]`) on an array claim will silently match nothing.** The flattening library ([`lib/flattening/flatten.go`](https://github.com/opentdf/platform/blob/main/lib/flattening/flatten.go)) produces keys like `.groups[0]`, `.groups[1]`, and `.groups[]` for array elements — there is no `.groups` key. Use `otdfctl dev selectors generate` to see exactly what keys your token produces.
 
+### ERS Mode and What Selectors Target
+
+Selectors are evaluated against the **entity representation** produced by the Entity Resolution Service (ERS) — not directly against your JWT. The format of that representation depends on which ERS mode your platform is configured to use.
+
+**Keycloak ERS (default, `mode: keycloak`)**
+
+The ERS calls the Keycloak Admin API to fetch the full user object. Custom Keycloak user attributes are nested under `.attributes.<name>[]` and are **always an array**, regardless of whether the Keycloak attribute is configured as multi-valued:
+
+| Entity data | Selector |
+|-------------|---------|
+| Custom user attribute `department: ["Finance"]` | `.attributes.department[]` |
+| Standard user field `email` | `.email` |
+
+:::warning Common mistake
+A selector like `.department` will **never** match a custom Keycloak user attribute in Keycloak ERS mode, even if the JWT contains `"department": "Finance"`. The correct selector is `.attributes.department[]`.
+
+This is a frequent source of confusion because the JWT claim name and the entity representation key are different. See [opentdf/platform#3122](https://github.com/opentdf/platform/pull/3122) for integration tests that verify this behavior.
+:::
+
+**Claims ERS (`mode: claims`)**
+
+The ERS passes JWT private claims through as-is, so selectors match JWT claim names directly. In this mode, the correct selector also depends on the **multi-valued** setting of your Keycloak User Attribute mapper:
+
+| Keycloak mapper setting | JWT claim | Selector |
+|------------------------|-----------|---------|
+| Multi-valued **OFF** | `"department": "Finance"` (string) | `.department` |
+| Multi-valued **ON** | `"department": ["Finance"]` (array) | `.department[]` |
+
+Configure claims mode in your platform config:
+
+```yaml
+services:
+  entityresolution:
+    mode: claims  # default is "keycloak"
+```
+
+Trade-off: claims mode can only access what is in the token — it cannot look up Keycloak groups, roles, or other data from the user store that is not included in the JWT.
+
 ### Operators Explained
 
 | Operator | Value | Behavior | Example |
