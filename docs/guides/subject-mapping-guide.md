@@ -285,7 +285,7 @@ The ERS calls the Keycloak Admin API to fetch the full user object. Custom Keycl
 :::warning Common mistake
 A selector like `.department` will **never** match a custom Keycloak user attribute in Keycloak ERS mode, even if the JWT contains `"department": "Finance"`. The correct selector is `.attributes.department[]`.
 
-This is a frequent source of confusion because the JWT claim name and the entity representation key are different. See [opentdf/platform#3122](https://github.com/opentdf/platform/pull/3122) for integration tests that verify this behavior.
+This is a frequent source of confusion because the JWT claim name and the entity representation key are different.
 :::
 
 **Claims ERS (`mode: claims`)**
