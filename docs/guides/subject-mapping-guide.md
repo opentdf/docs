@@ -90,7 +90,7 @@ sequenceDiagram
 | Service | NIST Role | How to use it |
 |---|---|---|
 | Key Access Server | Policy Enforcement Point (PEP) | [Send a TDF decrypt request](/sdks/tdf) |
-| Entity Resolution Service | Policy Information Point (PIP) | *Used by Authorization Service* |
+| Entity Resolution Service | Policy Information Point (PIP) | [Configure ERS mode](https://github.com/opentdf/platform/blob/main/docs/Configuring.md?plain=1#L479) |
 | Authorization Service | Policy Decision Point (PDP) | [Get authorization decisions](/sdks/authorization) |
 | Policy Service | Policy Administration Point (PAP) | [Configure subject mappings](/sdks/policy) |
 
