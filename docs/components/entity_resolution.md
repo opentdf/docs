@@ -445,7 +445,6 @@ The **Claims ERS** processes each JWT by extracting claims directly from the tok
 - Categorizing all produced entities as `CATEGORY_SUBJECT`.
 - Constructing an entity chain for each token, where each chain contains a single entity of type `claims` with the claims of that token.
 
-
 #### Behavior of `ResolveEntities`
 The **Claims ERS** resolves entities by processing the claims embedded in the provided entities. The behavior includes:
 - Extracting claims from the entity's `claims` field.
@@ -500,7 +499,7 @@ A user has a token with the following claims:
 We want to map the `department` claim `"engineering"` to an attribute that grants access to a specific resource.
 
 #### Step 1: Token Processing by Claims ERS
-The **Claims ERS** processes the token to extract claims and resolve them into entities. The getEntitiesFromToken function in the Claims ERS converts the token into an entity representation.
+The **Claims ERS** processes the token to extract claims and resolve them into entities.
 
 ##### Resolved entity:
 ```json
@@ -509,6 +508,7 @@ The **Claims ERS** processes the token to extract claims and resolve them into e
   "category": "CATEGORY_SUBJECT",
   "additional_props": [
     {
+      "sub": "user123",
       "department": "engineering",
       "roles": ["developer", "admin"]
     }
@@ -522,11 +522,14 @@ The subject mapping defines how the `department` claim is mapped to an attribute
 subject_mappings:
   - attribute_value_id: "74babca6-016f-4f3e-a99b-4e46ea8d0fd8" # ID of the attribute value
     subject_condition_set:
-      conditions:
-        - key: "department"
-          operator: "SUBJECT_MAPPING_OPERATOR_ENUM_IN"
-          values:
-            - "engineering"
+      subject_sets:
+        - condition_groups:
+            - boolean_operator: AND
+              conditions:
+                - subject_external_selector_value: ".department"
+                  operator: IN
+                  subject_external_values:
+                    - "engineering"
 ```
 This configuration specifies:
 
@@ -544,7 +547,6 @@ Evaluation Logic:
 
 #### Step 4: Result
 The user is granted an entitlement to the attribute value corresponding to `74babca6-016f-4f3e-a99b-4e46ea8d0fd8`. Ex: `https://example.com/attr/department/value/engineering`
-
 
 #### Summary
 This example illustrates how the **Claims ERS** processes a token, resolves claims into entities, and evaluates subject mappings to grant entitlements. By defining subject mappings, administrators can enforce fine-grained access control based on token claims.
