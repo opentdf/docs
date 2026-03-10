@@ -46,6 +46,10 @@ The definition for creating a key can be found in the key_access_registry [proto
 
 Let's look at a valid request and dissect it:
 
+### KEY_MODE_CONFIG_ROOT_KEY (mode 1)
+
+The asymmetric key pair is stored within the platform's database, wrapped using the platform's own root key.
+
 :::note
 These keys can be found within the [policy_fixtures.yaml](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/internal/fixtures/policy_fixtures.yaml#L528) file located
 in opentdf.
@@ -100,7 +104,37 @@ Key_Id is required for all key modes except KEY_MODE_PUBLIC_KEY_ONLY
 You can also specify metadata for the key via a common metadata structure, but that is not covered here.
 :::
 
-The above JSON request covers registering a key where the asymmetric key pair will be stored within the platform's database, and the expected symmetric key that decrypts the private key will be stored within KAS. What if you want to only store a reference to a key and have that reference point to a key elsewhere? Say for a KMS, for example. That's where **KEY_MODE_REMOTE** is handy.
+### KEY_MODE_PROVIDER_ROOT_KEY (mode 2)
+
+Use this mode when wrapping is performed by an external KMS or HSM, while the wrapped key is still stored in the platform's database.
+
+```json5
+{
+  "kas_id": "5f4903b8-235d-43cb-b98f-1d1d919515e2",
+  "key_id": "rsa-1",
+  "key_algorithm": 3,
+  "key_mode": 2,
+  "provider_config_id": "0ffeb53b-291c-4f76-80c3-3ad242cd7519",
+  "public_key_ctx": {
+    "pem": "<base64-encoded-public-key-pem>",
+  },
+  "private_key_ctx": {
+    "wrapped_key": "<base64-encoded-wrapped-private-key>",
+    "key_id": "arn:aws:kms:us-east-1:123456789012:key/mrk-1234abcd-12ab-34cd-56ef-1234567890ab",
+  },
+}
+```
+
+The differences from the `KEY_MODE_CONFIG_ROOT_KEY` example above are:
+
+- **key_mode** is `2`.
+- A **provider_config_id** is required. This points to a registered provider configuration that tells KAS which external key manager holds the wrapping key. See [provider configuration](./key_managers.md#provider-configurations).
+- **private_key_ctx.wrapped_key** contains the private key already wrapped (encrypted) by the external KMS/HSM, base64-encoded. The platform stores this ciphertext and delegates unwrapping to the external KMS/HSM at rewrap time.
+- **private_key_ctx.key_id** identifies the specific wrapping key within the provider (e.g. a KMS key ID or alias). KAS uses this when it needs to unwrap the private key during a rewrap operation.
+
+### KEY_MODE_REMOTE (mode 3)
+
+Use this mode when only a reference to the private key is stored, pointing to the key in an external KMS or HSM. No wrapped key material is stored in the platform.
 
 ```json5
 {
@@ -133,4 +167,4 @@ Follow the [base key setup](./base_key.md) guide for setting a base key.
 ## Important additional comments
 
 1. As of version 0.7.0 of the OpenTDF platform, there is no way to delete a key. If you would like to deactivate a key, use the **RotateKey** rpc.
-2. When creating a key of mode **KEY_MODE_CONFIG_ROOT_KEY** the **wrapped_key** is expected to be base64 encoded.
+2. When creating a key of mode **KEY_MODE_CONFIG_ROOT_KEY** or **KEY_MODE_PROVIDER_ROOT_KEY** the **wrapped_key** is expected to be base64 encoded.
