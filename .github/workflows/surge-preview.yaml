@@ -1,6 +1,15 @@
 name: Surge Preview
 
 on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number (used for deploy domain: opentdf-docs-pr-{number}.surge.sh)'
+        required: true
+      teardown:
+        description: 'Tear down the preview instead of deploying'
+        type: boolean
+        default: false
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
@@ -15,7 +24,7 @@ on:
 
 jobs:
   deploy-preview:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.teardown == false)
     name: Deploy Preview
     runs-on: ubuntu-latest
     permissions:
@@ -38,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to Surge
-        run: npx surge build/ https://opentdf-docs-pr-${{ github.event.number }}.surge.sh
+        run: npx surge build/ https://opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh
         env:
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
@@ -52,11 +61,11 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '📄 Preview deployed to https://opentdf-docs-pr-${{ github.event.number }}.surge.sh'
+              body: '📄 Preview deployed to https://opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh'
             })
 
   teardown-preview:
-    if: github.event.action == 'closed'
+    if: github.event.action == 'closed' || (github.event_name == 'workflow_dispatch' && inputs.teardown == true)
     name: Teardown Preview
     runs-on: ubuntu-latest
     steps:
@@ -65,7 +74,7 @@ jobs:
           node-version: 22
 
       - name: Teardown Surge preview
-        run: npx surge teardown opentdf-docs-pr-${{ github.event.number }}.surge.sh
+        run: npx surge teardown opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh
         env:
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
