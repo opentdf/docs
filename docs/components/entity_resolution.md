@@ -12,7 +12,7 @@ The **Keycloak ERS** is tightly integrated with Keycloak. It retrieves entity in
 
 **Key features:**
 - Direct integration with Keycloak's identity management system.
-- Resolves entities using Keycloak-specific attributes and roles.
+- Resolves entities using Keycloak-specific user properties and roles.
 - Returns rich entity representations including roles, permissions, and metadata.
 
 **How it works:**
