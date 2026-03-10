@@ -16,7 +16,7 @@ This page covers the core TDF operations:
 - **[CreateTDF](#createtdf)** — encrypt a payload and write a TDF
 - **[LoadTDF](#loadtdf)** — open a TDF and access the plaintext
 - **[IsValidTdf](#isvalidtdf)** — check whether a stream is a valid TDF without decrypting
-- **[BulkDecrypt](#bulkdecrypt-go)** — decrypt multiple TDFs in one call *(Go only)*
+- **[BulkDecrypt](#bulkdecrypt)** — decrypt multiple TDFs in one call
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
@@ -180,8 +180,8 @@ async createZTDF(options: CreateZTDFOptions): Promise<DecoratedStream>
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| Output destination | Required | Where the encrypted TDF bytes are written. In Go and Java, pass an explicit writer/stream. In JavaScript, the encrypted stream is returned from the call. |
-| Plaintext source | Required | The data to encrypt. In Go: `io.ReadSeeker` (must support seeking). In Java: `InputStream`. In JavaScript: `source` in the options object. |
+| Output destination | Required | Where the encrypted TDF bytes are written. |
+| Plaintext source | Required | The data to encrypt. See the signature tab for your language for the expected type. |
 | Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
 
 **Returns**
@@ -330,15 +330,8 @@ open(options: ReadOptions): TDFReader
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. In Go: `io.ReadSeeker`. In Java: `SeekableByteChannel`. In JavaScript: `source` in the options object (see below). |
+| Encrypted TDF source | Required | The TDF to open. See the signature tab for your language for the expected type. For JavaScript, `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). |
 | Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
-
-**JavaScript `source` types**
-
-| `type` | `location` | Description |
-|--------|-----------|-------------|
-| `'buffer'` | `Uint8Array` | In-memory bytes. Use when you have already loaded the TDF into memory. |
-| `'stream'` | `ReadableStream` | A Web Streams API `ReadableStream`. Use for large files or piped data. |
 
 **Returns**
 
@@ -472,11 +465,6 @@ static boolean SDK.isTDF(SeekableByteChannel channel)
 ```
 
 </TabItem>
-<TabItem value="js" label="JavaScript">
-
-Not available as a standalone function. Pass the source to `client.open()` and catch the error on `.manifest()` or `.decrypt()`.
-
-</TabItem>
 </Tabs>
 
 **Parameters**
@@ -557,39 +545,9 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 </TabItem>
 </Tabs>
 
-:::note Inspecting a TDF without decrypting
-**Java** provides static methods to read the manifest and policy without performing key access or decrypting the payload:
-
-```java
-import io.opentdf.platform.sdk.PolicyObject;
-import io.opentdf.platform.sdk.SDK;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-
-try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
-    Manifest manifest = SDK.readManifest(channel);
-    System.out.println("TDF version: " + manifest.tdfVersion);
-
-    PolicyObject policy = SDK.decodePolicyObject(manifest);
-    System.out.println("Policy UUID: " + policy.uuid);
-    for (var attr : policy.body.dataAttributes) {
-        System.out.println("Attribute: " + attr.attribute);
-    }
-}
-```
-
-**JavaScript / TypeScript** exposes the same capability through the `TDFReader` returned by `client.open()`. Calling `.manifest()` or `.attributes()` does not trigger payload decryption or a KAS round-trip:
-
-```typescript
-const reader = client.open({ source: { type: 'buffer', location: encryptedBytes } });
-const manifest = await reader.manifest();
-const attrs = await reader.attributes();
-```
-:::
-
 ---
 
-## BulkDecrypt (Go)
+## BulkDecrypt
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
 
@@ -681,7 +639,7 @@ err = prepared.BulkDecrypt(ctx)
 
 ## TDF Reader
 
-[`LoadTDF`](#loadtdf) (Go) and [`loadTDF`](#loadtdf) (Java) return a reader object. In JavaScript, the equivalent is the [`TDFReader`](#tdf-reader) returned by `client.open()`. You can call manifest and policy methods on the reader without reading the payload, which is useful for routing, auditing, or display.
+The reader returned by `LoadTDF` provides methods to read the plaintext payload and inspect manifest and policy data without a second decrypt call, useful for routing, auditing, or display.
 
 ### Payload
 
@@ -806,8 +764,6 @@ System.out.println("Policy UUID: " + policy.uuid);
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-Policy is embedded in the manifest. Use `reader.manifest()` on a [`TDFReader`](#tdf-reader):
-
 ```typescript
 const manifest = await reader.manifest();
 // Policy is at manifest.encryptionInformation.policy
@@ -838,8 +794,6 @@ for _, a := range attrs {
 
 </TabItem>
 <TabItem value="java" label="Java">
-
-Access via `readPolicyObject()`:
 
 ```java
 import io.opentdf.platform.sdk.PolicyObject;
@@ -926,7 +880,7 @@ The following types are returned by or passed to the methods above.
 | Algorithm | `Algorithm string` | `String Algorithm` | Optional | Wrapping key algorithm (e.g. `"ec:secp256r1"`). Defaults to `"rsa:2048"` if empty. |
 | KID | `KID string` | `String KID` | Optional | Key identifier on the KAS, used when the KAS hosts multiple keys. |
 | PublicKey | `PublicKey string` | `String PublicKey` | Optional | PEM-encoded public key. If empty, the SDK fetches it from the KAS. |
-| Default | `Default bool` | — | Optional | Go only. If `true`, this KAS is used as the default for encrypt calls when no KAS is explicitly specified. |
+| Default | `Default bool` | — | Optional | If `true`, this KAS is used as the default for encrypt calls when no KAS is explicitly specified. |
 
 **Example**
 
@@ -1102,10 +1056,6 @@ for _, a := range manifest.Assertions {
     fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
 }
 ```
-
-:::note Cross-language
-In Java, `reader.getManifest()` returns a `Manifest` object with equivalent fields. In JavaScript, `reader.manifest()` returns the manifest as a parsed JSON object matching the TDF spec's `manifest.json` structure.
-:::
 
 ---
 
