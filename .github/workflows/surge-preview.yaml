@@ -3,6 +3,15 @@ name: Surge Preview
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
+    paths:
+      - 'docs/**'
+      - 'code_samples/**'
+      - 'src/**'
+      - 'static/**'
+      - 'blog/**'
+      - 'specs/**'
+      - 'docusaurus.config.ts'
+      - 'sidebars.js'
 
 jobs:
   deploy-preview:
