@@ -22,5 +22,8 @@ JavaScript
 Autoconfigure
 requester(?('s))
 rewrap(?(s))
-Keycloak
 ERS
+APIs
+JWTs
+protos
+decisioning
