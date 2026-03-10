@@ -4,7 +4,7 @@ The Entity Resolution Service (ERS) is an IdP-specific service that interacts wi
 
 ## Built-In Entity Resolution Services
 
-The platform ships with two built-in ERS implementations. Choose based on your IdP and deployment needs.
+The platform ships with three ERS implementations. Choose based on your identity backend and deployment needs.
 
 ### Keycloak ERS (default)
 
@@ -38,12 +38,64 @@ For `ResolveEntities`: claims from the entity's `claims` field are extracted and
 
 ### Comparison
 
-| Feature              | Keycloak ERS                              | Claims ERS                                      |
-|----------------------|-------------------------------------------|-------------------------------------------------|
-| **Best for**         | Keycloak-based deployments                | Multi-IdP or non-Keycloak environments          |
-| **Entity data**      | Full Keycloak user/client objects         | JWT claims as-is                                |
-| **External calls**   | Yes — Keycloak Admin API                  | No                                              |
-| **Customization**    | Limited to Keycloak's identity model      | Highly flexible                                 |
+| Feature              | Keycloak ERS                              | Claims ERS                              | Multi-Strategy ERS (Preview)                        |
+|----------------------|-------------------------------------------|-----------------------------------------|-----------------------------------------------------|
+| **Best for**         | Keycloak-based deployments                | Multi-IdP or non-Keycloak environments  | Heterogeneous identity systems (SQL, LDAP, JWT)     |
+| **Entity data**      | Full Keycloak user/client objects         | JWT claims as-is                        | Normalized claims from any backend                  |
+| **External calls**   | Yes — Keycloak Admin API                  | No                                      | Yes — SQL / LDAP (configurable)                     |
+| **Customization**    | Limited to Keycloak's identity model      | Highly flexible                         | Highly flexible, with 16 built-in transformations   |
+| **Status**           | Stable                                    | Stable                                  | Preview (v2 only)                                   |
+
+### Multi-Strategy ERS (Preview)
+
+:::caution Preview
+The Multi-Strategy ERS is available on the v2 API only and is under active development. APIs and configuration options may change before it reaches stable status.
+:::
+
+The **Multi-Strategy ERS** consolidates SQL, LDAP, and JWT Claims backends into a single service with intelligent routing. It is designed for organizations with heterogeneous identity systems — for example, a primary SQL user store combined with an LDAP directory for group membership.
+
+**Key features:**
+- Routes entity resolution dynamically based on JWT context (e.g., which claims are present).
+- Supports SQL databases (PostgreSQL, SQLite), LDAP/Active Directory, and JWT claims as backends.
+- Cross-backend failover: if one backend fails, another can continue (`failure_strategy: continue`).
+- Built-in data transformations to normalize values across sources (e.g., `csv_to_array`, `ldap_dn_to_cn_array`, `postgres_array`).
+
+**Configuration:**
+
+```yaml
+services:
+  entityresolution:
+    mode: "multi-strategy"
+    failure_strategy: "continue"  # "fail-fast" (default) or "continue"
+    providers:
+      jwt_claims:
+        type: claims
+      primary_db:
+        type: sql
+        connection:
+          driver: postgres
+          host: localhost
+          port: 5432
+          database: identity_db
+          username: ers_user
+          password: ers_password
+      corporate_ldap:
+        type: ldap
+        connection:
+          host: ldap.company.com
+          port: 636
+          use_tls: true
+          bind_dn: "cn=service,ou=apps,dc=company,dc=com"
+          bind_password: "secret"
+    mapping_strategies:
+      # Strategies are evaluated in order; the first matching strategy is used (or all, with continue)
+      - name: jwt_fast_path
+        provider: jwt_claims
+        entity_type: subject
+        # ... conditions and output_mapping
+```
+
+For full configuration details, see the [multi-strategy ERS README](https://github.com/opentdf/platform/blob/main/service/entityresolution/multi-strategy/README.md) in the platform repository.
 
 ### Configuration
 
@@ -52,7 +104,7 @@ Set the ERS mode in your platform configuration file:
 ```yaml
 services:
   entityresolution:
-    mode: "claims" # Options: "keycloak" (default), "claims"
+    mode: "claims" # Options: "keycloak" (default), "claims", "multi-strategy" (preview)
 ```
 
 If no mode is specified, the platform defaults to the Keycloak ERS.
