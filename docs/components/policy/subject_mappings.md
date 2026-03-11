@@ -4,14 +4,8 @@
 For a comprehensive tutorial with IdP integration examples, troubleshooting, and step-by-step guides, see the [Subject Mapping Comprehensive Guide](/guides/subject-mapping-guide).
 :::
 
-:::note Entity attributes come from the Entity Resolution Service (ERS)
-Subject Mappings evaluate conditions against the **Entity Representation** produced by the Entity Resolution Service — not directly against IdP tokens. Depending on ERS configuration, entity attributes may come from:
-- Access token claims (JWT)
-- IdP user info (e.g., Keycloak, Okta)
-- LDAP / Active Directory
-- SQL databases
-
-This means a Subject Condition Set matching `.emailAddress` will work regardless of whether that attribute comes from a JWT claim, an LDAP directory entry, or a SQL row — as long as ERS resolves it into the entity representation. Multi-source ERS support is available; see the [Entity Resolution](/components/entity_resolution) documentation.
+:::note What Subject Mappings evaluate against
+Subject Mappings evaluate conditions against an **Entity Representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against raw IdP tokens. The fields available to your selectors depend on which ERS mode is configured.
 :::
 
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, entities are associated with Attribute values through a mechanism called Subject Mappings.

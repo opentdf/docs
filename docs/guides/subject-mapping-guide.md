@@ -11,7 +11,7 @@ sidebar_position: 1
 :::info What You'll Learn
 This guide explains how OpenTDF connects user identities from your Identity Provider (IdP) to attribute-based access control. You'll understand:
 - **Why** Subject Mappings exist (vs. direct IdP attribute mapping)
-- **How** authentication flows through Entity Resolution to authorization decisions
+- **How** authentication flows through to authorization decisions
 - **How** to scale Subject Mappings from exact-match to pattern-based conditions
 - **How to troubleshoot** common Subject Mapping errors
 :::
@@ -58,7 +58,7 @@ sequenceDiagram
     KAS->>Auth: 4. GetDecision
 
     Auth->>ERS: 5. Resolve entity
-    ERS->>Auth: 6. Entity representation
+    ERS->>Auth: 6. Entity representation (JWT claims or enriched data)
 
     Auth->>Policy: 7. Get policies
     Policy-->>Auth: 8. Subject Mappings & Attribute rules

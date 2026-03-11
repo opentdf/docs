@@ -1,6 +1,26 @@
 # Entity Resolution Service
 
-The Entity Resolution Service (ERS) is an IdP-specific service that interacts with the Identity Provider (IdP) to retrieve information about entities required by the Authorization service.
+The Entity Resolution Service (ERS) is a platform-internal service that produces **Entity Representations** — normalized views of an entity's identity attributes — for use by the Authorization Service when evaluating Subject Mappings.
+
+ERS is bundled into the platform and runs automatically as part of the default deployment (`mode: all`). There is no separate ERS service to set up.
+
+:::note Keycloak as IdP vs. Keycloak ERS
+These are two different things:
+- **Keycloak as IdP**: authenticates users and issues JWT tokens. This is always external to the platform.
+- **Keycloak ERS mode**: after receiving a token, ERS calls the Keycloak **Admin API** to fetch additional user data (custom attributes, groups, roles) that may not be in the JWT. This is one of three available ERS modes.
+
+You can use Keycloak as your IdP without using Keycloak ERS mode — configure `mode: claims` and ERS will use JWT claims directly without calling back to Keycloak.
+:::
+
+:::note Entity categories and Subject Mappings
+ERS categorizes entities from a token as either:
+- **`CATEGORY_SUBJECT`** (users): evaluated against Subject Mappings to determine entitlements
+- **`CATEGORY_ENVIRONMENT`** (OIDC clients / service accounts): tracked in audit logs but **not** evaluated in access decisions
+
+In a standard user-auth flow, the user is `CATEGORY_SUBJECT` and the OIDC client is `CATEGORY_ENVIRONMENT`. In a client credentials (service account) flow with no human user, the client itself becomes `CATEGORY_SUBJECT` and requires its own Subject Mappings.
+
+Note: Claims ERS categorizes all entities as `CATEGORY_SUBJECT`. Keycloak ERS distinguishes between users and clients.
+:::
 
 ## Built-In Entity Resolution Services
 
