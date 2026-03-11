@@ -102,6 +102,40 @@ Should return: `{"status":"SERVING"}`
 
 If not running, restart your platform services according to your deployment documentation.
 
+## File Permission Errors
+
+**Symptom**: Cryptic errors like `"server misbehaving"`, `connection reset`, or generic gRPC failures that don't mention permissions — when the real cause is a file the process can't read or write.
+
+On Linux, `"server misbehaving"` is a DNS resolution failure. It can be triggered by file permission problems at the OS level — for example, if `/etc/resolv.conf` or `/etc/hosts` is not readable by the current user or process. The error surfaces through gRPC with no hint of the underlying cause.
+
+**Common scenarios:**
+
+| Scenario | Symptom | Fix |
+|---|---|---|
+| Input file not readable by process | Encryption fails with a cryptic error | `chmod 644 <input-file>` or run as the correct user |
+| Output directory not writable | TDF write fails | `chmod 755 <output-dir>` or check directory ownership |
+| `/etc/resolv.conf` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf` |
+| Docker volume ownership mismatch | Operations fail with cryptic errors | `sudo chown -R $USER ~/.opentdf/` |
+
+**Diagnostic:**
+
+```bash
+# Verify input file is readable
+ls -la <input-file>
+
+# Verify output directory is writable
+ls -la <output-directory>/
+
+# Check DNS config files (Linux)
+ls -la /etc/resolv.conf /etc/hosts
+
+# Quick permission fix
+chmod 644 <input-file>
+chmod 755 <output-directory>/
+```
+
+For platform-level permission issues (Docker volumes, install directory), see [Managing the Platform — File Permission Errors](/getting-started/managing-platform#file-permission-errors-linux).
+
 ## Import Errors
 
 **Go**: `package github.com/opentdf/platform/sdk is not in GOROOT`
