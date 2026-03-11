@@ -1127,14 +1127,17 @@ if err != nil {
     log.Fatal(err)
 }
 
-_, err = writer.WriteSegment(ctx, 0, []byte("first chunk"))
+segResult, err := writer.WriteSegment(ctx, 0, []byte("first chunk"))
 if err != nil {
     log.Fatal(err)
 }
-_, err = writer.WriteSegment(ctx, 1, []byte("second chunk"))
+// segResult.TDFData is a reader for the encrypted segment bytes — stream or store it before calling Finalize
+segResult, err = writer.WriteSegment(ctx, 1, []byte("second chunk"))
 if err != nil {
     log.Fatal(err)
 }
+// segResult.TDFData is a reader for the encrypted segment bytes — stream or store it before calling Finalize
+_ = segResult
 
 // kasPublicKeyPEM holds the PEM-encoded RSA public key for your KAS instance.
 // Load this from a file, environment variable, or configuration source.
@@ -1158,8 +1161,8 @@ result, err := writer.Finalize(ctx,
 if err != nil {
     log.Fatal(err)
 }
-// result.TDFBytes contains the complete TDF
-// result.Manifest contains the TDF manifest
+// result.Data contains the manifest and ZIP footer bytes
+// result.Manifest is the TDF manifest struct
 ```
 
 </TabItem>
@@ -1188,24 +1191,28 @@ chunk1 := []byte("segment 1 data")
 chunk2 := []byte("segment 2 data")
 
 // Segments arrive from parallel workers — write in any order
-_, err = writer.WriteSegment(ctx, 2, chunk2)
+segResult, err := writer.WriteSegment(ctx, 2, chunk2)
 if err != nil {
     log.Fatal(err)
 }
-_, err = writer.WriteSegment(ctx, 0, chunk0)
+segResult, err = writer.WriteSegment(ctx, 0, chunk0)
 if err != nil {
     log.Fatal(err)
 }
-_, err = writer.WriteSegment(ctx, 1, chunk1)
+segResult, err = writer.WriteSegment(ctx, 1, chunk1)
 if err != nil {
     log.Fatal(err)
 }
+// segResult.TDFData is a reader for the encrypted segment bytes — stream or store each before calling Finalize
+_ = segResult
 
 // Finalize assembles them as segment 0, 1, 2
 result, err := writer.Finalize(ctx, tdf.WithDefaultKAS(kasKey))
 if err != nil {
     log.Fatal(err)
 }
+// result.Data contains the manifest and ZIP footer bytes
+// result.Manifest is the TDF manifest struct
 ```
 
 </TabItem>
