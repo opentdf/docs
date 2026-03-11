@@ -127,7 +127,7 @@ const client = new OpenTDF({ authProvider, platformUrl: 'https://platform.exampl
 
 // Encrypt
 const enc = new TextEncoder();
-const tdfStream = await client.createZTDF({
+const tdfStream = await client.createTDF({
     source: { type: 'buffer', location: enc.encode('hello, world') },
     defaultKASEndpoint: 'https://platform.example.com/kas',
 });
@@ -170,7 +170,7 @@ Manifest SDK.createTDF(InputStream plaintext, OutputStream out, Config.TDFConfig
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-async createZTDF(options: CreateZTDFOptions): Promise<DecoratedStream>
+async createTDF(options: CreateTDFOptions): Promise<DecoratedStream>
 ```
 
 </TabItem>
@@ -278,7 +278,7 @@ Manifest manifest = sdk.createTDF(in, out, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: new TextEncoder().encode('Sensitive data') },
     defaultKASEndpoint: 'https://kas.example.com',
 });
