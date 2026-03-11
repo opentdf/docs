@@ -49,16 +49,13 @@ If you modify quickstart scripts or Docker Compose instructions:
 
 ## Preview Deployment
 
-After opening a PR, deploy a Surge preview so reviewers can see the changes live. Use the ticket number as the identifier.
+Surge previews are deployed automatically by CI when a PR is opened or updated (for content-affecting changes). The preview URL is posted as a PR comment on first open:
 
-```bash
-npm run build
-npx surge build opentdf-docs-preview-<ticket-number>.surge.sh
+```
+https://opentdf-docs-pr-<pr-number>.surge.sh
 ```
 
-Preview URL: `https://opentdf-docs-preview-<ticket-number>.surge.sh/`
-
-A free Surge account is required — first run will prompt to sign up or log in.
+To trigger a preview manually (e.g. for a PR with only config changes), use the **Surge Preview** workflow dispatch from the Actions tab, providing the PR number.
 
 ## Commit & Pull Request Guidelines
 
