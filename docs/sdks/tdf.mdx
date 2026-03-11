@@ -1131,13 +1131,11 @@ segResult, err := writer.WriteSegment(ctx, 0, []byte("first chunk"))
 if err != nil {
     log.Fatal(err)
 }
-// segResult.TDFData is a reader for the encrypted segment bytes — stream or store it before calling Finalize
 segResult, err = writer.WriteSegment(ctx, 1, []byte("second chunk"))
 if err != nil {
     log.Fatal(err)
 }
-// segResult.TDFData is a reader for the encrypted segment bytes — stream or store it before calling Finalize
-_ = segResult
+_ = segResult // stream or store segResult.TDFData before calling Finalize
 
 // kasPublicKeyPEM holds the PEM-encoded RSA public key for your KAS instance.
 // Load this from a file, environment variable, or configuration source.
@@ -1161,8 +1159,6 @@ result, err := writer.Finalize(ctx,
 if err != nil {
     log.Fatal(err)
 }
-// result.Data contains the manifest and ZIP footer bytes
-// result.Manifest is the TDF manifest struct
 ```
 
 </TabItem>
@@ -1203,16 +1199,13 @@ segResult, err = writer.WriteSegment(ctx, 1, chunk1)
 if err != nil {
     log.Fatal(err)
 }
-// segResult.TDFData is a reader for the encrypted segment bytes — stream or store each before calling Finalize
-_ = segResult
+_ = segResult // stream or store segResult.TDFData before calling Finalize
 
 // Finalize assembles them as segment 0, 1, 2
 result, err := writer.Finalize(ctx, tdf.WithDefaultKAS(kasKey))
 if err != nil {
     log.Fatal(err)
 }
-// result.Data contains the manifest and ZIP footer bytes
-// result.Manifest is the TDF manifest struct
 ```
 
 </TabItem>
@@ -1279,5 +1272,31 @@ Not available in the JavaScript SDK.
 
 </TabItem>
 </Tabs>
+
+**Result types**
+
+### SegmentResult
+
+Returned by each `WriteSegment` call.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `TDFData` | `io.Reader` | Reader for the encrypted segment bytes (nonce + ciphertext + ZIP structures). Stream or store this before calling `Finalize`. |
+| `Index` | `int` | The segment index that was written. |
+| `Hash` | `string` | Base64-encoded integrity hash for this segment. |
+| `PlaintextSize` | `int64` | Size of the original (unencrypted) data in bytes. |
+| `EncryptedSize` | `int64` | Size of the encrypted data in bytes. |
+
+### FinalizeResult
+
+Returned by `Finalize`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Data` | `[]byte` | Manifest JSON and ZIP footer bytes. Does **not** contain the encrypted payload — segment data is returned by each `WriteSegment` call via `TDFData`. |
+| `Manifest` | `*Manifest` | The complete [TDF manifest](#manifest-object) including key access objects, integrity information, and assertions. |
+| `TotalSegments` | `int` | Number of segments written. |
+| `TotalSize` | `int64` | Total plaintext bytes across all segments. |
+| `EncryptedSize` | `int64` | Total encrypted bytes across all segments. |
 
 For the full API reference, see the [pkg.go.dev documentation](https://pkg.go.dev/github.com/opentdf/platform/sdk/experimental/tdf).
