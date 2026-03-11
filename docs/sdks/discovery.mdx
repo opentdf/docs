@@ -512,7 +512,7 @@ try {
 
 // 4. Encrypt with confidence
 const client = new OpenTDF({ authProvider, platformUrl });
-const ciphertext = await client.createZTDF({
+const ciphertext = await client.createTDF({
     source: { type: 'stream', location: dataStream },
     attributes: required,
     defaultKASEndpoint: platformUrl,

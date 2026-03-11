@@ -550,9 +550,9 @@ Now that we have a few basic resources in place we can show you how to control a
 
 ### Encrypt Data Without Attributes
 
-Within the `otdfctl` CLI there is basic functionality to interact with `zTDF`.
+Within the `otdfctl` CLI there is basic functionality to interact with TDF.
 
-#### Example zTDF encryption
+#### Example TDF encryption
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3
@@ -579,7 +579,7 @@ In this example we will encrypt the data with the attribute `https://opentdf.io/
 rm example.tdf
 ```
 
-#### Example zTDF encryption with attributes
+#### Example TDF encryption with attributes
 
 ```shell
 echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o example.tdf --tdf-type tdf3 --attr https://opentdf.io/attr/role/value/guest
@@ -589,7 +589,7 @@ echo 'my first encrypted tdf' | otdfctl encrypt --profile platform-otdf-local -o
 
 In this first example we will try to decrypt the data but it will fail because we shouldn't be assigned the entitlement of `https://opentdf.io/attr/role/value/guest` at this point.
 
-#### Example zTDF failed decryption
+#### Example TDF failed decryption
 
 ```shell
 otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
@@ -628,7 +628,7 @@ NOTE   Use 'subject-mappings get --id=f6bf9fc7-e23b-4276-9dfc-7a61f359edfd --jso
 
 Now that we have the subject mapping in place we should be able to decrypt the data.
 
-#### Example zTDF successful decryption
+#### Example TDF successful decryption
 
 ```shell
 otdfctl decrypt --profile platform-otdf-local --tdf-type tdf3 example.tdf
