@@ -182,7 +182,7 @@ if [[ "$OS" != "windows" ]]; then
     else
         print_warning "Home directory may not be writable — install may fail"
         echo -e "${YELLOW}   The installer creates ~/.opentdf/ to store platform files.${NC}"
-        echo -e "${YELLOW}   Check permissions with: ls -la ~/${NC}"
+        echo -e "${YELLOW}   Check permissions with: ls -ld ~/${NC}"
     fi
 fi
 echo ""

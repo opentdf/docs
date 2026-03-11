@@ -114,8 +114,8 @@ On Linux, `"server misbehaving"` is a DNS resolution failure. It can be triggere
 |---|---|---|
 | Input file not readable by process | Encryption fails with a cryptic error | `chmod 644 <input-file>` or run as the correct user |
 | Output directory not writable | TDF write fails | `chmod 755 <output-dir>` or check directory ownership |
-| `/etc/resolv.conf` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf` |
-| Docker volume ownership mismatch | Operations fail with cryptic errors | `sudo chown -R $USER ~/.opentdf/` |
+| `/etc/resolv.conf` or `/etc/hosts` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf /etc/hosts` |
+| Docker volume ownership mismatch | Operations fail with cryptic errors | `sudo chown -R $USER:$USER ~/.opentdf/` |
 
 **Diagnostic:**
 

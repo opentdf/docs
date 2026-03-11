@@ -182,7 +182,7 @@ watch 'docker ps --filter name=platform- --format "table {{.Names}}\t{{.Status}}
 
 | Scenario | Symptom | Fix |
 |---|---|---|
-| Docker volume ownership mismatch | Services start but fail silently on file ops | `sudo chown -R $USER ~/.opentdf/` |
+| Docker volume ownership mismatch | Services start but fail silently on file ops | `sudo chown -R $USER:$USER ~/.opentdf/` |
 | `/etc/hosts` or `/etc/resolv.conf` not readable | `"server misbehaving"` on all gRPC calls | `sudo chmod 644 /etc/resolv.conf /etc/hosts` |
 | Install directory not writable | `mkdir` or download fails mid-install | Check permissions on `~/.opentdf/` |
 
