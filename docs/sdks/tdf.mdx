@@ -1086,11 +1086,30 @@ TDFs produced by `NewWriter` are fully compatible with the standard [`LoadTDF`](
 
 **Import**
 
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
 import "github.com/opentdf/platform/sdk/experimental/tdf"
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
 **Basic usage**
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 import (
@@ -1143,9 +1162,25 @@ if err != nil {
 // result.Manifest contains the TDF manifest
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
 **Out-of-order segments**
 
 Segments are written by index and assembled in index order at `Finalize` time regardless of write order:
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 chunk0 := []byte("segment 0 data")
@@ -1172,6 +1207,19 @@ if err != nil {
     log.Fatal(err)
 }
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
 
 **Key options**
 
