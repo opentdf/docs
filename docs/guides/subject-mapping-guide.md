@@ -319,6 +319,51 @@ The selector syntax depends on whether the token claim is a **string** or an **a
 - ❌ `{"level": "senior", "department": "engineering"}` (not finance)
 - ❌ `{"level": "junior", "department": "finance"}` (not senior)
 
+### Example 5: AND Across Multiple Attribute Definitions (Multi-Attribute File)
+
+This example covers a different kind of AND: enforcing multiple **attribute definitions** on a single resource, where a user must satisfy **all** of them to decrypt.
+
+:::note How multi-attribute AND works
+When a file is tagged with values from two different attribute definitions (e.g., `department/finance` AND `country/us`), the authorization service evaluates each attribute definition independently and requires all of them to pass. This is enforced in [`service/internal/access/pdp.go`](https://github.com/opentdf/platform/blob/main/service/internal/access/pdp.go) — `rollUpDecisions` combines per-definition results with `&&`.
+
+This is different from AND within a single Subject Condition Set (Example 2), which requires multiple claims to match within one subject mapping. Here, the AND comes from tagging the resource with multiple attributes — no special subject mapping configuration is needed.
+:::
+
+**Goal:** A file requires both `department/finance` AND `country/us` to decrypt. A user must be entitled to both.
+
+**Step 1: Tag the file with both attribute values at encrypt time:**
+```bash
+otdfctl encrypt file.txt -o file.tdf \
+  --attr https://example.com/attr/department/value/finance \
+  --attr https://example.com/attr/country/value/us
+```
+
+**Step 2: Create two separate subject mappings — one per attribute value.**
+
+Subject Mapping 1 (linked to `department/value/finance`):
+```json
+{
+  "subject_external_selector_value": ".attributes.department[]",
+  "operator": 1,
+  "subject_external_values": ["Finance"]
+}
+```
+
+Subject Mapping 2 (linked to `country/value/us`):
+```json
+{
+  "subject_external_selector_value": ".attributes.country[]",
+  "operator": 1,
+  "subject_external_values": ["US"]
+}
+```
+
+**Result:** A user whose token satisfies both condition sets will be entitled to both attribute values and can decrypt the file. A user who satisfies only one will be denied.
+
+- ✅ `{"attributes": {"department": ["Finance"], "country": ["US"]}}` — entitled to both, PERMIT
+- ❌ `{"attributes": {"department": ["Finance"], "country": ["UK"]}}` — missing `country/us`, DENY
+- ❌ `{"attributes": {"department": ["Engineering"], "country": ["US"]}}` — missing `department/finance`, DENY
+
 ## Scaling Subject Mappings: Entitle Kinds of Users, Not Individual Users
 
 :::warning Avoid one Subject Mapping per user
@@ -912,7 +957,7 @@ The exact claim key for the client ID varies by IdP and ERS configuration — us
 1. Define attributes for multiple dimensions (`department`, `clearance`, `region`)
 2. Create Subject Condition Sets with multi-condition logic
 3. Encrypt resources with multiple attributes (`--attr X --attr Y`)
-4. Subject Mappings grant partial entitlements; decision evaluates all attributes
+4. Create one Subject Mapping per attribute value — the authorization service requires all attribute definitions on the resource to be satisfied (AND enforcement)
 
 **Scale Subject Mappings with pattern matching:**
 1. Define attribute and its values
