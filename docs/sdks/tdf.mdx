@@ -21,6 +21,7 @@ This page covers the core TDF operations:
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
 - **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
 
@@ -1064,3 +1065,102 @@ for _, a := range manifest.Assertions {
 ---
 
 <DecryptOptions />
+
+---
+
+## Experimental: Streaming Writer
+
+:::warning Experimental API
+`github.com/opentdf/platform/sdk/experimental/tdf` is **experimental** — its API may change or be removed without notice. Do not use it in production without accepting that risk.
+:::
+
+The standard `CreateTDF` API takes a single `io.ReadSeeker` and writes the TDF in one call. For most use cases this is the right choice.
+
+The experimental `tdf.NewWriter` API uses a segment-based model where you write indexed segments — potentially out of order — and call `Finalize` when done. Use it when:
+
+- **Encrypting large files in chunks**: process data segment-by-segment without loading it all into memory
+- **Out-of-order assembly**: segments arrive from parallel workers or a network stream and must be assembled in order
+- **You already have the KAS public key**: `NewWriter` takes a `*policy.SimpleKasKey` directly and does not require a full `sdk.SDK` client
+
+TDFs produced by `NewWriter` are fully compatible with the standard [`LoadTDF`](#loadtdf).
+
+**Import**
+
+```go
+import "github.com/opentdf/platform/sdk/experimental/tdf"
+```
+
+**Basic usage**
+
+```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/sdk/experimental/tdf"
+)
+
+ctx := context.Background()
+
+writer, err := tdf.NewWriter(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+_, err = writer.WriteSegment(ctx, 0, []byte("first chunk"))
+if err != nil {
+    log.Fatal(err)
+}
+_, err = writer.WriteSegment(ctx, 1, []byte("second chunk"))
+if err != nil {
+    log.Fatal(err)
+}
+
+kasKey := &policy.SimpleKasKey{
+    KasUri: "https://kas.example.com",
+    PublicKey: &policy.SimpleKasPublicKey{
+        Algorithm: policy.Algorithm_ALGORITHM_RSA_2048,
+        Kid:       "my-key-id",
+        Pem:       kasPublicKeyPEM, // PEM-encoded RSA public key
+    },
+}
+
+result, err := writer.Finalize(ctx,
+    tdf.WithDefaultKAS(kasKey),
+    tdf.WithPayloadMimeType("text/plain"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+// result.TDFBytes contains the complete TDF
+// result.Manifest contains the TDF manifest
+```
+
+**Out-of-order segments**
+
+Segments are written by index and assembled in index order at `Finalize` time regardless of write order:
+
+```go
+// Segments arrive from parallel workers — write in any order
+_ = writer.WriteSegment(ctx, 2, chunk2)
+_ = writer.WriteSegment(ctx, 0, chunk0)
+_ = writer.WriteSegment(ctx, 1, chunk1)
+
+// Finalize assembles them as segment 0, 1, 2
+result, err := writer.Finalize(ctx, tdf.WithDefaultKAS(kasKey))
+```
+
+**Key options**
+
+| Option | Description |
+|--------|-------------|
+| `tdf.WithIntegrityAlgorithm(tdf.HS256\|tdf.GMAC)` | Root integrity algorithm (default: `HS256`) |
+| `tdf.WithSegmentIntegrityAlgorithm(tdf.GMAC)` | Per-segment hash algorithm — `GMAC` is faster for many small segments |
+| `tdf.WithAttributeValues(values)` | Data attribute `*policy.Value` slice for ABAC |
+| `tdf.WithDefaultKAS(kasKey)` | Default KAS for key wrapping (Finalize option) |
+| `tdf.WithEncryptedMetadata(string)` | Metadata encrypted inside the key access objects |
+| `tdf.WithPayloadMimeType(string)` | MIME type of the payload content |
+| `tdf.WithSegments([]int)` | Restrict Finalize to a specific contiguous segment prefix |
+
+For the full API reference, see the [pkg.go.dev documentation](https://pkg.go.dev/github.com/opentdf/platform/sdk/experimental/tdf).
