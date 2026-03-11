@@ -339,9 +339,12 @@ const plaintext = await client.read({
 
 ---
 
-### Max Manifest Size (Go only)
+### Max Manifest Size
 
 Limit the maximum size of the TDF manifest that the SDK will parse. This is a defence against malformed or malicious TDFs with abnormally large manifests.
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 import (
@@ -355,4 +358,17 @@ tdfReader, err := client.LoadTDF(
     sdk.WithMaxManifestSize(1 * 1024 * 1024), // 1 MB limit
 )
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK. The manifest size limit is not configurable; the SDK accepts any well-formed manifest.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK. The manifest size limit is not configurable; the SDK accepts any well-formed manifest.
+
+</TabItem>
+</Tabs>
 
