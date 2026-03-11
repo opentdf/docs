@@ -50,7 +50,7 @@ To pass fully resolved `Value` objects instead of FQN strings, use `Config.withD
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     attributes: [
@@ -109,7 +109,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     attributes: ['https://example.com/attr/clearance/value/executive'],
@@ -156,7 +156,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     attributes: ['https://example.com/attr/clearance/value/executive'],
     autoconfigure: true,
@@ -217,7 +217,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     splitPlan: [
         { kas: 'https://kas-a.example.com', sid: 'split-1' },
@@ -266,7 +266,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     metadata: { owner: 'alice', sensitivity: 'high' },
@@ -315,7 +315,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     mimeType: 'application/pdf',
@@ -366,7 +366,7 @@ sdk.createTDF(inputStream, outputStream, config);
 ```typescript
 const oneMB = 1 * 1024 * 1024;
 
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     windowSize: oneMB,
@@ -471,7 +471,7 @@ assertionCfg.signingKey = signingKey;
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     assertionConfigs: [
@@ -492,7 +492,7 @@ const tdf = await client.createZTDF({
 To sign the assertion, add a `signers` map keyed by assertion ID:
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     assertionConfigs: [
@@ -559,7 +559,7 @@ Valid values: `KeyType.RSA2048Key`, `KeyType.EC256Key`, `KeyType.EC384Key`, `Key
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     wrappingKeyAlgorithm: 'ec:secp256r1',
@@ -610,7 +610,7 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const tdf = await client.createZTDF({
+const tdf = await client.createTDF({
     source: { type: 'buffer', location: data },
     defaultKASEndpoint: 'https://kas.example.com',
     tdfSpecVersion: '4.3.0',
