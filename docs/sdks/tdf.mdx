@@ -21,6 +21,7 @@ This page covers the core TDF operations:
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
 - **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
 
@@ -1064,3 +1065,238 @@ for _, a := range manifest.Assertions {
 ---
 
 <DecryptOptions />
+
+---
+
+## Experimental: Streaming Writer
+
+:::warning Experimental API
+`github.com/opentdf/platform/sdk/experimental/tdf` is **experimental** — its API may change or be removed without notice. Do not use it in production without accepting that risk.
+:::
+
+The standard `CreateTDF` API takes a single `io.ReadSeeker` and writes the TDF in one call. For most use cases this is the right choice.
+
+The experimental `tdf.NewWriter` API uses a segment-based model where you write indexed segments — potentially out of order — and call `Finalize` when done. Use it when:
+
+- **Encrypting large files in chunks**: process data segment-by-segment without loading it all into memory
+- **Out-of-order assembly**: segments arrive from parallel workers or a network stream and must be assembled in order
+- **You already have the KAS public key**: `NewWriter` takes a `*policy.SimpleKasKey` directly and does not require a full `sdk.SDK` client
+
+TDFs produced by `NewWriter` are fully compatible with the standard [`LoadTDF`](#loadtdf).
+
+**Import**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/sdk/experimental/tdf"
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
+**Basic usage**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/sdk/experimental/tdf"
+)
+
+ctx := context.Background()
+
+writer, err := tdf.NewWriter(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+segResult, err := writer.WriteSegment(ctx, 0, []byte("first chunk"))
+if err != nil {
+    log.Fatal(err)
+}
+segResult, err = writer.WriteSegment(ctx, 1, []byte("second chunk"))
+if err != nil {
+    log.Fatal(err)
+}
+_ = segResult // stream or store segResult.TDFData before calling Finalize
+
+// kasPublicKeyPEM holds the PEM-encoded RSA public key for your KAS instance.
+// Load this from a file, environment variable, or configuration source.
+kasPublicKeyPEM := `-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----`
+
+kasKey := &policy.SimpleKasKey{
+    KasUri: "https://kas.example.com",
+    PublicKey: &policy.SimpleKasPublicKey{
+        Algorithm: policy.Algorithm_ALGORITHM_RSA_2048,
+        Kid:       "my-key-id",
+        Pem:       kasPublicKeyPEM,
+    },
+}
+
+result, err := writer.Finalize(ctx,
+    tdf.WithDefaultKAS(kasKey),
+    tdf.WithPayloadMimeType("text/plain"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
+**Out-of-order segments**
+
+Segments are written by index and assembled in index order at `Finalize` time regardless of write order:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+chunk0 := []byte("segment 0 data")
+chunk1 := []byte("segment 1 data")
+chunk2 := []byte("segment 2 data")
+
+// Segments arrive from parallel workers — write in any order
+segResult, err := writer.WriteSegment(ctx, 2, chunk2)
+if err != nil {
+    log.Fatal(err)
+}
+segResult, err = writer.WriteSegment(ctx, 0, chunk0)
+if err != nil {
+    log.Fatal(err)
+}
+segResult, err = writer.WriteSegment(ctx, 1, chunk1)
+if err != nil {
+    log.Fatal(err)
+}
+_ = segResult // stream or store segResult.TDFData before calling Finalize
+
+// Finalize assembles them as segment 0, 1, 2
+result, err := writer.Finalize(ctx, tdf.WithDefaultKAS(kasKey))
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
+**Key options**
+
+| Option | Description |
+|--------|-------------|
+| `tdf.WithIntegrityAlgorithm(algorithm)` | Root integrity algorithm. Can be `tdf.HS256` (default) or `tdf.GMAC`. |
+| `tdf.WithSegmentIntegrityAlgorithm(tdf.GMAC)` | Per-segment hash algorithm — `GMAC` is faster for many small segments |
+| `tdf.WithAttributeValues(values)` | Data attribute `*policy.Value` slice for ABAC |
+| `tdf.WithDefaultKAS(kasKey)` | Default KAS for key wrapping (Finalize option) |
+| `tdf.WithEncryptedMetadata(string)` | Metadata encrypted inside the key access objects |
+| `tdf.WithPayloadMimeType(string)` | MIME type of the payload content |
+| `tdf.WithSegments([]int)` | Restrict Finalize to a specific contiguous segment prefix |
+
+**Inspecting the manifest before finalization**
+
+`GetManifest` returns a snapshot of the TDF manifest at any point during the writer's lifecycle:
+
+- **Before `Finalize`**: returns a stub manifest built from the current writer state — segments written so far, algorithm selections, initial attributes and KAS if set on `NewWriter`. Use it to pre-calculate the expected manifest size or inspect the anticipated structure. This stub is **not suitable for verification**.
+- **After `Finalize`**: returns the finalized manifest (identical to `result.Manifest` from `Finalize`).
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "encoding/json"
+
+// After writing segments but before Finalize, inspect the expected manifest size.
+stub, err := writer.GetManifest(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+manifestJSON, err := json.Marshal(stub)
+if err != nil {
+    log.Fatal(err)
+}
+expectedManifestSize := len(manifestJSON)
+// Use expectedManifestSize to pre-allocate buffers, set Content-Length headers, etc.
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
+**Result types**
+
+### SegmentResult
+
+Returned by each `WriteSegment` call.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `TDFData` | `io.Reader` | Reader for the encrypted segment bytes (nonce + ciphertext + ZIP structures). Stream or store this before calling `Finalize`. |
+| `Index` | `int` | The segment index that was written. |
+| `Hash` | `string` | Base64-encoded integrity hash for this segment. |
+| `PlaintextSize` | `int64` | Size of the original (unencrypted) data in bytes. |
+| `EncryptedSize` | `int64` | Size of the encrypted data in bytes. |
+
+### FinalizeResult
+
+Returned by `Finalize`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Data` | `[]byte` | Manifest JSON and ZIP footer bytes. Does **not** contain the encrypted payload — segment data is returned by each `WriteSegment` call via `TDFData`. |
+| `Manifest` | `*Manifest` | The complete [TDF manifest](#manifest-object) including key access objects, integrity information, and assertions. |
+| `TotalSegments` | `int` | Number of segments written. |
+| `TotalSize` | `int64` | Total plaintext bytes across all segments. |
+| `EncryptedSize` | `int64` | Total encrypted bytes across all segments. |
+
+For the full API reference, see the [pkg.go.dev documentation](https://pkg.go.dev/github.com/opentdf/platform/sdk/experimental/tdf).

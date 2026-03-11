@@ -1,14 +1,14 @@
 ---
 sidebar_position: 3
-title: Platform Service Client
+title: "SDK Architecture: Core vs. Service Client"
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Platform Service Client
+# SDK Architecture: Core vs. Service Client
 
-Some SDK functionality — including policy management, authorization decisions, and KAS registry operations — is provided through a **platform service client** rather than through the core SDK.
+Some SDK functionality — including policy management and authorization decisions — is provided through a **platform service client** rather than through the core SDK. This page explains the difference and when you'll use each.
 
 ## Core SDK vs. Platform Service Client
 
@@ -22,7 +22,7 @@ This is the same pattern used by cloud provider SDKs — you instantiate a typed
 
 [gRPC](https://grpc.io) is a high-performance open-source remote procedure call framework. It uses HTTP/2 for transport and Protocol Buffers for serialization, enabling strongly-typed service contracts across languages.
 
-## Setup
+## Initializing the SDK client
 
 <Tabs>
 <TabItem value="go" label="Go">
