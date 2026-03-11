@@ -175,6 +175,15 @@ if [[ "$OS" != "windows" ]]; then
         echo -e "${YELLOW}   For NixOS/immutable systems, manually add these entries:${NC}"
         echo -e "${YELLOW}   127.0.0.1 platform.opentdf.local keycloak.opentdf.local${NC}"
     fi
+
+    # Check if home directory is writable (install directory will be created here)
+    if [ -w "$HOME" ]; then
+        print_status 0 "Home directory is writable (install directory: ~/.opentdf/)"
+    else
+        print_warning "Home directory may not be writable — install may fail"
+        echo -e "${YELLOW}   The installer creates ~/.opentdf/ to store platform files.${NC}"
+        echo -e "${YELLOW}   Check permissions with: ls -la ~/${NC}"
+    fi
 fi
 echo ""
 
