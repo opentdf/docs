@@ -793,6 +793,8 @@ In **client credentials (service account) flows**, there is no separate user —
 
 ```bash
 # Create Subject Mapping for a service account client
+# Note: ".clientId" is the Keycloak-specific claim for client ID.
+# The exact claim key varies by IdP — use `otdfctl dev selectors generate` with your token to confirm.
 otdfctl policy subject-condition-sets create \
   --subject-sets '[
     {

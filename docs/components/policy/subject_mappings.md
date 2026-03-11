@@ -5,7 +5,7 @@ For a comprehensive tutorial with IdP integration examples, troubleshooting, and
 :::
 
 :::note What Subject Mappings evaluate against
-Subject Mappings evaluate conditions against an **Entity Representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against raw IdP tokens. The fields available to your selectors depend on which ERS mode is configured.
+Subject Mappings evaluate conditions against an **Entity Representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against raw IdP tokens. Depending on which ERS mode is configured, this representation may include JWT claims from the token, enriched user data from the Keycloak Admin API, or data from external sources such as LDAP or SQL. The fields available to your selectors depend on [which mode is configured](/components/entity_resolution).
 :::
 
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, entities are associated with Attribute values through a mechanism called Subject Mappings.
