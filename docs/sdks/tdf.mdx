@@ -1117,12 +1117,18 @@ if err != nil {
     log.Fatal(err)
 }
 
+// kasPublicKeyPEM holds the PEM-encoded RSA public key for your KAS instance.
+// Load this from a file, environment variable, or configuration source.
+kasPublicKeyPEM := `-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----`
+
 kasKey := &policy.SimpleKasKey{
     KasUri: "https://kas.example.com",
     PublicKey: &policy.SimpleKasPublicKey{
         Algorithm: policy.Algorithm_ALGORITHM_RSA_2048,
         Kid:       "my-key-id",
-        Pem:       kasPublicKeyPEM, // PEM-encoded RSA public key
+        Pem:       kasPublicKeyPEM,
     },
 }
 
@@ -1142,20 +1148,36 @@ if err != nil {
 Segments are written by index and assembled in index order at `Finalize` time regardless of write order:
 
 ```go
+chunk0 := []byte("segment 0 data")
+chunk1 := []byte("segment 1 data")
+chunk2 := []byte("segment 2 data")
+
 // Segments arrive from parallel workers — write in any order
-_ = writer.WriteSegment(ctx, 2, chunk2)
-_ = writer.WriteSegment(ctx, 0, chunk0)
-_ = writer.WriteSegment(ctx, 1, chunk1)
+_, err = writer.WriteSegment(ctx, 2, chunk2)
+if err != nil {
+    log.Fatal(err)
+}
+_, err = writer.WriteSegment(ctx, 0, chunk0)
+if err != nil {
+    log.Fatal(err)
+}
+_, err = writer.WriteSegment(ctx, 1, chunk1)
+if err != nil {
+    log.Fatal(err)
+}
 
 // Finalize assembles them as segment 0, 1, 2
 result, err := writer.Finalize(ctx, tdf.WithDefaultKAS(kasKey))
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 **Key options**
 
 | Option | Description |
 |--------|-------------|
-| `tdf.WithIntegrityAlgorithm(tdf.HS256\|tdf.GMAC)` | Root integrity algorithm (default: `HS256`) |
+| `tdf.WithIntegrityAlgorithm(algorithm)` | Root integrity algorithm. Can be `tdf.HS256` (default) or `tdf.GMAC`. |
 | `tdf.WithSegmentIntegrityAlgorithm(tdf.GMAC)` | Per-segment hash algorithm — `GMAC` is faster for many small segments |
 | `tdf.WithAttributeValues(values)` | Data attribute `*policy.Value` slice for ABAC |
 | `tdf.WithDefaultKAS(kasKey)` | Default KAS for key wrapping (Finalize option) |
