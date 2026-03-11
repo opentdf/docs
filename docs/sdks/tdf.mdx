@@ -1240,4 +1240,44 @@ Not available in the JavaScript SDK.
 | `tdf.WithPayloadMimeType(string)` | MIME type of the payload content |
 | `tdf.WithSegments([]int)` | Restrict Finalize to a specific contiguous segment prefix |
 
+**Inspecting the manifest before finalization**
+
+`GetManifest` returns a snapshot of the TDF manifest at any point during the writer's lifecycle:
+
+- **Before `Finalize`**: returns a stub manifest built from the current writer state — segments written so far, algorithm selections, initial attributes and KAS if set on `NewWriter`. Use it to pre-calculate the expected manifest size or inspect the anticipated structure. This stub is **not suitable for verification**.
+- **After `Finalize`**: returns the finalized manifest (identical to `result.Manifest` from `Finalize`).
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "encoding/json"
+
+// After writing segments but before Finalize, inspect the expected manifest size.
+stub, err := writer.GetManifest(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+manifestJSON, err := json.Marshal(stub)
+if err != nil {
+    log.Fatal(err)
+}
+expectedManifestSize := len(manifestJSON)
+// Use expectedManifestSize to pre-allocate buffers, set Content-Length headers, etc.
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Not available in the Java SDK.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Not available in the JavaScript SDK.
+
+</TabItem>
+</Tabs>
+
 For the full API reference, see the [pkg.go.dev documentation](https://pkg.go.dev/github.com/opentdf/platform/sdk/experimental/tdf).
