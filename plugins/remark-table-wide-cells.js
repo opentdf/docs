@@ -34,6 +34,7 @@ function remarkTableWideCells({ threshold = 100 } = {}) {
       for (const row of table.children) {
         if (!row.children) continue;
         for (let colIdx = 0; colIdx < row.children.length; colIdx++) {
+          if (wideColumns.has(colIdx)) continue;
           const cell = row.children[colIdx];
           const text = extractText(cell);
           if (text.length > threshold) {
