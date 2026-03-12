@@ -200,13 +200,13 @@ Checks that a list of attribute value FQNs exist on the platform **before** call
 ```go
 fqns := []string{
     "https://opentdf.io/attr/department/value/marketing",
-    "https://opentdf.io/attr/clearance/value/secret",
+    "https://opentdf.io/attr/clearance/value/executive",
 }
 
 if err := client.ValidateAttributes(ctx, fqns...); err != nil {
     log.Fatalf("attribute validation failed: %v", err)
     // err will name the specific FQNs that are missing, e.g.:
-    // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+    // "attribute not found: https://opentdf.io/attr/clearance/value/executive"
 }
 
 // Safe to encrypt — all attributes confirmed present
@@ -222,7 +222,7 @@ _, err = client.CreateTDF(encryptedBuffer, dataReader,
 ```java
 List<String> fqns = List.of(
     "https://opentdf.io/attr/department/value/marketing",
-    "https://opentdf.io/attr/clearance/value/secret"
+    "https://opentdf.io/attr/clearance/value/executive"
 );
 
 try {
@@ -230,7 +230,7 @@ try {
 } catch (SDK.AttributeNotFoundException e) {
     System.err.println("attribute validation failed: " + e.getMessage());
     // getMessage() names the specific FQNs that are missing, e.g.:
-    // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+    // "attribute not found: https://opentdf.io/attr/clearance/value/executive"
 }
 
 // Safe to encrypt — all attributes confirmed present
@@ -249,7 +249,7 @@ import { validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
 const fqns = [
     'https://opentdf.io/attr/department/value/marketing',
-    'https://opentdf.io/attr/clearance/value/secret',
+    'https://opentdf.io/attr/clearance/value/executive',
 ];
 
 try {
@@ -258,7 +258,7 @@ try {
     if (e instanceof AttributeNotFoundError) {
         console.error('attribute validation failed:', e.message);
         // e.message names the specific FQNs that are missing, e.g.:
-        // "attribute not found: https://opentdf.io/attr/clearance/value/secret"
+        // "attribute not found: https://opentdf.io/attr/clearance/value/executive"
     }
 }
 
@@ -512,7 +512,7 @@ try {
 
 // 4. Encrypt with confidence
 const client = new OpenTDF({ authProvider, platformUrl });
-const ciphertext = await client.createZTDF({
+const ciphertext = await client.createTDF({
     source: { type: 'stream', location: dataStream },
     attributes: required,
     defaultKASEndpoint: platformUrl,

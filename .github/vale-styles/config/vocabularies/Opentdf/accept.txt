@@ -22,3 +22,9 @@ JavaScript
 Autoconfigure
 requester(?('s))
 rewrap(?(s))
+ERS
+APIs
+JWTs
+protos
+decisioning
+failover
