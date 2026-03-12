@@ -54,7 +54,7 @@ function remarkTableWideCells({ threshold = 100 } = {}) {
           cell.data = cell.data || {};
           cell.data.hProperties = cell.data.hProperties || {};
           const existing = cell.data.hProperties.className || [];
-          cell.data.hProperties.className = [...existing, 'wide-cell'];
+          cell.data.hProperties.className = Array.from(new Set([...existing, 'wide-cell']));
         }
       }
     });
