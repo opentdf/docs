@@ -176,6 +176,30 @@ docker compose up -d
 watch 'docker ps --filter name=platform- --format "table {{.Names}}\t{{.Status}}"'
 ```
 
+### File Permission Errors (Linux)
+
+**Symptom:** Misleading errors like `"server misbehaving"`, `"connection reset"`, or generic gRPC failures — when the real cause is a file or directory permission problem. These appear because the process cannot read a system file needed for DNS resolution (`/etc/resolv.conf`, `/etc/hosts`), or cannot access the OpenTDF data directory.
+
+| Scenario | Symptom | Fix |
+|---|---|---|
+| Docker volume ownership mismatch | Services start but fail silently on file ops | `sudo chown -R $USER:$USER ~/.opentdf/` |
+| `/etc/hosts` or `/etc/resolv.conf` not readable | `"server misbehaving"` on all gRPC calls | `sudo chmod 644 /etc/resolv.conf /etc/hosts` |
+| Install directory not writable | `mkdir` or download fails mid-install | Check permissions on `~/.opentdf/` |
+
+```shell
+# Check ownership of install directory
+ls -la ~/.opentdf/
+
+# Check Docker volume permissions
+docker run --rm -v ~/.opentdf/platform:/data alpine ls -la /data
+
+# Check DNS config file permissions
+ls -la /etc/resolv.conf /etc/hosts
+
+# Fix ownership if needed
+sudo chown -R $USER:$USER ~/.opentdf/
+```
+
 ### Platform Not Responding
 
 **Symptom:** Commands timeout or connection refused
