@@ -351,28 +351,33 @@ Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+The JavaScript SDK does not expose a `getEntityAttributes` convenience function because `GetEntitlements` is a server-side/PEP operation that should not be called from browser contexts. In a Node.js server environment, use the `PlatformClient` directly:
+
 ```ts
-import { getEntityAttributes } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({ authProvider, platformUrl });
 
 // By email address
-const fqns = await getEntityAttributes(platformUrl, authProvider, {
-    id: 'e1',
-    entityType: { case: 'emailAddress' as const, value: 'alice@example.com' },
+const resp = await platform.v2.authorization.getEntitlements({
+  entities: [{ id: 'e1', emailAddress: 'alice@example.com' }],
 });
-console.log("alice's entitlements:", fqns);
+
+const alice = resp.entitlements.find((e) => e.entityId === 'e1');
+console.log("alice's entitlements:", alice?.attributeValueFqns);
 ```
 
-Other supported entity types:
+Other supported entity fields:
 
 ```ts
 // By username
-{ id: 'e1', entityType: { case: 'userName' as const, value: 'alice' } }
+{ id: 'e1', userName: 'alice' }
 
 // By client ID (NPE / service account)
-{ id: 'e1', entityType: { case: 'clientId' as const, value: 'my-service' } }
+{ id: 'e1', clientId: 'my-service' }
 
 // By UUID
-{ id: 'e1', entityType: { case: 'uuid' as const, value: '550e8400-e29b-41d4-a716-446655440000' } }
+{ id: 'e1', uuid: '550e8400-e29b-41d4-a716-446655440000' }
 ```
 
 </TabItem>
@@ -481,7 +486,7 @@ try (SDK sdk = new SDKBuilder()
 ```ts
 import { OpenTDF, AuthProviders, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientCredentials({
+const authProvider = await AuthProviders.clientSecretAuthProvider({
     clientId: 'opentdf',
     clientSecret: 'secret',
     oidcOrigin: oidcEndpoint,
