@@ -1,5 +1,13 @@
 # Subject Mappings
 
+:::tip New to Subject Mappings?
+For a comprehensive tutorial with IdP integration examples, troubleshooting, and step-by-step guides, see the [Subject Mapping Guide](/guides/subject-mapping-guide).
+:::
+
+:::note What Subject Mappings evaluate against
+Subject Mappings evaluate conditions against an **Entity Representation** produced by the [Entity Resolution Service (ERS)](/components/entity_resolution) — not directly against raw IdP tokens. Depending on which ERS mode is configured, this representation may include JWT claims from the token, enriched user data from the Keycloak Admin API, or data from external sources such as LDAP or SQL. The fields available to your selectors depend on [which mode is configured](/components/entity_resolution).
+:::
+
 As data is bound to fully qualified Attribute Values when encrypted within a TDF, entities are associated with Attribute values through a mechanism called Subject Mappings.
 
 Entities (subjects, users, machines, etc.) are represented by their identity as determined from an identity provider (IdP). After an entity has securely authenticated with the IdP, the client's token (OIDC/OAUTH2) will include claims or attributes that describe that identity. Subject Mappings define how to map these identity attributes to actions on attribute values defined in the OpenTDF platform Policy. For more details on how the platform integrates with the IdP and how entities are resolved, refer to the [Authorization documentation](../authorization).
