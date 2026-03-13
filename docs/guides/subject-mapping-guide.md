@@ -379,7 +379,7 @@ All attribute values in OpenTDF must be explicitly created before they can be us
 ```json
 {
   "attribute_value_id": "attr-owner-alice",
-  "actions": ["read"],
+  "actions": [{"name": "read"}],
   "subject_condition_set": {
     "subject_sets": [{
       "condition_groups": [{
@@ -404,7 +404,7 @@ Use `IN_CONTAINS` (operator `3`) to match token claim substrings, covering many 
 ```json
 {
   "attribute_value_id": "attr-company-employees",
-  "actions": ["read"],
+  "actions": [{"name": "read"}],
   "subject_condition_set": {
     "subject_sets": [{
       "condition_groups": [{
@@ -492,11 +492,12 @@ For attribute traversal configuration, see the Policy Service reference.
 - User "alice" has Keycloak role: `admin`
 
 **Subject Mapping** (links the condition set to an attribute value):
+Attribute value FQN: `https://example.com/attr/clearance/value/confidential`
+
 ```json
-// attribute value FQN: https://example.com/attr/clearance/value/top_secret
 {
-  "attribute_value_id": "<clearance-top-secret-value-id>",
-  "actions": ["read"],
+  "attribute_value_id": "<clearance-confidential-value-id>",
+  "actions": [{"name": "read"}],
   "subject_condition_set": {
     "subject_sets": [{
       "condition_groups": [{
@@ -705,16 +706,14 @@ otdfctl policy subject-condition-sets list
 
 **Check action format:**
 ```bash
-# Correct: use --action with a standard action name
+# Use --action with a named action
 --action read
 
-# Also correct: use action ID (UUID)
+# Or use action ID (UUID)
 --action 891cfe85-b381-4f85-9699-5f7dbfe2a9ab
-
-# Deprecated flags (still accepted but migrate away from these)
-# --action-standard DECRYPT  →  use --action read
-# --action-custom "download"  →  use --action download
 ```
+
+See the [actions reference](https://github.com/opentdf/otdfctl/blob/main/docs/man/policy/actions/_index.md) for more details.
 
 ### Error: Token Claim Not Appearing in Entitlements
 
@@ -753,21 +752,25 @@ See [Selectors: String vs. Array Claims](#selectors-string-vs-array-claims) for 
 
 **3. Check operator type:**
 
+If the claim is an array:
+
 ```json
-// If claim is an array:
 {
   "groups": ["admin", "user"]
 }
+```
 
-// Use .groups[] (not .groups) to match each element:
+Use `.groups[]` (not `.groups`) to match each element:
+
+```json
 {
   "subject_external_selector_value": ".groups[]",
   "operator": 1,
   "subject_external_values": ["admin"]
 }
-
-// .groups (without []) matches NOTHING for an array — it only works for string claims
 ```
+
+`.groups` (without `[]`) matches NOTHING for an array — it only works for string claims.
 
 **4. Enable debug logging:**
 
