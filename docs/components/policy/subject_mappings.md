@@ -1,7 +1,7 @@
 # Subject Mappings
 
 :::tip New to Subject Mappings?
-For a comprehensive tutorial with IdP integration examples, troubleshooting, and step-by-step guides, see the [Subject Mapping Comprehensive Guide](/guides/subject-mapping-guide).
+For a comprehensive tutorial with IdP integration examples, troubleshooting, and step-by-step guides, see the [Subject Mapping Guide](/guides/subject-mapping-guide).
 :::
 
 :::note What Subject Mappings evaluate against

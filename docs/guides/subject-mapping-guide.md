@@ -1,12 +1,9 @@
 ---
-title: Subject Mapping Comprehensive Guide
+title: Subject Mapping Guide
 sidebar_position: 1
 ---
 
-<!-- vale Vale.Terms = NO -->
-<!-- vale Vale.Spelling = NO -->
-
-# Subject Mapping: Comprehensive Guide
+# Subject Mapping Guide
 
 :::info What You'll Learn
 This guide explains how OpenTDF connects user identities from your Identity Provider (IdP) to attribute-based access control. You'll understand:
@@ -18,7 +15,7 @@ This guide explains how OpenTDF connects user identities from your Identity Prov
 
 ## The Core Problem: Why Subject Mappings Exist
 
-### ✅ How It Actually Works
+### How It Actually Works
 
 OpenTDF uses a three-layer architecture:
 
@@ -374,7 +371,7 @@ Instead of thinking "grant Alice access", think "grant anyone in the finance tea
 
 All attribute values in OpenTDF must be explicitly created before they can be used — there is no "freeform" or "dynamic" attribute value type. Each `attribute_value_id` in a Subject Mapping must reference an existing, named value. The flexibility comes from how Subject Condition Sets match entity claims.
 
-### ❌ Anti-Pattern: One Mapping Per User
+### Anti-Pattern: One Mapping Per User
 
 ```json
 {
@@ -397,7 +394,7 @@ All attribute values in OpenTDF must be explicitly created before they can be us
 
 **Why this fails at scale:** Requires creating a new Subject Mapping (and a corresponding attribute value) for every user. Performance degrades significantly as the number of mappings grows.
 
-### ✅ Recommended: Pattern-Based Access
+### Recommended: Pattern-Based Access
 
 Use `IN_CONTAINS` (operator `3`) to match token claim substrings, covering many users with one Subject Mapping:
 
@@ -723,8 +720,8 @@ See the [actions reference](https://github.com/opentdf/otdfctl/blob/main/docs/ma
 
 **1. Verify token claims:**
 ```bash
-# Decode your JWT token
-echo "<your-jwt>" | base64 -d
+# Inspect all valid selectors for your JWT
+otdfctl dev selectors generate --subject "<your-jwt>"
 ```
 
 **2. Check selector with `otdfctl dev selectors`:**
