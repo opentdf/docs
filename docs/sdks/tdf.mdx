@@ -940,11 +940,11 @@ for _, fqn := range obligations.FQNs {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProvider, OpenTDF } from '@opentdf/sdk';
+import { OpenTDF } from '@opentdf/sdk';
 
 const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
 
-const reader = await client.read({ source: ciphertextSource });
+const reader = client.open({ source: ciphertextSource });
 const obligations = await reader.obligations();
 
 for (const fqn of obligations.fqns) {
@@ -1008,7 +1008,7 @@ reader, err := client.LoadTDF(
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const reader = await client.read({
+const reader = client.open({
   source: ciphertextSource,
   fulfillableObligationFQNs: [
     'https://example.com/obl/drm/value/watermarking',
@@ -1051,8 +1051,8 @@ for _, fqn := range obligations.FQNs {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-// 1. Set fulfillable obligations at read time.
-const reader = await client.read({
+// 1. Set fulfillable obligations at open time.
+const reader = client.open({
   source: ciphertextSource,
   fulfillableObligationFQNs: [
     'https://example.com/obl/drm/value/watermarking',
