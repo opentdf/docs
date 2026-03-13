@@ -486,7 +486,7 @@ For attribute traversal configuration, see the Policy Service reference.
 #### Example 1: Map Keycloak Realm Roles
 
 **IdP Configuration:**
-- User "alice" has Keycloak role: `admin`
+- User "Alice" has Keycloak role: `admin`
 
 **Subject Mapping** (links the condition set to an attribute value):
 Attribute value FQN: `https://example.com/attr/clearance/value/confidential`

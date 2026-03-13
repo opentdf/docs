@@ -31,3 +31,10 @@ failover
 CI
 [Ss]hellcheck
 Okta
+[Bb]oolean
+[Ss]ubstrings?
+walkthrough
+enum
+OR'd
+NPEs
+top_secret
