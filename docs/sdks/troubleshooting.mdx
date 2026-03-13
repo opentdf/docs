@@ -43,11 +43,11 @@ curl https://<idp-endpoint>/
 
 2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
    ```js
-   import { AuthProviders } from '@opentdf/client';
+   import { AuthProviders } from '@opentdf/sdk';
 
    const authProvider = AuthProviders.refreshAuthProvider({
      clientId: 'your-client-id',
-     exchange: 'client_credentials',
+     exchange: 'client',
      clientSecret: 'your-client-secret',
      oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
    });
@@ -151,7 +151,7 @@ mvn clean install -U
 
 **JavaScript**: `Cannot find module '@opentdf/client'`
 ```bash
-npm install @opentdf/client
+npm install @opentdf/sdk
 ```
 
 ## Permission Denied / Insufficient Entitlements

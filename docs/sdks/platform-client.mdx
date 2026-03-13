@@ -62,8 +62,14 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { AuthProviders } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
+
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+});
 
 const platform = new PlatformClient({
     authProvider,
@@ -73,5 +79,3 @@ const platform = new PlatformClient({
 
 </TabItem>
 </Tabs>
-
-For credential configuration, see the Auth Providers guide.

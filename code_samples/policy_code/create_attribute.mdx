@@ -70,9 +70,37 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 <CreateAttributeExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// List namespaces to get a namespace ID
+const nsResp = await platform.v1.namespace.listNamespaces({});
+if (nsResp.namespaces.length === 0) {
+  throw new Error('no namespaces found');
+}
+const namespaceId = nsResp.namespaces[0].id;
+
+// Create a new attribute
+const attrResp = await platform.v1.attributes.createAttribute({
+  namespaceId,
+  name: 'role',
+  rule: AttributeRuleTypeEnum.ANY_OF,
+  values: ['admin', 'developer', 'guest'],
+});
+console.log(
+  'Created attribute:',
+  attrResp.attribute?.name,
+  'with ID:',
+  attrResp.attribute?.id
+);
 ```
 
 </TabItem>
