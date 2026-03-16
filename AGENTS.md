@@ -20,7 +20,7 @@
 
 Docs-only checks:
 - `vale sync`: Install Vale styles configured in `.vale.ini`.
-- `git diff --name-only | xargs vale --glob='!blog/*'`: Lint changed docs (matches CI’s “added lines” behavior closely).
+- `git diff --name-only | xargs vale --glob='!blog/*'`: Lint changed docs (matches CI's "added lines" behavior closely).
 
 ## Coding Style & Naming Conventions
 
@@ -30,8 +30,18 @@ Docs-only checks:
 
 ## Testing Guidelines
 
-- There is no dedicated unit test runner; CI primarily validates `npm run build` and Vale.
-- If you touch `docs/getting-started/` Docker Compose instructions, sanity-check them locally when feasible.
+CI runs the following tests:
+
+- **BATS tests**: Shell script tests in `tests/quickstart.bats` validate quickstart scripts on Ubuntu, macOS, and Windows
+- **Shellcheck**: Lints shell scripts in `static/quickstart/` (check.sh, install.sh)
+- **Docker Compose stack test**: Verifies the platform starts successfully on Ubuntu (triggered by changes to `docs/getting-started/`, `static/quickstart/`, or `tests/`)
+- **Build validation**: `npm run build` must complete successfully
+- **Vale linting**: Documentation prose style checks (run locally with `git diff --name-only | xargs vale --glob='!blog/*'`)
+
+If you modify quickstart scripts or Docker Compose instructions:
+- Run shellcheck locally: `shellcheck static/quickstart/check.sh static/quickstart/install.sh`
+- Run BATS tests if available: `bats tests/quickstart.bats`
+- Test the Docker Compose stack if feasible: Follow steps in `docs/getting-started/quickstart.mdx`
 
 ## Preview Deployment
 
