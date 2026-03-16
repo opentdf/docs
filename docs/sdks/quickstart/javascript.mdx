@@ -206,10 +206,11 @@ try {
   console.log(`✅ Created namespace: ${namespaceId}`);
 } catch (err) {
   if (err.message?.includes('already_exists')) {
-    // Namespace exists, fetch it
-    const listNsResp = await platform.v1.namespace.listNamespaces({});
-    const ns = listNsResp.namespaces.find((n) => n.name === 'opentdf.io');
-    namespaceId = ns?.id;
+    // Namespace exists — fetch it directly by FQN
+    const getNsResp = await platform.v1.namespace.getNamespace({
+      identifier: { case: 'fqn', value: 'https://opentdf.io' },
+    });
+    namespaceId = getNsResp.namespace?.id;
     console.log(`✅ Using existing namespace: ${namespaceId}`);
   } else {
     throw err;
@@ -424,9 +425,11 @@ async function main() {
     console.log(`✅ Created namespace: ${namespaceId}`);
   } catch (err) {
     if (err.message?.includes('already_exists')) {
-      const listResp = await platform.v1.namespace.listNamespaces({});
-      const ns = listResp.namespaces.find((n) => n.name === 'opentdf.io');
-      namespaceId = ns?.id;
+      // Namespace exists — fetch it directly by FQN
+      const getNsResp = await platform.v1.namespace.getNamespace({
+        identifier: { case: 'fqn', value: 'https://opentdf.io' },
+      });
+      namespaceId = getNsResp.namespace?.id;
       console.log(`✅ Using existing namespace: ${namespaceId}`);
     } else {
       throw err;
@@ -451,6 +454,15 @@ async function main() {
         (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
       );
       console.log(`✅ Using existing attribute: ${attribute?.name}`);
+
+      // Ensure the 'marketing' value exists on the attribute
+      if (attribute && !attribute.values?.some((v) => v.value === 'marketing')) {
+        await platform.v1.attributes.createAttributeValue({
+          attributeId: attribute.id,
+          value: 'marketing',
+        });
+        console.log(`✅ Added 'marketing' value to department attribute`);
+      }
     } else {
       throw err;
     }
