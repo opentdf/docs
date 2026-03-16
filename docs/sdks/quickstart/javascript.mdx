@@ -196,9 +196,11 @@ const authProvider = await AuthProviders.clientSecretAuthProvider({
   oidcOrigin: 'https://keycloak.opentdf.local:9443/auth/realms/opentdf',
 });
 
-// Create the OpenTDF client first — it automatically generates DPoP keys
-// and configures them on the auth provider, which PlatformClient also needs
+// Create the OpenTDF client — this generates DPoP keys but doesn't
+// bind them to the auth provider until the first encrypt/decrypt call.
+// We need to do that explicitly so PlatformClient can authenticate.
 const client = new OpenTDF({ authProvider, platformUrl });
+await authProvider.updateClientPublicKey(await client.dpopKeys);
 const platform = new PlatformClient({ authProvider, platformUrl });
 
 // First, ensure the namespace exists
@@ -415,9 +417,11 @@ async function main() {
     oidcOrigin,
   });
 
-  // Create the OpenTDF client first — it automatically generates DPoP keys
-  // and configures them on the auth provider, which PlatformClient also needs
+  // Create the OpenTDF client — this generates DPoP keys but doesn't
+  // bind them to the auth provider until the first encrypt/decrypt call.
+  // We need to do that explicitly so PlatformClient can authenticate.
   const client = new OpenTDF({ authProvider, platformUrl });
+  await authProvider.updateClientPublicKey(await client.dpopKeys);
   const platform = new PlatformClient({ authProvider, platformUrl });
 
   // 1. Create namespace (or use existing)

@@ -62,8 +62,14 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 // See the Auth Providers guide for authProvider setup.
+
+// OpenTDF generates DPoP keys needed for authenticated platform calls.
+// Bind them to the auth provider before creating PlatformClient.
+const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+await authProvider.updateClientPublicKey(await client.dpopKeys);
 
 const platform = new PlatformClient({
     authProvider,
