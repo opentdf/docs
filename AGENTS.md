@@ -18,10 +18,6 @@
 - `npm run check-vendored-yaml`: Verify vendored OpenAPI YAML matches upstream.
 - `npm run update-vendored-yaml`: Refresh vendored specs in `specs/` from upstream.
 
-Preview deployment:
-- Deploy to preview using pattern: `surge build opentdf-docs-preview-<ticket>.surge.sh`
-- Extract ticket number from branch name (e.g., branch `feat/dspx-2416` → `opentdf-docs-preview-dspx-2416.surge.sh`)
-
 Docs-only checks:
 - `vale sync`: Install Vale styles configured in `.vale.ini`.
 - `git diff --name-only | xargs vale --glob='!blog/*'`: Lint changed docs (matches CI's "added lines" behavior closely).
