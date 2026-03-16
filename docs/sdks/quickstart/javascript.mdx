@@ -145,6 +145,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node index.mjs
 
 📝 Encrypting sensitive data...
 🔒 Creating TDF...
+NetworkError: ... is missing BaseKey in WellKnownConfiguration  ← expected, see note below
 ✅ Data successfully encrypted
 📊 Encrypted TDF size: 1234 bytes
 
@@ -158,6 +159,10 @@ Hello from the OpenTDF JS SDK! This data is encrypted.
 ```
 
 </details>
+
+:::note BaseKey warning is expected
+You may see a `NetworkError: ... is missing BaseKey in WellKnownConfiguration` message during encryption. This is harmless — the SDK first tries to fetch the KAS public key from the platform's well-known configuration, and when that isn't populated, it falls back to the legacy KAS public key endpoint. Encryption and decryption will still succeed.
+:::
 
 ---
 
