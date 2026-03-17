@@ -9,7 +9,6 @@ on:
       - 'src/**'
       - 'static/**'
       - 'blog/**'
-      - 'specs/**'
       - 'docusaurus.config.ts'
       - 'sidebars.js'
 
