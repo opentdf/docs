@@ -97,6 +97,9 @@ const config: Config = {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
+          remarkPlugins: [
+            [require('./plugins/remark-table-wide-cells'), { threshold: 100 }],
+          ],
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
