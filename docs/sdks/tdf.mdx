@@ -118,7 +118,7 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 ```typescript
 import { OpenTDF, AuthProviders } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientCredentials({
+const authProvider = await AuthProviders.clientSecretAuthProvider({
     clientId: 'client-id',
     clientSecret: 'client-secret',
     oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
