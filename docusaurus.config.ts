@@ -22,6 +22,7 @@ preprocessOpenApiSpecs().catch(error => {
 const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
 
 const javaSdkVersion = "0.11.1";
+const gtmId = "GTM-MKRLN6NL"; 
 
 const config: Config = {
   title: "OpenTDF",
@@ -36,7 +37,6 @@ const config: Config = {
   trailingSlash: false,
   customFields: {
     javaSdkVersion,
-    googleGtagId: 'G-JH0PNJK88L',
   },
 
   // GitHub pages deployment config.
@@ -45,6 +45,31 @@ const config: Config = {
   projectName: "docs", // Usually your repo name.
 
   headTags: [
+    {
+      tagName: "script",
+      attributes: {
+        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/e8936898-a719-43df-b0be-8b3543478151/osano.js",
+      },
+    },
+    {
+      tagName: "script",
+      attributes: {},
+      innerHTML: `
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function(){window.dataLayer.push(arguments);}
+        window.gtag('consent', 'default', {
+          ad_storage: 'denied',
+          ad_personalization: 'denied',
+          ad_user_data: 'denied',
+          analytics_storage: 'denied'
+        });
+      `,
+    },
+    {
+      tagName: "script",
+      attributes: {},
+      innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`,
+    },
     {
       tagName: "script",
       attributes: {
@@ -236,6 +261,22 @@ const config: Config = {
     languageTabs: languageTabs,
   } satisfies Preset.ThemeConfig,
   plugins: [
+    function gtmPlugin() {
+      return {
+        name: 'gtm-noscript',
+        injectHtmlTags() {
+          return {
+            preBodyTags: [
+              {
+                tagName: 'noscript',
+                attributes: {},
+                innerHTML: `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
+              },
+            ],
+          };
+        },
+      };
+    },
     [
       "@docusaurus/plugin-ideal-image",
       {

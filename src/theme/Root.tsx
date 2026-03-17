@@ -1,61 +1,57 @@
 import React, { useEffect } from "react";
 import CookieConsent from "react-cookie-consent";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useLocation } from "@docusaurus/router";
 
+// Extracted helper — called on mount (returning visitor) and on accept (new visitor)
+function grantAnalyticsConsent() {
+  window.gtag("consent", "update", {
+    analytics_storage: "granted",
+    ad_storage: "denied",
+    ad_personalization: "denied",
+    ad_user_data: "denied",
+  });
+}
+
 export default function Root({ children }: { children: React.ReactNode }) {
-  const { siteConfig } = useDocusaurusContext();
-  const { googleGtagId } = siteConfig.customFields as { googleGtagId?: string };
   const location = useLocation();
 
-  const initializeGoogleAnalytics = () => {
-    if (typeof window === "undefined" || !googleGtagId || window.gtag) {
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${googleGtagId}`;
-    script.async = true;
-    document.head.appendChild(script);
-
-    // Stub function to queue gtag commands before the script loads
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() {
-      window.dataLayer.push(arguments);
-    };
-    window.gtag("js", new Date());
-    window.gtag("config", googleGtagId, { anonymize_ip: true });
-  };
-
+  // Runs once on mount: restore consent for returning visitors
   useEffect(() => {
-    if (typeof window === "undefined" || !googleGtagId) {
-      return;
-    }
-
-    // Check if user has already accepted cookies
+    window.dataLayer = window.dataLayer || [];
     const cookieValue = document.cookie
       .split("; ")
       .find((row) => row.startsWith("opentdf-cookie-consent="))
       ?.split("=")[1];
+    if (cookieValue !== "true") return;
+    grantAnalyticsConsent();
+  }, []);
 
-    const hasConsent = cookieValue === "true";
-
-    // Initialize Google Analytics if consent is given and not already loaded
-    if (hasConsent) {
-      initializeGoogleAnalytics();
-    }
-
-    // Track page views on route changes (SPA navigation)
-    if (hasConsent && window.gtag) {
-      window.gtag("config", googleGtagId, {
-        page_path: location.pathname + location.search + location.hash,
-        anonymize_ip: true,
-      });
-    }
-  }, [location, googleGtagId]);
+  // Runs on every navigation: track page views
+  useEffect(() => {
+    const hasConsent = document.cookie.includes("opentdf-cookie-consent=true");
+    if (!hasConsent) return;
+    window.dataLayer.push({
+      event: "page_view",
+      page_path: location.pathname + location.search + location.hash,
+    });
+  }, [location]);
 
   const handleAcceptCookie = () => {
-    initializeGoogleAnalytics();
+    grantAnalyticsConsent();
+    // ← Trigger GA4 to fire now that consent is granted
+    window.dataLayer.push({
+      event: "page_view",
+      page_path: location.pathname + location.search + location.hash,
+    });
+  };
+
+  const handleDeclineCookie = () => {
+    window.gtag("consent", "update", {
+      analytics_storage: "denied",
+      ad_storage: "denied",
+      ad_personalization: "denied",
+      ad_user_data: "denied",
+    });
   };
 
   return (
@@ -72,6 +68,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         expires={365}
         enableDeclineButton
         onAccept={handleAcceptCookie}
+        onDecline={handleDeclineCookie}
       >
         This website uses cookies to improve user experience and analyze website
         traffic. By clicking "Accept", you consent to our use of cookies. See
@@ -85,6 +82,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
 declare global {
   interface Window {
     dataLayer: any[];
-    gtag?: (...args: any[]) => void;
+    gtag: (...args: any[]) => void;
   }
 }
