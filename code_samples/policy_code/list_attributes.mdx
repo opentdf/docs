@@ -55,9 +55,24 @@ import ListAttributesExample from '@site/code_samples/java/list-attributes.mdx';
 <ListAttributesExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// List attributes
+const resp = await platform.v1.attributes.listAttributes({});
+for (const attr of resp.attributes) {
+  console.log('Attribute:', attr.name, 'ID:', attr.id);
+  for (const value of attr.values) {
+    console.log('  Value:', value.value, 'ID:', value.id);
+  }
+}
 ```
 
 </TabItem>

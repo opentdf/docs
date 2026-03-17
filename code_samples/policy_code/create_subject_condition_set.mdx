@@ -72,9 +72,51 @@ import CreateSubjectConditionSetExample from '@site/code_samples/java/create-sub
 <CreateSubjectConditionSetExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { create } from '@bufbuild/protobuf';
+import { PlatformClient } from '@opentdf/sdk/platform';
+import {
+  ConditionBooleanTypeEnum,
+  SubjectMappingOperatorEnum,
+} from '@opentdf/sdk/platform/policy/objects_pb.js';
+import {
+  CreateSubjectConditionSetRequestSchema,
+} from '@opentdf/sdk/platform/policy/subjectmapping/subject_mapping_pb.js';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// Create Subject Condition Set
+// Using create() from @bufbuild/protobuf for proper type handling
+const request = create(CreateSubjectConditionSetRequestSchema, {
+  subjectConditionSet: {
+    subjectSets: [
+      {
+        conditionGroups: [
+          {
+            booleanOperator: ConditionBooleanTypeEnum.AND,
+            conditions: [
+              {
+                subjectExternalSelectorValue: '.clientId',
+                operator: SubjectMappingOperatorEnum.IN,
+                subjectExternalValues: ['opentdf'],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+});
+const resp = await platform.v1.subjectMapping.createSubjectConditionSet(request);
+console.log(
+  'Created Subject Condition Set with ID:',
+  resp.subjectConditionSet?.id
+);
 ```
 
 </TabItem>

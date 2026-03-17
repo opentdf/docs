@@ -51,9 +51,21 @@ import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx
 <CreateNamespaceExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// Create Namespace
+const resp = await platform.v1.namespace.createNamespace({
+  name: 'opentdf.io',
+});
+console.log('Created namespace:', resp.namespace?.id);
 ```
 
 </TabItem>

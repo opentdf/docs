@@ -53,9 +53,21 @@ import ListSubjectMappingsExample from '@site/code_samples/java/list-subject-map
 <ListSubjectMappingsExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// List Subject Mappings
+const resp = await platform.v1.subjectMapping.listSubjectMappings({});
+for (const sm of resp.subjectMappings) {
+  console.log('Subject Mapping:', sm.id);
+}
 ```
 
 </TabItem>
