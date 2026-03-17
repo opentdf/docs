@@ -11,7 +11,7 @@ This guide covers the **JavaScript/TypeScript SDK** implementation. For other la
 
 ## Prerequisites
 
-- Node.js 18 or later
+- [Node.js LTS](https://nodejs.org/en/about/previous-releases)
 - Your OpenTDF platform running locally (from Getting Started guide)
 
 :::warning Platform Must Be Running
@@ -42,7 +42,7 @@ cd opentdf-quickstart
 npm init -y
 ```
 
-The OpenTDF SDK uses ES module (`import`/`export`) syntax. Enable ES modules by adding `"type": "module"` to your `package.json`:
+The SDK supports both ESM and CommonJS. In this guide we'll use `import` syntax. Ensure your environment supports ES modules (e.g., via `"type": "module"` in `package.json` or a bundler):
 
 ```json title="package.json"
 {
