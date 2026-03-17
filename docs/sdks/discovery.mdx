@@ -351,28 +351,44 @@ Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+The JavaScript SDK does not expose a `getEntityAttributes` convenience function because `GetEntitlements` is a server-side/PEP operation that should not be called from browser contexts. In a Node.js server environment, use the `PlatformClient` directly:
+
 ```ts
-import { getEntityAttributes } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({ authProvider, platformUrl });
 
 // By email address
-const fqns = await getEntityAttributes(platformUrl, authProvider, {
-    id: 'e1',
-    entityType: { case: 'emailAddress' as const, value: 'alice@example.com' },
+const resp = await platform.v2.authorization.getEntitlements({
+  entityIdentifier: {
+    identifier: {
+      case: 'entityChain',
+      value: {
+        ephemeralId: 'e1',
+        entities: [
+          {
+            ephemeralId: 'e1',
+            entityType: { case: 'emailAddress', value: 'alice@example.com' },
+          },
+        ],
+      },
+    },
+  },
 });
-console.log("alice's entitlements:", fqns);
+
+if (resp.entitlements.length > 0) {
+  console.log("alice's entitlements:", resp.entitlements[0].actionsPerAttributeValueFqn);
+}
 ```
 
-Other supported entity types:
+Other supported entity types (placed inside the `entities` array):
 
 ```ts
 // By username
-{ id: 'e1', entityType: { case: 'userName' as const, value: 'alice' } }
+{ ephemeralId: 'e1', entityType: { case: 'userName', value: 'alice' } }
 
 // By client ID (NPE / service account)
-{ id: 'e1', entityType: { case: 'clientId' as const, value: 'my-service' } }
-
-// By UUID
-{ id: 'e1', entityType: { case: 'uuid' as const, value: '550e8400-e29b-41d4-a716-446655440000' } }
+{ ephemeralId: 'e1', entityType: { case: 'clientId', value: 'my-service' } }
 ```
 
 </TabItem>
@@ -481,7 +497,7 @@ try (SDK sdk = new SDKBuilder()
 ```ts
 import { OpenTDF, AuthProviders, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientCredentials({
+const authProvider = await AuthProviders.clientSecretAuthProvider({
     clientId: 'opentdf',
     clientSecret: 'secret',
     oidcOrigin: oidcEndpoint,

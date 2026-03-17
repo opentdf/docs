@@ -92,25 +92,35 @@ public class AuthorizationSetup {
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-import { PlatformClient } from '@opentdf/sdk/platform';
-import { AuthProviders } from '@opentdf/sdk';
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { platformConnect, PlatformClient } from '@opentdf/sdk/platform';
 
-// Assume you have an existing access token
-const accessToken = 'your-access-token-here';
-
-// Create auth provider with existing token
-const authProvider = await AuthProviders.accessTokenAuthProvider({
-  accessToken: accessToken
+// Option 1: Using AuthProvider (recommended when also using TDF client)
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+  clientId: 'opentdf',
+  clientSecret: 'secret',
+  oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
 });
+const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+await client.ready;
 
-// Create platform client
 const platformClient = new PlatformClient({
+  authProvider,
   platformUrl: 'http://localhost:8080',
-  authProvider
 });
 
-// Client is ready for authorization calls
+// Option 2: Using a raw interceptor (when you manage tokens yourself)
+const accessToken = 'your-access-token-here';
+const interceptor: platformConnect.Interceptor = (next) => async (req) => {
+  req.header.set('Authorization', `Bearer ${accessToken}`);
+  return next(req);
+};
+
+const platformClient2 = new PlatformClient({
+  platformUrl: 'http://localhost:8080',
+  interceptors: [interceptor],
+});
 ```
 
 </TabItem>
@@ -170,8 +180,8 @@ func getEntitlementsV2(client *sdk.SDK) {
 
 ```go
 func getEntitlementsV1(client *sdk.SDK) {
-    // Using v1 API - note: v1 doesn't have GetEntitlements
-    // Instead, use GetDecisions to understand entity capabilities
+    // V1 API also supports GetEntitlements, but uses a different request shape.
+    // Here we use GetDecisions to show bulk decision-based entitlement discovery.
     decisionRequests := []*authorization.DecisionRequest{{
         Actions: []*policy.Action{{Name: "read"}},
         EntityChains: []*authorization.EntityChain{{
@@ -248,32 +258,30 @@ public void getEntitlements(SDK sdk) throws ExecutionException, InterruptedExcep
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-import { create } from '@bufbuild/protobuf';
-import { GetEntitlementsRequestSchema, EntitySchema, Entity_CategorySchema } from '@opentdf/sdk/platform';
-
-async function getEntitlements(platformClient) {
-  // Assume we have an access token representing the user
-  const accessToken = 'user-access-token-here';
-  
-  const request = create(GetEntitlementsRequestSchema, {
-    entities: [
-      create(EntitySchema, {
-        id: 'user-bob',
-        entityType: {
-          case: 'emailAddress',
-          value: 'bob@OrgA.com'
+```typescript
+async function getEntitlements(platformClient: PlatformClient) {
+  const response = await platformClient.v2.authorization.getEntitlements({
+    entityIdentifier: {
+      identifier: {
+        case: 'entityChain',
+        value: {
+          entities: [
+            {
+              ephemeralId: 'user-bob',
+              entityType: {
+                case: 'emailAddress',
+                value: 'bob@OrgA.com',
+              },
+            },
+          ],
         },
-        category: Entity_CategorySchema.SUBJECT
-      })
-    ]
+      },
+    },
   });
-  
-  const response = await platformClient.v1.authorization.getEntitlements(request);
-  
-  response.entitlements.forEach(entitlement => {
-    console.log('Entitled to:', entitlement.attributeValueFqns);
-  });
+
+  for (const entitlement of response.entitlements) {
+    console.log('Entitled to:', entitlement.actionsPerAttributeValueFqn);
+  }
 }
 ```
 
@@ -352,23 +360,29 @@ public void getEntitlementsWithScope(SDK sdk) throws ExecutionException, Interru
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-async function getEntitlementsWithScope(sdk) {
-  const request = {
+```typescript
+async function getEntitlementsWithScope(platformClient: PlatformClient) {
+  const response = await platformClient.v2.authorization.getEntitlements({
     entityIdentifier: {
-      entityChain: {
-        entities: [{
-          id: 'user-123',
-          emailAddress: 'user@company.com'
-        }]
-      }
+      identifier: {
+        case: 'entityChain',
+        value: {
+          entities: [
+            {
+              ephemeralId: 'user-123',
+              entityType: {
+                case: 'emailAddress',
+                value: 'user@company.com',
+              },
+            },
+          ],
+        },
+      },
     },
     // When true, returns all entitled values for attributes with hierarchy rules
-    withComprehensiveHierarchy: true
-  };
-  
-  const response = await sdk.authorization.getEntitlements(request);
-  
+    withComprehensiveHierarchy: true,
+  });
+
   console.log('Scoped entitlements:', response.entitlements);
 }
 ```
@@ -430,7 +444,9 @@ func getDecisionV2(client *sdk.SDK) {
     resDecision := decision.GetDecision()
     if resDecision.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
         fmt.Println("Access granted")
-        // Note: ResourceDecision doesn't have obligations in v2 API
+        if len(resDecision.GetRequiredObligations()) > 0 {
+            fmt.Printf("Required obligations: %v\n", resDecision.GetRequiredObligations())
+        }
     } else {
         fmt.Println("Access denied")
     }
@@ -541,36 +557,48 @@ public void getDecision(SDK sdk) throws ExecutionException, InterruptedException
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-async function getDecision(sdk) {
-  const request = {
+```typescript
+import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
+
+async function getDecision(platformClient: PlatformClient) {
+  const response = await platformClient.v2.authorization.getDecision({
     entityIdentifier: {
-      entityChain: {
-        entities: [{
-          id: 'user-123',
-          emailAddress: 'user@company.com'
-        }]
-      }
+      identifier: {
+        case: 'entityChain',
+        value: {
+          entities: [
+            {
+              ephemeralId: 'user-123',
+              entityType: {
+                case: 'emailAddress',
+                value: 'user@company.com',
+              },
+            },
+          ],
+        },
+      },
     },
     action: {
-      name: 'decrypt'
+      name: 'decrypt',
     },
     resource: {
-      attributeValues: {
-        fqns: [
-          'https://company.com/attr/clearance/value/confidential',
-          'https://company.com/attr/department/value/finance'
-        ]
-      }
-    }
-  };
-  
-  const response = await sdk.authorization.getDecision(request);
-  
-  if (response.decision.decision === 'DECISION_PERMIT') {
+      resource: {
+        case: 'attributeValues',
+        value: {
+          fqns: [
+            'https://company.com/attr/clearance/value/confidential',
+            'https://company.com/attr/department/value/finance',
+          ],
+        },
+      },
+    },
+  });
+
+  const decision = response.decision;
+  if (decision?.decision === Decision.PERMIT) {
     console.log('Access granted');
-    if (response.decision.obligations?.length > 0) {
-      console.log('Obligations:', response.decision.obligations);
+    if (decision.requiredObligations.length > 0) {
+      console.log('Required obligations:', decision.requiredObligations);
     }
   } else {
     console.log('Access denied');
@@ -773,48 +801,64 @@ import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-async function getBulkDecisions(sdk) {
-  const request = {
-    decisionRequests: [{
-      entityIdentifier: {
-        entityChain: {
-          entities: [{
-            id: 'user-123',
-            emailAddress: 'user@company.com'
-          }]
-        }
-      },
-      action: {
-        name: 'decrypt'
-      },
-      resources: [
-        {
-          ephemeralId: 'resource-1',
-          attributeValues: {
-            fqns: ['https://company.com/attr/class/value/public']
-          }
+```typescript
+async function getBulkDecisions(platformClient: PlatformClient) {
+  const response = await platformClient.v2.authorization.getDecisionBulk({
+    decisionRequests: [
+      {
+        entityIdentifier: {
+          identifier: {
+            case: 'entityChain',
+            value: {
+              entities: [
+                {
+                  ephemeralId: 'user-123',
+                  entityType: {
+                    case: 'emailAddress',
+                    value: 'user@company.com',
+                  },
+                },
+              ],
+            },
+          },
         },
-        {
-          ephemeralId: 'resource-2',
-          attributeValues: {
-            fqns: ['https://company.com/attr/class/value/confidential']
-          }
-        }
-      ]
-    }]
-  };
-  
-  const response = await sdk.authorization.getDecisionBulk(request);
-  
-  response.decisionResponses.forEach(resp => {
+        action: {
+          name: 'decrypt',
+        },
+        resources: [
+          {
+            ephemeralId: 'resource-1',
+            resource: {
+              case: 'attributeValues',
+              value: {
+                fqns: ['https://company.com/attr/class/value/public'],
+              },
+            },
+          },
+          {
+            ephemeralId: 'resource-2',
+            resource: {
+              case: 'attributeValues',
+              value: {
+                fqns: ['https://company.com/attr/class/value/confidential'],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  for (const resp of response.decisionResponses) {
     if (resp.allPermitted !== undefined) {
       console.log('All resources permitted:', resp.allPermitted.value);
     }
-    resp.resourceDecisions.forEach(resourceDecision => {
-      console.log(`Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`);
-    });
-  });
+    for (const resourceDecision of resp.resourceDecisions) {
+      console.log(
+        `Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`
+      );
+    }
+  }
 }
 ```
 
@@ -959,28 +1003,32 @@ public void getDecisionWithToken(SDK sdk, String jwtToken) throws ExecutionExcep
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```javascript
-async function getDecisionWithToken(sdk, jwtToken) {
-  const request = {
+```typescript
+async function getDecisionWithToken(platformClient: PlatformClient, jwtToken: string) {
+  const response = await platformClient.v2.authorization.getDecision({
     entityIdentifier: {
-      token: {
-        id: 'token-1',
-        jwt: jwtToken
-      }
+      identifier: {
+        case: 'token',
+        value: {
+          ephemeralId: 'token-1',
+          jwt: jwtToken,
+        },
+      },
     },
     action: {
-      name: 'decrypt'
+      name: 'decrypt',
     },
     resource: {
-      attributeValues: {
-        fqns: ['https://company.com/attr/clearance/value/public']
-      }
-    }
-  };
-  
-  const response = await sdk.authorization.getDecision(request);
-  
-  console.log('Token-based decision:', response.decision.decision);
+      resource: {
+        case: 'attributeValues',
+        value: {
+          fqns: ['https://company.com/attr/clearance/value/public'],
+        },
+      },
+    },
+  });
+
+  console.log('Token-based decision:', response.decision?.decision);
 }
 ```
 

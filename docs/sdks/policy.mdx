@@ -2103,3 +2103,686 @@ for (const sm of resp.subjectMappings) {
 
 ---
 
+## Obligations
+
+An **obligation** is a PDP-to-PEP directive that accompanies an access decision: "permit, provided these controls are enforced." Obligations are scoped to a namespace and can carry multiple values and triggers. See [Obligations](/components/policy/obligations) for the policy concept.
+
+Access to the Obligations service:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("client-id", "client-secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// sdk.Obligations provides the full ObligationsServiceClient interface.
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// platform.v1.obligation provides the full Obligations service interface.
+```
+
+</TabItem>
+</Tabs>
+
+### Obligation Definitions
+
+<details id="list-obligations">
+<summary>List Obligations</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Obligations.ListObligations(context.Background(),
+		&obligations.ListObligationsRequest{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, obl := range resp.GetObligations() {
+		log.Printf("Obligation: %s  FQN: %s\n", obl.GetName(), obl.GetFqn())
+	}
+}
+```
+
+To filter by namespace, set `NamespaceId` or `NamespaceFqn` on the request:
+
+```go
+resp, err := client.Obligations.ListObligations(context.Background(),
+    &obligations.ListObligationsRequest{
+        NamespaceFqn: "https://example.com",
+    },
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.listObligations({});
+
+for (const obl of resp.obligations) {
+  console.log(`Obligation: ${obl.name}  FQN: ${obl.fqn}`);
+}
+```
+
+To filter by namespace:
+
+```typescript
+const resp = await platform.v1.obligation.listObligations({
+  namespaceFqn: 'https://example.com',
+});
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="get-obligation">
+<summary>Get an Obligation</summary>
+
+Look up by ID or FQN (one is required):
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Obligations.GetObligation(context.Background(),
+		&obligations.GetObligationRequest{
+			Fqn: "https://example.com/obl/drm",
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Obligation ID: %s\n", resp.GetObligation().GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligation({
+  fqn: 'https://example.com/obl/drm',
+});
+
+console.log(`Obligation ID: ${resp.obligation?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="get-obligations-by-fqns">
+<summary>Get Obligations by FQNs</summary>
+
+Batch-fetch multiple obligations by FQN. Returns a map of FQN to `Obligation`:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.GetObligationsByFQNs(context.Background(),
+    &obligations.GetObligationsByFQNsRequest{
+        Fqns: []string{
+            "https://example.com/obl/drm",
+            "https://example.com/obl/audit",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for fqn, obl := range resp.GetFqnObligationMap() {
+    log.Printf("%s → %s\n", fqn, obl.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationsByFQNs({
+  fqns: [
+    'https://example.com/obl/drm',
+    'https://example.com/obl/audit',
+  ],
+});
+
+for (const [fqn, obl] of Object.entries(resp.fqnObligationMap)) {
+  console.log(`${fqn} → ${obl.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="create-obligation">
+<summary>Create an Obligation</summary>
+
+Provide either a `NamespaceId` or `NamespaceFqn` (one is required), plus a `Name`. Values can be created inline or added later via [Create Obligation Value](#create-obligation-value):
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Obligations.CreateObligation(context.Background(),
+		&obligations.CreateObligationRequest{
+			NamespaceFqn: "https://example.com",
+			Name:         "drm",
+			Values:       []string{"watermarking", "no-download"},
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Created obligation: %s  FQN: %s\n",
+		resp.GetObligation().GetId(), resp.GetObligation().GetFqn())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.createObligation({
+  namespaceFqn: 'https://example.com',
+  name: 'drm',
+  values: ['watermarking', 'no-download'],
+});
+
+console.log(`Created obligation: ${resp.obligation?.id}  FQN: ${resp.obligation?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+
+The resulting FQN follows the convention `<namespace>/obl/<name>` (e.g. `https://example.com/obl/drm`).
+
+</details>
+
+<details id="update-obligation">
+<summary>Update an Obligation</summary>
+
+Only the fields you set are updated. Provide the obligation `Id`:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.UpdateObligation(context.Background(),
+    &obligations.UpdateObligationRequest{
+        Id:   "3f4a7c12-...",
+        Name: "digital-rights",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Updated obligation FQN: %s\n", resp.GetObligation().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.updateObligation({
+  id: '3f4a7c12-...',
+  name: 'digital-rights',
+});
+
+console.log(`Updated obligation FQN: ${resp.obligation?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="delete-obligation">
+<summary>Delete an Obligation</summary>
+
+Provide either `Id` or `Fqn`:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.DeleteObligation(context.Background(),
+    &obligations.DeleteObligationRequest{
+        Fqn: "https://example.com/obl/drm",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Deleted obligation: %s\n", resp.GetObligation().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.deleteObligation({
+  fqn: 'https://example.com/obl/drm',
+});
+
+console.log(`Deleted obligation: ${resp.obligation?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+---
+
+### Obligation Values
+
+Each obligation can carry one or more values. Value FQNs follow the convention `<namespace>/obl/<obligation_name>/value/<value>` (e.g. `https://example.com/obl/drm/value/watermarking`).
+
+<details id="get-obligation-value">
+<summary>Get an Obligation Value</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.GetObligationValue(context.Background(),
+    &obligations.GetObligationValueRequest{
+        Fqn: "https://example.com/obl/drm/value/watermarking",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Value ID: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationValue({
+  fqn: 'https://example.com/obl/drm/value/watermarking',
+});
+
+console.log(`Value ID: ${resp.value?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="get-obligation-values-by-fqns">
+<summary>Get Obligation Values by FQNs</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.GetObligationValuesByFQNs(context.Background(),
+    &obligations.GetObligationValuesByFQNsRequest{
+        Fqns: []string{
+            "https://example.com/obl/drm/value/watermarking",
+            "https://example.com/obl/drm/value/no-download",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for fqn, val := range resp.GetFqnValueMap() {
+    log.Printf("%s → %s\n", fqn, val.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationValuesByFQNs({
+  fqns: [
+    'https://example.com/obl/drm/value/watermarking',
+    'https://example.com/obl/drm/value/no-download',
+  ],
+});
+
+for (const [fqn, val] of Object.entries(resp.fqnValueMap)) {
+  console.log(`${fqn} → ${val.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="create-obligation-value">
+<summary>Create an Obligation Value</summary>
+
+Provide either `ObligationId` or `ObligationFqn`, plus the `Value` string:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Obligations.CreateObligationValue(context.Background(),
+		&obligations.CreateObligationValueRequest{
+			ObligationFqn: "https://example.com/obl/drm",
+			Value:         "encrypt-at-rest",
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Created value: %s  FQN: %s\n",
+		resp.GetValue().GetId(), resp.GetValue().GetFqn())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.createObligationValue({
+  obligationFqn: 'https://example.com/obl/drm',
+  value: 'encrypt-at-rest',
+});
+
+console.log(`Created value: ${resp.value?.id}  FQN: ${resp.value?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="update-obligation-value">
+<summary>Update an Obligation Value</summary>
+
+Provide the value `Id`. Triggers provided here **replace** all existing triggers for the value:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.UpdateObligationValue(context.Background(),
+    &obligations.UpdateObligationValueRequest{
+        Id:    "9a1b2c3d-...",
+        Value: "encrypt-at-rest-v2",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Updated value FQN: %s\n", resp.GetValue().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.updateObligationValue({
+  id: '9a1b2c3d-...',
+  value: 'encrypt-at-rest-v2',
+});
+
+console.log(`Updated value FQN: ${resp.value?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="delete-obligation-value">
+<summary>Delete an Obligation Value</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.DeleteObligationValue(context.Background(),
+    &obligations.DeleteObligationValueRequest{
+        Fqn: "https://example.com/obl/drm/value/watermarking",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Deleted value: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.deleteObligationValue({
+  fqn: 'https://example.com/obl/drm/value/watermarking',
+});
+
+console.log(`Deleted value: ${resp.value?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+---
+
+### Triggers
+
+A trigger links an obligation value to a specific action + attribute value combination (and optionally a PEP identifier). When that action is performed on data carrying that attribute value, the obligation fires.
+
+<details id="add-obligation-trigger">
+<summary>Add an Obligation Trigger</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Obligations.AddObligationTrigger(context.Background(),
+		&obligations.AddObligationTriggerRequest{
+			ObligationValue: &common.IdFqnIdentifier{
+				Fqn: "https://example.com/obl/drm/value/watermarking",
+			},
+			Action: &common.IdNameIdentifier{
+				Name: "DECRYPT",
+			},
+			AttributeValue: &common.IdFqnIdentifier{
+				Fqn: "https://example.com/attr/classification/value/secret",
+			},
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Added trigger: %s\n", resp.GetTrigger().GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.addObligationTrigger({
+  obligationValue: { fqn: 'https://example.com/obl/drm/value/watermarking' },
+  action: { name: 'DECRYPT' },
+  attributeValue: { fqn: 'https://example.com/attr/classification/value/secret' },
+});
+
+console.log(`Added trigger: ${resp.trigger?.id}`);
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="list-obligation-triggers">
+<summary>List Obligation Triggers</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.ListObligationTriggers(context.Background(),
+    &obligations.ListObligationTriggersRequest{
+        NamespaceFqn: "https://example.com",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for _, trigger := range resp.GetTriggers() {
+    log.Printf("Trigger ID: %s\n", trigger.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.listObligationTriggers({
+  namespaceFqn: 'https://example.com',
+});
+
+for (const trigger of resp.triggers) {
+  console.log(`Trigger ID: ${trigger.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+</details>
+
+<details id="remove-obligation-trigger">
+<summary>Remove an Obligation Trigger</summary>
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Obligations.RemoveObligationTrigger(context.Background(),
+    &obligations.RemoveObligationTriggerRequest{
+        Id: "7e8f9a0b-...",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Removed trigger: %s\n", resp.GetTrigger().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.removeObligationTrigger({
+  id: '7e8f9a0b-...',
+});
+
+console.log(`Removed trigger: ${resp.trigger?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+</details>
