@@ -30,9 +30,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Update vendored OpenAPI specs
+        run: npm run update-vendored-yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build website
         id: build
-        run: npm run build
+        run: npm run gen-api-docs-all && npx docusaurus build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
