@@ -103,7 +103,7 @@ const authProvider = await AuthProviders.clientSecretAuthProvider({
   oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
 });
 const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
-await authProvider.updateClientPublicKey(await client.dpopKeys);
+await client.ready;
 
 const platformClient = new PlatformClient({
   authProvider,

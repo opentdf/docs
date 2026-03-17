@@ -62,7 +62,7 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders } from '@opentdf/sdk';
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const authProvider = await AuthProviders.clientSecretAuthProvider({
@@ -70,6 +70,11 @@ const authProvider = await AuthProviders.clientSecretAuthProvider({
     clientSecret: 'client-secret',
     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
 });
+
+// OpenTDF eagerly binds DPoP keys to the auth provider.
+// Await ready before creating PlatformClient.
+const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+await client.ready;
 
 const platform = new PlatformClient({
     authProvider,
