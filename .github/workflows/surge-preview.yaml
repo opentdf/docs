@@ -31,23 +31,31 @@ jobs:
         run: npm ci
 
       - name: Build website
+        id: build
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write PR metadata
+        if: always()
         run: |
-          printf '{"pr_number":%s,"action":"%s"}' \
-            "${{ github.event.number }}" "${{ github.event.action }}" \
+          printf '{"pr_number":%s,"action":"%s","build_success":%s}' \
+            "${{ github.event.number }}" \
+            "${{ github.event.action }}" \
+            "${{ steps.build.outcome == 'success' && 'true' || 'false' }}" \
             > pr-metadata.json
 
       - name: Upload artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: surge-preview
+          # build/ only exists on success; if-no-files-found: warn lets the
+          # artifact upload succeed with just pr-metadata.json on failure.
           path: |
             build/
             pr-metadata.json
+          if-no-files-found: warn
           retention-days: 1
 
   record-close:
@@ -57,7 +65,7 @@ jobs:
     steps:
       - name: Write teardown metadata
         run: |
-          printf '{"pr_number":%s,"action":"closed"}' \
+          printf '{"pr_number":%s,"action":"closed","build_success":true}' \
             "${{ github.event.number }}" > pr-metadata.json
 
       - name: Upload artifact
