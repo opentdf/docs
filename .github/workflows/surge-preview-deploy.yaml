@@ -86,7 +86,7 @@ jobs:
               issue_number: ${{ steps.meta.outputs.pr_number }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `❌ Surge preview build failed — no preview was deployed. [Check the workflow logs](${{ github.event.workflow_run.html_url }}) for details.\n\n**Common cause:** If the build failed on vendored YAML validation, run the following locally and commit the result:\n\`\`\`\nnpm run update-vendored-yaml\ngit add specs/\ngit commit -m "chore(deps): update vendored OpenAPI specs"\n\`\`\``
+              body: `❌ Surge preview build failed — no preview was deployed. [Check the workflow logs](${{ github.event.workflow_run.html_url }}) for details.\n\nOnce the build passes, the preview will be at: https://opentdf-docs-pr-${{ steps.meta.outputs.pr_number }}.surge.sh\n\n**Common cause:** If the build failed on vendored YAML validation, run the following locally and commit the result:\n\`\`\`\nnpm run update-vendored-yaml\ngit add specs/\ngit commit -m "chore(deps): update vendored OpenAPI specs"\n\`\`\``
             })
 
   # Manual dispatch: builds and deploys in a fully trusted context.
