@@ -193,12 +193,12 @@ if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo -e "${GREEN}✓ All checks passed!${NC}"
     echo ""
     echo "Ready to install OpenTDF:"
-    echo "  curl -fsSL https://opentdf.io/install.sh | bash"
+    echo "  curl -fsSL https://opentdf.io/quickstart/install.sh | bash"
 elif [ $ERRORS -eq 0 ]; then
     echo -e "${YELLOW}⚠ Passed with $WARNINGS warning(s)${NC}"
     echo ""
     echo "You can proceed, but some features may not work optimally:"
-    echo "  curl -fsSL https://opentdf.io/install.sh | bash"
+    echo "  curl -fsSL https://opentdf.io/quickstart/install.sh | bash"
 else
     echo -e "${RED}✗ Failed with $ERRORS error(s) and $WARNINGS warning(s)${NC}"
     echo ""
