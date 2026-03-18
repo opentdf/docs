@@ -6,14 +6,20 @@
 
 A Registered Resource consists of:
 
-1. A `Namespace` (the same organizational container used by [attributes](./attributes))
-2. A `Registered Resource` (scoped to a namespace)
+1. An optional `Namespace` (the same organizational container used by [attributes](./attributes))
+2. A `Registered Resource`
 3. A `Registered Resource Value`
 4. One or more `Action Attribute Values`
 
-A Registered Resource belongs to a Namespace, has a unique name within that namespace, and may contain multiple, unique Registered Resource Values.
+A Registered Resource may optionally belong to a Namespace. It has a unique name and may contain multiple, unique Registered Resource Values.
 
-A Registered Resource Value is used to represent a specific instance of the Registered Resource and can be referenced by a FQN (Fully Qualified Name) in the form of `https://<namespace>/reg_res/<registered_resource.name>/value/<registered_resource_value.value>`.
+A Registered Resource Value is used to represent a specific instance of the Registered Resource and can be referenced by a FQN (Fully Qualified Name).
+
+When a Registered Resource is associated with a namespace, the FQN takes the form `https://<namespace>/reg_res/<registered_resource.name>/value/<registered_resource_value.value>`.
+
+:::warning Deprecation
+Non-namespaced Registered Resources are deprecated. Their FQNs use the form `https://reg_res/<registered_resource.name>/value/<registered_resource_value.value>`. A future version will require all Registered Resources to be associated with a namespace. Use the `otdfctl migrate registered-resources` command to migrate existing non-namespaced Registered Resources.
+:::
 
 :::tip
 Registered Resource Value FQNs contain the `reg_res` path segment to distinguish them from attribute FQNs under the same namespace.
@@ -24,7 +30,7 @@ Registered Resource Values may contain multiple Action Attribute Values, which a
 ```mermaid
 graph LR;
 
-Namespace-->Registered_Resource;
+Namespace-.->|optional|Registered_Resource;
 
 Registered_Resource-->Registered_Resource_Value_A;
 Registered_Resource-->Registered_Resource_Value_B;
@@ -50,12 +56,12 @@ Action_Attribute_Value_D-->Attribute_Value_D;
 
 ## As a Resource
 
-Alice is a cloud security architect. She needs to control user access to S3 buckets in her cloud environment. Under the `demo.com` namespace, she defines a Registered Resource called `s3_bucket` with values like `bucket1`, `bucket2`, and `bucket3`. For the Registered Resource Value `https://demo.com/reg_res/s3_bucket/value/bucket1`, she might define Action Attribute Values for actions such as `read`, `create`, and `delete` on attribute values such as `https://demo.com/attr/classification/value/topsecret`, `https://demo.com/attr/classification/value/secret`, and `https://demo.com/attr/classification/value/unclassified` to enforce the desired access control.
+Alice is a cloud security architect. She needs to control user access to S3 buckets in her cloud environment. She defines a Registered Resource called `s3_bucket` under the `demo.com` namespace, with values like `bucket1`, `bucket2`, and `bucket3`. For the Registered Resource Value `https://demo.com/reg_res/s3_bucket/value/bucket1`, she might define Action Attribute Values for actions such as `read`, `create`, and `delete` on attribute values such as `https://demo.com/attr/classification/value/topsecret`, `https://demo.com/attr/classification/value/secret`, and `https://demo.com/attr/classification/value/unclassified` to enforce the desired access control.
 
 In this case, Policy Decision Points would evaluate a user's attributes and subject mappings (acting as the entity) against the Action Attribute Values of the `https://demo.com/reg_res/s3_bucket/value/bucket1` Registered Resource Value (acting as the resource).
 
 ## As an Entity
 
-Bob is a network security administrator in a large organization. He needs to manage data communications across various networks that have different classification-based access controls. Under the `demo.com` namespace, he defines a Registered Resource called `network` with values like `private` and `public`. For the Registered Resource Value `https://demo.com/reg_res/network/value/private`, he might define Action Attribute Values for actions such as `read` and `create` on attribute values such as `https://demo.com/attr/classification/value/topsecret` and `https://demo.com/attr/classification/value/secret`.
+Bob is a network security administrator in a large organization. He needs to manage data communications across various networks that have different classification-based access controls. He defines a Registered Resource called `network` under the `demo.com` namespace, with values like `private` and `public`. For the Registered Resource Value `https://demo.com/reg_res/network/value/private`, he might define Action Attribute Values for actions such as `read` and `create` on attribute values such as `https://demo.com/attr/classification/value/topsecret` and `https://demo.com/attr/classification/value/secret`.
 
 In this case, Policy Decision Points would evaluate the Action Attribute Values of the `https://demo.com/reg_res/network/value/private` Registered Resource Value (acting as the entity) against either the Action Attribute Values of the `https://demo.com/reg_res/network/value/public` Registered Resource Value or against a TDF's attributes (acting as the resource).
