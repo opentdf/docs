@@ -52,6 +52,26 @@ Action_Attribute_Value_D-->Attribute_Value_D;
 
 ```
 
+## Namespacing
+
+Registered Resources can optionally be associated with a namespace by providing a `namespace_id` or `namespace_fqn` when creating the resource. Non-namespaced Registered Resources are deprecated and a future version will require all Registered Resources to have a namespace.
+
+### Uniqueness
+
+Namespaced Registered Resource names are unique within their namespace. Non-namespaced Registered Resource names are globally unique. The same name can exist as both a namespaced and a non-namespaced resource.
+
+### Name Lookup
+
+When getting a Registered Resource by name without specifying a namespace, and both a namespaced and non-namespaced resource share that name, the non-namespaced one is returned. To retrieve the namespaced one, provide the `namespace_id` or `namespace_fqn` in the request.
+
+### Namespace Deletion Cascade
+
+Deleting a namespace cascades to delete all Registered Resources (and their values) within that namespace.
+
+### `NamespacedPolicy` Enforcement
+
+The platform supports a `NamespacedPolicy` server configuration flag. When enabled, all new Registered Resources are required to have a namespace. This flag will become the default in a future version.
+
 # Examples
 
 ## As a Resource
@@ -65,3 +85,46 @@ In this case, Policy Decision Points would evaluate a user's attributes and subj
 Bob is a network security administrator in a large organization. He needs to manage data communications across various networks that have different classification-based access controls. He defines a Registered Resource called `network` under the `demo.com` namespace, with values like `private` and `public`. For the Registered Resource Value `https://demo.com/reg_res/network/value/private`, he might define Action Attribute Values for actions such as `read` and `create` on attribute values such as `https://demo.com/attr/classification/value/topsecret` and `https://demo.com/attr/classification/value/secret`.
 
 In this case, Policy Decision Points would evaluate the Action Attribute Values of the `https://demo.com/reg_res/network/value/private` Registered Resource Value (acting as the entity) against either the Action Attribute Values of the `https://demo.com/reg_res/network/value/public` Registered Resource Value or against a TDF's attributes (acting as the resource).
+
+# Migrating Non-Namespaced Registered Resources
+
+The `otdfctl migrate registered-resources` command migrates legacy non-namespaced Registered Resources to namespaced ones.
+
+:::caution
+Migration creates a new namespaced resource, recreates its values with their action-attribute-value mappings, then deletes the old non-namespaced resource. The migrated resource will have a new UUID. Back up your data before running with `--commit`.
+:::
+
+## Modes
+
+### Dry Run (default)
+
+Running without flags previews resources that need migration and their auto-detected namespaces. No changes are made.
+
+```bash
+otdfctl migrate registered-resources
+```
+
+### Batch
+
+The `--commit` flag migrates all resources at once. The tool auto-detects namespaces from action attribute values where possible and prompts for a batch namespace for any resources where the namespace cannot be determined.
+
+```bash
+otdfctl migrate registered-resources --commit
+```
+
+### Interactive
+
+The `--interactive --commit` flags walk through each resource one-by-one, allowing per-resource namespace selection with options to skip individual resources or abort the migration.
+
+```bash
+otdfctl migrate registered-resources --interactive --commit
+```
+
+## Namespace Auto-Detection
+
+The migration tool inspects each resource's action attribute values to determine the target namespace:
+
+- **Deterministic**: All action attribute values reference the same namespace — that namespace is used automatically.
+- **Conflicting**: Action attribute values reference multiple namespaces — manual selection is required.
+- **Undetermined**: Action attribute values exist but namespace data is unavailable — manual selection is required.
+- **No AAVs**: The resource has no action attribute values — manual selection is required.
