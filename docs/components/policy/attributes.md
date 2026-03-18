@@ -25,7 +25,7 @@ Definition_B-->Value_D;
 
 ## Namespaces
 
-A Namespace is the parent container for a set of attributes. Consider the following example:
+A Namespace is the parent container for a set of attributes and [registered resources](./registered_resources). Consider the following example:
 
 Alice wants to control access in a platform instance based on Attribute Values of the Definitions `color` and `order`. She creates attribute definitions for each and assigns values to them.
 
@@ -78,7 +78,7 @@ Unsafe actions on policy attributes include:
 - **Namespaces**:
   - Updating the namespace name (e.g., `demo.com` to `example.org`).
   - Reactivation (does not cascade to reactivate attributes and their values).
-  - Deletion (permanently removes the namespace and all associated attributes and values).
+  - Deletion (permanently removes the namespace and all associated attributes, values, and registered resources).
 - **Attribute Definitions**:
   - Updating the attribute definition name.
   - Changing the order of attribute values.

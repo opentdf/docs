@@ -34,13 +34,13 @@ Version 2 of Authorization Service introduced the following changes:
 The entity identifier is a request proto object allowing multiple structures representing an entity to stand in as the entity in an Auth Service request:
 - an Entity Chain (the response from an `entityresolutionservice.v2.CreateEntityChainsFromTokens` call)
 - a Token (access token JWT)
-- the FQN of a Registered Resource Value (_EXPERIMENTAL_)
+- the FQN of a Registered Resource Value (e.g. `https://example.com/reg_res/network/value/private`)
 
 #### Resource
 
 The resource is a request proto object allowing multiple structures representing a resource to stand in as the resource in an Auth Service Decision request:
 - a list of Attribute Values FQNs
-- the FQN of a Registered Resource Value (_EXPERIMENTAL_)
+- the FQN of a Registered Resource Value (e.g. `https://example.com/reg_res/s3_bucket/value/bucket1`)
 
 ### GetEntitlements
 
