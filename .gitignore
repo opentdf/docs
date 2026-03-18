@@ -31,6 +31,7 @@ node_modules
 /docs/spec/**/*.md
 /docs/components/cli/
 /docs/getting-started/configuration.md
+/code_samples/java/
 
 /.idea/
 
