@@ -121,7 +121,7 @@ See the [CLI auth command reference](/components/cli/auth/login) for all options
 
 ### Local Development
 
-The OpenTDF [quickstart](/sdks/quickstart) runs Keycloak with pre-configured defaults:
+The OpenTDF [quickstart](/quickstart) runs Keycloak with pre-configured defaults:
 
 | Setting | Default value |
 |---------|--------------|
