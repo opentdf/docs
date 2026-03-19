@@ -1,0 +1,2600 @@
+# OpenTDF Specification
+
+> OpenTDF (Trusted Data Format) is an open, interoperable standard for data-centric security that embeds encryption and attribute-based access control policies directly into data objects. Version 4.3.0.
+
+## Overview {#overview}
+
+OpenTDF defines an open format for embedding data protection directly into data objects (files, emails, etc.). It ensures data remains protected wherever it travels through **data-centric security**.
+
+### Key Capabilities
+
+- **Strong Encryption**: AES-256-GCM for payload encryption
+- **Attribute-Based Access Control (ABAC)**: Fine-grained access based on attributes of users, data, and environment
+- **Persistent Policy Enforcement**: Policies are bound to data and enforced even after sharing outside organizational boundaries
+- **End-to-End Auditability**: Comprehensive logging of key requests and access attempts
+- **Large File & Streaming Support**: Segment-based encryption for efficient handling of large data
+- **Policy Integrity**: Cryptographic binding of access policy to key access information prevents tampering
+- **Offline Creation**: TDF objects can be created without immediate connectivity to a key server
+- **Federated Key Management**: Multiple Key Access Servers (KAS) across organizations can collaboratively manage access to a single TDF
+
+### Lineage
+
+OpenTDF modernizes the **IC-TDF** (Intelligence Community Trusted Data Format) XML specification into a JSON-based format. **ZTDF** (Zero Trust Data Format), used in NATO contexts, extends OpenTDF by mandating specific cryptographic assertions.
+
+### Reference Implementation
+
+The open-source reference implementation is at [opentdf/platform](https://github.com/opentdf/platform), providing client SDKs (Java, JavaScript, Go) and server components (KAS).
+
+---
+
+## TDF Structure {#tdf-structure}
+
+A TDF object is a standard **ZIP archive** with a `.tdf` extension (e.g., `document.pdf.tdf`). It MUST contain:
+
+1. **`manifest.json`** — JSON metadata for decryption and access control
+2. **`payload`** (typically `0.payload`) — The encrypted data
+
+A TDF can also be encoded as an HTML document for browser-based scenarios.
+
+### Manifest Components
+
+The `manifest.json` orchestrates the TDF with these sections:
+
+- **Payload Description**: Location and characteristics of the encrypted payload
+- **Encryption Information**: Encryption algorithm, key access, integrity checks, and access policy
+  - Key Access Objects: How/where to get the decryption key
+  - Method: Symmetric encryption algorithm details
+  - Integrity Information: Hashes/signatures for payload integrity
+  - Policy: Access control policy (Base64-encoded JSON)
+- **Assertions** (optional): Verifiable statements about the TDF or payload
+
+---
+
+## Manifest Schema {#manifest-schema}
+
+The `manifest.json` MUST be JSON format at the root of the ZIP archive.
+
+### Top-Level Fields
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `tdf_spec_version` | String | Semver version of the OpenTDF spec this manifest conforms to | Yes |
+| `payload` | Object | Describes the encrypted payload location and characteristics | Yes |
+| `encryptionInformation` | Object | Encryption, key access, integrity, and policy details | Yes |
+| `assertions` | Array | Optional verifiable statements about the TDF or payload | No |
+
+### Complete Manifest Example
+
+```json
+{
+  "tdf_spec_version": "1.0.0",
+  "payload": {
+    "type": "reference",
+    "url": "0.payload",
+    "protocol": "zip",
+    "isEncrypted": true,
+    "mimeType": "application/octet-stream"
+  },
+  "encryptionInformation": {
+    "type": "split",
+    "keyAccess": [
+      {
+        "type": "wrapped",
+        "url": "http://kas.example.com:4000",
+        "protocol": "kas",
+        "wrappedKey": "YBkqvsiDnyDfw5JQ...B82uw==",
+        "policyBinding": {
+          "alg": "HS256",
+          "hash": "ZGMwNGExZjg0ODFj...OTJlODcwNA=="
+        },
+        "encryptedMetadata": "OEOqJCS6mZsmLWJ38lh6EN2lDUA8OagL/OxQRQ=="
+      }
+    ],
+    "method": {
+      "algorithm": "AES-256-GCM",
+      "isStreamable": true,
+      "iv": "OEOqJCS6mZsmLWJ3"
+    },
+    "integrityInformation": {
+      "rootSignature": {
+        "alg": "HS256",
+        "sig": "YjliMzAyNjg4NzA0...YTdmZmFmOA=="
+      },
+      "segmentSizeDefault": 1000000,
+      "segmentHashAlg": "GMAC",
+      "segments": [
+        {
+          "hash": "ZmQyYjY2ZDgxY2IzNGNmZTI3ODFhYTk2ZjJhNWNjODA=",
+          "segmentSize": 14056,
+          "encryptedSegmentSize": 14084
+        }
+      ],
+      "encryptedSegmentSizeDefault": 1000028
+    },
+    "policy": "eyJ1dWlkIjoiNjEzMzM0NjYtNGYwYS00YTEyLTk1ZmItYjZkOGJkMGI4YjI2IiwiYm9keSI6eyJhdHRyaWJ1dGVzIjpbXSwiZGlzc2VtIjpbInVzZXJAdmlydHJ1LmNvbSJdfX0="
+  },
+  "assertions": [
+    {
+      "id": "nato-label-1",
+      "type": "handling",
+      "scope": "payload",
+      "appliesToState": "encrypted",
+      "statement": {
+        "format": "json-structured",
+        "schema": "urn:nato:stanag:4774:confidentialitymetadatalabel:1:0",
+        "value": {
+          "Xmlns": "urn:nato:stanag:4774:confidentialitymetadatalabel:1:0",
+          "CreationTime": "2015-08-29T16:15:00Z",
+          "ConfidentialityInformation": {
+            "PolicyIdentifier": "NATO",
+            "Classification": "SECRET",
+            "Category": {
+              "Type": "PERMISSIVE",
+              "TagName": "Releasable to",
+              "GenericValues": ["SWE", "FIN", "FRA"]
+            }
+          }
+        }
+      },
+      "binding": {
+        "method": "jws",
+        "signature": "eyJhbGciOiJIUzI1NiJ9...FakeBindingSignatureExample"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Payload {#payload}
+
+The `payload` object contains metadata to locate and process the encrypted payload within the ZIP archive.
+
+### Fields
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `type` | String | How the payload is referenced. `reference` = payload is within the TDF archive | Yes |
+| `url` | String | URI pointing to the payload location. For `reference` type, a relative path in the ZIP (e.g., `0.payload`) | Yes |
+| `protocol` | String | Packaging format: `zip` (standard files) or `zipstream` (streamed files) | Yes |
+| `isEncrypted` | Boolean | Whether the payload is encrypted. MUST be `true` for standard TDFs | Yes |
+| `mimeType` | String | MIME type of the original unencrypted data. Defaults to `application/octet-stream` | No |
+
+### Example
+
+```json
+"payload": {
+    "type": "reference",
+    "url": "0.payload",
+    "protocol": "zip",
+    "isEncrypted": true,
+    "mimeType": "application/pdf"
+}
+```
+
+---
+
+## Encryption Information {#encryption-information}
+
+The `encryptionInformation` object aggregates all encryption, policy, and key management information.
+
+### Fields
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `type` | String | Key management scheme. `split` allows key sharing/splitting across multiple `keyAccess` entries | Yes |
+| `keyAccess` | Array | Array of Key Access Objects describing how to obtain the decryption key or key shares | Yes |
+| `method` | Object | Symmetric encryption algorithm and parameters | Yes |
+| `integrityInformation` | Object | Payload integrity verification data | Yes |
+| `policy` | String | Base64-encoded JSON string of the Policy Object | Yes |
+
+### Method Object {#method}
+
+Describes the symmetric encryption algorithm used on the payload.
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `algorithm` | String | Symmetric encryption algorithm. `AES-256-GCM` is recommended | Yes |
+| `isStreamable` | Boolean | Whether payload was encrypted in segments for streaming. If `true`, `integrityInformation` MUST contain segment details | Yes |
+| `iv` | String | Base64-encoded Initialization Vector. For AES-GCM, typically 12 bytes (96 bits). MUST be unique per TDF per key | Yes |
+
+```json
+"method": {
+  "algorithm": "AES-256-GCM",
+  "isStreamable": true,
+  "iv": "D6s7cSgFXzhVkran"
+}
+```
+
+### Integrity Information Object {#integrity-information}
+
+Provides mechanisms to verify the integrity of the encrypted payload.
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `rootSignature` | Object | Cryptographic signature over all segment hashes | Yes |
+| `rootSignature.alg` | String | Algorithm used. `HS256` (HMAC-SHA256 with payload key) is common | Yes |
+| `rootSignature.sig` | String | Base64-encoded HMAC: `HMAC-SHA256(PayloadKey, Concat(SegHash1, SegHash2, ...))` | Yes |
+| `segmentHashAlg` | String | Algorithm for per-segment hashes. `GMAC` is common with AES-256-GCM | Yes |
+| `segments` | Array | Array of Segment Objects, one per payload chunk. Order MUST match payload order | Yes |
+| `segmentSizeDefault` | Number | Default plaintext segment size in bytes | Yes |
+| `encryptedSegmentSizeDefault` | Number | Default encrypted segment size in bytes (includes auth tag overhead) | No |
+
+### Segment Object
+
+| Parameter | Type | Description |
+|---|---|---|
+| `hash` | String | Base64-encoded hash: `HMAC(segment, payloadKey)` using `segmentHashAlg` |
+| `segmentSize` | Number | Plaintext segment size. Optional if matches `segmentSizeDefault` |
+| `encryptedSegmentSize` | Number | Encrypted segment size in bytes |
+
+---
+
+## Key Access Object {#key-access-object}
+
+Found in the `keyAccess` array, each object stores information about how a specific encryption key (or key share) is accessed via a Key Access Server (KAS).
+
+### Fields
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `type` | String | How key is stored/accessed: `wrapped` (default, key encrypted with KAS public key), `remote` (legacy), `remoteWrapped` (wrapped but managed by CKS) | Yes |
+| `url` | String | Base URL of the KAS responsible for this key/share | Yes |
+| `protocol` | String | Protocol for interacting with the URL. Currently only `kas` | Yes |
+| `wrappedKey` | String | Base64-encoded payload key (or share) encrypted with KAS public key | Yes |
+| `policyBinding` | Object | Keyed hash binding the policy to this wrapped key | Yes |
+| `kid` | String | Identifier for the specific KAS public key used (for key rotation) | No |
+| `sid` | String | Split/Share Identifier. If present, this is only a share of the full key. Multiple objects with different `sid` values must be combined (via XOR) to reconstruct the full key | No |
+| `encryptedMetadata` | String | Base64-encoded encrypted client metadata passed to KAS during rewrap | No |
+
+### Policy Binding Object (`policyBinding`)
+
+Cryptographic binding between the policy and the key share, preventing policy tampering.
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `alg` | String | Hash algorithm. `HS256` (HMAC-SHA256) is standard | Yes |
+| `hash` | String | Base64-encoded `HMAC(KEY, POLICY)` where KEY is the plaintext key share and POLICY is the Base64-encoded policy string from `encryptionInformation.policy` | Yes |
+
+### Example
+
+```json
+{
+  "type": "wrapped",
+  "url": "https://kas.example.com:5000",
+  "kid": "6f3b6a82-2f30-4c8a-aef3-57c65b8e7387",
+  "sid": "split-id-1",
+  "protocol": "kas",
+  "wrappedKey": "OqnOE...B82uw==",
+  "policyBinding": {
+    "alg": "HS256",
+    "hash": "BzmgoIxZzMmIF42qzbdD4Rw30GtdaRSQL2Xlfms1OPs="
+  },
+  "encryptedMetadata": "ZoJTNW24UMhnXIif0mSnqLVCU="
+}
+```
+
+---
+
+## Policy Object {#policy-object}
+
+The Policy Object defines access control rules. It is JSON-stringified and Base64-encoded in `encryptionInformation.policy`.
+
+### Fields
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `uuid` | String | RFC 4122 UUID uniquely identifying this policy instance | Yes |
+| `body` | Object | Core access control constraints | Yes |
+| `body.dataAttributes` | Array | Array of Attribute Objects. Attributes an entity must possess to satisfy ABAC requirements | Yes |
+| `body.dissem` | Array | Array of entity identifier strings (email, user ID). If present and non-empty, entity must be in this list AND satisfy dataAttributes. If empty/omitted, only dataAttributes matter | No |
+
+### Example (Decoded JSON)
+
+```json
+{
+  "uuid": "1111-2222-33333-44444-abddef-timestamp",
+  "body": {
+    "dataAttributes": [
+      { "attribute": "https://example.com/attr/classification/value/secret" }
+    ],
+    "dissem": ["user-id@domain.com"]
+  }
+}
+```
+
+> **Policy Logic**: The `dissem` list and `dataAttributes` have an **AND** relationship. An entity MUST be on the `dissem` list (if used) AND MUST satisfy the `dataAttributes` requirements.
+
+---
+
+## Attributes {#attributes}
+
+Attributes are represented as **URIs** following this structure:
+
+```
+{Attribute Namespace}/attr/{Attribute Name}/value/{Attribute Value}
+```
+
+### Components
+
+| Component | Example | Description | Globally Unique? |
+|---|---|---|---|
+| **Attribute Namespace** | `https://example.com` | Domain controlled by the attribute authority | No (by itself) |
+| **Attribute Canonical Name** | `https://example.com/attr/classification` | `{Namespace}/attr/{Name}`. Identifies the attribute type | **Yes** |
+| **Attribute Instance** | `https://example.com/attr/classification/value/secret` | Full URI `{Canonical Name}/value/{Value}`. A specific actionable attribute | **Yes** |
+
+### Attribute Object (in Policy)
+
+```json
+{
+  "attribute": "https://example.com/attr/classification/value/topsecret"
+}
+```
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `attribute` | String | Full Attribute Instance URI: `{Namespace}/attr/{Name}/value/{Value}` | Yes |
+
+### Attribute Definitions (External Rules)
+
+The rules governing how attributes are compared are defined in **Attribute Definitions**, managed externally by attribute authorities and associated with the Attribute Canonical Name. Definitions include:
+
+- **Rule Type**: How values are compared
+  - `AllOf` — Entity must have ALL specified values
+  - `AnyOf` — Entity must have at least one specified value
+  - `Hierarchy` — Values have an order/rank (e.g., Confidential < Secret < TopSecret)
+- **Allowed Values**: Optional enumeration of valid attribute values
+- **Order/Rank** (for Hierarchy): Defines the relationship between values
+
+The Policy Enforcement Point (PEP) retrieves these definitions at access decision time based on the Canonical Names found in `dataAttributes` and entity entitlements.
+
+---
+
+## Assertions {#assertions}
+
+The optional `assertions` array in the manifest contains verifiable statements about the TDF or payload, commonly used for security labeling or handling instructions.
+
+### Assertion Object
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `id` | String | Unique identifier within this manifest | Yes |
+| `type` | String | Purpose category: `handling` (caveats, dissemination controls) or `metadata` (general info) | Yes |
+| `scope` | String | What it applies to: `tdo` (entire TDF object) or `payload` | Yes |
+| `appliesToState` | String | Whether statement applies to `encrypted` or `unencrypted` state. Default: `encrypted` | No |
+| `statement` | Object | The actual assertion content | Yes |
+| `binding` | Object | Cryptographic signature ensuring integrity and preventing replay | Yes |
+
+### Statement Object
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `schema` | String | URI identifying the schema/standard defining the value structure | No |
+| `format` | String | Encoding format: `json-structured`, `base64binary`, or `string` | Yes |
+| `value` | Any | The assertion content, formatted per the `format` field | Yes |
+
+### Binding Object
+
+| Parameter | Type | Description | Required |
+|---|---|---|---|
+| `method` | String | Cryptographic method. `jws` (JSON Web Signature) is standard | Yes |
+| `signature` | String | Base64URL-encoded signature (e.g., JWS Compact Serialization). MUST include assertion content and TDF context to prevent replay | Yes |
+
+### Example
+
+```json
+{
+  "id": "handling-assertion-1",
+  "type": "handling",
+  "scope": "payload",
+  "appliesToState": "encrypted",
+  "statement": {
+    "schema": "urn:nato:stanag:4774:confidentialitymetadatalabel:1:0",
+    "format": "json-structured",
+    "value": {
+      "Xmlns": "urn:nato:stanag:4774:confidentialitymetadatalabel:1:0",
+      "CreationTime": "2015-08-29T16:15:00Z",
+      "ConfidentialityInformation": {
+        "PolicyIdentifier": "NATO",
+        "Classification": "SECRET"
+      }
+    }
+  },
+  "binding": {
+    "method": "jws",
+    "signature": "eyJhbGciOiJSUzI1NiJ9..."
+  }
+}
+```
+
+---
+
+## Protocol {#protocol}
+
+The protocol describes interactions between OpenTDF clients (SDKs) and Key Access Servers (KAS) for managing access to Data Encryption Keys (DEKs).
+
+### Crypto-Agility
+
+A core design principle: each Key Access Object can use different key wrapping mechanisms. One KAS may use RSA while another uses ECIES. This allows independent evolution to new algorithms (including post-quantum) without breaking the TDF format.
+
+Each `keyAccess` object specifies:
+1. The **URL** of the responsible KAS
+2. The **protocol** identifier (e.g., `wrapped`)
+3. A **Key Identifier (`kid`)** referencing a specific KAS public key
+4. A **Split Identifier (`sid`)** for key shares in multi-party scenarios
+
+### TDF Creation Flow (Encryption)
+
+1. **Generate DEK**: Create a cryptographically strong symmetric key (e.g., AES-256)
+2. **Encrypt Payload**: Encrypt data with DEK using AES-256-GCM, generating IV and integrity tags per segment
+3. **Define Policy**: Construct the Policy Object JSON with `dataAttributes` and `dissem`, then Base64-encode it
+4. **Generate Policy Binding**: Calculate `HMAC(DEK, Base64(policyJSON))` using HMAC-SHA256, Base64-encode the result
+5. **Prepare Optional Metadata**: Prepare client-specific metadata for KAS (optional)
+6. **Encrypt Optional Metadata**: Encrypt metadata with the DEK using AES-GCM, Base64-encode
+7. **Fetch KAS Public Key**: Obtain the target KAS's public key (RSA or EC, identified by URL and `kid`)
+8. **Wrap DEK**: Encrypt the DEK with KAS public key (e.g., RSAES-OAEP), Base64-encode
+9. **Construct Key Access Object**: Build the object with type, url, protocol, kid, wrappedKey, policyBinding, encryptedMetadata
+10. **Construct Manifest**: Assemble `manifest.json` with payload, encryptionInformation, and assertions
+11. **Package TDF**: Create ZIP archive with `manifest.json` and encrypted payload
+12. **Securely Discard DEK**: Erase plaintext DEK from memory immediately
+
+### TDF Access Flow (Decryption)
+
+#### Phase 1: Client Preparation & Request (SDK)
+
+1. **Parse Manifest**: Read `manifest.json` from the TDF
+2. **Identify KAS Target(s)**: Select Key Access Object(s) by KAS URL or required shares (`sid`)
+3. **Extract Information**: Get `wrappedKey`, `policyBinding`, `encryptedMetadata`, and `policy` string
+4. **Prepare Client Context**: Obtain auth credentials (OAuth token) and client's public key
+5. **Construct Rewrap Request**: Build request with wrappedKey, policyBinding, policy, encryptedMetadata, and client public key
+6. **Send Request**: `POST {KAS_URL}/v1/rewrap`
+
+#### Phase 2: KAS Processing & Verification
+
+7. **Authenticate Client**: Verify credentials. Return 401/403 on failure
+8. **Decrypt DEK Share**: Use KAS private key to unwrap the `wrappedKey`
+9. **Validate Policy Binding**: Recalculate `HMAC(DEK_share, policy_string)` and compare with `policyBinding.hash`. Return 400/403 on mismatch
+10. **Decrypt Metadata** (optional): If `encryptedMetadata` present, decrypt with DEK share
+11. **Authorize**: Evaluate policy against client's attributes/entitlements. Return 403 on denial
+12. **Rewrap DEK Share**: Encrypt DEK share with client's public key
+13. **Return Response**: Send Base64-encoded rewrapped DEK share
+
+#### Phase 3: Client Decryption (SDK)
+
+14. **Receive Response**: Check for errors
+15. **Decrypt DEK Share**: Use client's private key to decrypt the rewrapped share
+16. **Reconstruct DEK** (if split): XOR all shares: `Share1 ⊕ Share2 ⊕ ... ⊕ ShareN = FullKey`
+17. **Decrypt Payload & Verify Integrity**: Decrypt with DEK, verify each segment hash and `rootSignature`
+18. **Securely Discard DEK**: Erase from memory
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant ClientSDK as Client SDK
+    participant KAS
+
+    activate ClientSDK
+    ClientSDK-->>ClientSDK: Parse Manifest
+    ClientSDK-->>ClientSDK: Identify KAS Target & Extract Info
+    ClientSDK-->>ClientSDK: Prepare Client Context (Auth, PubKey)
+    ClientSDK-->>ClientSDK: Construct Rewrap Request
+    ClientSDK->>KAS: POST /v1/rewrap (Request Body)
+    deactivate ClientSDK
+
+    activate KAS
+    KAS-->>KAS: Authenticate Client Request
+    alt Authentication Failed
+        KAS->>ClientSDK: Error 401/403
+    end
+    KAS-->>KAS: Decrypt DEK Share (KAS Private Key)
+    KAS-->>KAS: Validate Policy Binding (HMAC compare)
+    alt Policy Binding Invalid
+        KAS->>ClientSDK: Error 400/403
+    end
+    KAS-->>KAS: (Optional) Decrypt Metadata
+    KAS-->>KAS: Authorize (Evaluate Policy/Attributes)
+    alt Authorization Failed
+        KAS->>ClientSDK: Error 403
+    end
+    KAS-->>KAS: Rewrap DEK Share (Client Public Key)
+    KAS->>ClientSDK: Success (Rewrapped DEK Share)
+    deactivate KAS
+
+    activate ClientSDK
+    ClientSDK-->>ClientSDK: Decrypt DEK Share (Client Private Key)
+    ClientSDK-->>ClientSDK: Reconstruct Full DEK (if split)
+    ClientSDK-->>ClientSDK: Decrypt Payload & Verify Integrity
+    ClientSDK-->>ClientSDK: Securely Discard DEK
+    deactivate ClientSDK
+```
+
+### Error Handling
+
+KAS implementations SHOULD return standard HTTP error codes:
+
+| Code | Meaning |
+|---|---|
+| 400 | Invalid input, malformed request, or policy binding validation failure |
+| 401 | Authentication failure |
+| 403 | Authentication failure, policy binding failure, or authorization denied |
+| 500 | Internal server error |
+
+---
+
+## Access Control (ABAC) {#abac}
+
+OpenTDF implements **Attribute-Based Access Control (ABAC)**, where access is granted based on evaluated attributes rather than roles or ACLs.
+
+### ABAC Components in OpenTDF
+
+| ABAC Concept | OpenTDF Component | Description |
+|---|---|---|
+| **Subject Attributes** | Entity Entitlements | Attribute instances asserted about the requesting user/entity by the identity system |
+| **Resource Attributes** | `dataAttributes` in Policy | Attribute instances required to access this specific data |
+| **Policies** | Policy Object + External Attribute Definitions | `dataAttributes` + `dissem` list + external rules (AllOf, AnyOf, Hierarchy) |
+| **Policy Enforcement Point (PEP)** | Key Access Server (KAS) | Evaluates policy, authenticates client, checks entitlements, releases keys |
+
+### Access Control Flow
+
+When an entity requests access to a TDF:
+
+1. **Dissemination Check** (if applicable): If the policy's `dissem` list is present and non-empty, verify the requesting entity's identifier is in the list. If not → **DENIED**
+
+2. **Attribute Check**:
+   - Examine required `dataAttributes` (Resource Attributes) from the policy
+   - For each attribute, retrieve the external **Attribute Definition** by Canonical Name
+   - Compare required attributes against Entity Entitlements using the rule logic:
+     - **AllOf**: Entity must have ALL specified attribute values
+     - **AnyOf**: Entity must have at least ONE specified value
+     - **Hierarchy**: Entity's attribute value must be at or above the required level
+   - If entitlements don't satisfy ALL dataAttributes → **DENIED**
+
+3. **Key Release**: If both checks pass, verify Policy Binding, then unwrap and provide the key share
+
+> The `dissem` list and `dataAttributes` have an **AND** relationship. Both must be satisfied.
+
+---
+
+## Security Mechanisms {#security}
+
+OpenTDF provides layered security through four mechanisms:
+
+### 1. Payload Encryption
+
+The data is encrypted using **AES-256-GCM** (authenticated encryption). The Data Encryption Key (DEK) is never stored — it's wrapped by KAS public keys and discarded after use.
+
+### 2. Payload Integrity Verification
+
+Prevents undetected modification of ciphertext:
+
+1. **Segmentation**: Payload is processed in chunks (segments)
+2. **Segment Hashing**: Each encrypted segment gets a GMAC integrity tag using the payload key, stored as `hash` in the Segment Object
+3. **Root Signature**: All segment hashes are concatenated in order, then `HMAC-SHA256(PayloadKey, ConcatenatedHashes)` produces the `rootSignature.sig`
+
+Any modification to a single bit of ciphertext invalidates the affected segment hash AND the root signature. Recipients MUST verify both during decryption.
+
+### 3. Policy Binding
+
+Prevents detaching a wrapped key from its policy and attaching it to a weaker policy:
+
+1. Client takes the Base64-encoded `policy` string from `encryptionInformation`
+2. For each key share, calculates `HMAC-SHA256(plaintext_key_share, policy_string)`
+3. Stores the result as `policyBinding.hash` in the corresponding Key Access Object
+4. KAS recalculates this HMAC during rewrap and rejects if mismatched
+
+### 4. Key Splitting (Multi-Party Access Control)
+
+Distributes the DEK across multiple independent KAS instances:
+
+1. Client generates the DEK
+2. Splits into shares via XOR: `Share1 ⊕ Share2 ⊕ ... ⊕ ShareN = FullKey`
+3. Each share is independently wrapped with its designated KAS's public key
+4. Each share gets its own Policy Binding and unique `sid` (Split ID)
+5. Decryption requires contacting ALL KAS instances and combining all shares
+
+No single KAS holds enough information to decrypt the data alone.
+
+### Summary: Layered Security
+
+| Layer | Protects | Mechanism |
+|---|---|---|
+| **Payload Encryption** | Confidentiality | AES-256-GCM |
+| **Integrity Verification** | Tamper detection | Segment GMAC + Root HMAC |
+| **Policy Binding** | Policy integrity | HMAC linking policy to key shares |
+| **Key Splitting** | Multi-party control | XOR shares across independent KAS instances |
+# OpenTDF Platform
+
+> The OpenTDF Platform is a Go-based modular monolith providing data-centric security services: Key Access Server (KAS), Policy management, Authorization, and Entity Resolution. It implements the OpenTDF specification for encrypting data with attribute-based access control.
+
+## Overview {#overview}
+
+The OpenTDF Platform is the reference implementation of the OpenTDF specification. It provides:
+
+- **Key Access Server (KAS)**: Controls access to TDF-protected content by managing encryption key wrapping/rewrapping
+- **Policy Service**: Manages namespaces, attributes, subject mappings, and access policies
+- **Authorization Service**: Validates entity entitlements against policies to make access decisions
+- **Entity Resolution Service (ERS)**: Resolves entity identities from identity providers (Keycloak, OIDC claims, multi-strategy)
+- **Well Known Service**: Provides discovery endpoints for platform configuration
+
+The platform is a **modular monolith** — all services are built into a single binary but can be run in different deployment modes.
+
+### Deployment Modes
+
+| Mode | Services | Use Case |
+|---|---|---|
+| `all` | Every registered service | Default, full platform |
+| `core` | Policy, Authorization, Well Known | Central policy management |
+| `kas` | Key Access Server only | Dedicated KAS instances |
+
+Service negation syntax allows excluding specific services: `mode: all,-entityresolution`
+
+Available services for negation: `policy`, `authorization`, `kas`, `entityresolution`, `wellknown`
+
+---
+
+## Prerequisites {#prerequisites}
+
+- **Go** (see `go.mod` for specific version)
+- **Container runtime**: Docker or Podman
+- **Compose**: Docker Compose (v2 plugin: `docker compose`) or Podman Compose. Note: the standalone `docker-compose` (v1) binary also works but commands in this doc use the v2 plugin syntax (`docker compose`)
+- **Buf**: For protobuf management (`brew install buf`)
+- **golangci-lint**: For code quality (`brew install golangci-lint`)
+
+Optional:
+- **Air**: Hot-reload development (`go install github.com/air-verse/air@latest`)
+- **grpcurl**: gRPC testing (`brew install grpcurl`)
+
+---
+
+## Quick Start {#quick-start}
+
+### 1. Initialize Platform Configuration
+
+```shell
+cp opentdf-dev.yaml opentdf.yaml
+
+# Generate development keys/certs
+./.github/scripts/init-temp-keys.sh
+
+# macOS: Trust the local certificate
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./keys/localhost.crt
+
+# Linux alternative:
+# sudo cp ./keys/localhost.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+```
+
+> **Apple M4 chip users**: Set `export JAVA_OPTS_APPEND="-XX:UseSVE=0"` before running commands to resolve SIGILL errors.
+
+### 2. Start Background Services
+
+```shell
+docker compose up
+```
+
+This starts:
+- **Keycloak** (OIDC IdP) on port 8888 (HTTP) / 8443 (HTTPS)
+- **PostgreSQL 15** on port 5432
+
+### 3. Provision Keycloak
+
+```shell
+go run ./service provision keycloak
+```
+
+### 4. Add Sample Attributes and Metadata
+
+```shell
+go run ./service provision fixtures
+```
+
+### 5. Start the Platform
+
+```shell
+go run ./service start
+```
+
+### Verify
+
+- Platform services: `http://localhost:8080/`
+- Keycloak admin: `http://localhost:8888/auth/` (admin/changeme)
+
+### Try the CLI (otdfctl)
+
+```shell
+otdfctl auth client-credentials --host http://localhost:8080 --client-id opentdf --client-secret secret
+```
+
+---
+
+## Configuration {#configuration}
+
+The platform uses [Viper](https://github.com/spf13/viper) for configuration. All settings can be set via YAML config file or environment variables.
+
+### Logger
+
+Root key: `logger`
+
+| Field | Description | Default | Env Var |
+|---|---|---|---|
+| `level` | Logging level (debug, info, warn, error) | `info` | `OPENTDF_LOGGER_LEVEL` |
+| `type` | Log format (json, text) | `json` | `OPENTDF_LOGGER_TYPE` |
+| `output` | Output stream (stdout, stderr) | `stdout` | `OPENTDF_LOGGER_OUTPUT` |
+
+### Server
+
+Root key: `server`
+
+| Field | Description | Default | Env Var |
+|---|---|---|---|
+| `host` | Server host address | `""` | `OPENTDF_SERVER_HOST` |
+| `port` | Server port | `9000` | `OPENTDF_SERVER_PORT` |
+| `auth.audience` | OIDC audience | | `OPENTDF_SERVER_AUTH_AUDIENCE` |
+| `auth.issuer` | OIDC issuer URL | | `OPENTDF_SERVER_AUTH_ISSUER` |
+| `auth.enforceDPoP` | Enforce DPoP on access tokens | `false` | `OPENTDF_SERVER_AUTH_ENFORCEDPOP` |
+| `auth.cache_refresh` | JWKS refresh interval | `15m` | `OPENTDF_SERVER_AUTH_CACHE_REFRESH` |
+| `auth.skew` | Token expiry clock skew tolerance | `1m` | `OPENTDF_SERVER_AUTH_SKEW` |
+| `auth.dpopskew` | DPoP proof time drift tolerance | `1h` | |
+| `tls.enabled` | Enable TLS | `false` | `OPENTDF_SERVER_TLS_ENABLED` |
+| `tls.cert` | TLS certificate path | | `OPENTDF_SERVER_TLS_CERT` |
+| `tls.key` | TLS key path | | `OPENTDF_SERVER_TLS_KEY` |
+| `grpc.reflection` | Enable gRPC reflection | `true` | `OPENTDF_SERVER_GRPC_REFLECTION` |
+| `enable_pprof` | Enable Go performance profiling | `false` | `OPENTDF_SERVER_ENABLE_PPROF` |
+
+### Crypto Provider
+
+Root key: `server.cryptoProvider`
+
+Configures KAS keypairs for key wrapping/unwrapping.
+
+```yaml
+server:
+  cryptoProvider:
+    type: standard
+    standard:
+      keys:
+        - kid: r1
+          alg: rsa:2048
+          private: /keys/kas-private.pem
+          cert: /keys/kas-cert.pem
+        - kid: e1
+          alg: ec:secp256r1
+          private: /keys/kas-ec-private.pem
+          cert: /keys/kas-ec-cert.pem
+```
+
+| Field | Description |
+|---|---|
+| `type` | Crypto provider type (`standard`) |
+| `standard.*.kid` | Key identifier (globally unique, stable) |
+| `standard.*.alg` | Algorithm: `rsa:2048` or `ec:secp256r1` |
+| `standard.*.private` | Path to private key PEM |
+| `standard.*.cert` | Path to public certificate PEM (optional) |
+
+### CORS
+
+Root key: `server.cors`
+
+| Field | Default | Description |
+|---|---|---|
+| `enabled` | `true` | Enable CORS |
+| `allowedorigins` | `[]` | Allowed origins (`*` for any) |
+| `allowedmethods` | `["GET","POST","PATCH","DELETE","OPTIONS"]` | Allowed HTTP methods |
+| `allowedheaders` | See below | Allowed request headers |
+| `allowcredentials` | `true` | Include credentials |
+| `maxage` | `3600` | Preflight cache max age (seconds) |
+
+Default allowed headers: `Accept`, `Accept-Encoding`, `Authorization`, `Connect-Protocol-Version`, `Content-Length`, `Content-Type`, `Dpop`, `X-CSRF-Token`, `X-Requested-With`, `X-Rewrap-Additional-Context`
+
+Use `additionalheaders`, `additionalmethods`, `additionalexposedheaders` to extend defaults without replacing them.
+
+### Tracing
+
+Root key: `server.trace`
+
+| Field | Description | Default |
+|---|---|---|
+| `enabled` | Enable distributed tracing | `false` |
+| `provider.name` | Provider: `file` or `otlp` | `otlp` |
+
+OTLP example:
+
+```yaml
+server:
+  trace:
+    enabled: true
+    provider:
+      name: otlp
+      otlp:
+        protocol: grpc
+        endpoint: "localhost:4317"
+        insecure: true
+```
+
+### Database
+
+Root key: `db`
+
+| Field | Default | Env Var |
+|---|---|---|
+| `host` | `localhost` | `OPENTDF_DB_HOST` |
+| `port` | `5432` | `OPENTDF_DB_PORT` |
+| `database` | `opentdf` | `OPENTDF_DB_DATABASE` |
+| `user` | `postgres` | `OPENTDF_DB_USER` |
+| `password` | `changeme` | `OPENTDF_DB_PASSWORD` |
+| `sslmode` | `prefer` | `OPENTDF_DB_SSLMODE` |
+| `schema` | `opentdf` | `OPENTDF_DB_SCHEMA` |
+| `runMigration` | `true` | `OPENTDF_DB_RUNMIGRATION` |
+| `pool.max_connection_count` | `4` | `OPENTDF_DB_POOL_MAX_CONNECTION_COUNT` |
+
+### Cache
+
+Root key: `cache`
+
+```yaml
+cache:
+  ristretto:
+    max_cost: 1gb
+```
+
+---
+
+## Services Architecture {#services}
+
+### Core Services
+
+- **Health**: Rollup health checks for running services
+- **Well Known**: Discovery endpoints for platform configuration (`.well-known/opentdf-configuration`)
+
+### Business Services
+
+- **Policy Service (PAP)**: Manages namespaces, attributes, values, subject mappings, resource mappings, KAS grants, key management
+- **Authorization Service (PDP)**: Evaluates entitlements and makes access decisions
+- **Entity Resolution Service (PIP)**: Resolves entity identities from identity providers
+- **Key Access Server (PEP)**: Controls access to TDF content, performs key rewrap operations
+
+All services communicate via gRPC internally and expose both gRPC and Connect (HTTP/JSON) externally.
+
+---
+
+## Policy Service {#policy-service}
+
+Manages the ABAC policy hierarchy: **Namespaces → Attributes → Values → Subject Mappings**
+
+### Hierarchy
+
+1. **Namespaces**: Top-level grouping (e.g., `https://example.com`)
+2. **Attribute Definitions**: Named attributes within a namespace with a rule type (`AllOf`, `AnyOf`, `Hierarchy`)
+3. **Attribute Values**: Specific values for an attribute (e.g., `secret`, `topsecret`)
+4. **Subject Mappings**: Map external identity claims to attribute values (e.g., "users with role X get attribute Y")
+5. **Resource Mappings**: Map data resources to attribute values
+6. **KAS Grants**: Bind attributes to specific KAS instances
+
+### Policy Proto Services
+
+- `AttributesService`: CRUD for attribute definitions and values
+- `NamespaceService`: CRUD for namespaces
+- `SubjectMappingService`: Map external claims to attribute values
+- `ResourceMappingService`: Map resources to attributes
+- `KasRegistryService`: Register and manage KAS instances
+- `KeyManagementService`: Manage encryption keys
+- `UnsafeService`: Administrative operations (rename, reorder, etc.)
+
+### Configuration
+
+```yaml
+services:
+  policy:
+    list_request_limit_default: 1000
+    list_request_limit_max: 2500
+```
+
+---
+
+## Key Access Server (KAS) {#kas}
+
+Controls access to TDF-protected content by performing key rewrap operations.
+
+### KAS RPCs
+
+- **PublicKey**: Returns the KAS public key for a given algorithm
+- **Rewrap**: Accepts a wrapped key, validates policy binding, checks authorization, and re-wraps the key with the client's public key
+
+### Configuration
+
+```yaml
+services:
+  kas:
+    keyring:
+      - kid: r1
+        alg: rsa:2048
+        legacy: true
+      - kid: e1
+        alg: ec:secp256r1
+        legacy: true
+      - kid: r2
+        alg: rsa:2048
+      - kid: e2
+        alg: ec:secp256r1
+    preview:
+      ec_tdf_enabled: false
+      key_management: false
+```
+
+| Field | Description |
+|---|---|
+| `keyring.*.kid` | Key identifier binding |
+| `keyring.*.alg` | Algorithm (`rsa:2048`, `ec:secp256r1`) |
+| `keyring.*.legacy` | Used for TDFs with no key ID |
+| `preview.ec_tdf_enabled` | Enable ECC-based TDF support |
+| `preview.key_management` | Enable new key management features |
+
+---
+
+## Authorization Service {#authorization}
+
+Evaluates whether entities have the correct entitlements to access TDF-protected data.
+
+### v1 (Rego-based)
+
+Uses Open Policy Agent (OPA) Rego policies for entitlement evaluation.
+
+```yaml
+services:
+  authorization:
+    rego:
+      path: /path/to/policy.rego
+      query: data.opentdf.entitlements.attributes
+```
+
+### v2 (Entitlement Cache)
+
+Uses an internal entitlement cache with configurable refresh.
+
+```yaml
+services:
+  authorization:
+    entitlement_policy_cache:
+      enabled: false
+      refresh_interval: 30s
+```
+
+### Casbin Endpoint Authorization
+
+Controls which users/roles can access which platform API endpoints.
+
+```yaml
+server:
+  auth:
+    policy:
+      username_claim: "email"
+      group_claim: "realm_access.roles"
+      extension: |
+        g, opentdf-admin, role:admin
+        g, opentdf-standard, role:standard
+```
+
+Roles:
+- **Admin** (`role:admin`): All operations
+- **Standard** (`role:standard`): Read operations
+- **Unknown**: Public endpoints only (e.g., `kas.AccessService/Rewrap`)
+
+---
+
+## Entity Resolution Service {#entity-resolution}
+
+Resolves entity identities from tokens and identity providers.
+
+### Modes
+
+| Mode | Description | Use Case |
+|---|---|---|
+| `keycloak` | Queries Keycloak REST API | Single Keycloak IdP |
+| `claims` | Extracts attributes from JWT claims | Multi-IdP, no Keycloak dependency |
+| `multi-strategy` | Multiple providers (SQL, LDAP, etc.) | Complex enterprise setups (preview) |
+
+### Keycloak Mode Configuration
+
+```yaml
+services:
+  entityresolution:
+    mode: keycloak
+    url: http://keycloak:8888/auth
+    clientid: "tdf-entity-resolution"
+    clientsecret: "secret"
+    realm: "opentdf"
+    legacykeycloak: true
+    inferid:
+      from:
+        email: true
+        username: true
+```
+
+### Claims Mode
+
+No external IdP calls — entity attributes extracted directly from JWT tokens. Set `mode: claims`.
+
+### v2 Caching
+
+```yaml
+services:
+  entityresolution:
+    cache_expiration: 30s
+```
+
+---
+
+## Go SDK {#go-sdk}
+
+The Go SDK (`github.com/opentdf/platform/sdk`) provides programmatic access to all platform services.
+
+### Quick Start
+
+```go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "log"
+    "os"
+    "strings"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+func main() {
+    platformEndpoint := "http://localhost:8080"
+    clientID := "opentdf"
+    clientSecret := "secret"
+    keycloakURL := "http://localhost:8888/auth/realms/opentdf"
+
+    s, err := sdk.New(
+        platformEndpoint,
+        sdk.WithClientCredentials(clientID, clientSecret, []string{"email", "profile"}),
+        sdk.WithPlatformConfiguration(sdk.PlatformConfiguration{
+            "platform_issuer": keycloakURL,
+        }),
+        sdk.WithInsecurePlaintextConn(), // Only for local dev with HTTP
+    )
+    if err != nil {
+        log.Fatalf("Failed to create SDK: %v", err)
+    }
+    defer s.Close()
+
+    // Create a TDF
+    dataAttribute := "https://opentdf.io/attr/department/value/finance"
+    plaintext := strings.NewReader("Hello, world!")
+    var ciphertext bytes.Buffer
+    _, err = s.CreateTDF(
+        &ciphertext,
+        plaintext,
+        sdk.WithDataAttributes(dataAttribute),
+    )
+    if err != nil {
+        log.Fatalf("Failed to create TDF: %v", err)
+    }
+
+    fmt.Printf("Ciphertext is %d bytes long\n", ciphertext.Len())
+
+    // Decrypt the TDF
+    r, err := s.LoadTDF(bytes.NewReader(ciphertext.Bytes()))
+    if err != nil {
+        log.Fatalf("Failed to load TDF: %v", err)
+    }
+
+    f, err := os.Create("output.txt")
+    if err != nil {
+        log.Fatalf("Failed to create output file: %v", err)
+    }
+    defer f.Close()
+
+    _, err = io.Copy(f, r)
+    if err != nil {
+        log.Fatalf("Failed to write decrypted content: %v", err)
+    }
+
+    fmt.Println("Successfully created and decrypted TDF")
+}
+```
+
+### Authentication Options
+
+**Client Credentials (OAuth 2.0):**
+```go
+sdk.WithClientCredentials("client-id", "client-secret", []string{"scope1", "scope2"})
+```
+
+**TLS/mTLS:**
+```go
+tlsConfig := &tls.Config{
+    Certificates: []tls.Certificate{cert},
+    MinVersion:   tls.VersionTLS12,
+}
+sdk.WithTLSCredentials(tlsConfig, []string{"audience1", "audience2"})
+```
+
+**Custom OAuth2 Token Source:**
+```go
+tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "your-token"})
+sdk.WithOAuthAccessTokenSource(tokenSource)
+```
+
+**Token Exchange:**
+```go
+sdk.WithTokenExchange("subject-token", []string{"audience1", "audience2"})
+```
+
+### Base Key
+
+Retrieve the platform's base KAS public key:
+
+```go
+baseKey, err := s.GetBaseKey(ctx)
+```
+
+---
+
+## Docker Compose Infrastructure {#infrastructure}
+
+The `docker-compose.yaml` provides the required infrastructure:
+
+### Default Services
+
+| Service | Image | Port | Purpose |
+|---|---|---|---|
+| `keycloak` | `keycloak/keycloak:25.0` | 8888 (HTTP), 8443 (HTTPS) | OIDC Identity Provider |
+| `opentdfdb` | `postgres:15-alpine` | 5432 | Policy database |
+
+### Optional Profiles
+
+| Profile | Services | Purpose |
+|---|---|---|
+| `tracing` | Jaeger (ports 16686, 4317, 4318) | OpenTelemetry distributed tracing |
+| `ers-test` | PostgreSQL (5433), OpenLDAP (1389) | Multi-strategy ERS testing |
+| `ers-admin` | Above + phpLDAPadmin (6443) | ERS testing with LDAP admin UI |
+
+### Default Credentials
+
+| Service | Username | Password | Realm/Scope |
+|---|---|---|---|
+| Keycloak admin console | `admin` | `changeme` | **master** realm only — this is the Keycloak superadmin, NOT an OpenTDF user |
+| PostgreSQL | `postgres` | `changeme` | Database |
+| Platform OAuth client | `opentdf` | `secret` | **opentdf** realm — client credentials for SDK/CLI |
+
+> **Important**: The `admin`/`changeme` credentials only work in the Keycloak **master** realm (admin console at `/auth/admin/`). To create users in the **opentdf** realm (for browser apps or testing), use the Keycloak admin console: navigate to the `opentdf` realm → Users → Add user, then assign realm roles like `opentdf-admin` or `opentdf-standard`.
+
+---
+
+## Example Configuration {#example-config}
+
+Complete `opentdf-example.yaml`:
+
+```yaml
+logger:
+  level: debug
+  type: text
+  output: stdout
+
+db:
+  host: opentdfdb
+
+services:
+  kas:
+    eccertid: e1
+    rsacertid: r1
+  entityresolution:
+    url: http://keycloak:8888/auth
+    clientid: "tdf-entity-resolution"
+    clientsecret: "secret"
+    realm: "opentdf"
+    legacykeycloak: true
+    inferid:
+      from:
+        email: true
+        username: true
+
+server:
+  auth:
+    enabled: true
+    enforceDPoP: false
+    audience: "http://localhost:8080"
+    issuer: http://keycloak:8888/auth/realms/opentdf
+    policy:
+      extension: |
+        g, opentdf-admin, role:admin
+        g, opentdf-standard, role:standard
+  cors:
+    allowedorigins:
+      - "*"
+    allowedmethods:
+      - GET
+      - POST
+      - PATCH
+      - PUT
+      - DELETE
+      - OPTIONS
+    allowcredentials: true
+    maxage: 3600
+  grpc:
+    reflectionEnabled: true
+  cryptoProvider:
+    type: standard
+    standard:
+      keys:
+        - kid: r1
+          alg: rsa:2048
+          private: /keys/kas-private.pem
+          cert: /keys/kas-cert.pem
+        - kid: e1
+          alg: ec:secp256r1
+          private: /keys/kas-ec-private.pem
+          cert: /keys/kas-ec-cert.pem
+  port: 8080
+```
+
+---
+
+## Browser OIDC Client Setup {#browser-oidc-setup}
+
+When building a browser application (React, Vue, etc.) that talks to the OpenTDF platform, you need a **public** Keycloak client in the `opentdf` realm. The quickstart `opentdf` client is a **confidential** client (has a secret) intended for server-side use.
+
+### Creating a Browser Client in Keycloak
+
+1. Go to Keycloak admin console → `opentdf` realm → Clients → Create client
+2. Set **Client ID** (e.g., `opentdf-admin-ui`), **Client type** = OpenID Connect
+3. Enable **Standard flow** (Authorization Code), disable **Client authentication** (public client)
+4. Set **Valid redirect URIs** (e.g., `http://localhost:5173/*` for Vite dev)
+5. Set **Web origins** to `+` (allows all redirect origins)
+
+### Required: Audience Mapper
+
+Tokens from new Keycloak clients **lack the platform audience by default**, causing `unauthenticated` errors. You must add an audience mapper:
+
+1. Go to your client → Client scopes → `<client-id>-dedicated` scope
+2. Add mapper → By configuration → **Audience**
+3. Set **Included Custom Audience** to `http://localhost:8080` (your platform URL)
+4. Enable **Add to access token**
+
+### Assigning Roles
+
+Users in the `opentdf` realm need roles for platform access:
+- `opentdf-admin` → full admin access to all endpoints
+- `opentdf-standard` → read-only access to policy and KAS registry
+
+Assign via: Users → select user → Role mapping → Assign role → Filter by realm roles
+
+---
+
+## gRPC & REST APIs {#api-reference}
+
+All services expose gRPC APIs and Connect (HTTP/JSON) APIs via the same port.
+
+### Service Endpoints
+
+| Service | gRPC Package | Key RPCs |
+|---|---|---|
+| **Policy - Attributes** | `policy.attributes` | `CreateAttribute`, `GetAttribute`, `ListAttributes`, `UpdateAttribute`, `DeactivateAttribute`, `CreateAttributeValue`, `ListAttributeValues` |
+| **Policy - Namespaces** | `policy.namespaces` | `CreateNamespace`, `GetNamespace`, `ListNamespaces`, `UpdateNamespace`, `DeactivateNamespace` |
+| **Policy - Subject Mappings** | `policy.subjectmapping` | `CreateSubjectMapping`, `ListSubjectMappings`, `UpdateSubjectMapping`, `CreateSubjectConditionSet` |
+| **Policy - Resource Mappings** | `policy.resourcemapping` | `CreateResourceMapping`, `ListResourceMappings` |
+| **Policy - KAS Registry** | `policy.kasregistry` | `CreateKeyAccessServer`, `ListKeyAccessServers`, `UpdateKeyAccessServer` |
+| **Policy - Key Management** | `policy.keymanagement` | `CreateKey`, `ListKeys`, `GetKey` |
+| **Policy - Unsafe** | `policy.unsafe` | Administrative operations (rename attributes, reorder values, etc.) |
+| **Authorization** | `authorization` | `GetDecisions`, `GetEntitlements` |
+| **Entity Resolution** | `entityresolution` | `CreateEntityChainFromJwt`, `ResolveEntities` |
+| **KAS** | `kas` | `PublicKey`, `Rewrap` |
+| **Well Known** | `wellknownconfiguration` | `GetWellKnownConfiguration` |
+
+### API Divergences from Common Pattern
+
+Most list endpoints follow the pattern `ListXRequest{state, pagination}` → `ListXResponse{items[]}`. Notable exceptions:
+
+| Endpoint | Divergence |
+|---|---|
+| **ListActions** | No `state` filter field. Response uses `actionsStandard` and `actionsCustom` arrays instead of a single `actions` array |
+| **ListKeyAccessServers** | Uses `keyAccessServers` in response |
+| **GetEntitlements** | Request uses `entities` array of entity identifiers, not a single entity |
+
+### Connect RPC Transport
+
+The platform uses **Connect RPC** (connectrpc.com), which serves gRPC-compatible APIs over HTTP POST. URL pattern:
+
+```
+POST http://localhost:8080/{package}.{ServiceName}/{MethodName}
+Content-Type: application/json
+```
+
+Examples:
+- `POST /policy.namespaces.NamespaceService/ListNamespaces`
+- `POST /policy.attributes.AttributesService/ListAttributes`
+- `POST /kas.AccessService/PublicKey`
+- `POST /authorization.AuthorizationService/GetDecisions`
+
+This is important for configuring dev proxies (e.g., Vite `server.proxy` mapping `/api` → `http://localhost:8080`).
+
+### OpenAPI Docs
+
+Generated OpenAPI v3.1 specs are available in `docs/openapi/` for all services.
+
+---
+
+## Development & Contributing {#contributing}
+
+### Build Commands (Makefile)
+
+| Command | Description |
+|---|---|
+| `make build` | Full build pipeline |
+| `make test` | Run unit tests |
+| `make lint` | Buf lint + golangci-lint + govulncheck |
+| `make fmt` | Format code with gofumpt |
+| `make proto-generate` | Generate code from proto definitions |
+| `make policy-sql-gen` | Generate SQL query code (sqlc) |
+| `make policy-erd-gen` | Generate database schema ERD |
+
+### Code Quality Requirements
+
+1. **Linting**: `golangci-lint run` must pass with 0 issues
+2. **Formatting**: Run `gofumpt -w` on all changed Go files
+3. **Tests**: All existing tests must pass; add tests for new functionality
+4. **Commit Style**: Conventional Commits with DCO sign-off (`git commit -s`)
+
+### Dev Setup for Contributors
+
+```shell
+# Start infrastructure
+docker compose up
+
+# Provision Keycloak
+go run ./service provision keycloak
+
+# Start with hot-reload (requires Air)
+air
+
+# Run distributed tracing
+docker compose --profile tracing up
+# Jaeger UI: http://localhost:16686
+```
+
+### Provisioning Custom Keycloak
+
+```shell
+go run ./service provision keycloak -f <path-to-custom-yaml>
+```
+
+### BDD Testing
+
+Uses Cucumber/Godog with Gherkin feature files in `tests-bdd/`.
+
+```shell
+# Run BDD tests locally
+go test ./tests-bdd/... -v
+
+# Filter by tags
+go test ./tests-bdd/... -v -tags=@authorization
+```
+
+### Database Migrations
+
+Uses Goose. Migration files in `service/policy/db/migrations/` with naming convention `YYYYMMDD_description.sql`.
+
+```shell
+# Generate SQL code from queries
+make policy-sql-gen
+
+# Generate ERD diagram
+make policy-erd-gen
+```
+
+---
+
+## Terms and Concepts {#terms}
+
+| Term | Description |
+|---|---|
+| **TDF** | Trusted Data Format — encrypted data container with embedded access policy |
+| **KAS** | Key Access Server — manages encryption key wrapping and access decisions |
+| **ABAC** | Attribute-Based Access Control — fine-grained access based on entity/resource attributes |
+| **Policy** | The set of namespaces, attributes, values, and subject mappings that define access rules |
+| **Entity** | A user, service, or system that requests access to TDF-protected data |
+| **Entitlement** | An attribute value granted to an entity |
+| **Subject Mapping** | A rule mapping external identity claims to attribute values |
+| **Namespace** | Top-level grouping for attributes (e.g., `https://example.com`) |
+| **Attribute Definition** | A named attribute type within a namespace with a comparison rule |
+| **Attribute Value** | A specific value for an attribute definition |
+| **DPoP** | Demonstration of Proof-of-Possession — enhanced token security |
+| **ERS** | Entity Resolution Service — resolves entity identities from IdPs |
+| **otdfctl** | The OpenTDF command-line tool |
+# OpenTDF Documentation
+
+> Comprehensive documentation for the OpenTDF platform — an open-source toolkit for zero trust, data-centric security with attribute-based access control (ABAC). Published at docs.opentdf.io.
+
+## Introduction {#introduction}
+
+OpenTDF is an open-source system implementing data-centric security that enables:
+
+- **Zero Trust Data Protection**: Cryptographically bind access control policies to data objects
+- **Attribute-Based Access Control (ABAC)**: Fine-grained access decisions based on attributes and context
+- **Policy Travels with Data**: Security controls remain attached wherever data goes
+- **Trusted Data Format (TDF)**: Open standard for self-protecting data
+
+### Documentation Structure
+
+- **Tutorials**: Step-by-step learning experiences
+- **How-To Guides**: Problem-solving recipes for specific tasks
+- **Explanations**: Conceptual guides covering the "why" behind design
+- **Reference**: Technical specifications, API docs, lookup information
+
+---
+
+## Architecture {#architecture}
+
+OpenTDF is built on a service-oriented architecture aligned with the **NIST ABAC model**. The platform consists of four core components:
+
+### Core Components
+
+| Component | NIST Role | Description |
+|---|---|---|
+| **Policy Service** | PAP (Policy Administration Point) | Manages namespaces, attributes, values, subject mappings, actions, obligations, key access mappings |
+| **Authorization Service** | PDP (Policy Decision Point) | Evaluates policies against entity attributes to make access decisions |
+| **Entity Resolution Service** | PIP (Policy Information Point) | Gathers entity attributes from tokens, IdPs, or external sources (LDAP, SQL) |
+| **Key Access Server (KAS)** | PEP (Policy Enforcement Point) | Enforces decisions by granting/withholding cryptographic keys. Manages key exchanges and TDF encryption modes |
+
+### Access Flow
+
+1. Client authenticates with Identity Provider
+2. Client sends access request to KAS
+3. KAS sends decision request to Authorization Service
+4. Authorization Service gets policies from Policy Service
+5. Authorization Service gets entity attributes from ERS
+6. ERS optionally queries external attribute sources
+7. Authorization Service returns decision to KAS
+8. KAS grants or denies access to client
+
+Developers can build custom PEPs that leverage the platform's Authorization and Policy services while implementing custom enforcement logic.
+
+---
+
+## Quick Start Guide {#quickstart}
+
+### Prerequisites
+
+- macOS, Linux, or Windows (WSL2)
+- Docker Desktop or Colima (recommended)
+- 4GB+ RAM, 10GB+ disk space
+
+### Pre-flight Check
+
+```shell
+curl -fsSL https://opentdf.io/quickstart/check.sh | bash
+```
+
+### Step 1: Download Quickstart Files
+
+Download the quickstart `docker-compose.yaml` from the docs site. It includes:
+- OpenTDF Platform service
+- Keycloak (OIDC Identity Provider)
+- PostgreSQL (policy database)
+
+### Step 2: Set Up TLS Certificates
+
+```shell
+# Generate self-signed certs
+./.github/scripts/init-temp-keys.sh
+
+# macOS: Trust the certificate
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./keys/localhost.crt
+
+# Linux:
+# sudo cp ./keys/localhost.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
+```
+
+### Step 3: Start the Platform
+
+```shell
+docker compose up -d
+```
+
+### Step 4: Provision Keycloak
+
+```shell
+go run ./service provision keycloak
+```
+
+### Step 5: Add Sample Data
+
+```shell
+go run ./service provision fixtures
+```
+
+### Step 6: Verify
+
+- Platform: `http://localhost:8080/`
+- Keycloak: `http://localhost:8888/auth/` (admin/changeme)
+
+### Step 7: Install CLI and Authenticate
+
+```shell
+# Install otdfctl
+otdfctl auth client-credentials --host http://localhost:8080 --client-id opentdf --client-secret secret
+```
+
+### The Quickstart Scenario
+
+**Entitlements** (who can access what):
+- `department`: `finance`, `engineering`
+- `clearance`: `executive`, `standard`
+
+**Users**:
+- Jen (CFO): `clearance/executive` + `department/finance`
+- Preston (accountant): `department/finance` + `clearance/standard`
+- Jack (engineer): `department/engineering` + `clearance/standard`
+
+**Result**: Executive strategy doc (requires `clearance/executive`) — only Jen can access. Finance report (requires `department/finance` + `clearance/standard`) — Jen and Preston can access, Jack cannot.
+
+### Creating Policy (ABAC Workflow)
+
+```shell
+# Create namespace
+otdfctl policy attributes namespaces create --name https://opentdf.io
+
+# Create attributes
+otdfctl policy attributes create --namespace https://opentdf.io --name department --rule anyOf
+otdfctl policy attributes create --namespace https://opentdf.io --name clearance --rule hierarchy
+
+# Create attribute values
+otdfctl policy attributes values create --attribute-id <attr-id> --value finance
+otdfctl policy attributes values create --attribute-id <attr-id> --value engineering
+otdfctl policy attributes values create --attribute-id <attr-id> --value executive
+otdfctl policy attributes values create --attribute-id <attr-id> --value standard
+
+# Create subject mappings (map IdP claims to attributes)
+otdfctl policy subject-mappings create \
+  --attribute-value-id <value-id> \
+  --subject-condition-set-new '[{"condition_groups":[{"boolean_operator":"OR","conditions":[{"subject_external_selector_value":".department","operator":"IN","subject_external_values":["finance"]}]}]}]' \
+  --action-standard read
+
+# Encrypt with attributes
+otdfctl encrypt --attributes https://opentdf.io/attr/department/value/finance sample.txt
+
+# Decrypt (succeeds if user has matching entitlements)
+otdfctl decrypt sample.txt.tdf
+```
+
+---
+
+## Managing the Platform {#managing-platform}
+
+### Lifecycle Commands
+
+```shell
+docker compose up -d     # Start
+docker compose stop      # Stop
+docker compose restart   # Restart
+docker compose down      # Remove
+```
+
+### Health Checks
+
+```shell
+curl http://localhost:8080/healthz
+```
+
+### Default Credentials
+
+| Service | Username | Password |
+|---|---|---|
+| Keycloak admin | `admin` | `changeme` |
+| PostgreSQL | `postgres` | `changeme` |
+| Platform OAuth | `opentdf` | `secret` |
+
+### Troubleshooting
+
+- **TLS errors**: Ensure certificates are trusted (`sudo security add-trusted-cert ...`)
+- **Port conflicts**: Check ports 8080, 8443, 8888, 5432 are available
+- **Container issues**: `docker compose down && docker compose up -d`
+- **Keycloak not ready**: Wait for healthcheck, may take up to 2 minutes
+
+---
+
+## Policy Service {#policy}
+
+Policy is the configuration of cryptographically-bound ABAC within the Platform.
+
+### Hierarchy
+
+```
+Namespace → Attribute Definition → Attribute Values
+                                     ↕
+                              Subject Mappings ↔ Entities (via IdP/ERS)
+                                     ↕
+                              Resource Mappings ↔ Data
+```
+
+### Namespaces
+
+Top-level grouping for attributes. Example: `https://example.com`
+
+### Attribute Definitions
+
+Named attributes within a namespace. Each has a **rule type**:
+
+| Rule | Description | Example |
+|---|---|---|
+| `AllOf` | Entity must have ALL specified values | Entity needs both `finance` AND `accounting` |
+| `AnyOf` | Entity must have at least ONE value | Entity needs `finance` OR `accounting` |
+| `Hierarchy` | Values have a rank order | `executive` > `standard` (executive implies standard) |
+
+### Attribute Values
+
+Specific values for a definition. Full URI format: `{namespace}/attr/{name}/value/{value}`
+
+Example: `https://example.com/attr/department/value/finance`
+
+### Actions
+
+Standard actions: `create`, `read`, `update`, `delete`. Custom actions can be defined.
+
+### Subject Mappings
+
+Map external identity claims to actions on attribute values. Components:
+
+1. **Attribute Value**: The target entitlement
+2. **Subject Condition Set**: Boolean logic matching entity claims
+3. **Actions**: What the entity can do (read, create, etc.)
+
+#### Example: Executives
+
+```yaml
+subject_sets:
+  - condition_groups:
+      - boolean_operator: OR
+        conditions:
+          - subject_external_selector_value: '.role'
+            operator: IN
+            subject_external_values:
+              - vice_president
+```
+
+If entity has `role: vice_president`, they get the mapped attribute value entitlement.
+
+#### Example: Engineers
+
+```yaml
+subject_sets:
+  - condition_groups:
+      - boolean_operator: AND
+        conditions:
+          - subject_external_selector_value: '.title'
+            operator: IN
+            subject_external_values: [staff, senior, junior, intern]
+          - subject_external_selector_value: '.department'
+            operator: IN
+            subject_external_values: [engineering]
+```
+
+### Obligations
+
+Directives from PDP to PEP. Examples: watermarking, prevent download. Obligations are returned alongside authorization decisions.
+
+### Registered Resources
+
+Non-data resources tracked in the platform (e.g., S3 buckets, network endpoints).
+
+### Resource Mappings
+
+Map data terms or identifiers to attribute values.
+
+---
+
+## Key Management {#key-management}
+
+### Key Architecture
+
+Keys flow: **Key Manager → Base Key → Key Mappings → Attribute-KAS Bindings**
+
+### Base Key
+
+Default key for KAS. Set via:
+```shell
+otdfctl policy keys base set --key-id <key-id>
+```
+
+### Key Mappings
+
+Bind specific keys to attributes, namespaces, or values:
+
+```shell
+otdfctl policy keys mappings create \
+  --key-id <key-id> \
+  --attribute-value-id <value-id>
+```
+
+### Key Managers
+
+External key storage (e.g., AWS KMS). Configure providers for HSM or cloud KMS integration.
+
+### Quickstart Checklist
+
+1. Enable key management (`preview.key_management: true`)
+2. Create keys
+3. Set base key
+4. Create key mappings for attributes
+5. Test encrypt/decrypt
+
+---
+
+## Authorization Service {#authorization}
+
+### v2 API (Current)
+
+**GetEntitlements**: Returns attribute values an entity is entitled to.
+
+**GetDecision / GetDecisionMultiResource / GetDecisionBulk**: Returns permit/deny decisions for entity-resource pairs.
+
+```json
+{
+  "entityIdentifier": "user@example.com",
+  "resources": [
+    {
+      "attributeValueFqns": [
+        "https://example.com/attr/department/value/finance"
+      ]
+    }
+  ]
+}
+```
+
+Response: `PERMIT` or `DENY` with optional obligations.
+
+### v1 API (Deprecated)
+
+Uses `GetDecisions` with entity chains and resource attribute FQNs.
+
+---
+
+## Entity Resolution Service {#entity-resolution}
+
+### Modes
+
+| Mode | Description | IdP Dependency |
+|---|---|---|
+| **Keycloak** (default) | Queries Keycloak Admin API | Requires Keycloak |
+| **Claims** | Extracts from JWT claims | Any OIDC IdP |
+| **Multi-Strategy** (preview) | Multiple providers (SQL, LDAP, etc.) | Flexible |
+
+### Key Operations
+
+- **CreateEntityChainsFromTokens**: Processes auth tokens into entity representations
+- **ResolveEntities**: Resolves entity identifiers to full attribute sets
+
+### Comparison
+
+| Feature | Keycloak | Claims | Multi-Strategy |
+|---|---|---|---|
+| External calls | Yes (Keycloak API) | No | Yes (configurable) |
+| Multi-IdP | No | Yes | Yes |
+| Custom attributes | Limited | Token only | SQL, LDAP, etc. |
+
+---
+
+## Key Access Server {#kas}
+
+### RPCs
+
+- **PublicKey**: Returns KAS public key for key wrapping
+- **Rewrap**: Validates policy binding, checks authorization, re-wraps key with client's public key
+
+### Rewrap Flow
+
+1. Client sends wrapped key + policy binding + auth context
+2. KAS validates policy binding (HMAC)
+3. KAS requests authorization decision
+4. If authorized, KAS rewraps key with client's public key
+5. Returns rewrapped key to client
+
+---
+
+## SDKs Overview {#sdks}
+
+### Available SDKs
+
+| SDK | Language | Package |
+|---|---|---|
+| **Go SDK** | Go | `github.com/opentdf/platform/sdk` |
+| **Java SDK** | Java | Maven: `io.opentdf:sdk` |
+| **Web SDK** | TypeScript/JavaScript | npm: `@opentdf/sdk` |
+
+All SDKs support:
+- TDF encryption and decryption
+- Authentication (OAuth2, client credentials, token exchange)
+- Policy management (namespaces, attributes, subject mappings)
+- Authorization decisions
+
+---
+
+## SDK Quickstart {#sdk-quickstart}
+
+### Go
+
+```go
+import "github.com/opentdf/platform/sdk"
+
+s, err := sdk.New(
+    "http://localhost:8080",
+    sdk.WithClientCredentials("opentdf", "secret", []string{"email"}),
+    sdk.WithInsecurePlaintextConn(),
+)
+defer s.Close()
+
+// Encrypt
+plaintext := strings.NewReader("Hello, world!")
+var ciphertext bytes.Buffer
+s.CreateTDF(&ciphertext, plaintext,
+    sdk.WithDataAttributes("https://opentdf.io/attr/department/value/finance"),
+)
+
+// Decrypt
+r, _ := s.LoadTDF(bytes.NewReader(ciphertext.Bytes()))
+io.Copy(os.Stdout, r)
+```
+
+### JavaScript
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+  clientId: 'opentdf',
+  clientSecret: 'secret',
+  oidcOrigin: 'http://localhost:8888/auth/realms/opentdf',
+  exchange: 'client',
+});
+
+const client = new OpenTDF({
+  authProvider,
+  defaultCreateOptions: { defaultKASEndpoint: 'http://localhost:8080/kas' },
+});
+
+// Encrypt
+const cipherText = await client.createTDF({
+  source: { type: 'buffer', location: new TextEncoder().encode('Hello, world!') },
+  attributes: ['https://opentdf.io/attr/department/value/finance'],
+});
+
+// Decrypt
+const reader = client.open({ source: { type: 'stream', location: cipherText } });
+const clearText = await reader.decrypt();
+```
+
+### Java
+
+```java
+import io.opentdf.platform.sdk.*;
+
+var sdk = new SDK.Builder()
+    .platformEndpoint("localhost:8080")
+    .clientSecret("opentdf", "secret")
+    .useInsecurePlaintextConnection(true)
+    .build();
+
+// Encrypt
+var tdfConfig = Config.newTDFConfig(
+    Config.withDataAttributes("https://opentdf.io/attr/department/value/finance")
+);
+var tdf = sdk.createTDF(inputStream, tdfConfig);
+
+// Decrypt
+var result = sdk.loadTDF(tdfInputStream);
+```
+
+---
+
+## SDK: TDF Operations {#sdk-tdf}
+
+### CreateTDF (Encryption)
+
+Creates a TDF-encrypted object from plaintext data. Requires:
+- Source data (stream, buffer, or file)
+- KAS endpoint or autoconfigure
+- Optional: data attributes, assertions, split plan
+
+### LoadTDF (Decryption)
+
+Loads and decrypts a TDF object. The SDK:
+1. Parses the manifest
+2. Contacts KAS for key rewrap
+3. Verifies policy binding
+4. Decrypts and verifies integrity
+
+### Options
+
+**Encrypt options**: attributes, assertions, mimeType, splitPlan, windowSize, byteLimit
+**Decrypt options**: allowedKASEndpoints, assertionVerificationKeys, noVerify
+
+---
+
+## SDK: Policy Management {#sdk-policy}
+
+All SDKs support policy CRUD operations:
+
+- **Namespaces**: Create, list, get, update, deactivate
+- **Attributes**: Create definitions with rules (AllOf, AnyOf, Hierarchy), manage values
+- **Subject Condition Sets**: Define matching logic for entity claims
+- **Subject Mappings**: Link condition sets to attribute values with actions
+
+---
+
+## SDK: Authorization {#sdk-authorization}
+
+### GetEntitlements
+
+Returns the attribute values an entity is entitled to, based on their identity and subject mappings.
+
+### GetDecision
+
+Given an entity and a set of resource attribute FQNs, returns PERMIT or DENY.
+
+Useful for building custom PEPs that don't use TDF encryption.
+
+---
+
+## SDK: Troubleshooting {#sdk-troubleshooting}
+
+### Common Issues
+
+| Issue | Cause | Fix |
+|---|---|---|
+| Authentication failure | Invalid credentials or expired token | Check client ID/secret, token freshness |
+| Token expiration | Access token expired | Implement token refresh logic |
+| Certificate errors | Untrusted TLS cert | Trust the cert or use `WithInsecure...` for dev |
+| Connection refused | Platform not running | Check `docker compose ps`, verify ports |
+| Permission denied | Missing entitlements | Check subject mappings, verify attribute values |
+
+---
+
+## Subject Mapping Guide {#subject-mapping-guide}
+
+### Three-Layer Architecture
+
+1. **Authentication**: Entity proves identity (IdP/OIDC)
+2. **Entity Resolution**: Platform gathers entity attributes (ERS)
+3. **Authorization**: Platform maps attributes to entitlements (Subject Mappings)
+
+### Selector Formats by ERS Mode
+
+| ERS Mode | Selector Format | Example |
+|---|---|---|
+| Keycloak | jq-style on Keycloak user object | `.attributes.department[0]` |
+| Claims | jq-style on JWT claims | `.realm_access.roles` |
+
+### Condition Operators
+
+| Operator | Description |
+|---|---|
+| `IN` | Value is in the list |
+| `NOT_IN` | Value is not in the list |
+
+### Boolean Operators
+
+| Operator | Description |
+|---|---|
+| `AND` | All conditions must match |
+| `OR` | At least one condition must match |
+
+---
+
+## Feature Matrix {#feature-matrix}
+
+### SDK Feature Support
+
+| Feature | Go | Java | JavaScript |
+|---|---|---|---|
+| TDF Encrypt | Yes | Yes | Yes |
+| TDF Decrypt | Yes | Yes | Yes |
+| Policy CRUD | Yes | Yes | Yes |
+| Authorization | Yes | Yes | Yes |
+| Assertions | Yes | Yes | Yes |
+| Key Splitting | Yes | Yes | Yes |
+| Streaming | Yes | Yes | Yes |
+| DPoP | Yes | N/A | Yes |
+
+### Platform Service Status
+
+| Service | Status |
+|---|---|
+| Policy (v1) | Stable |
+| Authorization (v2) | Stable |
+| KAS | Stable |
+| Entity Resolution (v2) | Stable |
+| Key Management | Preview |
+| Multi-Strategy ERS | Preview |
+# OpenTDF Web SDK
+
+> TypeScript/JavaScript client library (`@opentdf/sdk`) for end-to-end encryption using the Trusted Data Format (TDF) with attribute-based access control. Works in browsers and Node.js. Version 0.12.0, targeting TDF spec 4.3.0.
+
+## Overview {#overview}
+
+The OpenTDF Web SDK provides:
+
+- **Encrypt & Decrypt**: Create and read TDF-encrypted files with AES-256-GCM
+- **ABAC Policy Support**: Assign data attributes to encrypted objects for fine-grained access control
+- **Authentication**: OIDC-based auth providers with DPoP support
+- **Platform Client**: Full gRPC/Connect RPC client for all OpenTDF platform services
+- **Policy Discovery**: Query the platform for attribute definitions and validation
+- **Assertions**: Sign and verify metadata assertions bound to TDF objects
+- **Streaming**: Large file support via segment-based streaming encryption/decryption
+
+### Packages
+
+| Package | npm | Description |
+|---|---|---|
+| `@opentdf/sdk` | `lib/` | Core SDK — encrypt, decrypt, auth, platform client |
+| `@opentdf/ctl` | `cli/` | CLI tool for encrypt/decrypt operations |
+
+---
+
+## Installation {#installation}
+
+```bash
+npm install @opentdf/sdk
+```
+
+The SDK supports both ESM and CommonJS:
+- ESM: `import { OpenTDF, AuthProviders } from '@opentdf/sdk'`
+- CJS: `const { OpenTDF, AuthProviders } = require('@opentdf/sdk')`
+
+### Sub-path Exports
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+import { AssertionConfig } from '@opentdf/sdk/assertions';
+import { base64 } from '@opentdf/sdk/encodings';
+```
+
+---
+
+## Authentication {#authentication}
+
+All auth providers implement the `AuthProvider` interface and add authorization headers to requests.
+
+### Refresh Token Provider (Browser)
+
+For browser apps where the user has already authenticated via OIDC:
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId: 'myApp',
+  exchange: 'refresh',
+  refreshToken: 'refreshTokenFromIdP',
+  oidcOrigin: 'http://localhost:65432/auth/realms/opentdf',
+});
+```
+
+### Client Credentials Provider (Server-side)
+
+For Node.js/Deno server-side apps with client ID + secret. **Never use in a browser.**
+
+```typescript
+import { AuthProviders } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+  clientId: 'username',
+  clientSecret: 'IdP_GENERATED_SECRET',
+  oidcOrigin: 'http://localhost:65432/auth/realms/opentdf',
+  exchange: 'client',
+});
+```
+
+### External JWT Provider (Browser)
+
+For apps authenticated with a trusted third-party IdP:
+
+```typescript
+import { AuthProviders } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.externalAuthProvider({
+  clientId: 'myApp',
+  externalJwt: 'jwt-from-trusted-idp',
+  oidcOrigin: 'http://localhost:65432/auth/realms/opentdf',
+});
+```
+
+### DPoP (Demonstration of Proof-of-Possession)
+
+The SDK supports DPoP for enhanced token security. Pass DPoP keys when creating the OpenTDF client:
+
+```typescript
+const client = new OpenTDF({
+  authProvider,
+  dpopKeys: authProvider.getSigningKey(),
+  defaultCreateOptions: { defaultKASEndpoint: kasEndpoint },
+});
+```
+
+### Building a Custom Provider
+
+For authorization code flow with PKCE and DPoP, see the sample web app at `web-app/src/session.ts`.
+
+### Alternative: Direct Bearer Interceptor (Browser Apps)
+
+If your browser app already manages tokens via `oidc-client-ts` or similar, you can skip the SDK auth providers entirely and use a simple Bearer interceptor with `PlatformClient`:
+
+```typescript
+import { PlatformClient, platformConnect } from '@opentdf/sdk/platform';
+
+// Your app's token manager (e.g., oidc-client-ts User)
+function getAccessToken(): string {
+  return myOidcUserManager.getUser().access_token;
+}
+
+const bearerInterceptor: platformConnect.Interceptor = (next) => async (req) => {
+  req.header.set('Authorization', `Bearer ${getAccessToken()}`);
+  return await next(req);
+};
+
+const platform = new PlatformClient({
+  interceptors: [bearerInterceptor],
+  platformUrl: '/api', // or http://localhost:8080
+});
+
+// Now use platform.v1.* services directly
+const attrs = await platform.v1.attributes.listAttributes({});
+```
+
+This is simpler than `AuthProviders.refreshAuthProvider()` for browser apps where you already have a working OIDC flow. The SDK auth providers perform their own internal token exchange, which may fail silently if the Keycloak client is not configured with the expected audience mapper or token exchange permissions.
+
+---
+
+## Encrypt & Decrypt {#encrypt-decrypt}
+
+### Basic Usage
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
+const kasEndpoint = 'http://localhost:65432/kas';
+const oidcOrigin = 'http://localhost:65432/auth/realms/opentdf';
+
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId: 'myApp',
+  exchange: 'refresh',
+  refreshToken: 'refreshTokenValue',
+  oidcOrigin,
+});
+
+const client = new OpenTDF({
+  authProvider,
+  defaultCreateOptions: { defaultKASEndpoint: kasEndpoint },
+  dpopKeys: authProvider.getSigningKey(),
+});
+
+// Encrypt
+const cipherText = await client.createTDF({
+  source: { type: 'stream', location: plainTextStream },
+  autoconfigure: false,
+});
+
+// Decrypt
+const reader = client.open({ source: { type: 'stream', location: cipherText } });
+const clearText = await reader.decrypt();
+```
+
+### Encrypt with Attributes
+
+```typescript
+const cipherText = await client.createTDF({
+  source: { type: 'buffer', location: new TextEncoder().encode('sensitive data') },
+  attributes: ['https://example.com/attr/classification/value/secret'],
+  autoconfigure: false,
+});
+```
+
+### Encrypt with Assertions
+
+```typescript
+const cipherText = await client.createTDF({
+  source: { type: 'stream', location: dataStream },
+  assertionConfigs: [{
+    id: 'label-1',
+    type: 'handling',
+    scope: 'payload',
+    appliesToState: 'encrypted',
+    statement: {
+      format: 'json-structured',
+      value: { classification: 'SECRET' },
+    },
+    signingKey: { alg: 'RS256', key: privateKey },
+  }],
+});
+```
+
+### Encrypt with Split Plan (Multi-KAS)
+
+```typescript
+const cipherText = await client.createTDF({
+  source: { type: 'stream', location: dataStream },
+  splitPlan: [
+    { kas: 'https://kas1.example.com', sid: 'share-1' },
+    { kas: 'https://kas2.example.com', sid: 'share-2' },
+  ],
+});
+```
+
+---
+
+## Configuration Options {#configuration}
+
+### OpenTDFOptions (Constructor)
+
+```typescript
+interface OpenTDFOptions {
+  authProvider: AuthProvider;
+  dpopKeys?: CryptoKeyPair;
+  defaultCreateOptions?: Partial<CreateOptions>;
+  cryptoService?: CryptoService;
+}
+```
+
+### CreateOptions (Shared)
+
+```typescript
+type CreateOptions = {
+  autoconfigure?: boolean;        // Use policy service for KAS discovery
+  attributes?: string[];          // Attribute URIs for the policy
+  byteLimit?: number;             // Max bytes to read (DoS protection)
+  defaultKASEndpoint?: string;    // Default KAS URL
+  signers?: Keys;                 // Private keys for signing assertions
+  source: Source;                 // Input data source
+};
+```
+
+### CreateTDFOptions (ZTDF-specific)
+
+```typescript
+type CreateTDFOptions = CreateOptions & {
+  assertionConfigs?: AssertionConfig[];   // Bound metadata assertions
+  metadata?: Metadata;                    // Unbound metadata (deprecated)
+  mimeType?: MimeType;                   // MIME type of plaintext
+  splitPlan?: SplitStep[];               // Multi-KAS key splitting
+  windowSize?: number;                   // Segment size (default: 1 MiB)
+  wrappingKeyAlgorithm?: KasPublicKeyAlgorithm;  // RSA or EC
+  tdfSpecVersion?: '4.2.2' | '4.3.0';   // Target spec version
+};
+```
+
+### ReadOptions (Decrypt)
+
+```typescript
+type ReadOptions = {
+  source: Source;                              // Ciphertext input
+  platformUrl?: string;                       // Platform URL for discovery
+  allowedKASEndpoints?: string[];             // Trusted KAS URLs
+  ignoreAllowlist?: boolean;                  // Disable KAS URL validation
+  fulfillableObligationFQNs?: string[];       // Client-fulfillable obligations
+  assertionVerificationKeys?: AssertionVerificationKeys;  // Public keys for assertion verification
+  noVerify?: boolean;                         // Skip assertion verification
+};
+```
+
+### SplitStep (Multi-KAS)
+
+```typescript
+type SplitStep = {
+  kas: string;    // KAS URL for this share
+  sid?: string;   // Split identifier (empty = shared key, not split)
+};
+```
+
+---
+
+## Source Types & Streaming {#streaming}
+
+The SDK supports multiple input source types:
+
+```typescript
+type Source =
+  | { type: 'buffer'; location: Uint8Array }
+  | { type: 'chunker'; location: Chunker }
+  | { type: 'file-browser'; location: Blob }
+  | { type: 'remote'; location: string }       // URL with range request support
+  | { type: 'stream'; location: ReadableStream<Uint8Array> };
+```
+
+### Helper Functions
+
+```typescript
+import { fromBrowserFile, fromBuffer, fromString } from '@opentdf/sdk';
+
+// From a browser File input
+const chunker = fromBrowserFile(fileInput.files[0]);
+
+// From a buffer
+const chunker = fromBuffer(new Uint8Array([1, 2, 3]));
+
+// From a string
+const chunker = fromString('Hello, world!');
+```
+
+### Chunker Interface
+
+```typescript
+type Chunker = (byteStart?: number, byteEnd?: number) => Promise<Uint8Array>;
+```
+
+Remote sources automatically retry with exponential backoff on network errors.
+
+---
+
+## Policy Discovery {#policy-discovery}
+
+Query the platform for attribute definitions:
+
+```typescript
+import { listAttributes, validateAttributes, attributeExists, attributeValueExists } from '@opentdf/sdk';
+
+// List all attributes from the platform
+const attrs = await listAttributes(platformUrl, authProvider);
+
+// Validate that specific attribute FQNs exist
+await validateAttributes(platformUrl, authProvider, [
+  'https://example.com/attr/classification/value/secret'
+]);
+
+// Check if an attribute exists
+const exists = await attributeExists(platformUrl, authProvider, 'https://example.com/attr/classification');
+
+// Check if a specific attribute value exists
+const valueExists = await attributeValueExists(platformUrl, authProvider,
+  'https://example.com/attr/classification/value/secret'
+);
+```
+
+---
+
+## Platform Client {#platform-client}
+
+The `PlatformClient` provides typed access to all OpenTDF platform gRPC services via Connect RPC.
+
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+```
+
+### Available Services (v1)
+
+| Service | Description |
+|---|---|
+| `platform.v1.authorization` | Authorization decisions and entitlements |
+| `platform.v1.entityResolution` | Entity identity resolution |
+| `platform.v1.access` | KAS public key and rewrap |
+| `platform.v1.action` | Policy action definitions |
+| `platform.v1.attributes` | Attribute CRUD |
+| `platform.v1.keyAccessServerRegistry` | KAS registry management |
+| `platform.v1.keyManagement` | Key lifecycle management |
+| `platform.v1.namespace` | Namespace CRUD |
+| `platform.v1.obligation` | Policy obligations |
+| `platform.v1.registeredResources` | Registered resources |
+| `platform.v1.resourceMapping` | Resource-to-attribute mappings |
+| `platform.v1.subjectMapping` | Subject-to-attribute mappings |
+| `platform.v1.unsafe` | Administrative operations |
+| `platform.v1.wellknown` | Platform discovery |
+
+### v2 Services
+
+| Service | Description |
+|---|---|
+| `platform.v2.authorization` | Enhanced authorization with entity identifiers |
+
+### Usage Examples
+
+```typescript
+// List attributes
+const response = await platform.v1.attributes.listAttributes({});
+console.log(response.attributes);
+
+// Get well-known configuration
+const config = await platform.v1.wellknown.getWellKnownConfiguration({});
+
+// Create a namespace
+await platform.v1.namespace.createNamespace({ name: 'https://example.com' });
+```
+
+### Connect RPC URL Pattern
+
+PlatformClient uses Connect RPC, which makes HTTP POST requests to URLs in the pattern:
+
+```
+POST {platformUrl}/{package}.{ServiceName}/{MethodName}
+Content-Type: application/json
+```
+
+For example, if `platformUrl` is `/api`:
+- `/api/policy.namespaces.NamespaceService/ListNamespaces`
+- `/api/policy.attributes.AttributesService/ListAttributes`
+- `/api/kas.AccessService/PublicKey`
+
+This is relevant when configuring a dev proxy (e.g., Vite):
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
+});
+```
+
+### Custom Interceptors
+
+```typescript
+import { platformConnect, PlatformClient } from '@opentdf/sdk/platform';
+
+const loggingInterceptor: platformConnect.Interceptor = (next) => async (req) => {
+  console.log('Request:', req.url);
+  return await next(req);
+};
+
+const platform = new PlatformClient({
+  interceptors: [loggingInterceptor],
+  platformUrl: '/api',
+});
+```
+
+---
+
+## Error Handling {#error-handling}
+
+All errors extend `TdfError`:
+
+| Error Class | Description |
+|---|---|
+| `TdfError` | Base error class |
+| `ConfigurationError` | Invalid options or configuration |
+| `AttributeValidationError` | Data attribute not in correct form |
+| `InvalidFileError` | Corrupt, invalid, or failed TDF validation |
+| `DecryptError` | Decryption failure (wrong key, corrupt data) |
+| `IntegrityError` | Integrity check failure |
+| `UnsafeUrlError` | KAS URL not in allowlist (possible malicious file) |
+| `NetworkError` | Network failure during rewrap or API call |
+| `ServiceError` | Server-side 5xx error |
+| `UnauthenticatedError` | Authentication failure (401) |
+| `PermissionDeniedError` | Authorization failure (403), may include `requiredObligations` |
+| `UnsupportedFeatureError` | Unsupported TDF version or feature |
+| `AttributeNotFoundError` | Attribute FQN not found on platform |
+
+### Obligation Handling
+
+```typescript
+try {
+  const reader = client.open({ source });
+  await reader.decrypt();
+} catch (e) {
+  if (e instanceof PermissionDeniedError && e.requiredObligations) {
+    console.log('Must fulfill obligations:', e.requiredObligations);
+  }
+}
+```
+
+---
+
+## CLI Tool {#cli}
+
+The `@opentdf/ctl` package provides a Node.js CLI:
+
+```bash
+npx @opentdf/ctl <auth options> <policy options> [encrypt|decrypt] [input file]
+```
+
+### Encrypt
+
+```bash
+echo hello-world > sample.txt
+npx @opentdf/ctl encrypt \
+  --kasEndpoint http://localhost:65432/api/kas \
+  --oidcEndpoint http://localhost:65432/auth/realms/opentdf \
+  --auth tdf-client:123-456 \
+  --containerType tdf3 \
+  --output sample.tdf \
+  sample.txt
+```
+
+### Decrypt
+
+```bash
+npx @opentdf/ctl decrypt \
+  --kasEndpoint http://localhost:65432/api/kas \
+  --oidcEndpoint http://localhost:65432/auth/realms/opentdf \
+  --auth tdf-client:123-456 \
+  --containerType tdf3 \
+  --userId alice@somewhere.there \
+  sample.tdf
+```
+
+### CLI Options
+
+| Option | Description |
+|---|---|
+| `--kasEndpoint` | KAS URL |
+| `--oidcEndpoint` | OIDC realm URL |
+| `--auth` | Credentials as `clientId:clientSecret` |
+| `--containerType` | Container format (`tdf3`/`ztdf`) |
+| `--output` | Output file path |
+| `--userId` | Override user ID for decrypt |
+| `--attributes` | Comma-separated attribute URIs |
+| `--byteLimit` | Max bytes to encrypt |
+
+---
+
+## Exported Types {#types}
+
+Key types exported from `@opentdf/sdk`:
+
+```typescript
+// Auth
+export { AuthProvider, HttpMethod, HttpRequest, withHeaders } from './auth/auth';
+export { AuthProviders } from './auth/providers';
+
+// Core
+export { OpenTDF, CreateOptions, CreateTDFOptions, ReadOptions, RequiredObligations } from './opentdf';
+export { PlatformClient, PlatformClientOptions, PlatformServices } from './platform';
+
+// Policy
+export { listAttributes, validateAttributes, attributeExists, attributeValueExists } from './policy/discovery';
+
+// Errors
+export { TdfError, PermissionDeniedError, IntegrityError, InvalidFileError, DecryptError,
+         NetworkError, AttributeValidationError, AttributeNotFoundError, ConfigurationError } from './errors';
+
+// Data Types
+export { Source, Chunker, fromBrowserFile, fromBuffer, fromString } from './seekable';
+export { Manifest, Payload, EncryptionInformation, KeyAccessObject, Segment } from './models';
+
+// TDF
+export { Assertion, CryptoService, KasPublicKeyAlgorithm } from './opentdf';
+
+// Metadata
+export { version, clientType, tdfSpecVersion } from './version';
+```
+
+---
+
+## Development {#development}
+
+### Makefile Commands
+
+| Command | Description |
+|---|---|
+| `make` | Build and test everything |
+| `make start` | Build all, start web-app dev server |
+| `make test` | Run all tests |
+| `make lint` | Lint all packages |
+| `make format` | Format all code |
+| `make clean` | Remove build artifacts and node_modules |
+| `make cli` | Build and pack CLI tool |
+| `make doc` | Generate SDK documentation |
+| `make generate-platform` | Regenerate platform proto TypeScript |
+
+### Tech Stack
+
+- **TypeScript** with strict mode, ESM + CJS
+- **Testing**: Mocha (lib, cli), Vitest (web-app), Playwright (e2e)
+- **Build**: TypeScript compiler, Webpack, Vite
+- **RPC**: Connect RPC for platform communication
+- **Crypto**: Web Crypto API
+- **Style**: Prettier (100 char width, single quotes), ESLint
+- **Commits**: Conventional Commits with scopes: `sdk`, `cli`, `docs`, `ci`, `main`

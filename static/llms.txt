@@ -1,0 +1,68 @@
+# OpenTDF
+
+> OpenTDF is an open-source platform for data-centric security using the Trusted Data Format (TDF). It provides end-to-end encryption with attribute-based access control (ABAC), ensuring data remains protected wherever it travels. The platform includes server-side services (KAS, Policy, Authorization, Entity Resolution) and client SDKs (Go, Java, TypeScript/JavaScript).
+
+## TDF Specification
+- [Overview](llms-full.txt#overview): What OpenTDF/TDF is — open standard for data-centric security, version 4.3.0
+- [TDF Structure](llms-full.txt#tdf-structure): ZIP archive format containing manifest.json and encrypted payload
+- [Manifest Schema](llms-full.txt#manifest-schema): Complete manifest.json structure with all field definitions and JSON example
+- [Payload](llms-full.txt#payload): Payload object fields — type, url, protocol, isEncrypted, mimeType
+- [Encryption Information](llms-full.txt#encryption-information): Encryption method (AES-256-GCM), integrity information, segments
+- [Key Access Object](llms-full.txt#key-access-object): How decryption keys are wrapped and accessed via KAS
+- [Policy Object](llms-full.txt#policy-object): Access control policy structure with dataAttributes and dissem list
+- [Attributes](llms-full.txt#attributes): Attribute URI format, canonical names, instances, external definitions with AllOf/AnyOf/Hierarchy rules
+- [Assertions](llms-full.txt#assertions): Optional verifiable statements for security labeling, with JWS bindings
+- [Protocol](llms-full.txt#protocol): Client-KAS interaction flow — TDF creation, rewrap, decryption with sequence diagram
+- [Access Control (ABAC)](llms-full.txt#abac): Subject attributes, resource attributes, policy enforcement, 3-step access flow
+- [Security Mechanisms](llms-full.txt#security): Payload encryption, integrity verification, policy binding, key splitting
+
+## Platform
+- [Platform Overview](llms-full.txt#overview-1): Modular monolith architecture — all, core, kas deployment modes
+- [Prerequisites](llms-full.txt#prerequisites): Go, Docker, Buf, golangci-lint installation
+- [Quick Start](llms-full.txt#quick-start): Run OpenTDF locally with Docker Compose in 5 steps
+- [Configuration](llms-full.txt#configuration): Full config reference — logger, server, auth, CORS, crypto provider, tracing, database, cache
+- [Services Architecture](llms-full.txt#services): Core services (Health, Well Known) and business services (Policy, AuthZ, ERS, KAS)
+- [Policy Service](llms-full.txt#policy-service): Namespaces, attributes, values, subject mappings, resource mappings, KAS grants
+- [Key Access Server (KAS)](llms-full.txt#kas): Keyring config, key management, rewrap operations
+- [Authorization Service](llms-full.txt#authorization): v1 (Rego) vs v2 (entitlement cache), Casbin endpoint authorization
+- [Entity Resolution Service](llms-full.txt#entity-resolution): Keycloak, Claims, Multi-Strategy modes with configuration
+- [Go SDK](llms-full.txt#go-sdk): Complete usage with encrypt/decrypt example and all auth options
+- [Docker Compose Infrastructure](llms-full.txt#infrastructure): Keycloak, PostgreSQL, Jaeger, ERS test services
+- [Example Configuration](llms-full.txt#example-config): Complete opentdf-example.yaml
+- [Browser OIDC Client Setup](llms-full.txt#browser-oidc-setup): Creating a Keycloak public client, audience mapper, realm roles — required for browser apps
+- [gRPC & REST APIs](llms-full.txt#api-reference): All service endpoints, RPCs, API divergences from common pattern, Connect RPC URL format
+- [Development & Contributing](llms-full.txt#contributing): Build commands, code quality, BDD testing, migrations
+
+## Documentation Site (docs.opentdf.io)
+- [Architecture](llms-full.txt#architecture): NIST ABAC model alignment, component diagram
+- [Quick Start Guide](llms-full.txt#quickstart): Full walkthrough — install, configure TLS, start platform, create ABAC policy, encrypt/decrypt
+- [Managing the Platform](llms-full.txt#managing-platform): Lifecycle commands, health checks, troubleshooting
+- [Policy Service](llms-full.txt#policy): Complete policy hierarchy — namespaces, attributes, values, actions, subject mappings, obligations
+- [Key Management](llms-full.txt#key-management): Key architecture, base keys, key mappings, external key managers
+- [Authorization Service](llms-full.txt#authorization-1): v2 GetEntitlements/GetDecision APIs with examples
+- [Entity Resolution Service](llms-full.txt#entity-resolution-1): Mode comparison (Keycloak vs Claims vs Multi-Strategy)
+- [Subject Mapping Guide](llms-full.txt#subject-mapping-guide): Three-layer architecture, selector formats, condition operators
+- [SDKs Overview](llms-full.txt#sdks): Go, Java, JavaScript SDK comparison
+- [SDK Quickstart](llms-full.txt#sdk-quickstart): Complete encrypt/decrypt examples in Go, JavaScript, and Java
+- [SDK: TDF Operations](llms-full.txt#sdk-tdf): CreateTDF and LoadTDF with options reference
+- [SDK: Policy Management](llms-full.txt#sdk-policy): Namespace, attribute, subject mapping CRUD
+- [SDK: Troubleshooting](llms-full.txt#sdk-troubleshooting): Common issues and fixes
+- [Feature Matrix](llms-full.txt#feature-matrix): SDK and platform feature support status
+
+## Web SDK (@opentdf/sdk)
+- [Web SDK Overview](llms-full.txt#overview-2): TypeScript/JavaScript SDK — encrypt, decrypt, auth, platform client
+- [Installation](llms-full.txt#installation): npm install, ESM/CJS support, sub-path exports
+- [Authentication](llms-full.txt#authentication): Refresh token, client credentials, external JWT providers with DPoP, **Bearer interceptor pattern** for browser apps with existing OIDC
+- [Encrypt & Decrypt](llms-full.txt#encrypt-decrypt): OpenTDF class usage with full code examples
+- [Configuration Options](llms-full.txt#configuration-1): CreateOptions, CreateTDFOptions, ReadOptions type definitions
+- [Source Types & Streaming](llms-full.txt#streaming): buffer, chunker, file-browser, remote, stream sources
+- [Policy Discovery](llms-full.txt#policy-discovery): listAttributes, validateAttributes, attributeExists
+- [Platform Client](llms-full.txt#platform-client): Typed Connect RPC client for all platform services (14 v1 services + v2), Connect RPC URL pattern for proxy config
+- [Error Handling](llms-full.txt#error-handling): Full error hierarchy with obligation support
+- [CLI Tool](llms-full.txt#cli): @opentdf/ctl — encrypt/decrypt from command line
+
+## Optional
+- [Per-repo spec reference](spec/llms-full.txt): TDF specification details only
+- [Per-repo platform reference](platform/llms-full.txt): Platform service details only
+- [Per-repo docs reference](docs/llms-full.txt): User-facing documentation only
+- [Per-repo web-sdk reference](web-sdk/llms-full.txt): Web SDK details only
