@@ -139,7 +139,7 @@ logger:
 services:
   kas:
     registered_kas_uri: http://localhost:8080
-    keyring:
+    keyring:                # Each kid appears twice: current + legacy for backward compatibility
       - kid: e1
         alg: ec:secp256r1
       - kid: e1
@@ -254,6 +254,8 @@ The authorization chain has four links — **ALL must be in place** before decry
 ```
 
 #### Create attributes
+
+Each `otdfctl` command below outputs an ID. Copy it — you'll need it in the next command.
 
 ```bash
 # Create namespace (must be a valid hostname, no scheme)
@@ -474,7 +476,11 @@ go run ./service provision keycloak \
 
 **Disable VERIFY_PROFILE**: Keycloak 25 requires a `kc.org` attribute that blocks login. Disable it:
 ```bash
-# Via API
+# Get admin token (replace <KC_URL> and <admin-password> with your values)
+TOKEN=$(curl -sf -X POST "<KC_URL>/realms/master/protocol/openid-connect/token" \
+  -d "grant_type=password" -d "client_id=admin-cli" \
+  -d "username=admin" -d "password=<admin-password>" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
 curl -X PUT "<KC_URL>/admin/realms/opentdf/authentication/required-actions/VERIFY_PROFILE" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"alias":"VERIFY_PROFILE","enabled":false,"defaultAction":false,"priority":90}'
@@ -558,7 +564,7 @@ db:
 services:
   kas:
     registered_kas_uri: "${OPENTDF_KAS_URI}"
-    keyring:
+    keyring:                # Each kid appears twice: current + legacy for backward compatibility
       - kid: e1
         alg: ec:secp256r1
       - kid: e1
