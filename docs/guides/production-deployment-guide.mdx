@@ -90,6 +90,9 @@ This creates the `opentdf` realm, clients (`opentdf`, `opentdf-sdk`, `tdf-entity
 
 #### Create your application users
 
+<details>
+<summary>Keycloak user creation commands</summary>
+
 ```bash
 # Get admin token
 ADMIN_TOKEN=$(curl -sf -X POST http://localhost:8888/auth/realms/master/protocol/openid-connect/token \
@@ -116,6 +119,8 @@ curl -sf -o /dev/null -X POST "http://localhost:8888/auth/admin/realms/opentdf/u
   -d "[{\"id\":\"$STD_ROLE_ID\",\"name\":\"opentdf-standard\"}]"
 ```
 
+</details>
+
 **Important**: All users need the `opentdf-standard` realm role, or the browser SDK will get `403` when listing KAS servers. Add it to `default-roles-opentdf` so new users get it automatically.
 
 #### Configure browser client
@@ -129,6 +134,9 @@ In Keycloak admin → `opentdf` realm → Clients → `cli-client`:
 ### Step 3: Configure and Start the Platform
 
 Create `opentdf.yaml`:
+
+<details>
+<summary>Full opentdf.yaml for local development</summary>
 
 ```yaml
 logger:
@@ -211,6 +219,8 @@ server:
   port: 8080
 ```
 
+</details>
+
 #### Understanding ERS Modes
 
 The Entity Resolution Service mode controls **what subject mapping selectors match against**.
@@ -275,6 +285,9 @@ otdfctl policy attributes create \
 
 #### Register KAS with keys
 
+<details>
+<summary>KAS registration and key assignment commands</summary>
+
 ```bash
 # Register KAS
 otdfctl policy kas-registry create \
@@ -298,6 +311,8 @@ otdfctl policy attributes key assign \
   --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
   --attribute <attribute-id> --key-id <key-id>
 ```
+
+</details>
 
 #### Create subject mappings
 
@@ -547,6 +562,9 @@ CMD ["start"]
 
 Parameterize all deployment-specific values with environment variables, and harden the settings that Part 1 left in dev mode:
 
+<details>
+<summary>Full production opentdf.yaml</summary>
+
 ```yaml
 logger:
   level: info
@@ -634,6 +652,8 @@ server:
           cert: /keys/kas-ec-cert.pem
   port: 8080
 ```
+
+</details>
 
 :::tip About `audience: "http://localhost:8080"`
 This looks wrong for production, but it works because `provision keycloak` hardcodes this audience in the `opentdf` client. The audience is a token validation string — the platform checks that the JWT's `aud` claim matches this value. It doesn't connect to this URL.
