@@ -1,0 +1,401 @@
+---
+title: "Part 1: Local Development"
+sidebar_label: "Local Development"
+sidebar_position: 1
+---
+
+# Part 1: Local Development
+
+Set up OpenTDF and build an application that encrypts data with attribute-based access control.
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Go (check the platform's [`go.mod`](https://github.com/opentdf/platform/blob/main/service/go.mod) for the required version)
+- OpenSSL (for generating KAS encryption keys)
+- The platform source code: `git clone https://github.com/opentdf/platform.git`
+
+:::warning Why do I need the source code?
+The `provision keycloak` command that bootstraps your identity provider requires files only in the source tree. The container image does not include them. Until provisioning is available as a standalone tool, you need the source checkout.
+:::
+
+## Step 1: Start PostgreSQL and Keycloak
+
+Generate self-signed TLS certificates (used for HTTPS between platform services locally — not the KAS encryption keys, which are separate) and start infrastructure:
+
+```bash
+cd platform
+./.github/scripts/init-temp-keys.sh
+docker compose up -d
+```
+
+Wait for both to be healthy:
+```bash
+curl -sf http://localhost:8888/auth/realms/master | head -1
+docker compose exec opentdfdb pg_isready
+```
+
+:::tip Apple M4 users
+Keycloak (Java) may crash with SIGILL. Set `export JAVA_OPTS_APPEND="-XX:UseSVE=0"` before running Docker.
+:::
+
+## Step 2: Provision the Identity Provider
+
+:::danger Order matters
+The platform **cannot start** until the OIDC realm exists. Provision Keycloak BEFORE starting the platform.
+:::
+
+```bash
+go run ./service provision keycloak
+```
+
+This creates the `opentdf` realm, clients (`opentdf`, `opentdf-sdk`, `tdf-entity-resolution`, `cli-client`), roles (`opentdf-admin`, `opentdf-standard`), and sample users.
+
+### Create your application users
+
+<details>
+<summary>Keycloak user creation commands</summary>
+
+```bash
+# Get admin token
+ADMIN_TOKEN=$(curl -sf -X POST http://localhost:8888/auth/realms/master/protocol/openid-connect/token \
+  -d "grant_type=password" -d "client_id=admin-cli" \
+  -d "username=admin" -d "password=changeme" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# Create a user
+curl -sf -X POST http://localhost:8888/auth/admin/realms/opentdf/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"username":"alice","enabled":true,"email":"alice@example.com","emailVerified":true}'
+
+# Set password
+ALICE_ID=$(curl -sf "http://localhost:8888/auth/admin/realms/opentdf/users?username=alice" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
+curl -sf -X PUT "http://localhost:8888/auth/admin/realms/opentdf/users/$ALICE_ID/reset-password" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"type":"password","value":"alice123","temporary":false}'
+
+# Add opentdf-standard role (required for SDK access)
+STD_ROLE_ID=$(curl -sf http://localhost:8888/auth/admin/realms/opentdf/roles/opentdf-standard \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+curl -sf -o /dev/null -X POST "http://localhost:8888/auth/admin/realms/opentdf/users/$ALICE_ID/role-mappings/realm" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d "[{\"id\":\"$STD_ROLE_ID\",\"name\":\"opentdf-standard\"}]"
+```
+
+</details>
+
+**Important**: All users need the `opentdf-standard` realm role, or the browser SDK will get `403` when listing KAS servers. To make this automatic for new users:
+
+1. Keycloak admin → `opentdf` realm → Realm roles → `default-roles-opentdf`
+2. Click **Assign role** → Filter by realm roles → Select `opentdf-standard` → **Assign**
+
+### Configure browser client
+
+For browser-based apps, update `cli-client` (the public client created by provisioning):
+
+In Keycloak admin → `opentdf` realm → Clients → `cli-client`:
+- Valid redirect URIs: `http://localhost:*`
+- Web origins: `+`
+
+## Step 3: Configure and Start the Platform
+
+Create `opentdf.yaml`:
+
+<details>
+<summary>Full opentdf.yaml for local development</summary>
+
+```yaml
+logger:
+  level: info
+  type: text
+  output: stdout       # Only 'stdout' is valid in the container image
+
+services:
+  kas:
+    registered_kas_uri: http://localhost:8080
+    keyring:
+      - kid: e1
+        alg: ec:secp256r1
+      - kid: e1
+        alg: ec:secp256r1
+        legacy: true       # Used for trial decryption of old TDFs that lack a kid field
+      - kid: r1
+        alg: rsa:2048
+      - kid: r1
+        alg: rsa:2048
+        legacy: true
+  entityresolution:
+    mode: claims         # See "Understanding ERS Modes" below
+    url: http://localhost:8888/auth
+    clientid: "tdf-entity-resolution"
+    clientsecret: "secret"
+    realm: "opentdf"
+    legacykeycloak: true
+    inferid:
+      from:
+        email: true
+        username: true
+
+server:
+  tls:
+    enabled: false
+  auth:
+    enabled: true
+    enforceDPoP: false
+    audience: "http://localhost:8080"
+    issuer: http://localhost:8888/auth/realms/opentdf
+    policy:
+      extension: |
+        g, opentdf-admin, role:admin
+        g, opentdf-standard, role:standard
+  cors:
+    enabled: true
+    allowedorigins:
+      - "http://localhost:5173"   # Vite dev server
+      - "http://localhost:3000"
+    allowedmethods: [GET, POST, PATCH, PUT, DELETE, OPTIONS]
+    allowedheaders:
+      - Accept
+      - Accept-Encoding
+      - Authorization
+      - Connect-Protocol-Version
+      - Content-Length
+      - Content-Type
+      - Dpop
+      - X-CSRF-Token
+      - X-Requested-With
+      - X-Rewrap-Additional-Context
+    exposedheaders: [Link]
+    allowcredentials: true
+    maxage: 3600
+  grpc:
+    reflectionEnabled: true
+  cryptoProvider:
+    type: standard
+    standard:
+      keys:
+        - kid: r1
+          alg: rsa:2048
+          private: kas-private.pem
+          cert: kas-cert.pem
+        - kid: e1
+          alg: ec:secp256r1
+          private: kas-ec-private.pem
+          cert: kas-ec-cert.pem
+  port: 8080
+```
+
+</details>
+
+### Understanding ERS Modes
+
+The Entity Resolution Service mode controls **what subject mapping selectors match against**.
+
+| Mode | Selectors target | Use |
+|------|-----------------|-----|
+| `claims` | JWT token claims directly | Simpler — `.preferred_username`, `.client_id`, `.realm_access.roles[]` |
+| `keycloak` (default) | Keycloak Admin API user object | When matching Keycloak user attributes: `.attributes.department[]` |
+
+**Use `claims` mode** unless you specifically need Keycloak Admin API data. See the [Subject Mapping Guide](/guides/subject-mapping-guide) for selector syntax.
+
+:::warning .sub selector doesn't work in claims mode
+The `.sub` JWT claim resolves correctly in `otdfctl dev selectors generate` but does NOT evaluate in subject mapping conditions. Use `.preferred_username` instead. This is a [known issue](https://github.com/opentdf/platform/issues/3188).
+:::
+
+### Start the platform
+
+```bash
+go run ./service start
+```
+
+Verify:
+```bash
+curl -sf http://localhost:8080/healthz
+# {"status":"SERVING"}
+```
+
+:::danger Don't run the platform in Docker for local dev
+Running the platform in Docker alongside Keycloak causes split-horizon DNS — tokens from `localhost:8888` have different `iss` claims than tokens from `keycloak:8888`. Use `KC_HOSTNAME_URL` in production (see [Part 2](./production-deployment)), or run the platform on the host for local dev.
+:::
+
+## Step 4: Set Up Attributes and Policy
+
+The authorization chain has four links — **ALL must be in place** before decrypt works:
+
+```text
+1. Attribute exists in policy DB
+2. KAS is registered with keys and granted to the attribute
+3. Subject mapping connects identity claims to the attribute
+4. Encrypted data is tagged with the attribute
+```
+
+### Create attributes
+
+Each `otdfctl` command below outputs an ID. Copy it — you'll need it in the next command.
+
+```bash
+# Create namespace (must be a valid hostname, no scheme)
+otdfctl policy attributes namespaces create \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --name "clinic.example"
+
+# Create attribute with values
+otdfctl policy attributes create \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --namespace <namespace-id> \
+  --name staff_role --rule ANY_OF \
+  --value doctor --value nurse --value admin
+```
+
+### Register KAS with keys
+
+<details>
+<summary>KAS registration and key assignment commands</summary>
+
+```bash
+# Register KAS
+otdfctl policy kas-registry create \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --uri http://localhost:8080 \
+  --public-key-remote http://localhost:8080/kas/v2/kas_public_key \
+  --name local-kas
+
+# Create KAS key (base64-encode the PEM)
+KAS_PUB_B64=$(curl -sf http://localhost:8080/kas/v2/kas_public_key | python3 -c "import sys,json,base64; print(base64.b64encode(json.load(sys.stdin)['publicKey'].encode()).decode())")
+otdfctl policy kas-registry key create \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --kas <kas-id> --key-id "r1" --algorithm "rsa:2048" \
+  --mode "public_key" --public-key-pem "$KAS_PUB_B64"
+
+# Assign key to attribute
+otdfctl policy attributes key assign \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --attribute <attribute-id> --key-id <key-id>
+```
+
+</details>
+
+### Create subject mappings
+
+One mapping per attribute value. See the [Subject Mapping Guide](/guides/subject-mapping-guide) for selector syntax, operators, and patterns.
+
+```bash
+otdfctl policy subject-mappings create \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --attribute-value-id <value-id> \
+  --action read \
+  --subject-condition-set-new '[{
+    "condition_groups": [{
+      "conditions": [{
+        "subject_external_selector_value": ".preferred_username",
+        "operator": "SUBJECT_MAPPING_OPERATOR_ENUM_IN",
+        "subject_external_values": ["alice"]
+      }],
+      "boolean_operator": "CONDITION_BOOLEAN_TYPE_ENUM_AND"
+    }]
+  }]'
+```
+
+:::warning Duplicate subject mappings poison evaluation
+If multiple mappings exist for the same attribute value and one has a non-matching condition, it can block other mappings from granting access. Always delete old mappings before creating replacements. See [issue #3190](https://github.com/opentdf/platform/issues/3190).
+:::
+
+### Validate with SDK discovery
+
+Before encrypting, use the SDK's discovery helpers to verify your policy is configured:
+
+```go
+// Check attribute exists
+exists, err := sdk.AttributeValueExists(ctx, "https://clinic.example/attr/staff_role/value/doctor")
+
+// Validate all FQNs before encrypting
+err := sdk.ValidateAttributes(ctx, fqns...)
+```
+
+Note: `AttributeValueExists` currently returns an error (not `false`) for non-existent values. See [issue #3191](https://github.com/opentdf/platform/issues/3191).
+
+## Step 5: Integrate the SDK
+
+### Go SDK (Backend — Encrypt Only)
+
+```go
+client, err := sdk.New(
+    "http://localhost:8080",                    // Must include http:// scheme
+    sdk.WithClientCredentials("opentdf-sdk", "secret", nil),
+    sdk.WithTokenEndpoint("http://localhost:8888/auth/realms/opentdf/protocol/openid-connect/token"),
+    sdk.WithInsecurePlaintextConn(),            // Remove in production
+)
+
+// Encrypt
+var buf bytes.Buffer
+_, err = client.CreateTDF(&buf, bytes.NewReader(plaintext),
+    sdk.WithDataAttributes("https://clinic.example/attr/staff_role/value/doctor"),
+    sdk.WithAutoconfigure(false),
+    sdk.WithKasInformation(sdk.KASInfo{URL: "http://localhost:8080"}),
+)
+```
+
+### JavaScript/TypeScript (Browser SDK — Decrypt)
+
+For true per-user access enforcement, the **browser** decrypts using the user's own Keycloak token. The backend should only encrypt.
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId: 'cli-client',         // Must be a PUBLIC Keycloak client
+  exchange: 'refresh',
+  refreshToken: keycloak.refreshToken,
+  oidcOrigin: 'http://localhost:8888/auth/realms/opentdf',
+});
+
+const client = new OpenTDF({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+await client.ready;
+
+// Decrypt
+const decryptedStream = await client.read({
+  source: { type: 'buffer', location: tdfBytes },
+});
+```
+
+## Step 6: Test the Full Round-Trip
+
+```bash
+# Encrypt
+echo "secret data" | otdfctl encrypt \
+  --host http://localhost:8080 \
+  --with-client-creds '{"clientId":"opentdf","clientSecret":"secret"}' \
+  --attr "https://clinic.example/attr/staff_role/value/doctor" \
+  -o test.tdf
+
+# Decrypt as a user with the right entitlement
+otdfctl decrypt \
+  --host http://localhost:8080 \
+  --with-access-token "$USER_TOKEN" \
+  test.tdf
+```
+
+If decrypt fails with "could not perform access", check all four links in the authorization chain (Step 4).
+
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Platform crashes: "failed to discover idp" | OIDC realm doesn't exist | Run `provision keycloak` BEFORE starting platform |
+| SDK: "platform endpoint is malformed" | Missing `http://` scheme | Use `http://localhost:8080`, not `localhost:8080` |
+| SDK: "unauthenticated" | Token endpoint unreachable | Use `WithTokenEndpoint()` to override Docker-internal URL |
+| Container: "Config File not found" | Wrong mount path | Mount to `/home/nonroot/.opentdf/opentdf.yaml`, NOT `/app/` |
+| Container: "invalid logger output: stderr" | Unsupported value | Use `output: stdout` |
+| Browser SDK: "ListKeyAccessServers 403" | User missing role | Add `opentdf-standard` role to user |
+| Encrypt works, decrypt 403 | Missing link in auth chain | Check: attribute exists, KAS registered + key assigned, subject mapping exists |
+| `.sub` selector doesn't match | Known platform issue | Use `.preferred_username` instead |
+| Duplicate mappings break access | Evaluation poisoning | Delete old mappings, create fresh |

@@ -1,0 +1,325 @@
+---
+title: "Part 2: Production Deployment"
+sidebar_label: "Production Deployment"
+sidebar_position: 2
+---
+
+# Part 2: Production Deployment
+
+Everything from [Part 1](./local-development) applies. This section covers what **changes** for production.
+
+## Key Differences from Local
+
+| Concern | Local Dev | Production |
+|---------|-----------|------------|
+| Database | Docker PostgreSQL, `changeme` | Managed PostgreSQL with SSL (`sslmode: require`) |
+| TLS | Disabled | CA-signed certificates (or terminate at load balancer) |
+| DPoP | `enforceDPoP: false` | `enforceDPoP: true` (proof-of-possession on tokens). Requires SDK and IdP support — verify both your browser SDK and backend SDK send DPoP proofs before enabling. |
+| Identity Provider | Local Keycloak, default passwords | Production OIDC with strong secrets |
+| KAS Keys | Generated locally in repo | Secrets manager or env vars, never committed |
+| CORS | `allowedorigins: ["http://localhost:5173"]` | Specific frontend domain |
+| Logging | `level: info`, `type: text` | `level: info`, `type: json` |
+| gRPC Reflection | Enabled | Disabled |
+| SDK Connection | `WithInsecurePlaintextConn()` | Remove — use TLS |
+| Credentials | Hardcoded `secret` | Environment variables |
+| Logger output | `stdout` | `stdout` (only valid value in container) |
+| Keycloak | `start-dev` mode | `start` production mode |
+
+## Solving Split-Horizon DNS
+
+The #1 architectural issue for containerized deployment. When the platform and Keycloak run in separate containers, they reach each other via internal hostnames (`keycloak:8888`) but external clients use public URLs (`https://keycloak.example.com`). JWT tokens have different `iss` claims depending on which URL was used.
+
+**Solution**: Set `KC_HOSTNAME_URL` in Keycloak to the public URL. This forces all tokens to use the same issuer regardless of how Keycloak is accessed:
+
+```bash
+KC_HOSTNAME_URL=https://keycloak.example.com/auth
+```
+
+## Keycloak Production Setup
+
+### Provisioning against a remote Keycloak
+
+```bash
+# Stop local Keycloak first — provisioning defaults to localhost:8888
+docker compose down
+
+# Use -e flag to target remote Keycloak, -p for admin password
+go run ./service provision keycloak \
+  -e https://keycloak.example.com/auth \
+  -u admin \
+  -p <admin-password>
+```
+
+:::warning Provisioning gotchas
+- The admin token expires in **60 seconds** — provisioning handles this, but some clients may be created while others aren't. Verify all expected clients exist.
+- The provisioned `opentdf` client's audience defaults to `http://localhost:8080`. The platform's `auth.audience` config must match this, or you need to add an audience mapper.
+:::
+
+### Required Keycloak fixes for production
+
+**Disable VERIFY_PROFILE**: Keycloak 25's Verify Profile required action can block login when user profiles are incomplete. Disable it:
+```bash
+# Get admin token (replace <KC_URL> and <admin-password> with your values)
+TOKEN=$(curl -sf -X POST "<KC_URL>/realms/master/protocol/openid-connect/token" \
+  -d "grant_type=password" -d "client_id=admin-cli" \
+  -d "username=admin" -d "password=<admin-password>" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl -X PUT "<KC_URL>/admin/realms/opentdf/authentication/required-actions/VERIFY_PROFILE" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"alias":"VERIFY_PROFILE","enabled":false,"defaultAction":false,"priority":90}'
+```
+
+**Add audience mapper to `cli-client`**: Browser tokens lack the platform audience by default.
+1. Keycloak admin → `opentdf` realm → Clients → `cli-client` → Client scopes
+2. Click `cli-client-dedicated` → Add mapper → By configuration → **Audience**
+3. Included Custom Audience: must match your platform's `auth.audience` config. If you used the default provisioning, this is `http://localhost:8080` (see the note in "Config in Production" for why and how to change it).
+4. Add to access token: ON
+
+**Add `opentdf-standard` to default roles**: So every new user automatically gets SDK access.
+1. Realm roles → `default-roles-opentdf` → Associated roles → Add `opentdf-standard`
+
+### Missing clients after provisioning
+
+The 60-second token can cause provisioning to exit early. Verify these exist:
+- `opentdf` — admin client
+- `opentdf-sdk` — SDK client with `opentdf-standard` role
+- `tdf-entity-resolution` — ERS client with `view-users`, `query-users` client roles
+- `cli-client` — public client for browser auth
+
+## KAS Keys in Production
+
+Never commit private keys to a repository. Options:
+
+1. **Bake into Docker image** (simplest for demos): Copy keys into a custom Dockerfile
+2. **Environment variables**: Base64-encode PEM files, decode at startup
+3. **Secrets manager**: AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault
+4. **Volume mounts**: If your platform supports file mounts
+
+Generate keys:
+```bash
+openssl genpkey -algorithm RSA -out kas-private.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -in kas-private.pem -pubout -out kas-cert.pem
+openssl ecparam -name prime256v1 -out ecparams.tmp
+openssl req -x509 -nodes -newkey ec:ecparams.tmp -subj "/CN=KAS" \
+  -keyout kas-ec-private.pem -out kas-ec-cert.pem -days 365
+rm ecparams.tmp
+```
+
+## Container Registry
+
+The official image at `registry.opentdf.io/platform:latest` may not be accessible from all cloud providers (Railway returns 403 despite the registry being public). Workaround: mirror to GHCR or Docker Hub:
+
+```bash
+docker pull --platform linux/amd64 registry.opentdf.io/platform:latest
+docker tag registry.opentdf.io/platform:latest ghcr.io/<your-account>/opentdf-platform:latest
+docker push ghcr.io/<your-account>/opentdf-platform:latest
+```
+
+**Important**: Specify `--platform linux/amd64` when pulling on ARM Macs — otherwise the image won't run on x86 cloud hosts.
+
+## Config in Production
+
+The platform reads config from `/home/nonroot/.opentdf/opentdf.yaml` in the container. For platforms that don't support file mounts (like [Railway](https://railway.app)), bake the config into a custom Docker image:
+
+```dockerfile
+FROM --platform=linux/amd64 ghcr.io/<your-account>/opentdf-platform:latest
+COPY opentdf.yaml /home/nonroot/.opentdf/opentdf.yaml
+COPY keys/ /keys/
+CMD ["start"]
+```
+
+Parameterize all deployment-specific values with environment variables, and harden the settings that Part 1 left in dev mode:
+
+<details>
+<summary>Full production opentdf.yaml</summary>
+
+```yaml
+logger:
+  level: info
+  type: json                          # Structured logs for production
+  output: stdout
+
+db:
+  host: "${OPENTDF_DB_HOST}"
+  port: 5432
+  database: "${OPENTDF_DB_DATABASE}"
+  user: postgres
+  password: "${OPENTDF_DB_PASSWORD}"
+  sslmode: require                    # Always use SSL for managed databases
+
+services:
+  kas:
+    registered_kas_uri: "${OPENTDF_KAS_URI}"
+    keyring:
+      - kid: e1
+        alg: ec:secp256r1
+      - kid: e1
+        alg: ec:secp256r1
+        legacy: true       # Used for trial decryption of old TDFs that lack a kid field
+      - kid: r1
+        alg: rsa:2048
+      - kid: r1
+        alg: rsa:2048
+        legacy: true
+  entityresolution:
+    mode: claims
+    url: "${OPENTDF_KEYCLOAK_URL}"
+    clientid: "tdf-entity-resolution"
+    clientsecret: "${OPENTDF_ERS_SECRET}"
+    realm: "opentdf"
+    legacykeycloak: true
+    inferid:
+      from:
+        email: true
+        username: true
+
+server:
+  tls:
+    enabled: true                     # Enable TLS (or terminate at load balancer)
+  auth:
+    enabled: true
+    enforceDPoP: false                # Set to true if your SDKs and IdP support DPoP
+    audience: "http://localhost:8080"  # Must match provisioned audience (see note below)
+    issuer: "${OPENTDF_KEYCLOAK_URL}/realms/opentdf"
+    policy:
+      extension: |
+        g, opentdf-admin, role:admin
+        g, opentdf-standard, role:standard
+  cors:
+    enabled: true
+    allowedorigins:
+      - "${OPENTDF_CORS_ORIGIN}"      # Specific frontend domain, NOT "*"
+    allowedmethods: [GET, POST, PATCH, PUT, DELETE, OPTIONS]
+    allowedheaders:
+      - Accept
+      - Accept-Encoding
+      - Authorization
+      - Connect-Protocol-Version
+      - Content-Length
+      - Content-Type
+      - Dpop
+      - X-CSRF-Token
+      - X-Requested-With
+      - X-Rewrap-Additional-Context
+    exposedheaders: [Link]
+    allowcredentials: true
+    maxage: 3600
+  grpc:
+    reflectionEnabled: false          # Disable in production
+  cryptoProvider:
+    type: standard
+    standard:
+      keys:
+        - kid: r1
+          alg: rsa:2048
+          private: /keys/kas-private.pem
+          cert: /keys/kas-cert.pem
+        - kid: e1
+          alg: ec:secp256r1
+          private: /keys/kas-ec-private.pem
+          cert: /keys/kas-ec-cert.pem
+  port: 8080
+```
+
+</details>
+
+:::tip About `audience: "http://localhost:8080"`
+This looks wrong for production, but it works because `provision keycloak` hardcodes this audience in the `opentdf` client. The audience is a token validation string — the platform checks that the JWT's `aud` claim matches this value. It doesn't connect to this URL.
+
+You *can* change it to your actual domain (e.g., `https://platform.mydomain.com`). Just make sure all three places agree:
+1. The `opentdf` client's audience in Keycloak
+2. The `cli-client` audience mapper's "Included Custom Audience" value
+3. The platform's `auth.audience` config
+
+If you used the default provisioning and didn't change the Keycloak client, keep it as `http://localhost:8080`.
+:::
+
+:::tip TLS termination
+If your platform (Railway, AWS ALB, etc.) terminates TLS at the load balancer, set `tls.enabled: false` and let the proxy handle certificates. The platform will receive plain HTTP on its internal port.
+:::
+
+**Note**: If both YAML values and `OPENTDF_` env vars are set, YAML wins. Use env var references in the YAML (`${VAR}`) or remove the YAML values entirely and rely solely on env vars.
+
+## SDK Changes for Production
+
+The Part 1 SDK examples use dev-only settings. Here's what to change:
+
+### Go SDK
+
+```go
+client, err := sdk.New(
+    "https://platform.example.com",         // Use HTTPS
+    sdk.WithClientCredentials("opentdf-sdk", os.Getenv("CLIENT_SECRET"), nil),
+    sdk.WithTokenEndpoint("https://keycloak.example.com/auth/realms/opentdf/protocol/openid-connect/token"),
+    // No WithInsecurePlaintextConn() — TLS is required
+)
+```
+
+Remove `sdk.WithInsecurePlaintextConn()` — this disables TLS and must never be used in production.
+
+### JavaScript/TypeScript (Browser SDK)
+
+```typescript
+const authProvider = await AuthProviders.refreshAuthProvider({
+  clientId: 'cli-client',
+  exchange: 'refresh',
+  refreshToken: keycloak.refreshToken,
+  oidcOrigin: 'https://keycloak.example.com/auth/realms/opentdf',
+});
+
+const client = new OpenTDF({
+  authProvider,
+  platformUrl: 'https://platform.example.com',
+});
+```
+
+All URLs must use `https://`. The browser SDK doesn't have an insecure mode flag — it just needs HTTPS URLs and a valid Keycloak token.
+
+## Troubleshooting
+
+All [local development troubleshooting](./local-development#troubleshooting) applies, plus:
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Account is not fully set up" | `VERIFY_PROFILE` enabled | Disable it (see above) |
+| Token audience mismatch (401) | Browser token missing platform audience | Add audience mapper to `cli-client` |
+| "Exec format error" in container | Wrong CPU architecture | Use `--platform=linux/amd64` in Dockerfile |
+| `provision keycloak` provisions wrong instance | Local Keycloak still running | Stop local first, use `-e` flag |
+| Admin password doesn't work | Changed env var after first boot | Reset in Keycloak admin console — env var only works on first boot |
+| Container can't pull `registry.opentdf.io` | Cloud provider blocks custom registries | Mirror to GHCR/Docker Hub |
+| YAML config ignored, uses defaults | Config not at expected path | Mount to `/home/nonroot/.opentdf/opentdf.yaml` |
+| `AttributeValueExists` errors on new values | SDK bug | Treat error as "not found" — [issue #3191](https://github.com/opentdf/platform/issues/3191) |
+
+## Advanced: Per-Field Encryption for Granular Sharing
+
+Instead of encrypting an entire record with one attribute, encrypt each data category separately. This enables granular sharing — share weight without sharing symptoms.
+
+### Compound attribute values
+
+Encode both user identity and data category in a single attribute value:
+
+```text
+Attribute: patient_access (rule: ANY_OF)
+Values: <user-uuid-slug>_<category>
+
+Example FQNs:
+  https://clinic.example/attr/patient_access/value/356eeb1968c94364b4227defd515db94_weight
+  https://clinic.example/attr/patient_access/value/356eeb1968c94364b4227defd515db94_symptoms
+```
+
+This provides per-user isolation AND per-category granularity in a single attribute.
+
+### Server-side vs client-side decrypt
+
+For true per-user cryptographic enforcement, the **browser** must decrypt using the user's own Keycloak token. The backend should only encrypt — never decrypt. This ensures the KAS checks each user's entitlements individually.
+
+For more on this pattern, see the [Subject Mapping Guide](/guides/subject-mapping-guide) and the [GLP-1 Tracker demo](https://github.com/opentdf/demo-glp1-tracker).
+
+## Next Steps
+
+- **Monitoring**: Add `server.trace` config with an OTLP endpoint for OpenTelemetry tracing
+- **Key Rotation**: Add new keys with different `kid` values, update KAS grants
+- **Scaling**: Multiple platform instances behind a load balancer (stateless — state lives in PostgreSQL)
+- **Backup**: Regularly back up PostgreSQL — it contains all your policy configuration
+- **Reference**: Read [opentdf.io/llms.txt](https://opentdf.io/llms.txt) for comprehensive LLM-optimized reference documentation
+- **Community**: Visit the [OpenTDF Discussion Forum](https://github.com/orgs/opentdf/discussions) for more examples and to ask questions
