@@ -1,0 +1,50 @@
+name: Commit Signatures
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check:
+    name: Verify signed commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit signatures
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = await github.paginate(
+              github.rest.pulls.listCommits,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              }
+            );
+
+            const unsigned = commits.filter(c => !c.commit.verification.verified);
+
+            if (unsigned.length === 0) {
+              core.info(`All ${commits.length} commit(s) have verified signatures.`);
+              return;
+            }
+
+            const list = unsigned
+              .map(c => `- \`${c.sha.slice(0, 7)}\` ${c.commit.message.split('\n')[0]} — reason: ${c.commit.verification.reason}`)
+              .join('\n');
+
+            core.setFailed(
+              `${unsigned.length} of ${commits.length} commit(s) do not have verified signatures:\n\n` +
+              `${list}\n\n` +
+              `This repository requires cryptographic commit signatures (GPG or SSH).\n` +
+              `This is separate from the DCO sign-off (git commit -s).\n\n` +
+              `To set up SSH signing (recommended):\n` +
+              `  1. git config --global gpg.format ssh\n` +
+              `  2. git config --global user.signingkey ~/.ssh/id_ed25519.pub\n` +
+              `  3. git config --global commit.gpgsign true\n` +
+              `  4. Add the same key as a **Signing Key** in GitHub → Settings → SSH and GPG keys\n\n` +
+              `To re-sign existing commits:\n` +
+              `  git rebase --exec 'git commit --amend --no-edit -S' origin/main\n` +
+              `  git push --force-with-lease\n\n` +
+              `See: https://docs.github.com/en/authentication/managing-commit-signature-verification`
+            );
