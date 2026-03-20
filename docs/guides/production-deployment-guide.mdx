@@ -58,7 +58,7 @@ The `provision keycloak` command that bootstraps your identity provider requires
 
 ### Step 1: Start PostgreSQL and Keycloak
 
-Generate TLS keys and start infrastructure:
+Generate self-signed TLS certificates (used for HTTPS between platform services locally — not the KAS encryption keys, which are separate) and start infrastructure:
 
 ```bash
 cd platform
