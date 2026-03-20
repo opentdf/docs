@@ -22,15 +22,16 @@
 - [Quick Start](llms-full.txt#quick-start): Run OpenTDF locally with Docker Compose in 5 steps
 - [Configuration](llms-full.txt#configuration): Full config reference — logger, server, auth, CORS, crypto provider, tracing, database, cache
 - [Services Architecture](llms-full.txt#services): Core services (Health, Well Known) and business services (Policy, AuthZ, ERS, KAS)
-- [Policy Service](llms-full.txt#policy-service): Namespaces, attributes, values, subject mappings, resource mappings, KAS grants
+- [Policy Service](llms-full.txt#policy-service): Namespaces, attributes, values, subject mappings, resource mappings, KAS grants, **protobuf enum values** for rule types/actions/decisions
 - [Key Access Server (KAS)](llms-full.txt#kas): Keyring config, key management, rewrap operations
 - [Authorization Service](llms-full.txt#authorization): v1 (Rego) vs v2 (entitlement cache), Casbin endpoint authorization
 - [Entity Resolution Service](llms-full.txt#entity-resolution): Keycloak, Claims, Multi-Strategy modes with configuration
 - [Go SDK](llms-full.txt#go-sdk): Complete usage with encrypt/decrypt example and all auth options
 - [Docker Compose Infrastructure](llms-full.txt#infrastructure): Keycloak, PostgreSQL, Jaeger, ERS test services
 - [Example Configuration](llms-full.txt#example-config): Complete opentdf-example.yaml
-- [Browser OIDC Client Setup](llms-full.txt#browser-oidc-setup): Creating a Keycloak public client, audience mapper, realm roles — required for browser apps
+- [Browser OIDC Client Setup](llms-full.txt#browser-oidc-setup): Creating a Keycloak public client, audience mapper, realm roles, JWKS discovery — required for browser apps
 - [gRPC & REST APIs](llms-full.txt#api-reference): All service endpoints, RPCs, API divergences from common pattern, Connect RPC URL format
+- [**Curl Cookbook**](llms-full.txt#curl-cookbook): Ready-to-use curl examples for common API operations — token, namespaces, attributes, values, subject mappings, authorization decisions
 - [Development & Contributing](llms-full.txt#contributing): Build commands, code quality, BDD testing, migrations
 
 ## Documentation Site (docs.opentdf.io)

@@ -347,6 +347,17 @@ The rules governing how attributes are compared are defined in **Attribute Defin
 - **Allowed Values**: Optional enumeration of valid attribute values
 - **Order/Rank** (for Hierarchy): Defines the relationship between values
 
+#### Protobuf Enum Values (API)
+
+When using the platform API directly (Connect RPC / gRPC), rule types use these enum strings:
+
+| Conceptual Name | API Enum Value |
+|---|---|
+| AllOf | `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF` |
+| AnyOf | `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF` |
+| Hierarchy | `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY` |
+| Unspecified | `ATTRIBUTE_RULE_TYPE_ENUM_UNSPECIFIED` |
+
 The Policy Enforcement Point (PEP) retrieves these definitions at access decision time based on the Canonical Names found in `dataAttributes` and entity entitlements.
 
 ---
@@ -871,6 +882,36 @@ Manages the ABAC policy hierarchy: **Namespaces → Attributes → Values → Su
 5. **Resource Mappings**: Map data resources to attribute values
 6. **KAS Grants**: Bind attributes to specific KAS instances
 
+### Protobuf Enum Values (API)
+
+When using the API directly, these are the exact enum strings to use in requests:
+
+**Attribute Rule Types:**
+
+| Conceptual Name | API Enum Value |
+|---|---|
+| AllOf | `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF` |
+| AnyOf | `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF` |
+| Hierarchy | `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY` |
+| Unspecified | `ATTRIBUTE_RULE_TYPE_ENUM_UNSPECIFIED` |
+
+**Standard Actions:**
+
+| Action | API Enum Value |
+|---|---|
+| Transmit | `STANDARD_ACTION_TRANSMIT` |
+| Read | `STANDARD_ACTION_READ` |
+| Create | `STANDARD_ACTION_CREATE` |
+| Update | `STANDARD_ACTION_UPDATE` |
+| Delete | `STANDARD_ACTION_DELETE` |
+
+**Authorization Decisions:**
+
+| Decision | API Enum Value |
+|---|---|
+| Permit | `DECISION_PERMIT` |
+| Deny | `DECISION_DENY` |
+
 ### Policy Proto Services
 
 - `AttributesService`: CRUD for attribute definitions and values
@@ -1266,6 +1307,15 @@ Users in the `opentdf` realm need roles for platform access:
 
 Assign via: Users → select user → Role mapping → Assign role → Filter by realm roles
 
+### JWKS Discovery
+
+Always use the `jwks_uri` from OIDC discovery rather than hardcoding a JWKS path — different IdPs use different paths:
+- Keycloak: `{issuer}/protocol/openid-connect/certs`
+- PocketID: `{issuer}/.well-known/jwks.json`
+- Auth0: `{issuer}/.well-known/jwks.json`
+
+Discover the correct URI via: `GET {issuer}/.well-known/openid-configuration` → read `jwks_uri` from the response.
+
 ---
 
 ## gRPC & REST APIs {#api-reference}
@@ -1318,6 +1368,142 @@ This is important for configuring dev proxies (e.g., Vite `server.proxy` mapping
 ### OpenAPI Docs
 
 Generated OpenAPI v3.1 specs are available in `docs/openapi/` for all services.
+
+---
+
+## Quick Reference: Common API Calls (curl) {#curl-cookbook}
+
+All examples use Connect RPC (HTTP POST with JSON). Set up variables first:
+
+```shell
+PLATFORM="http://localhost:8080"
+OIDC_URL="http://localhost:8888/auth/realms/opentdf"
+
+# Get a service token
+TOKEN=$(curl -s -X POST "$OIDC_URL/protocol/openid-connect/token" \
+  -d "client_id=opentdf&client_secret=secret&grant_type=client_credentials" \
+  | jq -r '.access_token')
+```
+
+### Create Namespace
+
+```shell
+curl -X POST "$PLATFORM/policy.namespaces.NamespaceService/CreateNamespace" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name": "https://example.com"}'
+```
+
+### List Namespaces
+
+```shell
+curl -X POST "$PLATFORM/policy.namespaces.NamespaceService/ListNamespaces" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+### Create Attribute (AnyOf rule)
+
+```shell
+curl -X POST "$PLATFORM/policy.attributes.AttributesService/CreateAttribute" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "namespaceId": "<namespace-uuid>",
+    "name": "department",
+    "rule": "ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF",
+    "values": []
+  }'
+```
+
+### Create Attribute Value
+
+```shell
+curl -X POST "$PLATFORM/policy.attributes.AttributesService/CreateAttributeValue" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "attributeId": "<attribute-uuid>",
+    "value": "finance"
+  }'
+```
+
+### List Attributes
+
+```shell
+curl -X POST "$PLATFORM/policy.attributes.AttributesService/ListAttributes" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"state": "ACTIVE_STATE_ENUM_ACTIVE"}'
+```
+
+### Create Subject Mapping
+
+```shell
+curl -X POST "$PLATFORM/policy.subjectmapping.SubjectMappingService/CreateSubjectMapping" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "attributeValueId": "<value-uuid>",
+    "actions": [{"standard": "STANDARD_ACTION_TRANSMIT"}],
+    "newSubjectConditionSet": {
+      "subjectSets": [{
+        "conditionGroups": [{
+          "booleanOperator": "CONDITION_BOOLEAN_TYPE_ENUM_OR",
+          "conditions": [{
+            "subjectExternalSelectorValue": ".department",
+            "operator": "SUBJECT_MAPPING_OPERATOR_ENUM_IN",
+            "subjectExternalValues": ["finance"]
+          }]
+        }]
+      }]
+    }
+  }'
+```
+
+### Check Authorization Decision (v1)
+
+```shell
+curl -X POST "$PLATFORM/authorization.AuthorizationService/GetDecisions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "decisionRequests": [{
+      "actions": [{"standard": "STANDARD_ACTION_TRANSMIT"}],
+      "entityChains": [{
+        "id": "ec1",
+        "entities": [{"emailAddress": "user@example.com"}]
+      }],
+      "resourceAttributes": [{
+        "attributeValueFqns": [
+          "https://example.com/attr/department/value/finance"
+        ]
+      }]
+    }]
+  }'
+```
+
+Response:
+```json
+{
+  "decisionResponses": [{
+    "decision": "DECISION_PERMIT",
+    "entityChainId": "ec1"
+  }]
+}
+```
+
+### GetDecisions Request Schema
+
+| Field | Type | Description |
+|---|---|---|
+| `decisionRequests` | Array | Array of decision request objects |
+| `decisionRequests[].actions` | Array | Actions to check (e.g., `{"standard": "STANDARD_ACTION_TRANSMIT"}`) |
+| `decisionRequests[].entityChains` | Array | Entity chains with `id` and `entities` array |
+| `decisionRequests[].entityChains[].entities` | Array | Entity identifiers: `{"emailAddress": "..."}` or `{"userName": "..."}` or `{"clientId": "..."}` |
+| `decisionRequests[].resourceAttributes` | Array | Resources with `attributeValueFqns` (full attribute URIs) |
+
+### Get KAS Public Key
+
+```shell
+curl -X POST "$PLATFORM/kas.AccessService/PublicKey" \
+  -H "Content-Type: application/json" \
+  -d '{"algorithm": "rsa:2048"}'
+```
 
 ---
 
@@ -1628,6 +1814,8 @@ Named attributes within a namespace. Each has a **rule type**:
 | `AnyOf` | Entity must have at least ONE value | Entity needs `finance` OR `accounting` |
 | `Hierarchy` | Values have a rank order | `executive` > `standard` (executive implies standard) |
 
+API enum values: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF`, `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY`
+
 ### Attribute Values
 
 Specific values for a definition. Full URI format: `{namespace}/attr/{name}/value/{value}`
@@ -1748,11 +1936,28 @@ External key storage (e.g., AWS KMS). Configure providers for HSM or cloud KMS i
 }
 ```
 
-Response: `PERMIT` or `DENY` with optional obligations.
+Response: `DECISION_PERMIT` or `DECISION_DENY` with optional obligations.
 
-### v1 API (Deprecated)
+### v1 API
 
-Uses `GetDecisions` with entity chains and resource attribute FQNs.
+Uses `GetDecisions` with entity chains and resource attribute FQNs:
+
+```json
+{
+  "decisionRequests": [{
+    "actions": [{"standard": "STANDARD_ACTION_TRANSMIT"}],
+    "entityChains": [{
+      "id": "ec1",
+      "entities": [{"emailAddress": "user@example.com"}]
+    }],
+    "resourceAttributes": [{
+      "attributeValueFqns": ["https://example.com/attr/department/value/finance"]
+    }]
+  }]
+}
+```
+
+Entity identifiers can be: `{"emailAddress": "..."}`, `{"userName": "..."}`, or `{"clientId": "..."}`.
 
 ---
 
