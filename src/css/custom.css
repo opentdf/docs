@@ -218,12 +218,16 @@ a[class*="embed_documentation_footer-"] {
 }
 .legal-container span:first-child { flex-grow: 1; }
 .legal-container span { margin: 0 auto; }
-.legal-container a { cursor: pointer; }
-.legal-container a:hover { text-decoration: underline; }
+.legal-container button {
+  color: var(--ifm-link-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.legal-container button:hover { text-decoration: underline; }
 .legal-container img {
   margin-bottom: -2px;
   width: 30px;
-  max-width: 30px;
   object-fit: contain;
 }
 

@@ -68,7 +68,7 @@ const config: Config = {
     {
       tagName: "script",
       attributes: {
-        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js", //update this back to main config when time to launch
+        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js",
       },
     },
     {
@@ -233,13 +233,13 @@ const config: Config = {
           <div class='legal-container'> 
             <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
             <span>
-              <a href='https://www.virtru.com/terms-of-service/' target='_blank'>Terms</a> 
+              <a href='https://www.virtru.com/terms-of-service/' target='_blank' rel='noopener noreferrer'>Terms</a> 
               &amp; 
-              <a href='https://www.virtru.com/privacy-policy/' target='_blank'>Privacy</a>
+              <a href='https://www.virtru.com/privacy-policy/' target='_blank' rel='noopener noreferrer'>Privacy</a>
               |
-              <a href='https://www.virtru.com/cookie-policy' target='_blank'>Cookie Policy</a>
+              <a href='https://www.virtru.com/cookie-policy' target='_blank' rel='noopener noreferrer'>Cookie Policy</a>
               &amp;
-              <a onclick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg"></a>
+              <button type="button" onclick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
             </span>
           </div>
           <div class="footer__license-info">
