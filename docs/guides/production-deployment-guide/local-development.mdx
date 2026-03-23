@@ -10,6 +10,7 @@ Set up OpenTDF and build an application that encrypts data with attribute-based 
 
 ## Prerequisites
 
+- A frontend application with OIDC authentication — the browser SDK needs a valid Keycloak token to decrypt. Use a library like [`keycloak-js`](https://www.keycloak.org/docs/latest/securing_apps/#_javascript_adapter) to handle login. See the [GLP-1 Tracker frontend](https://github.com/opentdf/demo-glp1-tracker/tree/main/frontend) for a working example.
 - Docker and Docker Compose
 - Go (check the platform's [`go.mod`](https://github.com/opentdf/platform/blob/main/service/go.mod) for the required version)
 - OpenSSL (for generating KAS encryption keys)
@@ -52,6 +53,8 @@ go run ./service provision keycloak
 This creates the `opentdf` realm, clients (`opentdf`, `opentdf-sdk`, `tdf-entity-resolution`, `cli-client`), roles (`opentdf-admin`, `opentdf-standard`), and sample users.
 
 ### Create your application users
+
+For bulk user creation, see the [create-users.py](https://github.com/opentdf/demo-glp1-tracker/blob/main/scripts/create-users.py) script in the demo app.
 
 <details>
 <summary>Keycloak user creation commands</summary>
@@ -99,7 +102,7 @@ In Keycloak admin → `opentdf` realm → Clients → `cli-client`:
 
 ## Step 3: Configure and Start the Platform
 
-Create `opentdf.yaml`:
+Create `opentdf.yaml` (see the [demo app's local config](https://github.com/opentdf/demo-glp1-tracker/blob/main/opentdf.yaml) for a working example):
 
 <details>
 <summary>Full opentdf.yaml for local development</summary>
@@ -282,7 +285,7 @@ otdfctl policy attributes key assign \
 
 ### Create subject mappings
 
-One mapping per attribute value. See the [Subject Mapping Guide](/guides/subject-mapping-guide) for selector syntax, operators, and patterns.
+One mapping per attribute value. See the [Subject Mapping Guide](/guides/subject-mapping-guide) for selector syntax, operators, and patterns. For programmatic creation of attributes and subject mappings, see the [policy manager](https://github.com/opentdf/demo-glp1-tracker/blob/main/backend/policymanager/manager.go) in the demo app.
 
 ```bash
 otdfctl policy subject-mappings create \
@@ -324,6 +327,8 @@ Note: `AttributeValueExists` currently returns an error (not `false`) for non-ex
 
 ### Go SDK (Backend — Encrypt Only)
 
+See the [demo app's TDF client](https://github.com/opentdf/demo-glp1-tracker/blob/main/backend/tdf/client.go) for a complete encrypt wrapper.
+
 ```go
 client, err := sdk.New(
     "http://localhost:8080",                    // Must include http:// scheme
@@ -343,7 +348,7 @@ _, err = client.CreateTDF(&buf, bytes.NewReader(plaintext),
 
 ### JavaScript/TypeScript (Browser SDK — Decrypt)
 
-For true per-user access enforcement, the **browser** decrypts using the user's own Keycloak token. The backend should only encrypt.
+For true per-user access enforcement, the **browser** decrypts using the user's own Keycloak token. The backend should only encrypt. See the demo app's [auth setup](https://github.com/opentdf/demo-glp1-tracker/blob/main/frontend/src/lib/auth.ts) and [TDF decrypt helper](https://github.com/opentdf/demo-glp1-tracker/blob/main/frontend/src/lib/tdf.ts).
 
 ```typescript
 import { AuthProviders, OpenTDF } from '@opentdf/sdk';

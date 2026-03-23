@@ -119,7 +119,7 @@ docker push ghcr.io/<your-account>/opentdf-platform:latest
 
 ## Config in Production
 
-The platform reads config from `/home/nonroot/.opentdf/opentdf.yaml` in the container. For platforms that don't support file mounts (like [Railway](https://railway.app)), bake the config into a custom Docker image:
+The platform reads config from `/home/nonroot/.opentdf/opentdf.yaml` in the container. For platforms that don't support file mounts (like [Railway](https://railway.app)), bake the config into a custom Docker image. See the demo app's [Railway deployment files](https://github.com/opentdf/demo-glp1-tracker/tree/main/deploy/railway) for a complete working example.
 
 ```dockerfile
 FROM --platform=linux/amd64 ghcr.io/<your-account>/opentdf-platform:latest
