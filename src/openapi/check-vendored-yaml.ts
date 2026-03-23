@@ -41,7 +41,7 @@ function fetchJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
       const headers: Record<string, string> = { 'User-Agent': 'opentdf-docs-check-vendored-yaml' };
-      if (GITHUB_TOKEN) {
+      if (GITHUB_TOKEN && url.startsWith(PLATFORM_API_BASE)) {
         headers['Authorization'] = `token ${GITHUB_TOKEN}`;
       }
       https.get(url, { headers } as any, (response: any) => {
@@ -72,7 +72,7 @@ function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
       const headers: Record<string, string> = { 'User-Agent': 'opentdf-docs-check-vendored-yaml' };
-      if (GITHUB_TOKEN) {
+      if (GITHUB_TOKEN && url.startsWith(PLATFORM_RAW_BASE)) {
         headers['Authorization'] = `token ${GITHUB_TOKEN}`;
       }
       https.get(url, { headers } as any, (response: any) => {
