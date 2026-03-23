@@ -1,9 +1,11 @@
 name: Update vendored OpenAPI specs
 
 on:
-  schedule:
-    - cron: "42 1 * * *" # Daily at 01:42 UTC
   workflow_dispatch:
+
+concurrency:
+  group: update-vendored-specs
+  cancel-in-progress: true
 
 jobs:
   update-specs:
@@ -62,7 +64,8 @@ jobs:
         if: steps.diff.outputs.changes == 'true'
         run: |
           BRANCH=chore/update-vendored-specs
-          git fetch origin "$BRANCH" 2>/dev/null && git checkout "$BRANCH" && git merge origin/main --no-edit || git checkout -b "$BRANCH"
+          git fetch origin main "$BRANCH" || true
+          git checkout -B "$BRANCH" origin/main
           npm run update-vendored-yaml
           git add specs/
           if git diff --cached --quiet; then
