@@ -8,6 +8,7 @@ import { openApiSpecsArray } from './preprocessing';
 
 const PLATFORM_API_BASE = 'https://api.github.com/repos/opentdf/platform';
 const PLATFORM_RAW_BASE = 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 
 function fileHash(filePath: string): string {
   if (!fs.existsSync(filePath)) return '';
@@ -39,7 +40,23 @@ function downloadFile(url: string, dest: string): Promise<void> {
 function fetchJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
-      https.get(url, { headers: { 'User-Agent': 'opentdf-docs-check-vendored-yaml' } } as any, (response: any) => {
+      const headers: Record<string, string> = { 'User-Agent': 'opentdf-docs-check-vendored-yaml' };
+      if (GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+      }
+      https.get(url, { headers } as any, (response: any) => {
+        if (response.statusCode !== 200) {
+          let body = '';
+          response.on('data', (chunk: string) => { body += chunk; });
+          response.on('end', () => {
+            reject(new Error(
+              `GitHub API request failed: ${url}\n` +
+              `  Status: ${response.statusCode}\n` +
+              `  Response: ${body.slice(0, 200)}`
+            ));
+          });
+          return;
+        }
         let data = '';
         response.on('data', (chunk: string) => { data += chunk; });
         response.on('end', () => {
@@ -54,7 +71,11 @@ function fetchJson(url: string): Promise<any> {
 function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     import('https').then(https => {
-      https.get(url, { headers: { 'User-Agent': 'opentdf-docs-check-vendored-yaml' } } as any, (response: any) => {
+      const headers: Record<string, string> = { 'User-Agent': 'opentdf-docs-check-vendored-yaml' };
+      if (GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+      }
+      https.get(url, { headers } as any, (response: any) => {
         let data = '';
         response.on('data', (chunk: string) => { data += chunk; });
         response.on('end', () => resolve(data));
@@ -69,6 +90,12 @@ function fetchText(url: string): Promise<string> {
 async function fetchRemoteSpecPaths(dirPath = 'docs/openapi'): Promise<string[]> {
   const specPaths: string[] = [];
   const contents = await fetchJson(`${PLATFORM_API_BASE}/contents/${dirPath}`);
+
+  if (!Array.isArray(contents)) {
+    throw new Error(
+      `Expected array from GitHub Contents API for ${dirPath}, got: ${JSON.stringify(contents).slice(0, 200)}`
+    );
+  }
 
   for (const item of contents) {
     if (item.type === 'file' && item.name.endsWith('.yaml')) {
