@@ -168,5 +168,5 @@ These defaults are for development only. Do not use them in production.
 
 ### "TLS/certificate errors"
 
-- **Self-signed certs in dev:** Use `useInsecurePlaintextConnection(true)` (Java) or configure your TLS settings to trust the dev CA.
+- **Self-signed certs in development:** Use `useInsecurePlaintextConnection(true)` (Java) or configure your TLS settings to trust the development CA.
 - **Missing CA certs:** Ensure the platform's CA certificate is in your trust store.
