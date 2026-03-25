@@ -28,7 +28,7 @@ sequenceDiagram
     Platform-->>App: Response
 ```
 
-Your choice of authentication method determines **how your application obtains tokens from the IdP**. The platform accepts any valid OIDC token from a trusted issuer.
+Your choice of authentication method determines **how your application obtains tokens from the IdP**. The platform validates tokens against a trusted issuer, but a valid token alone is not sufficient — the token must also carry the correct audience (`aud`), required claims, and scopes for the request to succeed.
 
 ## Choose Your Authentication Method
 
@@ -39,7 +39,7 @@ flowchart TD
     Start([What are you building?]) --> Backend{Backend service<br/>or script?}
     Backend -->|Yes| ClientCreds[**Client Credentials**<br/>Most common choice]
     Backend -->|No| WebApp{Browser-based<br/>web app?}
-    WebApp -->|Yes| Refresh[**Refresh Token**<br/>JS SDK only]
+    WebApp -->|Yes| Refresh[**OIDC Login Flow**<br/>JS SDK only]
     WebApp -->|No| CLI{CLI tool for<br/>interactive users?}
     CLI -->|Yes| OtdfCtl[**otdfctl auth login**<br/>Browser-based OIDC flow]
     CLI -->|No| CICD{CI/CD pipeline<br/>or automated job?}
@@ -62,7 +62,7 @@ flowchart TD
 | Scenario | Recommended Method | Notes |
 |----------|-------------------|-------|
 | Backend service / microservice | [Client Credentials](/sdks/authentication#client-credentials) | Most straightforward. SDK auto-refreshes tokens on expiry. |
-| Web application (browser) | [Refresh Token](/sdks/authentication#refresh-token) | JS SDK only. Never expose client secrets in browser code. |
+| Web application (browser) | [OIDC Login Flow](/sdks/authentication#refresh-token) | JS SDK only. Your app completes an OIDC login to get an access token and optional refresh token. Never expose client secrets in browser code. |
 | CLI tool (interactive user) | `otdfctl auth login` | Opens a browser for OIDC login. See [CLI auth docs](/components/cli/auth/login). |
 | CI/CD pipeline / automated job | [Client Credentials](/sdks/authentication#client-credentials) | Use a dedicated service account. Rotate secrets regularly. |
 | Federated identity / SAML | [Token Exchange](/sdks/authentication#token-exchange) | Exchange an existing token for one the platform accepts. |
@@ -79,11 +79,11 @@ The simplest path. Register a client in your IdP, then pass the client ID and se
 
 See [SDK code examples](/sdks/authentication#client-credentials) for Go, Java, and JavaScript.
 
-### Refresh Token (Browser Apps)
+### OIDC Login Flow (Browser Apps)
 
-For browser-based applications, your app first completes an OIDC login flow to obtain a refresh token, then passes it to the JS SDK. The SDK uses the refresh token to maintain a valid access token.
+For browser-based applications, your app completes an [OIDC Authorization Code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) to obtain an access token and (optionally) a refresh token from the IdP. The IdP returns both tokens after a successful `/token` call with a valid authorization code — though the refresh token is only issued if the IdP is configured to provide one. You then pass the refresh token to the JS SDK, which uses it to maintain a valid access token.
 
-**What you need:** A refresh token from a completed OIDC login flow.
+**What you need:** An access token and optional refresh token from a completed OIDC login flow.
 
 See [SDK code examples](/sdks/authentication#refresh-token) (JavaScript only).
 
@@ -113,6 +113,9 @@ otdfctl auth login --endpoint http://localhost:8080
 
 # Non-interactive (for scripts)
 otdfctl auth client-credentials --client-id my-client --client-secret my-secret
+
+# Print your current access token (useful for debugging)
+otdfctl auth print-access-token
 ```
 
 See the [CLI auth command reference](/components/cli/auth/login) for all options.
@@ -138,6 +141,10 @@ These defaults are for development only. Do not use them in production.
 
 ### Production Checklist
 
+:::note
+OpenTDF does not prescribe a specific deployment strategy. This checklist covers authentication-related concerns — your infrastructure, scaling, and orchestration choices are up to you.
+:::
+
 - [ ] **Enable TLS** — All connections to the platform and IdP must use HTTPS
 - [ ] **Use strong client secrets** — Generate long, random secrets and store them securely (vault, environment variables — never in code)
 - [ ] **Rotate secrets regularly** — Automate secret rotation where possible
@@ -145,6 +152,7 @@ These defaults are for development only. Do not use them in production.
 - [ ] **Enable DPoP** — Sender-constrained tokens protect against token theft (see [DPoP docs](/sdks/authentication#dpop-sender-constrained-tokens))
 - [ ] **Set appropriate token lifetimes** — Short-lived access tokens with refresh tokens where applicable
 - [ ] **Use a production-grade IdP** — Configure Keycloak (or your chosen IdP) for high availability, backups, and monitoring
+- [ ] **Configure CORS** — Your application's origin must be registered as an allowed origin in both the IdP and the OpenTDF platform
 
 ## Common Pitfalls
 
@@ -152,7 +160,8 @@ These defaults are for development only. Do not use them in production.
 
 - **Check your IdP URL.** The platform discovers the IdP via its well-known OIDC endpoint. Verify the `oidcOrigin` (JS), token endpoint (Go), or platform endpoint (Java) is correct.
 - **Verify the client exists.** Ensure the client ID is registered in your IdP and the secret matches.
-- **Check token audience.** The platform may reject tokens that aren't issued for the expected audience.
+- **Check token audience.** The platform rejects tokens whose `aud` claim doesn't match the expected audience. Decode your token (e.g., at [jwt.io](https://jwt.io)) and verify the `aud` field matches what's configured in your platform's YAML config under the auth section.
+- **Check CORS.** For browser-based apps, your application's origin must be allowed in both the IdP and OpenTDF platform configuration. CORS errors often appear as opaque network failures rather than clear 401 responses.
 
 ### "My token expired and I'm getting errors"
 
