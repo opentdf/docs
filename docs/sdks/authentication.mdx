@@ -38,7 +38,7 @@ The third parameter accepts optional scopes (`[]string`). Pass `nil` to use the 
 
 ```java
 SDK sdk = new SDKBuilder()
-    .platformEndpoint("localhost:8080")
+    .platformEndpoint("http://localhost:8080")
     .clientSecret("my-client-id", "my-client-secret")
     .useInsecurePlaintextConnection(true) // dev only — remove in production
     .build();
@@ -65,7 +65,7 @@ await client.ready;
 ```
 
 :::warning Confidential clients only
-`clientSecretAuthProvider` should only be used in Node.js or server-side environments. Never expose client secrets in browser code.
+`clientSecretAuthProvider` should be used only in Node.js or server-side environments. Never expose client secrets in browser code.
 :::
 
 </TabItem>
@@ -134,7 +134,7 @@ await client.ready;
 Use a **refresh token** for browser-based applications and long-lived sessions where you need to maintain access without re-prompting the user.
 
 :::info JavaScript SDK only
-Refresh token authentication is currently available only in the JavaScript SDK. Go and Java SDKs handle token lifecycle differently — see [Client Credentials](#client-credentials) for backend use cases.
+Refresh token authentication is currently available in the JavaScript SDK only. Go and Java SDKs handle token lifecycle differently — see [Client Credentials](#client-credentials) for backend use cases.
 :::
 
 ```typescript
