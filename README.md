@@ -4,7 +4,7 @@
 
 ## About This Repository
 
-This repository contains the source code for the [OpenTDF documentation website](https://docs.opentdf.io), built using [Docusaurus](https://docusaurus.io/). The documentation provides comprehensive guides, tutorials, and reference materials for developers and organizations implementing data-centric security with OpenTDF.
+This repository contains the source code for the [OpenTDF documentation website](https://opentdf.io), built using [Docusaurus](https://docusaurus.io/). The documentation provides comprehensive guides, tutorials, and reference materials for developers and organizations implementing data-centric security with OpenTDF.
 
 ## What is OpenTDF?
 
