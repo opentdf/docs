@@ -68,6 +68,7 @@ const config: Config = {
     {
       tagName: "script",
       attributes: {
+        async: "true",
         src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js",
       },
     },

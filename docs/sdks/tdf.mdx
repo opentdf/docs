@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+title: TDF
 ---
 
 import Tabs from '@theme/Tabs';
@@ -20,6 +21,7 @@ This page covers the core TDF operations:
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
+- **[Session Encryption](#session-encryption)** — provide your own RSA key for KAS response encryption
 - **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
 - **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
@@ -1103,6 +1105,32 @@ for i, tdf := range tdfs {
 if err := prepared.BulkDecrypt(ctx); err != nil {
     log.Fatal(err)
 }
+```
+
+---
+
+## Session Encryption
+
+The **session encryption key** is used to encrypt responses from the Key Access Server (KAS) back to your client during the rewrap flow. This is an advanced option for scenarios where you need to control the encryption key lifecycle — for example, reusing the same key across multiple TDF operations in a session.
+
+If not provided, the SDK generates a session key automatically.
+
+```go
+import (
+    "crypto/rand"
+    "crypto/rsa"
+)
+
+// Generate or load your own RSA key pair
+privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+if err != nil {
+    log.Fatal(err)
+}
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("id", "secret", nil),
+    sdk.WithSessionEncryptionRSA(privateKey),
+)
 ```
 
 ---
