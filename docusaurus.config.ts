@@ -233,7 +233,7 @@ const config: Config = {
               |
               <a href='https://www.virtru.com/cookie-policy' target='_blank' rel='noopener noreferrer'>Cookie Policy</a>
               &amp;
-              <button type="button" onclick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
+              <button type="button" onclick="window.openOsanoPreferences()">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
             </span>
           </div>
           <div class="footer__license-info">
