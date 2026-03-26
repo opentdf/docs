@@ -305,20 +305,3 @@ const client = new OpenTDF({
 :::warning
 Only disable DPoP if your IdP does not support it. DPoP is recommended for production deployments as it provides protection against token exfiltration.
 :::
-
-## Session Encryption
-
-The **session encryption key** is used to encrypt responses from the Key Access Server (KAS) for a given session. This is an advanced option for scenarios where you need to control the encryption key lifecycle.
-
-```go
-import "crypto/rsa"
-
-client, err := sdk.New("http://localhost:8080",
-    sdk.WithClientCredentials("id", "secret", nil),
-    sdk.WithSessionEncryptionRSA(privateKey),
-)
-```
-
-:::note
-The session encryption key can be reused across an entire session. If not provided, the SDK generates one automatically.
-:::
