@@ -37,7 +37,7 @@ For style guidelines, please refer to our [Style Guide](STYLE_GUIDE.md).
 
 ## Quick Links
 
-- **Live Documentation**: [docs.opentdf.io](https://docs.opentdf.io)
+- **Live Documentation**: [docs.opentdf.io](https://opentdf.io)
 - **OpenTDF Platform**: [github.com/opentdf/platform](https://github.com/opentdf/platform)
 - **TDF Format Spec**: [github.com/opentdf/spec](https://github.com/opentdf/spec)
 - **OpenTDF Organization**: [github.com/opentdf](https://github.com/opentdf)
