@@ -16,7 +16,6 @@ import (
 	"log"
 
 	authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-	"github.com/opentdf/platform/protocol/go/entity"
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/sdk"
 )
@@ -34,21 +33,10 @@ func main() {
 	}
 
 	// Get Decision using v2 API
+	// Use sdk.ForClientID to create an EntityIdentifier in one call.
+	// Other helpers: sdk.ForEmail, sdk.ForUserName, sdk.ForToken, sdk.WithRequestToken
 	decisionReq := &authorizationv2.GetDecisionRequest{
-		EntityIdentifier: &authorizationv2.EntityIdentifier{
-			Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-				EntityChain: &entity.EntityChain{
-					Entities: []*entity.Entity{
-						{
-							EphemeralId: "entity-1",
-							EntityType: &entity.Entity_ClientId{
-								ClientId: "opentdf",
-							},
-						},
-						},
-					},
-			},
-		},
+		EntityIdentifier: sdk.ForClientID("opentdf"),
 		Action: &policy.Action{
 			Name: "decrypt",
 		},
