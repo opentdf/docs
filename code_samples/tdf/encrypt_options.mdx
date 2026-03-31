@@ -391,7 +391,7 @@ import "github.com/opentdf/platform/sdk"
 assertionCfg := sdk.AssertionConfig{
     ID:             "assertion-1",
     Type:           sdk.HandlingAssertion,
-    Scope:          sdk.TrustedDataObj,
+    Scope:          sdk.TrustedDataObjScope,
     AppliesToState: sdk.Unencrypted,
     Statement: sdk.Statement{
         Format: "application/json",
@@ -417,7 +417,7 @@ import (
 assertionCfg := sdk.AssertionConfig{
     ID:             "assertion-1",
     Type:           sdk.HandlingAssertion,
-    Scope:          sdk.TrustedDataObj,
+    Scope:          sdk.TrustedDataObjScope,
     AppliesToState: sdk.Unencrypted,
     Statement: sdk.Statement{
         Format: "application/json",
@@ -514,6 +514,50 @@ const tdf = await client.createTDF({
 </Tabs>
 
 Signed assertions can be verified on decrypt using [Assertion Verification Keys](#assertion-verification-keys).
+
+---
+
+### System Metadata Assertion
+
+Automatically attach a system metadata assertion containing TDF spec version, creation timestamp, SDK version, OS, and architecture. Useful for audit trails and debugging.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/sdk"
+
+manifest, err := client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(sdk.KASInfo{URL: platformEndpoint}),
+    sdk.WithSystemMetadataAssertion(),
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.Config;
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withSystemMetadataAssertion()
+);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const encryptParams = new EncryptParamsBuilder()
+  .withSystemMetadataAssertion(true)
+  .build();
+```
+
+</TabItem>
+</Tabs>
+
+The assertion uses ID `"system-metadata"`, schema `"system-metadata-v1"`, type `BaseAssertion`, scope `PayloadScope`, and state `Unencrypted`. It is bound with the DEK (HS256) by default.
 
 ---
 

@@ -21,8 +21,9 @@ This page covers the core TDF operations:
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
+- **[Assertions](#assertions)** — signed metadata: types, scopes, signing, and verification
 - **[Session Encryption](#session-encryption)** — provide your own RSA key for KAS response encryption
-- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`, `AssertionConfig`
 - **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
@@ -1135,6 +1136,301 @@ client, err := sdk.New("http://localhost:8080",
 
 ---
 
+## Assertions
+
+**Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
+
+Every assertion is bound to the TDF's data encryption key (DEK) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+
+### Assertion Types
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `HandlingAssertion` | `"handling"` | Data handling and processing instructions — e.g., retention policies, access restrictions, DLP rules. |
+| `BaseAssertion` | `"other"` | General-purpose metadata — e.g., audit labels, content identifiers, provenance records. |
+
+### Scopes
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `TrustedDataObjScope` | `"tdo"` | Assertion applies to the entire TDF object. |
+| `PayloadScope` | `"payload"` | Assertion applies only to the encrypted payload. |
+
+### AppliesToState
+
+| Constant | Value | When to process |
+|----------|-------|-----------------|
+| `Encrypted` | `"encrypted"` | Process **before** decryption — useful for access-control checks, audit logging, or routing decisions that don't require seeing the plaintext. |
+| `Unencrypted` | `"unencrypted"` | Process **after** decryption — useful for content filtering, retention enforcement, or any logic that inspects the plaintext. |
+
+### Statement
+
+Each assertion carries a `Statement` with three fields:
+
+| Field | Description |
+|-------|-------------|
+| `Format` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | The assertion payload as a string — typically a JSON object. |
+
+### Signing and Verification
+
+By default, every assertion is bound to the TDF using the DEK with HMAC-SHA256 (`HS256`). This binding ensures the assertion cannot be tampered with or detached, but verification requires the DEK — which means only entities that can decrypt the TDF can verify the binding.
+
+To enable **independent verification** (where a verifier doesn't need the DEK), sign the assertion with an RSA private key (`RS256`) at encrypt time and provide the corresponding public key at decrypt time.
+
+| Algorithm | Constant | Key type | Use case |
+|-----------|----------|----------|----------|
+| HMAC-SHA256 | `AssertionKeyAlgHS256` | Symmetric (byte slice / DEK) | Default binding — tamper detection for anyone who can decrypt. |
+| RSA-SHA256 | `AssertionKeyAlgRS256` | RSA key pair or `crypto.Signer` | Independent verification — any holder of the public key can verify. |
+
+### System Metadata Assertions
+
+The SDKs can automatically attach a **system metadata assertion** containing information about the environment that created the TDF — spec version, creation timestamp, SDK version, OS, and architecture. This is useful for audit trails and debugging without requiring application-level code.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/sdk"
+
+manifest, err := client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(sdk.KASInfo{URL: kasURL}),
+    sdk.WithSystemMetadataAssertion(),
+)
+```
+
+To inspect or customize the config before passing it to `WithAssertions`:
+
+```go
+cfg, err := sdk.GetSystemMetadataAssertionConfig()
+// cfg.Statement.Value contains JSON like:
+// {"tdf_spec_version":"4.3.0","creation_date":"2026-03-31T12:00:00Z",
+//  "operating_system":"linux","sdk_version":"Go-0.3.4",
+//  "go_version":"go1.23.0","architecture":"amd64"}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.Config;
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withSystemMetadataAssertion()
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const encryptParams = new EncryptParamsBuilder()
+  .withSystemMetadataAssertion(true)
+  .build();
+```
+
+</TabItem>
+</Tabs>
+
+The system metadata assertion uses ID `"system-metadata"`, schema `"system-metadata-v1"`, type `BaseAssertion`, scope `PayloadScope`, and `AppliesToState` `Unencrypted`.
+
+### End-to-End Example
+
+Create a signed assertion at encrypt time, then verify it at decrypt time.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "bytes"
+    "crypto/rand"
+    "crypto/rsa"
+    "io"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+// Generate an RSA key pair for assertion signing.
+rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+if err != nil {
+    log.Fatal(err)
+}
+
+// --- Encrypt with a signed assertion ---
+
+assertionCfg := sdk.AssertionConfig{
+    ID:             "handling-1",
+    Type:           sdk.HandlingAssertion,
+    Scope:          sdk.TrustedDataObjScope,
+    AppliesToState: sdk.Unencrypted,
+    Statement: sdk.Statement{
+        Format: "application/json",
+        Schema: "retention-policy-v1",
+        Value:  `{"retain_until":"2027-01-01","classification":"internal"}`,
+    },
+    SigningKey: sdk.AssertionKey{
+        Alg: sdk.AssertionKeyAlgRS256,
+        Key: rsaKey,
+    },
+}
+
+var buf bytes.Buffer
+_, err = client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(sdk.KASInfo{URL: kasURL}),
+    sdk.WithAssertions(assertionCfg),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// --- Decrypt and verify the assertion ---
+
+verificationKeys := sdk.AssertionVerificationKeys{
+    Keys: map[string]sdk.AssertionKey{
+        "handling-1": {
+            Alg: sdk.AssertionKeyAlgRS256,
+            Key: &rsaKey.PublicKey,
+        },
+    },
+}
+
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(buf.Bytes()),
+    sdk.WithAssertionVerificationKeys(verificationKeys),
+)
+if err != nil {
+    log.Fatal(err) // Verification failure surfaces here.
+}
+
+decrypted, err := io.ReadAll(tdfReader)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Access assertions from the manifest.
+for _, a := range tdfReader.Manifest().Assertions {
+    log.Printf("Assertion %s [%s]: %s", a.ID, a.Type, a.Statement.Value)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.AssertionConfig;
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+import java.security.KeyPairGenerator;
+import java.util.Map;
+
+// Generate an RSA key pair for assertion signing.
+var keyGen = KeyPairGenerator.getInstance("RSA");
+keyGen.initialize(2048);
+var keyPair = keyGen.generateKeyPair();
+
+// --- Encrypt with a signed assertion ---
+
+var statement = new AssertionConfig.Statement();
+statement.format = "application/json";
+statement.schema = "retention-policy-v1";
+statement.value  = "{\"retain_until\":\"2027-01-01\",\"classification\":\"internal\"}";
+
+var assertionCfg = new AssertionConfig();
+assertionCfg.id             = "handling-1";
+assertionCfg.type           = AssertionConfig.Type.HandlingAssertion;
+assertionCfg.scope          = AssertionConfig.Scope.TrustedDataObj;
+assertionCfg.appliesToState = AssertionConfig.AppliesToState.Unencrypted;
+assertionCfg.statement      = statement;
+assertionCfg.signingKey     = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    keyPair.getPrivate()
+);
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withAssertionConfig(assertionCfg)
+);
+sdk.createTDF(inputStream, outputStream, config);
+
+// --- Decrypt and verify the assertion ---
+
+var verifyKey = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    keyPair.getPublic()
+);
+
+var verificationKeys = new Config.AssertionVerificationKeys();
+verificationKeys.keys = Map.of("handling-1", verifyKey);
+
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.withAssertionVerificationKeys(verificationKeys)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+// Verification failure throws during loadTDF.
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Generate an RSA key pair for assertion signing.
+const keyPair = await crypto.subtle.generateKey(
+  { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+  true,
+  ['sign', 'verify'],
+);
+
+// --- Encrypt with a signed assertion ---
+
+const tdf = await client.createTDF({
+  source: { type: 'buffer', location: plaintext },
+  defaultKASEndpoint: kasURL,
+  assertionConfigs: [
+    {
+      id:             'handling-1',
+      type:           'HandlingAssertion',
+      scope:          'TrustedDataObj',
+      appliesToState: 'Unencrypted',
+      statement: {
+        format: 'application/json',
+        schema: 'retention-policy-v1',
+        value:  '{"retain_until":"2027-01-01","classification":"internal"}',
+      },
+    },
+  ],
+  signers: {
+    'handling-1': keyPair.privateKey,
+  },
+});
+
+// --- Decrypt and verify the assertion ---
+
+const result = await client.read({
+  source: { type: 'buffer', location: tdf },
+  assertionVerificationKeys: {
+    keys: {
+      'handling-1': {
+        alg: 'RS256',
+        key: keyPair.publicKey,
+      },
+    },
+  },
+});
+// Verification failure throws during read.
+```
+
+</TabItem>
+</Tabs>
+
+See the [Encrypt Options](#encrypt-options) and [Decrypt Options](#decrypt-options) sections for the full option reference, including per-option details for `WithAssertions` and `WithAssertionVerificationKeys`.
+
+---
+
 ## Type Reference
 
 The following types are returned by or passed to the methods above.
@@ -1327,6 +1623,76 @@ for _, a := range manifest.Assertions {
     fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
 }
 ```
+
+---
+
+### AssertionConfig
+
+`AssertionConfig` is the input type passed to `WithAssertions` when creating a TDF. It defines the assertion content, classification, and optional signing key.
+
+**Fields**
+
+| Field | Go | Java | Required | Description |
+|-------|-----|------|----------|-------------|
+| ID | `ID string` | `String id` | Yes | Unique identifier for the assertion. Used to look up verification keys on decrypt. |
+| Type | `Type AssertionType` | `Type type` | Yes | `HandlingAssertion` (`"handling"`) or `BaseAssertion` (`"other"`). |
+| Scope | `Scope Scope` | `Scope scope` | Yes | `TrustedDataObjScope` (`"tdo"`) or `PayloadScope` (`"payload"`). |
+| AppliesToState | `AppliesToState AppliesToState` | `AppliesToState appliesToState` | Yes | `Encrypted` or `Unencrypted`. |
+| Statement | `Statement Statement` | `Statement statement` | No | The assertion content. See [Statement (type)](#statement-type). |
+| SigningKey | `SigningKey AssertionKey` | `AssertionKey signingKey` | No | Custom signing key. If empty, the assertion is bound with the DEK using HS256. See [AssertionKey](#assertionkey). |
+
+---
+
+### Assertion
+
+`Assertion` is the signed form stored in the TDF [manifest](#manifest-object). Accessible via `tdfReader.Manifest().Assertions` after decryption.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ID` | `string` | Assertion identifier (matches the `AssertionConfig.ID` used at encrypt time). |
+| `Type` | `AssertionType` | `"handling"` or `"other"`. |
+| `Scope` | `Scope` | `"tdo"` or `"payload"`. |
+| `AppliesToState` | `AppliesToState` | `"encrypted"` or `"unencrypted"`. |
+| `Statement` | `Statement` | The assertion content. |
+| `Binding` | `Binding` | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+
+---
+
+### Statement (type)
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Format` | `string` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | `string` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | `string` | The assertion payload — typically a JSON object serialized as a string. |
+
+---
+
+### AssertionKey
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Alg` | `AssertionKeyAlg` | `AssertionKeyAlgRS256` (`"RS256"`) for RSA-SHA256, or `AssertionKeyAlgHS256` (`"HS256"`) for HMAC-SHA256. |
+| `Key` | `interface{}` / `Object` | For RS256: an RSA private key (encrypt) or public key (verify). For HS256: a byte slice / shared secret. Supports `crypto.Signer` for hardware-backed keys. |
+
+---
+
+### AssertionVerificationKeys
+
+Passed to `WithAssertionVerificationKeys` when loading a TDF. Maps assertion IDs to the public keys used to verify their signatures.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `DefaultKey` | `AssertionKey` | Fallback key used when no ID-specific key is found. |
+| `Keys` | `map[string]AssertionKey` | Map of assertion ID to verification key. |
 
 ---
 
