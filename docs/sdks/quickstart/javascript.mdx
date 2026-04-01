@@ -81,10 +81,15 @@ async function main() {
 
   // Token provider function for client credentials
   async function getAccessToken() {
+    // In production, cache tokens and refresh only when expired.
     const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: 'opentdf',
+        client_secret: 'secret',
+      }),
     });
     const { access_token } = await resp.json();
     return access_token;
@@ -198,10 +203,15 @@ const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
 // Token provider function for client credentials
 async function getAccessToken() {
+  // In production, cache tokens and refresh only when expired.
   const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: 'opentdf',
+      client_secret: 'secret',
+    }),
   });
   const { access_token } = await resp.json();
   return access_token;
@@ -421,10 +431,15 @@ async function main() {
 
   // Token provider function for client credentials
   async function getAccessToken() {
+    // In production, cache tokens and refresh only when expired.
     const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: 'opentdf',
+        client_secret: 'secret',
+      }),
     });
     const { access_token } = await resp.json();
     return access_token;

@@ -12,6 +12,10 @@ Before encrypting data with `CreateTDF`, it helps to verify that the attributes 
 
 The Go, Java, and JavaScript SDKs provide five methods to discover and validate attributes without manual platform queries.
 
+:::tip JavaScript setup
+The JS examples below assume you have a `getAccessToken()` function that returns a valid access token. See [Authentication](/sdks/authentication) for how to set this up. The `auth` object can be shared across all SDK calls — define it once, pass it everywhere.
+:::
+
 ---
 
 ## ListAttributes

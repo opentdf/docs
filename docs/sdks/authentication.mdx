@@ -53,11 +53,16 @@ import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 // Use your preferred OAuth2 library to obtain tokens via client credentials grant.
 // The interceptor calls your token provider per-request.
 async function getAccessToken(): Promise<string> {
+    // In production, cache tokens and refresh only when expired.
     // Example: fetch token from your IdP's token endpoint
     const resp = await fetch('http://localhost:8080/auth/realms/opentdf/protocol/openid-connect/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'grant_type=client_credentials&client_id=my-client-id&client_secret=my-client-secret',
+        body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: 'my-client-id',
+            client_secret: 'my-client-secret',
+        }),
     });
     const { access_token } = await resp.json();
     return access_token;
@@ -119,6 +124,7 @@ import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 
 // Exchange your external JWT for a platform token, then provide it to the SDK.
 async function getExchangedToken(): Promise<string> {
+    // In production, cache tokens and refresh only when expired.
     // Perform RFC 8693 token exchange with your IdP
     const resp = await fetch('http://localhost:8080/auth/realms/opentdf/protocol/openid-connect/token', {
         method: 'POST',

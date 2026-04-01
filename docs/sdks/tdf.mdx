@@ -121,10 +121,15 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 
 async function getAccessToken(): Promise<string> {
+    // In production, cache tokens and refresh only when expired.
     const resp = await fetch('https://platform.example.com/auth/realms/opentdf/protocol/openid-connect/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'grant_type=client_credentials&client_id=client-id&client_secret=client-secret',
+        body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: 'client-id',
+            client_secret: 'client-secret',
+        }),
     });
     const { access_token } = await resp.json();
     return access_token;
