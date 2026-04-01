@@ -63,10 +63,11 @@ import CreateSubjectMappingExample from '@site/code_samples/java/create-subject-
 <TabItem value="js" label="TypeScript">
 
 ```typescript
+import { authTokenInterceptor } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  ...auth,
+  interceptors: [authTokenInterceptor(() => myAuth.getAccessToken())],
   platformUrl: 'http://localhost:8080',
 });
 

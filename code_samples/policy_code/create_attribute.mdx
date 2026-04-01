@@ -73,11 +73,12 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 <TabItem value="js" label="TypeScript">
 
 ```typescript
+import { authTokenInterceptor } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platform = new PlatformClient({
-  ...auth,
+  interceptors: [authTokenInterceptor(() => myAuth.getAccessToken())],
   platformUrl: 'http://localhost:8080',
 });
 
