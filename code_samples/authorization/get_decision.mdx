@@ -15,7 +15,7 @@ import (
 	"context"
 	"log"
 
-	authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+	authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/sdk"
 )
@@ -33,16 +33,16 @@ func main() {
 	}
 
 	// Get Decision using v2 API
-	// Use authorizationv2.ForClientID to create an EntityIdentifier in one call.
+	// Use authorization.ForClientID to create an EntityIdentifier in one call.
 	// Other helpers: ForEmail, ForUserName, ForToken, WithRequestToken
-	decisionReq := &authorizationv2.GetDecisionRequest{
-		EntityIdentifier: authorizationv2.ForClientID("opentdf"),
+	decisionReq := &authorization.GetDecisionRequest{
+		EntityIdentifier: authorization.ForClientID("opentdf"),
 		Action: &policy.Action{
 			Name: "decrypt",
 		},
-		Resource: &authorizationv2.Resource{
-			Resource: &authorizationv2.Resource_AttributeValues_{
-				AttributeValues: &authorizationv2.Resource_AttributeValues{
+		Resource: &authorization.Resource{
+			Resource: &authorization.Resource_AttributeValues_{
+				AttributeValues: &authorization.Resource_AttributeValues{
 					Fqns: []string{"https://opentdf.io/attr/role/value/developer"},
 				},
 			},
@@ -56,7 +56,7 @@ func main() {
 
 	decisionResult := decision.GetDecision()
 	log.Printf("Decision: %v", decisionResult.GetDecision())
-	if decisionResult.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
+	if decisionResult.GetDecision() == authorization.Decision_DECISION_PERMIT {
 		log.Printf("✓ Access GRANTED")
 		if len(decisionResult.GetRequiredObligations()) > 0 {
 			log.Printf("Required obligations: %v", decisionResult.GetRequiredObligations())

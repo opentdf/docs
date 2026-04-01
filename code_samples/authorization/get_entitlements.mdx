@@ -13,7 +13,7 @@ import (
 	"context"
 	"log"
 
-	authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+	authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 	"github.com/opentdf/platform/sdk"
 )
 
@@ -32,10 +32,10 @@ func main() {
 	}
 
 	// Get Entitlements using v2 API
-	// Use authorizationv2.ForClientID to create an EntityIdentifier in one call.
+	// Use authorization.ForClientID to create an EntityIdentifier in one call.
 	// Other helpers: ForEmail, ForUserName, ForToken, WithRequestToken
-	entitlementReq := &authorizationv2.GetEntitlementsRequest{
-		EntityIdentifier: authorizationv2.ForClientID("opentdf"),
+	entitlementReq := &authorization.GetEntitlementsRequest{
+		EntityIdentifier: authorization.ForClientID("opentdf"),
 	}
 
 	entitlements, err := client.AuthorizationV2.GetEntitlements(context.Background(), entitlementReq)
