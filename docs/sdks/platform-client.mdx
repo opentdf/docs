@@ -62,24 +62,13 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-});
+const interceptors = [authTokenInterceptor(getAccessToken)];
 
-// OpenTDF eagerly binds DPoP keys to the auth provider.
-// Await ready before creating PlatformClient.
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
-await client.ready;
-
-const platform = new PlatformClient({
-    authProvider,
-    platformUrl: 'http://localhost:8080',
-});
+const client = new OpenTDF({ interceptors, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({ interceptors, platformUrl: 'http://localhost:8080' });
 ```
 
 </TabItem>

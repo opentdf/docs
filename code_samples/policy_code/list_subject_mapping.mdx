@@ -59,7 +59,7 @@ import ListSubjectMappingsExample from '@site/code_samples/java/list-subject-map
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  authProvider,
+  ...auth,
   platformUrl: 'http://localhost:8080',
 });
 

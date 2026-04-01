@@ -70,7 +70,7 @@ Expected output:
 Create a file named `index.mjs`:
 
 ```javascript title="index.mjs"
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 
 async function main() {
   console.log('🚀 Starting OpenTDF SDK Quickstart...');
@@ -79,16 +79,20 @@ async function main() {
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
   console.log(`📡 Connecting to platform: ${platformUrl}`);
 
-  // Create an auth provider with client credentials
-  console.log('🔐 Initializing auth provider with client credentials...');
-  const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
-    oidcOrigin,
-  });
+  // Token provider function for client credentials
+  async function getAccessToken() {
+    const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+    });
+    const { access_token } = await resp.json();
+    return access_token;
+  }
 
   // Create a new OpenTDF client
-  const client = new OpenTDF({ authProvider, platformUrl });
+  console.log('🔐 Initializing client with auth interceptor...');
+  const client = new OpenTDF({ interceptors: [authTokenInterceptor(getAccessToken)], platformUrl });
   console.log('✅ SDK client initialized successfully');
 
   // Encrypt data
@@ -140,7 +144,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node index.mjs
 ```console
 🚀 Starting OpenTDF SDK Quickstart...
 📡 Connecting to platform: https://platform.opentdf.local:8443
-🔐 Initializing auth provider with client credentials...
+🔐 Initializing client with auth interceptor...
 ✅ SDK client initialized successfully
 
 📝 Encrypting sensitive data...
@@ -185,21 +189,28 @@ For additional policy management examples including managing attributes, namespa
 Let's work with the "department" attribute and add a "marketing" value. If you completed the [Quickstart setup guide](/quickstart), the attribute may already exist with finance and engineering values. If not, we'll create it:
 
 ```javascript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platformUrl = 'https://platform.opentdf.local:8443';
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-  clientId: 'opentdf',
-  clientSecret: 'secret',
-  oidcOrigin: 'https://keycloak.opentdf.local:9443/auth/realms/opentdf',
-});
+const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
-// Create the OpenTDF client and wait for DPoP key binding.
-const client = new OpenTDF({ authProvider, platformUrl });
-await client.ready;
-const platform = new PlatformClient({ authProvider, platformUrl });
+// Token provider function for client credentials
+async function getAccessToken() {
+  const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+  });
+  const { access_token } = await resp.json();
+  return access_token;
+}
+
+// Create the OpenTDF and Platform clients with auth interceptor
+const interceptors = [authTokenInterceptor(getAccessToken)];
+const client = new OpenTDF({ interceptors, platformUrl });
+const platform = new PlatformClient({ interceptors, platformUrl });
 
 // First, ensure the namespace exists
 let namespaceId;
@@ -396,7 +407,7 @@ For reference, here's a complete example showing all the pieces together:
 
 ```javascript title="index.mjs"
 import fs from 'node:fs';
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import {
   AttributeRuleTypeEnum,
@@ -408,17 +419,21 @@ async function main() {
   const platformUrl = 'https://platform.opentdf.local:8443';
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
-  // Create auth provider
-  const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
-    oidcOrigin,
-  });
+  // Token provider function for client credentials
+  async function getAccessToken() {
+    const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials&client_id=opentdf&client_secret=secret',
+    });
+    const { access_token } = await resp.json();
+    return access_token;
+  }
 
-  // Create the OpenTDF client and wait for DPoP key binding.
-  const client = new OpenTDF({ authProvider, platformUrl });
-  await client.ready;
-  const platform = new PlatformClient({ authProvider, platformUrl });
+  // Create the OpenTDF and Platform clients with auth interceptor
+  const interceptors = [authTokenInterceptor(getAccessToken)];
+  const client = new OpenTDF({ interceptors, platformUrl });
+  const platform = new PlatformClient({ interceptors, platformUrl });
 
   // 1. Create namespace (or use existing)
   let namespaceId;

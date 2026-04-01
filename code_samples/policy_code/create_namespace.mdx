@@ -57,7 +57,7 @@ import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  authProvider,
+  ...auth,
   platformUrl: 'http://localhost:8080',
 });
 

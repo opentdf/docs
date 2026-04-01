@@ -86,7 +86,7 @@ import {
 } from '@opentdf/sdk/platform/policy/subjectmapping/subject_mapping_pb.js';
 
 const platform = new PlatformClient({
-  authProvider,
+  ...auth,
   platformUrl: 'http://localhost:8080',
 });
 

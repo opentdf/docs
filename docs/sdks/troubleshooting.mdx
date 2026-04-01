@@ -41,16 +41,13 @@ curl https://<idp-endpoint>/
    otdfctl auth client-credentials <client-id> <client-secret>
    ```
 
-2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
+2. **Implement token refresh in your application**: Use `authTokenInterceptor` with a function that returns a fresh token on each call. This ensures the SDK always has a valid token:
    ```js
-   import { AuthProviders } from '@opentdf/sdk';
+   import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
 
-   const authProvider = AuthProviders.refreshAuthProvider({
-     clientId: 'your-client-id',
-     exchange: 'client',
-     clientSecret: 'your-client-secret',
-     oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
-   });
+   // getAccessToken should fetch/refresh a token from your IdP
+   const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+   const client = new OpenTDF({ ...auth, platformUrl });
    ```
 
 3. **Re-instantiate the SDK**: For Go and Java, create a new SDK instance with fresh credentials when a token error occurs.
@@ -320,7 +317,7 @@ exit status 1
 
 - **Go**: `client.ValidateAttributes(ctx, fqns)`
 - **Java**: `sdk.validateAttributes(fqns)`
-- **JavaScript**: `await validateAttributes(platformUrl, authProvider, fqns)`
+- **JavaScript**: `await validateAttributes(platformUrl, auth, fqns)`
 
 **Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
 

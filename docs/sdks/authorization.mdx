@@ -94,10 +94,18 @@ public class AuthorizationSetup {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
-import { platformConnect, PlatformClient } from '@opentdf/sdk/platform';
+// Option 1: Using interceptors (recommended for new code)
+import { authTokenInterceptor } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
 
-// Option 1: Using AuthProvider (recommended when also using TDF client)
+const platformClient = new PlatformClient({
+  interceptors: [authTokenInterceptor(getAccessToken)],
+  platformUrl: 'http://localhost:8080',
+});
+
+// Option 2: Legacy AuthProvider (deprecated — use interceptors for new code)
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
 const authProvider = await AuthProviders.clientSecretAuthProvider({
   clientId: 'opentdf',
   clientSecret: 'secret',
@@ -106,21 +114,9 @@ const authProvider = await AuthProviders.clientSecretAuthProvider({
 const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
 await client.ready;
 
-const platformClient = new PlatformClient({
+const platformClient2 = new PlatformClient({
   authProvider,
   platformUrl: 'http://localhost:8080',
-});
-
-// Option 2: Using a raw interceptor (when you manage tokens yourself)
-const accessToken = 'your-access-token-here';
-const interceptor: platformConnect.Interceptor = (next) => async (req) => {
-  req.header.set('Authorization', `Bearer ${accessToken}`);
-  return next(req);
-};
-
-const platformClient2 = new PlatformClient({
-  platformUrl: 'http://localhost:8080',
-  interceptors: [interceptor],
 });
 ```
 
