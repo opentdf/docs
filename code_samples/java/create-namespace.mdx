@@ -1,0 +1,58 @@
+```java
+package io.opentdf.platform;
+
+import com.connectrpc.ResponseMessageKt;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.policy.namespaces.CreateNamespaceResponse;
+import io.opentdf.platform.sdk.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Collections;
+import java.util.Objects;
+
+public class CreateNamespace {
+
+  private static final Logger logger = LogManager.getLogger(CreateNamespace.class);
+
+  public static void main(String[] args) {
+
+    String clientId = "opentdf";
+    String clientSecret = "secret";
+    String platformEndpoint = "localhost:8080";
+    String namespaceName = "opentdf.io";
+
+    SDKBuilder builder = new SDKBuilder();
+
+    try (SDK sdk =
+        builder
+            .platformEndpoint(platformEndpoint)
+            .clientSecret(clientId, clientSecret)
+            .useInsecurePlaintextConnection(true)
+            .build()) {
+
+      CreateNamespaceRequest createNamespaceRequest =
+          CreateNamespaceRequest.newBuilder().setName(namespaceName).build();
+
+      CreateNamespaceResponse createNamespaceResponse =
+          ResponseMessageKt.getOrThrow(
+              sdk.getServices()
+                  .namespaces()
+                  .createNamespaceBlocking(createNamespaceRequest, Collections.emptyMap())
+                  .execute());
+
+      logger.info(
+          "Successfully created namespace with ID: {}",
+          createNamespaceResponse.getNamespace().getId());
+
+    } catch (Exception e) {
+      if (Objects.equals(e.getMessage(), "resource unique field violation")) {
+        logger.error("Namespace '{}' already exists", namespaceName, e);
+      } else {
+        logger.error("Failed to create namespace", e);
+      }
+    }
+  }
+}
+
+```
