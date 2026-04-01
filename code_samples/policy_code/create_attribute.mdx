@@ -78,7 +78,7 @@ import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => myAuth.getAccessToken())],
+  interceptors: [authTokenInterceptor(() => getAccessToken())],
   platformUrl: 'http://localhost:8080',
 });
 

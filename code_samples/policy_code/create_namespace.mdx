@@ -58,7 +58,7 @@ import { authTokenInterceptor } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => myAuth.getAccessToken())],
+  interceptors: [authTokenInterceptor(() => getAccessToken())],
   platformUrl: 'http://localhost:8080',
 });
 

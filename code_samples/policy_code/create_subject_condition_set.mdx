@@ -87,7 +87,7 @@ import {
 } from '@opentdf/sdk/platform/policy/subjectmapping/subject_mapping_pb.js';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => myAuth.getAccessToken())],
+  interceptors: [authTokenInterceptor(() => getAccessToken())],
   platformUrl: 'http://localhost:8080',
 });
 
