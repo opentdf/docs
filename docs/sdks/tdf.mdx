@@ -118,24 +118,16 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-async function getAccessToken(): Promise<string> {
-    // In production, cache tokens and refresh only when expired.
-    const resp = await fetch('https://platform.example.com/auth/realms/opentdf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: 'client-id',
-            client_secret: 'client-secret',
-        }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-}
-
-const client = new OpenTDF({ interceptors: [authTokenInterceptor(getAccessToken)], platformUrl: 'https://platform.example.com' });
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+    }))],
+    platformUrl: 'https://platform.example.com',
+});
 
 // Encrypt
 const enc = new TextEncoder();
@@ -951,9 +943,15 @@ for _, fqn := range obligations.FQNs {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-const client = new OpenTDF({ interceptors: [authTokenInterceptor(getAccessToken)], platformUrl: 'http://localhost:8080' });
+const client = new OpenTDF({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const reader = client.open({ source: ciphertextSource });
 const obligations = await reader.obligations();

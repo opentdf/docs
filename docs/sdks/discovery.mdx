@@ -13,7 +13,7 @@ Before encrypting data with `CreateTDF`, it helps to verify that the attributes 
 The Go, Java, and JavaScript SDKs provide five methods to discover and validate attributes without manual platform queries.
 
 :::tip JavaScript setup
-The JS examples below assume you have a `getAccessToken()` function that returns a valid access token — see the [Authentication](/sdks/authentication) page for how to set this up. The `auth` object can be shared across all SDK calls — define it once, pass it everywhere.
+The JS examples below use `clientCredentialsTokenProvider` for authentication — see the [Authentication](/sdks/authentication) page for all available token providers. The `auth` object can be shared across all SDK calls — define it once, pass it everywhere.
 :::
 
 ---
@@ -69,9 +69,12 @@ List<Attribute> attrs = sdk.listAttributes("opentdf.io");
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { authTokenInterceptor, listAttributes } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, listAttributes } from '@opentdf/sdk';
 
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
 
 const attrs = await listAttributes(platformUrl, auth);
 
@@ -133,9 +136,12 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { authTokenInterceptor, attributeExists } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists } from '@opentdf/sdk';
 
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
 
 const exists = await attributeExists(platformUrl, auth, 'https://opentdf.io/attr/department');
 if (!exists) {
@@ -185,9 +191,12 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { authTokenInterceptor, attributeValueExists } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeValueExists } from '@opentdf/sdk';
 
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
 
 const exists = await attributeValueExists(platformUrl, auth, 'https://opentdf.io/attr/department/value/finance');
 if (!exists) {
@@ -255,9 +264,12 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { authTokenInterceptor, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
 
 const fqns = [
     'https://opentdf.io/attr/department/value/marketing',
@@ -507,10 +519,13 @@ try (SDK sdk = new SDKBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { authTokenInterceptor, OpenTDF, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
 // Define auth once — reuse for standalone functions and the OpenTDF client
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: oidcEndpoint,
+}))] };
 
 // 1. See what's available on the platform
 const attrs = await listAttributes(platformUrl, auth);

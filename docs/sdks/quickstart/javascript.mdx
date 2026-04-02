@@ -70,7 +70,7 @@ Expected output:
 Create a file named `index.mjs`:
 
 ```javascript title="index.mjs"
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
 async function main() {
   console.log('🚀 Starting OpenTDF SDK Quickstart...');
@@ -79,25 +79,16 @@ async function main() {
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
   console.log(`📡 Connecting to platform: ${platformUrl}`);
 
-  // Token provider function for client credentials
-  async function getAccessToken() {
-    // In production, cache tokens and refresh only when expired.
-    const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: 'opentdf',
-        client_secret: 'secret',
-      }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-  }
+  // Create a token provider that handles caching and auto-refresh
+  const tokenProvider = clientCredentialsTokenProvider({
+    clientId: 'opentdf',
+    clientSecret: 'secret',
+    oidcOrigin,
+  });
 
   // Create a new OpenTDF client
   console.log('🔐 Initializing client with auth interceptor...');
-  const client = new OpenTDF({ interceptors: [authTokenInterceptor(getAccessToken)], platformUrl });
+  const client = new OpenTDF({ interceptors: [authTokenInterceptor(tokenProvider)], platformUrl });
   console.log('✅ SDK client initialized successfully');
 
   // Encrypt data
@@ -194,31 +185,19 @@ For additional policy management examples including managing attributes, namespa
 Let's work with the "department" attribute and add a "marketing" value. If you completed the [Quickstart setup guide](/quickstart), the attribute may already exist with finance and engineering values. If not, we'll create it:
 
 ```javascript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platformUrl = 'https://platform.opentdf.local:8443';
 const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
-// Token provider function for client credentials
-async function getAccessToken() {
-  // In production, cache tokens and refresh only when expired.
-  const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: 'opentdf',
-      client_secret: 'secret',
-    }),
-  });
-  const { access_token } = await resp.json();
-  return access_token;
-}
-
 // Create the OpenTDF and Platform clients with auth interceptor
-const interceptors = [authTokenInterceptor(getAccessToken)];
+const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
+  clientId: 'opentdf',
+  clientSecret: 'secret',
+  oidcOrigin,
+}))];
 const client = new OpenTDF({ interceptors, platformUrl });
 const platform = new PlatformClient({ interceptors, platformUrl });
 
@@ -417,7 +396,7 @@ For reference, here's a complete example showing all the pieces together:
 
 ```javascript title="index.mjs"
 import fs from 'node:fs';
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import {
   AttributeRuleTypeEnum,
@@ -429,24 +408,12 @@ async function main() {
   const platformUrl = 'https://platform.opentdf.local:8443';
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
-  // Token provider function for client credentials
-  async function getAccessToken() {
-    // In production, cache tokens and refresh only when expired.
-    const resp = await fetch(`${oidcOrigin}/protocol/openid-connect/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: 'opentdf',
-        client_secret: 'secret',
-      }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-  }
-
   // Create the OpenTDF and Platform clients with auth interceptor
-  const interceptors = [authTokenInterceptor(getAccessToken)];
+  const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf',
+    clientSecret: 'secret',
+    oidcOrigin,
+  }))];
   const client = new OpenTDF({ interceptors, platformUrl });
   const platform = new PlatformClient({ interceptors, platformUrl });
 

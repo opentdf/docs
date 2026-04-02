@@ -126,11 +126,14 @@ public class GetNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -237,11 +240,14 @@ public class UpdateNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -328,11 +334,14 @@ public class DeactivateNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -444,11 +453,14 @@ public class GetAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -548,11 +560,14 @@ public class UpdateAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -639,11 +654,14 @@ public class DeactivateAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -734,11 +752,14 @@ public class CreateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -828,11 +849,14 @@ public class ListAttributeValuesExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -922,11 +946,14 @@ public class GetAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1029,11 +1056,14 @@ public class GetAttributeValuesByFqnsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1134,11 +1164,14 @@ public class UpdateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1225,11 +1258,14 @@ public class DeactivateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1325,11 +1361,14 @@ public class ListSubjectConditionSetsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1419,11 +1458,14 @@ public class GetSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1546,11 +1588,14 @@ public class UpdateSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1651,11 +1696,14 @@ public class DeleteSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1737,11 +1785,14 @@ public class DeleteAllUnmappedSubjectConditionSetsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1837,11 +1888,14 @@ public class GetSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -1945,11 +1999,14 @@ public class UpdateSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -2035,11 +2092,14 @@ public class DeleteSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -2142,11 +2202,14 @@ public class MatchSubjectMappingsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
@@ -2191,11 +2254,14 @@ if err != nil {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 

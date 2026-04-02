@@ -62,25 +62,16 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-async function getAccessToken(): Promise<string> {
-    // In production, cache tokens and refresh only when expired.
-    const resp = await fetch('http://localhost:8080/auth/realms/opentdf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: 'client-id',
-            client_secret: 'client-secret',
-        }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-}
-
-const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+const auth = {
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+};
 
 const client = new OpenTDF({ ...auth, platformUrl: 'http://localhost:8080' });
 const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:8080' });

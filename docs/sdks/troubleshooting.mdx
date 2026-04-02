@@ -41,12 +41,14 @@ curl https://<idp-endpoint>/
    otdfctl auth client-credentials <client-id> <client-secret>
    ```
 
-2. **Implement token refresh in your application**: Use `authTokenInterceptor` with a function that returns a fresh token on each call. This ensures the SDK always has a valid token:
+2. **Use a built-in token provider**: The SDK's token providers handle caching and auto-refresh automatically:
    ```js
-   import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+   import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-   // getAccessToken should fetch/refresh a token from your IdP
-   const auth = { interceptors: [authTokenInterceptor(getAccessToken)] };
+   const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+     clientId: 'opentdf', clientSecret: 'secret',
+     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+   }))] };
    const client = new OpenTDF({ ...auth, platformUrl });
    ```
 

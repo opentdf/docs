@@ -61,8 +61,8 @@ flowchart TD
 
 | Scenario | Recommended Method | Notes |
 |----------|-------------------|-------|
-| Backend service / microservice | [Client Credentials](/sdks/authentication#client-credentials) | Most straightforward. SDK auto-refreshes tokens on expiry. |
-| Web application (browser) | [OIDC Login Flow](/sdks/authentication#refresh-token) | JS SDK only. Your app completes an OIDC login to get an access token and optional refresh token. Never expose client secrets in browser code. |
+| Backend service / microservice | [Client Credentials](/sdks/authentication#client-credentials) | Most straightforward. Use `clientCredentialsTokenProvider()` — it caches tokens and auto-refreshes on expiry. |
+| Web application (browser) | [OIDC Login Flow](/sdks/authentication#refresh-token) | JS SDK only. Use `refreshTokenProvider()` with a refresh token from your OIDC login flow. Never expose client secrets in browser code. |
 | CLI tool (interactive user) | `otdfctl auth login` | Opens a browser for OIDC login. See [CLI auth docs](/components/cli/auth/login). |
 | CI/CD pipeline / automated job | [Client Credentials](/sdks/authentication#client-credentials) | Use a dedicated service account. Rotate secrets regularly. |
 | Federated identity / SAML | [Token Exchange](/sdks/authentication#token-exchange) | Exchange an existing token for one the platform accepts. |
@@ -73,7 +73,7 @@ flowchart TD
 
 ### Client Credentials (Backend Services)
 
-The simplest path. Register a client in your IdP, then pass the client ID and secret to the SDK. The SDK handles token acquisition and refresh automatically.
+The simplest path. Register a client in your IdP, then use `clientCredentialsTokenProvider()` (JS) or pass the client ID and secret directly (Go/Java). The SDK handles token acquisition, caching, and refresh automatically.
 
 **What you need:** A client ID and client secret from your IdP.
 
@@ -81,9 +81,9 @@ See [SDK code examples](/sdks/authentication#client-credentials) for Go, Java, a
 
 ### OIDC Login Flow (Browser Apps)
 
-For browser-based applications, your app completes an [OIDC Authorization Code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) to obtain an access token and (optionally) a refresh token from the IdP. The IdP returns both tokens after a successful `/token` call with a valid authorization code — though the refresh token is only issued if the IdP is configured to provide one. You then pass the refresh token to the JS SDK, which uses it to maintain a valid access token.
+For browser-based applications, your app completes an [OIDC Authorization Code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) to obtain an access token and (optionally) a refresh token from the IdP. The IdP returns both tokens after a successful `/token` call with a valid authorization code — though the refresh token is only issued if the IdP is configured to provide one. You then pass the refresh token to `refreshTokenProvider()`, which handles token exchange and automatic refresh.
 
-**What you need:** An access token and optional refresh token from a completed OIDC login flow.
+**What you need:** A refresh token from a completed OIDC login flow.
 
 See [SDK code examples](/sdks/authentication#refresh-token) (JavaScript only).
 
@@ -165,9 +165,9 @@ OpenTDF does not prescribe a specific deployment strategy. This checklist covers
 
 ### "My token expired and I'm getting errors"
 
-- **Client credentials:** The SDK refreshes automatically — if you're seeing expiry errors, check that your IdP is reachable.
+- **Client credentials:** The built-in `clientCredentialsTokenProvider()` (JS) and Go/Java SDKs refresh automatically — if you're seeing expiry errors, check that your IdP is reachable.
 - **OAuth token source (Go):** `WithOAuthAccessTokenSource` does not auto-refresh. Your `TokenSource` implementation must handle refresh.
-- **Refresh token (JS):** Ensure the refresh token itself hasn't expired. Long-lived refresh tokens can be configured in your IdP.
+- **Refresh token (JS):** `refreshTokenProvider()` handles rotation automatically, but ensure the initial refresh token itself hasn't expired. Long-lived refresh tokens can be configured in your IdP.
 
 ### "DPoP-related errors"
 

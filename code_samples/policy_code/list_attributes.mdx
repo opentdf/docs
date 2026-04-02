@@ -58,11 +58,14 @@ import ListAttributesExample from '@site/code_samples/java/list-attributes.mdx';
 <TabItem value="js" label="TypeScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 

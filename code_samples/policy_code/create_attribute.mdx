@@ -73,12 +73,15 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 <TabItem value="js" label="TypeScript">
 
 ```typescript
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(() => getAccessToken())],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 

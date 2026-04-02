@@ -48,28 +48,14 @@ SDK sdk = new SDKBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
-
-// Use your preferred OAuth2 library to obtain tokens via client credentials grant.
-// The interceptor calls your token provider per-request.
-async function getAccessToken(): Promise<string> {
-    // In production, cache tokens and refresh only when expired.
-    // Example: fetch token from your IdP's token endpoint
-    const resp = await fetch('http://localhost:8080/auth/realms/opentdf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: 'my-client-id',
-            client_secret: 'my-client-secret',
-        }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-}
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
 const client = new OpenTDF({
-    interceptors: [authTokenInterceptor(getAccessToken)],
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'my-client-id',
+        clientSecret: 'my-client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
     platformUrl: 'http://localhost:8080',
 });
 ```
@@ -81,7 +67,7 @@ Client credentials should be used only in Node.js or server-side environments. N
 </TabItem>
 </Tabs>
 
-**Token lifecycle:** The SDK calls your token provider on each request. Your provider is responsible for caching and refreshing tokens as needed.
+**Token lifecycle:** The built-in token providers automatically cache tokens and refresh them when they expire (with a 30-second buffer). You can also write your own `TokenProvider` — any `() => Promise<string>` function works.
 
 ## Token Exchange
 
@@ -120,28 +106,14 @@ The Java SDK wraps the JWT as a `BearerAccessToken` and performs an RFC 8693 tok
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
-
-// Exchange your external JWT for a platform token, then provide it to the SDK.
-async function getExchangedToken(): Promise<string> {
-    // In production, cache tokens and refresh only when expired.
-    // Perform RFC 8693 token exchange with your IdP
-    const resp = await fetch('http://localhost:8080/auth/realms/opentdf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-            subject_token: 'eyJhbGciOi...',
-            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-            client_id: 'my-client-id',
-        }),
-    });
-    const { access_token } = await resp.json();
-    return access_token;
-}
+import { authTokenInterceptor, externalJwtTokenProvider, OpenTDF } from '@opentdf/sdk';
 
 const client = new OpenTDF({
-    interceptors: [authTokenInterceptor(getExchangedToken)],
+    interceptors: [authTokenInterceptor(externalJwtTokenProvider({
+        clientId: 'my-client-id',
+        externalJwt: 'eyJhbGciOi...',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
     platformUrl: 'http://localhost:8080',
 });
 ```
@@ -158,13 +130,16 @@ Refresh token authentication is currently available in the JavaScript SDK only. 
 :::
 
 ```typescript
-import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, refreshTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-// For browser apps: use your OIDC library's token refresh mechanism.
-// The interceptor calls your provider per-request — it should return a valid token,
-// refreshing automatically when needed.
+// Use a refresh token obtained from a prior OIDC login flow.
+// The provider automatically exchanges it for access tokens and handles rotation.
 const client = new OpenTDF({
-    interceptors: [authTokenInterceptor(() => myOidcClient.getAccessToken())],
+    interceptors: [authTokenInterceptor(refreshTokenProvider({
+        clientId: 'my-app',
+        refreshToken: 'refresh-token-from-login-flow',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
     platformUrl: 'http://localhost:8080',
 });
 ```
@@ -313,10 +288,14 @@ const client = new OpenTDF({
 <TabItem value="js-dpop" label="JavaScript DPoP Example">
 
 ```typescript
-import { authTokenDPoPInterceptor, OpenTDF } from '@opentdf/sdk';
+import { authTokenDPoPInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
 const dpopInterceptor = authTokenDPoPInterceptor({
-    tokenProvider: () => getAccessToken(),
+    tokenProvider: clientCredentialsTokenProvider({
+        clientId: 'my-client-id',
+        clientSecret: 'my-client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }),
 });
 
 const client = new OpenTDF({

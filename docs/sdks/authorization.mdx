@@ -95,12 +95,15 @@ public class AuthorizationSetup {
 
 ```typescript
 // Option 1: Using interceptors (recommended for new code)
-// getAccessToken() returns a valid access token — see the Authentication page
-import { authTokenInterceptor } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platformClient = new PlatformClient({
-  interceptors: [authTokenInterceptor(getAccessToken)],
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf',
+    clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
