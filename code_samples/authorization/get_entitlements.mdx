@@ -32,10 +32,11 @@ func main() {
 	}
 
 	// Get Entitlements using v2 API
-	// Use authorization.ForClientID to create an EntityIdentifier in one call.
-	// Other helpers: ForEmail, ForUserName, ForToken, WithRequestToken
+	// Use sdk.EntityIdentifierForClientID to create an EntityIdentifier in one call.
+	// Other helpers: EntityIdentifierForEmail, EntityIdentifierForUserName,
+	// EntityIdentifierForToken, EntityIdentifierWithRequestToken
 	entitlementReq := &authorization.GetEntitlementsRequest{
-		EntityIdentifier: authorization.ForClientID("opentdf"),
+		EntityIdentifier: sdk.EntityIdentifierForClientID("opentdf"),
 	}
 
 	entitlements, err := client.AuthorizationV2.GetEntitlements(context.Background(), entitlementReq)

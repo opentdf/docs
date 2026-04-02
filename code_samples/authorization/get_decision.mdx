@@ -33,10 +33,11 @@ func main() {
 	}
 
 	// Get Decision using v2 API
-	// Use authorization.ForClientID to create an EntityIdentifier in one call.
-	// Other helpers: ForEmail, ForUserName, ForToken, WithRequestToken
+	// Use sdk.EntityIdentifierForClientID to create an EntityIdentifier in one call.
+	// Other helpers: EntityIdentifierForEmail, EntityIdentifierForUserName,
+	// EntityIdentifierForToken, EntityIdentifierWithRequestToken
 	decisionReq := &authorization.GetDecisionRequest{
-		EntityIdentifier: authorization.ForClientID("opentdf"),
+		EntityIdentifier: sdk.EntityIdentifierForClientID("opentdf"),
 		Action: &policy.Action{
 			Name: "decrypt",
 		},
