@@ -3,11 +3,17 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 const OSANO_SRC =
   'https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js';
 
-if (ExecutionEnvironment.canUseDOM) {
-  const isLocal = window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
+// Only load Osano on production — the script blocks page loading when the
+// Osano CDN is unreachable (localhost, preview environments).
+const OSANO_HOSTS = ['opentdf.io', 'www.opentdf.io'];
 
-  if (!isLocal && !document.querySelector(`script[src="${OSANO_SRC}"]`)) {
+function shouldLoadOsano() {
+  if (!ExecutionEnvironment.canUseDOM) return false;
+  return OSANO_HOSTS.includes(window.location.hostname);
+}
+
+if (ExecutionEnvironment.canUseDOM) {
+  if (shouldLoadOsano() && !document.querySelector(`script[src="${OSANO_SRC}"]`)) {
     const script = document.createElement('script');
     script.src = OSANO_SRC;
     script.async = true;
