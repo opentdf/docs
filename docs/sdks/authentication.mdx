@@ -257,6 +257,7 @@ AuthorizationGrant customGrant = /* your custom grant */;
 
 SDK sdk = new SDKBuilder()
     .platformEndpoint("http://localhost:8080")
+    .useInsecurePlaintextConnection(true) // dev only
     .authorizationGrant(customGrant)
     .build();
 ```
