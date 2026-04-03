@@ -27,6 +27,7 @@ Docs-only checks:
 - Indentation: 2 spaces; newlines: LF (see `.editorconfig`).
 - Docs: prefer `.mdx`; name new pages `kebab-case.mdx`, and use `index.mdx` for section landing pages.
 - Keep long examples in `code_samples/` and reference them from docs instead of duplicating.
+- **Anchor collision prevention**: Headers in `code_samples/` files render on the same page as the doc that imports them. Use SDK option names for encrypt/decrypt option headers (e.g. `### WithAssertions`, `### WithDataAttributes`, `### WithMetadata`) to avoid colliding with concept-level headers in the parent doc (e.g. `## Assertions`, `### Data Attributes`). See [#273](https://github.com/opentdf/docs/issues/273) for planned CI enforcement.
 
 ## Testing Guidelines
 
