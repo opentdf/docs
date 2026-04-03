@@ -8,6 +8,9 @@ if (ExecutionEnvironment.canUseDOM) {
     const script = document.createElement('script');
     script.src = OSANO_SRC;
     script.async = true;
+    script.onerror = () => {
+      console.warn('Osano CMP failed to load');
+    };
     document.head.appendChild(script);
   }
 
