@@ -4,7 +4,10 @@ const OSANO_SRC =
   'https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js';
 
 if (ExecutionEnvironment.canUseDOM) {
-  if (!document.querySelector(`script[src="${OSANO_SRC}"]`)) {
+  const isLocal = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  if (!isLocal && !document.querySelector(`script[src="${OSANO_SRC}"]`)) {
     const script = document.createElement('script');
     script.src = OSANO_SRC;
     script.async = true;
