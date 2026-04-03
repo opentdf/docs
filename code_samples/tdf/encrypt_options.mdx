@@ -7,7 +7,7 @@ The following options can be passed to the encrypt call to control how the TDF i
 
 ---
 
-### Data Attributes
+### WithDataAttributes
 
 Attach one or more attribute value FQNs to the TDF policy. Access to the data will be governed by these attributes — only entities that hold matching attribute values will be permitted to decrypt.
 
@@ -233,7 +233,7 @@ Steps with the same `sid` share a key segment. Steps with different `sid` values
 
 ---
 
-### Metadata
+### WithMetadata
 
 Attach a plaintext metadata string to the TDF. Metadata is stored unencrypted in the TDF manifest and is readable by anyone with access to the file — do not store sensitive values here. Common uses include audit labels, content identifiers, or application-specific tags.
 
@@ -378,7 +378,7 @@ const tdf = await client.createTDF({
 
 ---
 
-### Assertions
+### WithAssertions
 
 Assertions are signed statements attached to the TDF that carry structured metadata — audit labels, handling instructions, content identifiers — and can be cryptographically verified on decrypt.
 
