@@ -91,7 +91,7 @@ In this case, Policy Decision Points would evaluate the Action Attribute Values 
 The `otdfctl migrate registered-resources` command migrates legacy non-namespaced Registered Resources to namespaced ones.
 
 :::caution
-Migration creates a new namespaced resource, recreates its values with their action-attribute-value mappings, then deletes the old non-namespaced resource. The migrated resource will have a new UUID. Back up your data before running with `--commit`.
+Migration creates a new namespaced resource and recreates its values with their action-attribute-value mappings. The old non-namespaced resource is not deleted but is tagged with metadata. To delete migrated items, you will need to run a separate `prune`/`cleanup` command which can be found in the otdfctl docs. The migrated resource will have a new UUID. Back up your data before running with `--commit`.
 :::
 
 ## Modes
