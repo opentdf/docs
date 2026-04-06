@@ -67,13 +67,6 @@ const config: Config = {
     }, 
     {
       tagName: "script",
-      attributes: {
-        async: "true",
-        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js",
-      },
-    },
-    {
-      tagName: "script",
       attributes: {},
       innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`,
     },
@@ -240,7 +233,7 @@ const config: Config = {
               |
               <a href='https://www.virtru.com/cookie-policy' target='_blank' rel='noopener noreferrer'>Cookie Policy</a>
               &amp;
-              <button type="button" onclick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
+              <button type="button" onclick="window.openOsanoPreferences?.()">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
             </span>
           </div>
           <div class="footer__license-info">
@@ -447,6 +440,7 @@ ${updatedContent}`,
     require.resolve("docusaurus-lunr-search"),
   ],
   clientModules: [
+    require.resolve('./src/theme/OsanoLoader.js'),
     require.resolve('./src/theme/TabsHashSync.js'),
   ],
 };

@@ -94,7 +94,7 @@ defer client.Close()
 
 ```java
 SDK sdk = new SDKBuilder()
-    .platformEndpoint("localhost:8080")
+    .platformEndpoint("http://localhost:8080")
     .tokenExchange("eyJhbGciOi...")
     .useInsecurePlaintextConnection(true) // dev only
     .build();
@@ -176,14 +176,14 @@ The Java SDK provides several ways to configure TLS:
 ```java
 // From a directory of PEM/CRT files
 SDK sdk = new SDKBuilder()
-    .platformEndpoint("platform.example.com")
+    .platformEndpoint("https://platform.example.com")
     .clientSecret("my-client-id", "my-client-secret")
     .sslFactoryFromDirectory("/path/to/certs")
     .build();
 
 // From a Java keystore
 SDK sdk = new SDKBuilder()
-    .platformEndpoint("platform.example.com")
+    .platformEndpoint("https://platform.example.com")
     .clientSecret("my-client-id", "my-client-secret")
     .sslFactoryFromKeyStore("/path/to/keystore.jks", "password")
     .build();
@@ -246,7 +246,8 @@ import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 AuthorizationGrant customGrant = /* your custom grant */;
 
 SDK sdk = new SDKBuilder()
-    .platformEndpoint("localhost:8080")
+    .platformEndpoint("http://localhost:8080")
+    .useInsecurePlaintextConnection(true) // dev only
     .authorizationGrant(customGrant)
     .build();
 ```
