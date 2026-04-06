@@ -35,7 +35,7 @@ import (
     "github.com/opentdf/platform/sdk"
     // Plus the service-specific package for each call, e.g.:
     "github.com/opentdf/platform/protocol/go/policy/namespaces"
-    "github.com/opentdf/platform/protocol/go/authorization"
+    authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 )
 
 client, err := sdk.New("http://localhost:8080",
@@ -45,6 +45,13 @@ if err != nil {
     log.Fatal(err)
 }
 defer client.Close()
+
+// Platform services are accessed directly on the client, e.g.:
+resp, err := client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{})
+
+decision, err := client.AuthorizationV2.GetDecision(ctx, &authorization.GetDecisionRequest{
+    // ...
+})
 ```
 
 </TabItem>

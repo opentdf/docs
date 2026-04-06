@@ -187,11 +187,33 @@ async createTDF(options: CreateTDFOptions): Promise<DecoratedStream>
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Output destination | Required | Where the encrypted TDF bytes are written. |
-| Plaintext source | Required | The data to encrypt. See the signature tab for your language for the expected type. |
-| Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `writer` | `io.Writer` | Where the encrypted TDF bytes are written. |
+| `reader` | `io.ReadSeeker` | The plaintext data to encrypt. |
+| `opts` | `...TDFOption` | Encryption options. At minimum, a KAS endpoint must be specified (e.g., `sdk.WithKasInformation()`). See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `plaintext` | `InputStream` | The plaintext data to encrypt. |
+| `out` | `OutputStream` | Where the encrypted TDF bytes are written. |
+| `config` | `Config.TDFConfig` | Encryption options. At minimum, a KAS endpoint must be specified. See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `CreateTDFOptions` | A single options object containing the source, KAS endpoint, attributes, and other settings. See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+</Tabs>
 
 **Returns**
 

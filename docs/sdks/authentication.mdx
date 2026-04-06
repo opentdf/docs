@@ -196,9 +196,7 @@ Java's TLS configuration is layered on top of another auth method (typically cli
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-The JavaScript SDK relies on the runtime's TLS configuration (browser or Node.js). Configure client certificates at the environment level rather than in the SDK.
-
-For Node.js, use the `NODE_EXTRA_CA_CERTS` environment variable or configure the `https` agent.
+In browsers, client certificates are managed by the operating system and browser — the user is prompted to select a certificate when the server requests one. No SDK configuration is needed.
 
 </TabItem>
 </Tabs>
@@ -255,11 +253,20 @@ SDK sdk = new SDKBuilder()
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-Write a custom interceptor for full control over request authentication:
+Write a custom interceptor for full control over request authentication. This is useful when your app already has its own auth system (e.g., an OIDC library like `oidc-client-ts`, Auth0, or a custom token store):
 
 ```typescript
 import { type Interceptor } from '@connectrpc/connect';
 import { OpenTDF } from '@opentdf/sdk';
+
+// Replace this with however your app obtains tokens —
+// e.g., from an OIDC library, auth context, or token store.
+async function getMyToken(): Promise<string> {
+    // Example: read from your OIDC library's user manager
+    // const user = await userManager.getUser();
+    // return user?.access_token ?? '';
+    throw new Error('Implement getMyToken() for your auth system');
+}
 
 const myAuthInterceptor: Interceptor = (next) => async (req) => {
     req.header.set('Authorization', `Bearer ${await getMyToken()}`);
@@ -286,7 +293,37 @@ const client = new OpenTDF({
 | **JavaScript** | Off by default with interceptors | Use `authTokenDPoPInterceptor()` to enable |
 
 <Tabs>
-<TabItem value="js-dpop" label="JavaScript DPoP Example">
+<TabItem value="go" label="Go">
+
+DPoP is enabled by default with an auto-generated key. To provide your own RSA key:
+
+```go
+import "crypto/rsa"
+
+// Provide your own RSA key for DPoP signing
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("my-client-id", "my-client-secret", nil),
+    sdk.WithSessionSignerRSA(myRSAPrivateKey), // *rsa.PrivateKey
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+DPoP is always on with an auto-generated RSA key. To provide a custom signer:
+
+```java
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("my-client-id", "my-client-secret")
+    .srtSigner(customSigner) // custom DPoP signer
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+DPoP is off by default with interceptors. Use `authTokenDPoPInterceptor()` to enable it:
 
 ```typescript
 import { authTokenDPoPInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
@@ -321,6 +358,9 @@ The `AuthProvider` interface is deprecated as of the interceptor-based auth intr
 
 The legacy `AuthProvider` pattern managed token lifecycle internally:
 
+<Tabs>
+<TabItem value="js" label="JavaScript">
+
 ```typescript
 import { AuthProviders, OpenTDF } from '@opentdf/sdk';
 
@@ -337,3 +377,6 @@ const client = new OpenTDF({
 });
 await client.ready;
 ```
+
+</TabItem>
+</Tabs>
