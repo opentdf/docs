@@ -556,6 +556,10 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
 
+:::tip Why use BulkDecrypt?
+Calling `LoadTDF` in a loop issues a separate KAS rewrap request per TDF. `BulkDecrypt` batches all rewrap requests by KAS endpoint so that *N* TDFs targeting the same KAS require only one round-trip instead of *N*. Use it whenever you need to decrypt more than a handful of TDFs.
+:::
+
 **Signature**
 
 ```go
@@ -578,7 +582,15 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
 | `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
-Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
+**Options**
+
+| Option | Description |
+|--------|-------------|
+| `WithTDFs(tdfs...)` | **(Required)** The TDFs to decrypt. |
+| `WithBulkKasAllowlist([]string{...})` | Restrict which KAS endpoints may be contacted. Only listed URLs are allowed; requests to unlisted KAS endpoints fail with an error per TDF. If omitted and a KAS registry is configured, the SDK uses the registry as the allowlist. |
+| `WithBulkIgnoreAllowlist(true)` | Bypass KAS allowlist checks entirely. A warning is logged for each KAS URL contacted. Use only for testing or fully trusted environments. |
+| `WithTDFType(tdfType)` | Specify the TDF format explicitly. Currently only `sdk.Standard` (TDF3 / ZIP-based) is supported. If omitted, the SDK auto-detects the format from each reader. |
+| `WithTDF3DecryptOptions(opts...)` | Pass additional reader options (e.g., session key, assertion verification) through to each TDF3 decryptor. These are the same options accepted by `LoadTDF`. |
 
 **Returns**
 
@@ -587,7 +599,11 @@ Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints ma
 
 **Errors**
 
-Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
+`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
+
+- Each element corresponds to a TDF by position in the original `WithTDFs` call.
+- `nil` entries indicate success; non-nil entries describe why that TDF failed.
+- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 **Example**
 
@@ -622,7 +638,11 @@ if err != nil {
 }
 ```
 
-To inspect the prepared request before executing:
+**PrepareBulkDecrypt** splits the operation into two phases — rewrap (network) and decrypt (CPU) — so you can act between them:
+
+- **Inspect obligations** — after `PrepareBulkDecrypt`, each `BulkTDF` has its `TriggeredObligations` populated. Check these before decrypting payloads (see [Obligations in bulk decrypt](#obligations-in-bulk-decrypt)).
+- **Conditional decryption** — skip TDFs that don't meet your criteria without wasting CPU on decryption.
+- **Monitoring** — separate the network-bound rewrap phase from the CPU-bound decryption phase for progress reporting or latency attribution.
 
 ```go
 import (
