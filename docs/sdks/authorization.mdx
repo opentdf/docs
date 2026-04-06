@@ -853,35 +853,19 @@ OpenTDF supports various entity types for flexible authentication:
 
 ### Entity Identifier Helpers (Go)
 
-The Go SDK provides convenience constructors in the `authorization/v2` package that eliminate the deeply nested proto construction required to build an `EntityIdentifier`. These helpers are available starting with the `protocol/go` module version that includes [opentdf/platform#3232](https://github.com/opentdf/platform/pull/3232).
+The Go SDK provides convenience constructors in the `authorization/v2` package that eliminate the deeply nested proto construction required to build an `EntityIdentifier`.
 
 | Helper | Description |
 |--------|-------------|
-| `authorization.ForClientID(clientID string)` | Identifies a subject entity by client ID |
-| `authorization.ForEmail(email string)` | Identifies a subject entity by email address |
-| `authorization.ForUserName(username string)` | Identifies a subject entity by username |
-| `authorization.ForToken(jwt string)` | Resolves the entity from the given JWT |
-| `authorization.WithRequestToken()` | Derives the entity from the request's Authorization header |
+| `authorizationv2.ForClientID(clientID string)` | Identifies a subject entity by client ID |
+| `authorizationv2.ForEmail(email string)` | Identifies a subject entity by email address |
+| `authorizationv2.ForUserName(username string)` | Identifies a subject entity by username |
+| `authorizationv2.ForToken(jwt string)` | Resolves the entity from the given JWT |
+| `authorizationv2.WithRequestToken()` | Derives the entity from the request's Authorization header |
 
 ```go
 import authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 
-// Before: 8+ lines of nested proto construction
-req := &authorization.GetDecisionRequest{
-    EntityIdentifier: &authorization.EntityIdentifier{
-        Identifier: &authorization.EntityIdentifier_EntityChain{
-            EntityChain: &entity.EntityChain{
-                Entities: []*entity.Entity{{
-                    EntityType: &entity.Entity_ClientId{ClientId: "opentdf"},
-                    Category:   entity.Entity_CATEGORY_SUBJECT,
-                }},
-            },
-        },
-    },
-    // ...
-}
-
-// After: one line
 req := &authorization.GetDecisionRequest{
     EntityIdentifier: authorization.ForClientID("opentdf"),
     // ...
