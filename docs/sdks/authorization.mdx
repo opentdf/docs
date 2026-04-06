@@ -143,35 +143,21 @@ Use `GetEntitlements` to discover what attribute values an entity can access. Th
 
 ```go
 func getEntitlementsV2(client *sdk.SDK) {
-    // Using v2 API with EntityIdentifier
     entitlementReq := &authorizationv2.GetEntitlementsRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                EntityChain: &entity.EntityChain{
-                    Entities: []*entity.Entity{
-                        {
-                            EphemeralId: "user-bob",
-                            EntityType: &entity.Entity_EmailAddress{
-                                EmailAddress: "bob@OrgA.com",
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForEmail("bob@OrgA.com"),
     }
-    
+
     entitlements, err := client.AuthorizationV2.GetEntitlements(
-        context.Background(), 
+        context.Background(),
         entitlementReq,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Process entitlements
     for _, entitlement := range entitlements.GetEntitlements() {
-        fmt.Printf("Entity has access to: %v\n", 
+        fmt.Printf("Entity has access to: %v\n",
             entitlement.GetActionsPerAttributeValueFqn())
     }
 }
@@ -405,20 +391,7 @@ Use `GetDecision` when you need to authorize access to specific resources. This 
 ```go
 func getDecisionV2(client *sdk.SDK) {
     decisionReq := &authorizationv2.GetDecisionRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                EntityChain: &entity.EntityChain{
-                    Entities: []*entity.Entity{
-                        {
-                            EphemeralId: "user-123",
-                            EntityType: &entity.Entity_EmailAddress{
-                                EmailAddress: "user@company.com",
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
         Action: &policy.Action{
             Name: "decrypt",
         },
@@ -433,15 +406,15 @@ func getDecisionV2(client *sdk.SDK) {
             },
         },
     }
-    
+
     decision, err := client.AuthorizationV2.GetDecision(
-        context.Background(), 
+        context.Background(),
         decisionReq,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     resDecision := decision.GetDecision()
     if resDecision.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
         fmt.Println("Access granted")
@@ -624,20 +597,7 @@ func getBulkDecisionsV2(client *sdk.SDK) {
     bulkReq := &authorizationv2.GetDecisionBulkRequest{
         DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
             {
-                EntityIdentifier: &authorizationv2.EntityIdentifier{
-                    Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                        EntityChain: &entity.EntityChain{
-                            Entities: []*entity.Entity{
-                                {
-                                    EphemeralId: "user-123",
-                                    EntityType: &entity.Entity_EmailAddress{
-                                        EmailAddress: "user@company.com",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
                 Action: &policy.Action{Name: "decrypt"},
                 Resources: []*authorizationv2.Resource{
                     {
@@ -874,10 +834,49 @@ OpenTDF supports various entity types for flexible authentication:
 
 - **ClientId**: Service-to-service authentication
 - **EmailAddress**: User identification via email
-- **UserName**: User identification via username  
+- **UserName**: User identification via username
 - **UUID**: Direct entity UUID reference
 - **Token**: JWT-based authentication
 - **Claims**: Custom claims-based entities
+
+### Entity Identifier Helpers (Go)
+
+The Go SDK provides convenience constructors in the `authorization/v2` package that eliminate the deeply nested proto construction required to build an `EntityIdentifier`. These helpers are available starting with the `protocol/go` module version that includes [opentdf/platform#3232](https://github.com/opentdf/platform/pull/3232).
+
+| Helper | Description |
+|--------|-------------|
+| `authorization.ForClientID(clientID string)` | Identifies a subject entity by client ID |
+| `authorization.ForEmail(email string)` | Identifies a subject entity by email address |
+| `authorization.ForUserName(username string)` | Identifies a subject entity by username |
+| `authorization.ForToken(jwt string)` | Resolves the entity from the given JWT |
+| `authorization.WithRequestToken()` | Derives the entity from the request's Authorization header |
+
+```go
+import authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+// Before: 8+ lines of nested proto construction
+req := &authorization.GetDecisionRequest{
+    EntityIdentifier: &authorization.EntityIdentifier{
+        Identifier: &authorization.EntityIdentifier_EntityChain{
+            EntityChain: &entity.EntityChain{
+                Entities: []*entity.Entity{{
+                    EntityType: &entity.Entity_ClientId{ClientId: "opentdf"},
+                    Category:   entity.Entity_CATEGORY_SUBJECT,
+                }},
+            },
+        },
+    },
+    // ...
+}
+
+// After: one line
+req := &authorization.GetDecisionRequest{
+    EntityIdentifier: authorization.ForClientID("opentdf"),
+    // ...
+}
+```
+
+All five constructors work with every v2 authorization method: `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk`, and `GetEntitlements`.
 
 ### Token-Based Authentication Example
 
@@ -889,14 +888,7 @@ OpenTDF supports various entity types for flexible authentication:
 ```go
 func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
     decisionReq := &authorizationv2.GetDecisionRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_Token{
-                Token: &entity.Token{
-                    EphemeralId: "token-1",
-                    Jwt:         jwtToken,
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForToken(jwtToken),
         Action: &policy.Action{Name: "decrypt"},
         Resource: &authorizationv2.Resource{
             Resource: &authorizationv2.Resource_AttributeValues_{
@@ -906,7 +898,7 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
             },
         },
     }
-    
+
     decision, err := client.AuthorizationV2.GetDecision(
         context.Background(),
         decisionReq,
@@ -914,7 +906,7 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     resDecision := decision.GetDecision()
     fmt.Printf("Token-based decision: %v\n", resDecision.GetDecision())
 }
@@ -1048,7 +1040,7 @@ async function getDecisionWithToken(platformClient: PlatformClient, jwtToken: st
 
 1. **Least Privilege**: Request only the minimum necessary permissions
 2. **Token Validation**: Ensure JWT tokens are properly validated before use
-3. **Obligation Handling**: Always process and fulfill returned obligations
+3. **Obligation Handling**: Always process and fulfill returned [obligations](/sdks/policy#obligations)
 4. **Error Handling**: Implement proper error handling and fallback policies
 
 ### Integration Patterns
