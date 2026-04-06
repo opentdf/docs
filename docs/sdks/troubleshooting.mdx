@@ -5,6 +5,7 @@ title: Troubleshooting
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # SDK Troubleshooting
 
@@ -51,6 +52,8 @@ curl https://<idp-endpoint>/
    }))] };
    const client = new OpenTDF({ ...auth, platformUrl });
    ```
+
+   <JsAuthNote />
 
 3. **Re-instantiate the SDK**: For Go and Java, create a new SDK instance with fresh credentials when a token error occurs.
 

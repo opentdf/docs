@@ -65,6 +65,10 @@ Expected output:
 
 ## Step 3: Create Your Application {#step-3-js}
 
+:::note Local development only
+This quickstart uses `clientCredentialsTokenProvider` with the pre-configured Keycloak client (`opentdf`/`secret`) so you can focus on learning the SDK. In production browser apps, you would complete an OIDC login flow and pass the resulting refresh token to [`refreshTokenProvider()`](/sdks/authentication#refresh-token) instead — the JavaScript SDK is designed for browser use. See [Authentication](/sdks/authentication) for all options.
+:::
+
 ### JavaScript Implementation Code
 
 Create a file named `index.mjs`:

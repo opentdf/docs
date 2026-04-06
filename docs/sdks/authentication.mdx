@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-connect-works/)-compatible identity provider (IdP) to obtain access tokens for the platform. The platform itself is a **resource server**, not an identity provider — you bring your own IdP (Keycloak is the reference implementation).
 
 :::tip Not sure which method to use?
-See the [Authentication Decision Guide](/guides/authentication-guide) to choose the right approach for your use case.
+The JavaScript SDK is designed for **browser applications**. For browser apps, start with [Refresh Token](#refresh-token) (the most common browser pattern). For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
 :::
 
 ## Client Credentials
@@ -60,8 +60,8 @@ const client = new OpenTDF({
 });
 ```
 
-:::warning Confidential clients only
-Client credentials should be used only in Node.js or server-side environments. Never expose client secrets in browser code.
+:::warning Server-side only — not for browsers
+`clientCredentialsTokenProvider` requires a client secret and is intended for server-side scripts, CLI tools, and CI/CD pipelines. **Never expose client secrets in browser code.** The JavaScript SDK is designed for browser applications — in production, use [`refreshTokenProvider()`](#refresh-token) with a token from your OIDC login flow instead.
 :::
 
 </TabItem>

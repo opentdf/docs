@@ -5,6 +5,7 @@ title: Discovery
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Discovery
 
@@ -12,9 +13,7 @@ Before encrypting data with `CreateTDF`, it helps to verify that the attributes 
 
 The Go, Java, and JavaScript SDKs provide five methods to discover and validate attributes without manual platform queries.
 
-:::tip JavaScript setup
-The JS examples below use `clientCredentialsTokenProvider` for authentication — see the [Authentication](/sdks/authentication) page for all available token providers. The `auth` object can be shared across all SDK calls — define it once, pass it everywhere.
-:::
+<JsAuthNote />
 
 ---
 
