@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-connect-works/)-compatible identity provider (IdP) to obtain access tokens for the platform. The platform itself is a **resource server**, not an identity provider — you bring your own IdP (Keycloak is the reference implementation).
 
 :::tip Not sure which method to use?
-The JavaScript SDK is designed for **browser applications**. For browser apps, start with [Refresh Token](#refresh-token) (the most common browser pattern). For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
+The JavaScript SDK is designed for **browser applications**. If your app already has an access token, use [Access Token](#access-token). If your OIDC flow provides a refresh token, use [Refresh Token](#refresh-token) for automatic renewal. For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
 :::
 
 ## Client Credentials
@@ -143,6 +143,32 @@ const client = new OpenTDF({
     platformUrl: 'http://localhost:8080',
 });
 ```
+
+## Access Token
+
+Use an **access token** when your application already has a valid token from its own authentication system — for example, from an OIDC library like `oidc-client-ts`, an auth context provider, or a cookie. This is common when the IdP doesn't issue refresh tokens or when your security policy restricts their use.
+
+:::info JavaScript SDK only
+Access token authentication is currently available in the JavaScript SDK only. Go and Java SDKs handle token lifecycle differently — see [Client Credentials](#client-credentials) for backend use cases, or [Custom Token Source](#custom-token-source) for advanced integrations.
+:::
+
+```typescript
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+
+// Pass any () => Promise<string> function that returns a valid access token.
+// Example: read from your OIDC library's user manager.
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(async () => {
+        const user = await userManager.getUser();
+        return user?.access_token ?? '';
+    })],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+:::warning You manage token lifecycle
+Unlike the built-in token providers (`clientCredentialsTokenProvider`, `refreshTokenProvider`), a custom function does not automatically cache or refresh tokens. If your tokens are short-lived, ensure your function returns a fresh token when called — `authTokenInterceptor` calls it on every request.
+:::
 
 ## Certificate Exchange (mTLS)
 
@@ -326,14 +352,12 @@ SDK sdk = new SDKBuilder()
 DPoP is off by default with interceptors. Use `authTokenDPoPInterceptor()` to enable it:
 
 ```typescript
-import { authTokenDPoPInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
+import { authTokenDPoPInterceptor, OpenTDF } from '@opentdf/sdk';
 
+// Use any TokenProvider: refreshTokenProvider(), clientCredentialsTokenProvider(),
+// externalJwtTokenProvider(), or a custom () => Promise<string> function.
 const dpopInterceptor = authTokenDPoPInterceptor({
-    tokenProvider: clientCredentialsTokenProvider({
-        clientId: 'my-client-id',
-        clientSecret: 'my-client-secret',
-        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-    }),
+    tokenProvider: getAccessToken, // your token provider here
 });
 
 const client = new OpenTDF({

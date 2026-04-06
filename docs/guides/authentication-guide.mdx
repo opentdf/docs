@@ -62,7 +62,8 @@ flowchart TD
 | Scenario | Recommended Method | Notes |
 |----------|-------------------|-------|
 | Backend service / microservice | [Client Credentials](/sdks/authentication#client-credentials) | Most straightforward. Use `clientCredentialsTokenProvider()` — it caches tokens and auto-refreshes on expiry. |
-| Web application (browser) | [OIDC Login Flow](/sdks/authentication#refresh-token) | JS SDK only. Use `refreshTokenProvider()` with a refresh token from your OIDC login flow. Never expose client secrets in browser code. |
+| Web application (browser) with refresh token | [Refresh Token](/sdks/authentication#refresh-token) | JS SDK only. Use `refreshTokenProvider()` with a refresh token from your OIDC login flow. Handles automatic renewal. |
+| Web application (browser) with access token only | [Access Token](/sdks/authentication#access-token) | JS SDK only. Use `authTokenInterceptor()` with a function that returns your access token. Use when your IdP doesn't issue refresh tokens. |
 | CLI tool (interactive user) | `otdfctl auth login` | Opens a browser for OIDC login. See [CLI auth docs](/components/cli/auth/login). |
 | CI/CD pipeline / automated job | [Client Credentials](/sdks/authentication#client-credentials) | Use a dedicated service account. Rotate secrets regularly. |
 | Federated identity / SAML | [Token Exchange](/sdks/authentication#token-exchange) | Exchange an existing token for one the platform accepts. |
@@ -81,11 +82,12 @@ See [SDK code examples](/sdks/authentication#client-credentials) for Go, Java, a
 
 ### OIDC Login Flow (Browser Apps)
 
-For browser-based applications, your app completes an [OIDC Authorization Code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) to obtain an access token and (optionally) a refresh token from the IdP. The IdP returns both tokens after a successful `/token` call with a valid authorization code — though the refresh token is only issued if the IdP is configured to provide one. You then pass the refresh token to `refreshTokenProvider()`, which handles token exchange and automatic refresh.
+For browser-based applications, your app completes an [OIDC Authorization Code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) to obtain an access token and (optionally) a refresh token from the IdP.
 
-**What you need:** A refresh token from a completed OIDC login flow.
+- **If you have a refresh token**, use [`refreshTokenProvider()`](/sdks/authentication#refresh-token) — it handles token exchange and automatic renewal.
+- **If you only have an access token** (because your IdP doesn't issue refresh tokens or the grant is disabled for security reasons), use [`authTokenInterceptor()`](/sdks/authentication#access-token) with a function that returns your token.
 
-See [SDK code examples](/sdks/authentication#refresh-token) (JavaScript only).
+See SDK code examples: [Refresh Token](/sdks/authentication#refresh-token) | [Access Token](/sdks/authentication#access-token) (JavaScript only).
 
 ### Token Exchange (Federated Identity)
 

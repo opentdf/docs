@@ -244,12 +244,12 @@ if (!(await attributeExists(platformUrl, auth, deptFqn))) {
 
 // Ensure the marketing value exists on the attribute
 const marketingFqn = `${deptFqn}/value/marketing`;
+const listResp = await platform.v1.attributes.listAttributes({});
+const attribute = listResp.attributes.find(
+  (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
+);
+
 if (!(await attributeValueExists(platformUrl, auth, marketingFqn))) {
-  // Need the attribute ID to add a value — fetch it by FQN
-  const listResp = await platform.v1.attributes.listAttributes({});
-  const attribute = listResp.attributes.find(
-    (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
-  );
   await platform.v1.attributes.createAttributeValue({
     attributeId: attribute?.id,
     value: 'marketing',
@@ -299,7 +299,7 @@ import {
 } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 // Get the attribute value ID for "marketing"
-const marketingValue = attribute?.values?.find((v) => v.value === targetValue);
+const marketingValue = attribute?.values?.find((v) => v.value === 'marketing');
 const attributeValueId = marketingValue?.id;
 
 // Subject condition sets use a nested structure: sets → groups → conditions.
