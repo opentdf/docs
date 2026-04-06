@@ -163,7 +163,8 @@ func getEntitlementsV2(client *sdk.SDK) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getEntitlementsV1(client *sdk.SDK) {
@@ -188,26 +189,28 @@ func getEntitlementsV1(client *sdk.SDK) {
             },
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
-        context.Background(), 
+        context.Background(),
         decisionRequest,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Process decisions to understand entitlements
     for _, dr := range decisionResponse.GetDecisionResponses() {
-        fmt.Printf("Entity chain %s has decision: %v\n", 
+        fmt.Printf("Entity chain %s has decision: %v\n",
             dr.GetEntityChainId(), dr.GetDecision())
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -427,7 +430,8 @@ func getDecisionV2(client *sdk.SDK) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getDecisionV1(client *sdk.SDK) {
@@ -452,19 +456,19 @@ func getDecisionV1(client *sdk.SDK) {
             },
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
-        context.Background(), 
+        context.Background(),
         decisionRequest,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         if dr.GetDecision() == authorization.DecisionResponse_DECISION_PERMIT {
             fmt.Println("Access granted")
@@ -478,6 +482,8 @@ func getDecisionV1(client *sdk.SDK) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -643,7 +649,8 @@ func getBulkDecisionsV2(client *sdk.SDK) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getBulkDecisionsV1(client *sdk.SDK) {
@@ -668,11 +675,11 @@ func getBulkDecisionsV1(client *sdk.SDK) {
             },
         },
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
         context.Background(),
         decisionRequest,
@@ -680,7 +687,7 @@ func getBulkDecisionsV1(client *sdk.SDK) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         fmt.Printf("Entity chain %s: %v\n",
             dr.GetEntityChainId(),
@@ -691,6 +698,8 @@ func getBulkDecisionsV1(client *sdk.SDK) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -753,11 +762,14 @@ public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedExce
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 
 <GetDecisionsExample />
+
+</details>
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -912,7 +924,8 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
@@ -935,11 +948,11 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
             AttributeValueFqns: []string{"https://company.com/attr/clearance/value/public"},
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
         context.Background(),
         decisionRequest,
@@ -947,7 +960,7 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         fmt.Printf("Token-based decision: %v\n", dr.GetDecision())
         if len(dr.GetObligations()) > 0 {
@@ -956,6 +969,8 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
