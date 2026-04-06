@@ -143,41 +143,28 @@ Use `GetEntitlements` to discover what attribute values an entity can access. Th
 
 ```go
 func getEntitlementsV2(client *sdk.SDK) {
-    // Using v2 API with EntityIdentifier
     entitlementReq := &authorizationv2.GetEntitlementsRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                EntityChain: &entity.EntityChain{
-                    Entities: []*entity.Entity{
-                        {
-                            EphemeralId: "user-bob",
-                            EntityType: &entity.Entity_EmailAddress{
-                                EmailAddress: "bob@OrgA.com",
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForEmail("bob@OrgA.com"),
     }
-    
+
     entitlements, err := client.AuthorizationV2.GetEntitlements(
-        context.Background(), 
+        context.Background(),
         entitlementReq,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Process entitlements
     for _, entitlement := range entitlements.GetEntitlements() {
-        fmt.Printf("Entity has access to: %v\n", 
+        fmt.Printf("Entity has access to: %v\n",
             entitlement.GetActionsPerAttributeValueFqn())
     }
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getEntitlementsV1(client *sdk.SDK) {
@@ -202,26 +189,28 @@ func getEntitlementsV1(client *sdk.SDK) {
             },
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
-        context.Background(), 
+        context.Background(),
         decisionRequest,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Process decisions to understand entitlements
     for _, dr := range decisionResponse.GetDecisionResponses() {
-        fmt.Printf("Entity chain %s has decision: %v\n", 
+        fmt.Printf("Entity chain %s has decision: %v\n",
             dr.GetEntityChainId(), dr.GetDecision())
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -405,20 +394,7 @@ Use `GetDecision` when you need to authorize access to specific resources. This 
 ```go
 func getDecisionV2(client *sdk.SDK) {
     decisionReq := &authorizationv2.GetDecisionRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                EntityChain: &entity.EntityChain{
-                    Entities: []*entity.Entity{
-                        {
-                            EphemeralId: "user-123",
-                            EntityType: &entity.Entity_EmailAddress{
-                                EmailAddress: "user@company.com",
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
         Action: &policy.Action{
             Name: "decrypt",
         },
@@ -433,15 +409,15 @@ func getDecisionV2(client *sdk.SDK) {
             },
         },
     }
-    
+
     decision, err := client.AuthorizationV2.GetDecision(
-        context.Background(), 
+        context.Background(),
         decisionReq,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     resDecision := decision.GetDecision()
     if resDecision.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
         fmt.Println("Access granted")
@@ -454,7 +430,8 @@ func getDecisionV2(client *sdk.SDK) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getDecisionV1(client *sdk.SDK) {
@@ -479,19 +456,19 @@ func getDecisionV1(client *sdk.SDK) {
             },
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
-        context.Background(), 
+        context.Background(),
         decisionRequest,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         if dr.GetDecision() == authorization.DecisionResponse_DECISION_PERMIT {
             fmt.Println("Access granted")
@@ -505,6 +482,8 @@ func getDecisionV1(client *sdk.SDK) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -624,20 +603,7 @@ func getBulkDecisionsV2(client *sdk.SDK) {
     bulkReq := &authorizationv2.GetDecisionBulkRequest{
         DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
             {
-                EntityIdentifier: &authorizationv2.EntityIdentifier{
-                    Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-                        EntityChain: &entity.EntityChain{
-                            Entities: []*entity.Entity{
-                                {
-                                    EphemeralId: "user-123",
-                                    EntityType: &entity.Entity_EmailAddress{
-                                        EmailAddress: "user@company.com",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
                 Action: &policy.Action{Name: "decrypt"},
                 Resources: []*authorizationv2.Resource{
                     {
@@ -683,7 +649,8 @@ func getBulkDecisionsV2(client *sdk.SDK) {
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getBulkDecisionsV1(client *sdk.SDK) {
@@ -708,11 +675,11 @@ func getBulkDecisionsV1(client *sdk.SDK) {
             },
         },
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
         context.Background(),
         decisionRequest,
@@ -720,7 +687,7 @@ func getBulkDecisionsV1(client *sdk.SDK) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         fmt.Printf("Entity chain %s: %v\n",
             dr.GetEntityChainId(),
@@ -731,6 +698,8 @@ func getBulkDecisionsV1(client *sdk.SDK) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -793,11 +762,14 @@ public void getBulkDecisions(SDK sdk) throws ExecutionException, InterruptedExce
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 
 <GetDecisionsExample />
+
+</details>
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -874,10 +846,33 @@ OpenTDF supports various entity types for flexible authentication:
 
 - **ClientId**: Service-to-service authentication
 - **EmailAddress**: User identification via email
-- **UserName**: User identification via username  
+- **UserName**: User identification via username
 - **UUID**: Direct entity UUID reference
 - **Token**: JWT-based authentication
 - **Claims**: Custom claims-based entities
+
+### Entity Identifier Helpers (Go)
+
+The Go SDK provides convenience constructors in the `authorization/v2` package that eliminate the deeply nested proto construction required to build an `EntityIdentifier`.
+
+| Helper | Description |
+|--------|-------------|
+| `authorizationv2.ForClientID(clientID string)` | Identifies a subject entity by client ID |
+| `authorizationv2.ForEmail(email string)` | Identifies a subject entity by email address |
+| `authorizationv2.ForUserName(username string)` | Identifies a subject entity by username |
+| `authorizationv2.ForToken(jwt string)` | Resolves the entity from the given JWT |
+| `authorizationv2.WithRequestToken()` | Derives the entity from the request's Authorization header |
+
+```go
+import authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+req := &authorization.GetDecisionRequest{
+    EntityIdentifier: authorization.ForClientID("opentdf"),
+    // ...
+}
+```
+
+All five constructors work with every v2 authorization method: `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk`, and `GetEntitlements`.
 
 ### Token-Based Authentication Example
 
@@ -889,14 +884,7 @@ OpenTDF supports various entity types for flexible authentication:
 ```go
 func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
     decisionReq := &authorizationv2.GetDecisionRequest{
-        EntityIdentifier: &authorizationv2.EntityIdentifier{
-            Identifier: &authorizationv2.EntityIdentifier_Token{
-                Token: &entity.Token{
-                    EphemeralId: "token-1",
-                    Jwt:         jwtToken,
-                },
-            },
-        },
+        EntityIdentifier: authorizationv2.ForToken(jwtToken),
         Action: &policy.Action{Name: "decrypt"},
         Resource: &authorizationv2.Resource{
             Resource: &authorizationv2.Resource_AttributeValues_{
@@ -906,7 +894,7 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
             },
         },
     }
-    
+
     decision, err := client.AuthorizationV2.GetDecision(
         context.Background(),
         decisionReq,
@@ -914,13 +902,14 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     resDecision := decision.GetDecision()
     fmt.Printf("Token-based decision: %v\n", resDecision.GetDecision())
 }
 ```
 
-#### V1 API (Legacy)
+<details>
+<summary>V1 API (Legacy)</summary>
 
 ```go
 func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
@@ -943,11 +932,11 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
             AttributeValueFqns: []string{"https://company.com/attr/clearance/value/public"},
         }},
     }}
-    
+
     decisionRequest := &authorization.GetDecisionsRequest{
         DecisionRequests: decisionRequests,
     }
-    
+
     decisionResponse, err := client.Authorization.GetDecisions(
         context.Background(),
         decisionRequest,
@@ -955,7 +944,7 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     for _, dr := range decisionResponse.GetDecisionResponses() {
         fmt.Printf("Token-based decision: %v\n", dr.GetDecision())
         if len(dr.GetObligations()) > 0 {
@@ -964,6 +953,8 @@ func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
     }
 }
 ```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -1048,7 +1039,7 @@ async function getDecisionWithToken(platformClient: PlatformClient, jwtToken: st
 
 1. **Least Privilege**: Request only the minimum necessary permissions
 2. **Token Validation**: Ensure JWT tokens are properly validated before use
-3. **Obligation Handling**: Always process and fulfill returned obligations
+3. **Obligation Handling**: Always process and fulfill returned [obligations](/sdks/policy#obligations)
 4. **Error Handling**: Implement proper error handling and fallback policies
 
 ### Integration Patterns
