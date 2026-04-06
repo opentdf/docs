@@ -1,5 +1,5 @@
 ---
-sidebar_position: 10
+sidebar_position: 8
 title: Troubleshooting
 ---
 
@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
 
 :::note Troubleshooting Scope
-This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://docs.opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
+This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
 :::
 
 ## Authentication Failed
@@ -43,11 +43,11 @@ curl https://<idp-endpoint>/
 
 2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
    ```js
-   import { AuthProviders } from '@opentdf/client';
+   import { AuthProviders } from '@opentdf/sdk';
 
    const authProvider = AuthProviders.refreshAuthProvider({
      clientId: 'your-client-id',
-     exchange: 'client_credentials',
+     exchange: 'client',
      clientSecret: 'your-client-secret',
      oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
    });
@@ -102,6 +102,40 @@ Should return: `{"status":"SERVING"}`
 
 If not running, restart your platform services according to your deployment documentation.
 
+## File Permission Errors
+
+**Symptom**: Cryptic errors like `"server misbehaving"`, `connection reset`, or generic gRPC failures that don't mention permissions — when the real cause is a file the process can't read or write.
+
+On Linux, `"server misbehaving"` is a DNS resolution failure. It can be triggered by file permission problems at the OS level — for example, if `/etc/resolv.conf` or `/etc/hosts` is not readable by the current user or process. The error surfaces through gRPC with no hint of the underlying cause.
+
+**Common scenarios:**
+
+| Scenario | Symptom | Fix |
+|---|---|---|
+| Input file not readable by process | Encryption fails with a cryptic error | `chmod 644 <input-file>` or run as the correct user |
+| Output directory not writable | TDF write fails | `chmod 755 <output-dir>` or check directory ownership |
+| `/etc/resolv.conf` or `/etc/hosts` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf /etc/hosts` |
+| Docker volume ownership mismatch | Operations fail with cryptic errors | `sudo chown -R $USER:$USER ~/.opentdf/` |
+
+**Diagnostic:**
+
+```bash
+# Verify input file is readable
+ls -la <input-file>
+
+# Verify output directory is writable
+ls -la <output-directory>/
+
+# Check DNS config files (Linux)
+ls -la /etc/resolv.conf /etc/hosts
+
+# Quick permission fix
+chmod 644 <input-file>
+chmod 755 <output-directory>/
+```
+
+For platform-level permission issues (Docker volumes, install directory), see [Managing the Platform — File Permission Errors](/getting-started/managing-platform#file-permission-errors-linux).
+
 ## Import Errors
 
 **Go**: `package github.com/opentdf/platform/sdk is not in GOROOT`
@@ -117,7 +151,7 @@ mvn clean install -U
 
 **JavaScript**: `Cannot find module '@opentdf/client'`
 ```bash
-npm install @opentdf/client
+npm install @opentdf/sdk
 ```
 
 ## Permission Denied / Insufficient Entitlements

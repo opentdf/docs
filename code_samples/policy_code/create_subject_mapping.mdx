@@ -60,9 +60,22 @@ import CreateSubjectMappingExample from '@site/code_samples/java/create-subject-
 <CreateSubjectMappingExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// Create Subject Mapping
+await platform.v1.subjectMapping.createSubjectMapping({
+  attributeValueId: '224c9d29-2cd4-4a38-b6ad-5f025ca93a8c',
+  actions: [{ name: 'decrypt' }],
+  existingSubjectConditionSetId: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+});
 ```
 
 </TabItem>

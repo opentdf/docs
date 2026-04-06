@@ -70,7 +70,9 @@ func main() {
 	log.Printf("Decision: %v", decisionResult.GetDecision())
 	if decisionResult.GetDecision() == authorizationv2.Decision_DECISION_PERMIT {
 		log.Printf("✓ Access GRANTED")
-		// Note: ResourceDecision doesn't have obligations in v2 API
+		if len(decisionResult.GetRequiredObligations()) > 0 {
+			log.Printf("Required obligations: %v", decisionResult.GetRequiredObligations())
+		}
 	}
 }
 ```
@@ -206,6 +208,80 @@ public class GetDecision {
 </TabItem>
 <TabItem value="js" label="TypeScript">
 
+#### V2 API (Recommended)
+
+```typescript
+import {
+  Decision,
+} from "@opentdf/sdk/platform/authorization/v2/authorization_pb.js";
+import { platformConnect, PlatformClient } from "@opentdf/sdk/platform";
+
+async function main() {
+  const platformUrl = "http://localhost:8080";
+
+  // Assume you have an existing access token
+  const accessToken = "your-access-token-here";
+
+  const interceptor: platformConnect.Interceptor = (next) => async (req) => {
+    req.header.set("Authorization", `Bearer ${accessToken}`);
+    return next(req);
+  };
+
+  const platformClient = new PlatformClient({
+    platformUrl: platformUrl,
+    interceptors: [interceptor],
+  });
+
+  // Get Decision using v2 API
+  try {
+    const response = await platformClient.v2.authorization.getDecision({
+      entityIdentifier: {
+        identifier: {
+          case: "entityChain",
+          value: {
+            entities: [
+              {
+                ephemeralId: "entity-1",
+                entityType: {
+                  case: "clientId",
+                  value: "opentdf",
+                },
+              },
+            ],
+          },
+        },
+      },
+      action: {
+        name: "decrypt",
+      },
+      resource: {
+        resource: {
+          case: "attributeValues",
+          value: {
+            fqns: ["https://opentdf.io/attr/role/value/developer"],
+          },
+        },
+      },
+    });
+
+    const decision = response.decision;
+    console.log("Decision:", decision?.decision);
+    if (decision?.decision === Decision.PERMIT) {
+      console.log("✓ Access GRANTED");
+      if (decision.requiredObligations.length > 0) {
+        console.log("Required obligations:", decision.requiredObligations);
+      }
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+main();
+```
+
+#### V1 API (Legacy)
+
 ```typescript
 import {
   DecisionResponse_Decision,
@@ -217,8 +293,7 @@ import { platformConnect, PlatformClient } from "@opentdf/sdk/platform";
 async function main() {
   const platformUrl = "http://localhost:8080";
 
-  // Assume you have an existing access token
-  const accessToken = "your-refresh-token-here";
+  const accessToken = "your-access-token-here";
 
   const interceptor: platformConnect.Interceptor = (next) => async (req) => {
     req.header.set("Authorization", `Bearer ${accessToken}`);
@@ -231,7 +306,6 @@ async function main() {
   });
 
   // Get Decision using v1 API (bulk decisions)
-
   try {
     const response = (await platformClient.v1.authorization.getDecisions({
       decisionRequests: [

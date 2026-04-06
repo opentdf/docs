@@ -1,11 +1,13 @@
 ---
 sidebar_position: 4
+title: TDF
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
+import AssertionExamples from '../../code_samples/tdf/assertion_examples.mdx'
 
 # TDF
 
@@ -20,7 +22,9 @@ This page covers the core TDF operations:
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
-- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Assertions](#assertions)** — signed metadata: types, scopes, signing, and verification
+- **[Session Encryption](#session-encryption)** — provide your own RSA key for KAS response encryption
+- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`, `AssertionConfig`
 - **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
@@ -118,7 +122,7 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 ```typescript
 import { OpenTDF, AuthProviders } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientCredentials({
+const authProvider = await AuthProviders.clientSecretAuthProvider({
     clientId: 'client-id',
     clientSecret: 'client-secret',
     oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
@@ -572,6 +576,7 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 |-------|------|-------------|
 | `Reader` | `io.ReadSeeker` | Source of the encrypted TDF. |
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
+| `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
 Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
 
@@ -863,6 +868,327 @@ const manifest = await reader.manifest();
 </TabItem>
 </Tabs>
 
+### Obligations
+
+Obligations are PDP-to-PEP directives embedded in a TDF that specify additional controls the consuming application must enforce (for example: apply a watermark, prevent download). See [Obligations](/components/policy/obligations) for the policy concept.
+
+#### Reading obligations from a TDF
+
+Returns the obligation FQNs that the platform requires the consuming application to enforce before granting access to this TDF's payload. If obligations have not yet been fetched, calling this method triggers a rewrap request to the KAS (without decrypting the payload). Subsequent calls return the cached result.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (r *Reader) Obligations(ctx context.Context) (RequiredObligations, error)
+```
+
+`RequiredObligations` is a struct with a single field:
+
+```go
+type RequiredObligations struct {
+    FQNs []string
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+obligations(): Promise<RequiredObligations>
+```
+
+`RequiredObligations` is an object with a single field:
+
+```typescript
+type RequiredObligations = {
+  fqns: string[];
+};
+```
+
+</TabItem>
+</Tabs>
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "bytes"
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+reader, err := client.LoadTDF(bytes.NewReader(ciphertextBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+obligations, err := reader.Obligations(context.Background())
+if err != nil {
+    log.Fatal(err)
+}
+
+for _, fqn := range obligations.FQNs {
+    log.Printf("Required obligation: %s", fqn)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { OpenTDF } from '@opentdf/sdk';
+
+const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+
+const reader = client.open({ source: ciphertextSource });
+const obligations = await reader.obligations();
+
+for (const fqn of obligations.fqns) {
+  console.log(`Required obligation: ${fqn}`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+If the TDF carries no obligations, the FQNs field is an empty slice/array and no error is returned.
+
+#### Declaring fulfillable obligations
+
+Tell the platform which obligation FQNs your application is prepared to honor. The platform uses this list when deciding whether to surface obligation requirements in a rewrap response.
+
+There are two levels of configuration:
+
+**SDK-level default** — applies to every `LoadTDF` / `read` call:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client, err := sdk.New(
+    "https://platform.example.com",
+    sdk.WithClientCredentials("client-id", "client-secret", nil),
+    sdk.WithFulfillableObligationFQNs([]string{
+        "https://example.com/obl/drm/value/watermarking",
+        "https://example.com/obl/drm/value/no-download",
+    }),
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Not available at SDK init in JavaScript.
+// Use per-read fulfillableObligationFQNs instead (see below).
+```
+
+</TabItem>
+</Tabs>
+
+**Per-read override** — applies to a single TDF:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+reader, err := client.LoadTDF(
+    bytes.NewReader(ciphertextBytes),
+    sdk.WithTDFFulfillableObligationFQNs([]string{
+        "https://example.com/obl/drm/value/watermarking",
+    }),
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const reader = client.open({
+  source: ciphertextSource,
+  fulfillableObligationFQNs: [
+    'https://example.com/obl/drm/value/watermarking',
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+**Full workflow** — declare what you can fulfill, then read what is required:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+// 1. Declare fulfillable obligations at SDK init time (see above).
+
+// 2. Load the TDF.
+reader, err := client.LoadTDF(bytes.NewReader(ciphertextBytes))
+if err != nil {
+    log.Fatal(err)
+}
+
+// 3. Read required obligations (triggers rewrap if not yet populated).
+obligations, err := reader.Obligations(context.Background())
+if err != nil {
+    log.Fatal(err)
+}
+
+// 4. Enforce each required obligation before processing the payload.
+for _, fqn := range obligations.FQNs {
+    if err := enforce(fqn); err != nil {
+        log.Fatalf("Cannot fulfill obligation %s: %v", fqn, err)
+    }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// 1. Set fulfillable obligations at open time.
+const reader = client.open({
+  source: ciphertextSource,
+  fulfillableObligationFQNs: [
+    'https://example.com/obl/drm/value/watermarking',
+    'https://example.com/obl/drm/value/no-download',
+  ],
+});
+
+// 2. Read required obligations (triggers decrypt if not yet called).
+const obligations = await reader.obligations();
+
+// 3. Enforce each required obligation before processing the payload.
+for (const fqn of obligations.fqns) {
+  await enforce(fqn);
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### Obligations in bulk decrypt
+
+When using [`BulkDecrypt`](#bulkdecrypt), each `BulkTDF` result includes a `TriggeredObligations` field populated after the rewrap phase. Use `PrepareBulkDecrypt` to inspect obligations before decrypting payloads:
+
+```go
+tdfs := []*sdk.BulkTDF{
+    {Reader: bytes.NewReader(tdf1Bytes), Writer: &buf1},
+    {Reader: bytes.NewReader(tdf2Bytes), Writer: &buf2},
+}
+
+// Prepare: rewrap all TDFs and populate TriggeredObligations (no payload decryption yet).
+prepared, err := client.PrepareBulkDecrypt(ctx, sdk.WithTDFs(tdfs...))
+if err != nil {
+    log.Fatal(err)
+}
+
+// Inspect obligations before decrypting.
+for i, tdf := range tdfs {
+    if tdf.Error != nil {
+        log.Printf("TDF %d rewrap failed: %v", i, tdf.Error)
+        continue
+    }
+    for _, fqn := range tdf.TriggeredObligations.FQNs {
+        log.Printf("TDF %d requires: %s", i, fqn)
+    }
+}
+
+// Decrypt payloads.
+if err := prepared.BulkDecrypt(ctx); err != nil {
+    log.Fatal(err)
+}
+```
+
+---
+
+## Session Encryption
+
+The **session encryption key** is used to encrypt responses from the Key Access Server (KAS) back to your client during the rewrap flow. This is an advanced option for scenarios where you need to control the encryption key lifecycle — for example, reusing the same key across multiple TDF operations in a session.
+
+If not provided, the SDK generates a session key automatically.
+
+```go
+import (
+    "crypto/rand"
+    "crypto/rsa"
+)
+
+// Generate or load your own RSA key pair
+privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+if err != nil {
+    log.Fatal(err)
+}
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("id", "secret", nil),
+    sdk.WithSessionEncryptionRSA(privateKey),
+)
+```
+
+---
+
+## Assertions
+
+**Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
+
+Every assertion is bound to the TDF's data encryption key (DEK) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+
+### Assertion Types
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `HandlingAssertion` | `"handling"` | Data handling and processing instructions — e.g., retention policies, access restrictions, DLP rules. |
+| `BaseAssertion` | `"other"` | General-purpose metadata — e.g., audit labels, content identifiers, provenance records. |
+
+### Scopes
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `TrustedDataObjScope` | `"tdo"` | Assertion applies to the entire TDF object. |
+| `PayloadScope` | `"payload"` | Assertion applies only to the encrypted payload. |
+
+### AppliesToState
+
+| Constant | Value | When to process |
+|----------|-------|-----------------|
+| `Encrypted` | `"encrypted"` | Process **before** decryption — useful for access-control checks, audit logging, or routing decisions that don't require seeing the plaintext. |
+| `Unencrypted` | `"unencrypted"` | Process **after** decryption — useful for content filtering, retention enforcement, or any logic that inspects the plaintext. |
+
+### Statement
+
+Each assertion carries a `Statement` with three fields:
+
+| Field | Description |
+|-------|-------------|
+| `Format` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | The assertion payload as a string — typically a JSON object. |
+
+### Signing and Verification
+
+By default, every assertion is bound to the TDF using the DEK with HMAC-SHA256 (`HS256`). This binding ensures the assertion cannot be tampered with or detached, but verification requires the DEK — which means only entities that can decrypt the TDF can verify the binding.
+
+To enable **independent verification** (where a verifier doesn't need the DEK), sign the assertion with an RSA private key (`RS256`) at encrypt time and provide the corresponding public key at decrypt time.
+
+| Algorithm | Constant | Key type | Use case |
+|-----------|----------|----------|----------|
+| HMAC-SHA256 | `AssertionKeyAlgHS256` | Symmetric (byte slice / DEK) | Default binding — tamper detection for anyone who can decrypt. |
+| RSA-SHA256 | `AssertionKeyAlgRS256` | RSA key pair or `crypto.Signer` | Independent verification — any holder of the public key can verify. |
+
+<AssertionExamples />
+
+See the [Encrypt Options](#encrypt-options) and [Decrypt Options](#decrypt-options) sections for the full option reference, including per-option details for `WithAssertions` and `WithAssertionVerificationKeys`.
+
 ---
 
 ## Type Reference
@@ -1057,6 +1383,76 @@ for _, a := range manifest.Assertions {
     fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
 }
 ```
+
+---
+
+### AssertionConfig
+
+`AssertionConfig` is the input type passed to `WithAssertions` when creating a TDF. It defines the assertion content, classification, and optional signing key.
+
+**Fields**
+
+| Field | Go | Java | Required | Description |
+|-------|-----|------|----------|-------------|
+| ID | `ID string` | `String id` | Yes | Unique identifier for the assertion. Used to look up verification keys on decrypt. |
+| Type | `Type AssertionType` | `Type type` | Yes | `HandlingAssertion` (`"handling"`) or `BaseAssertion` (`"other"`). |
+| Scope | `Scope Scope` | `Scope scope` | Yes | `TrustedDataObjScope` (`"tdo"`) or `PayloadScope` (`"payload"`). |
+| AppliesToState | `AppliesToState AppliesToState` | `AppliesToState appliesToState` | Yes | `Encrypted` or `Unencrypted`. |
+| Statement | `Statement Statement` | `Statement statement` | No | The assertion content. See [Statement (type)](#statement-type). |
+| SigningKey | `SigningKey AssertionKey` | `AssertionKey signingKey` | No | Custom signing key. If empty, the assertion is bound with the DEK using HS256. See [AssertionKey](#assertionkey). |
+
+---
+
+### Assertion
+
+`Assertion` is the signed form stored in the TDF [manifest](#manifest-object). Accessible via `tdfReader.Manifest().Assertions` after decryption.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ID` | `string` | Assertion identifier (matches the `AssertionConfig.ID` used at encrypt time). |
+| `Type` | `AssertionType` | `"handling"` or `"other"`. |
+| `Scope` | `Scope` | `"tdo"` or `"payload"`. |
+| `AppliesToState` | `AppliesToState` | `"encrypted"` or `"unencrypted"`. |
+| `Statement` | `Statement` | The assertion content. |
+| `Binding` | `Binding` | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+
+---
+
+### Statement (type)
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Format` | `string` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | `string` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | `string` | The assertion payload — typically a JSON object serialized as a string. |
+
+---
+
+### AssertionKey
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Alg` | `AssertionKeyAlg` | `AssertionKeyAlgRS256` (`"RS256"`) for RSA-SHA256, or `AssertionKeyAlgHS256` (`"HS256"`) for HMAC-SHA256. |
+| `Key` | `interface{}` / `Object` | For RS256: an RSA private key (encrypt) or public key (verify). For HS256: a byte slice / shared secret. Supports `crypto.Signer` for hardware-backed keys. |
+
+---
+
+### AssertionVerificationKeys
+
+Passed to `WithAssertionVerificationKeys` when loading a TDF. Maps assertion IDs to the public keys used to verify their signatures.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `DefaultKey` | `AssertionKey` | Fallback key used when no ID-specific key is found. |
+| `Keys` | `map[string]AssertionKey` | Map of assertion ID to verification key. |
 
 ---
 

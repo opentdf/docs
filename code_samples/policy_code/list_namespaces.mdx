@@ -50,9 +50,21 @@ import ListNamespacesExample from '@site/code_samples/java/list-namespaces.mdx';
 <ListNamespacesExample />
 
 </TabItem>
-<TabItem value="js" label="Javascript">
+<TabItem value="js" label="TypeScript">
 
-```javascript
+```typescript
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  authProvider,
+  platformUrl: 'http://localhost:8080',
+});
+
+// List All Namespaces
+const resp = await platform.v1.namespace.listNamespaces({});
+for (const ns of resp.namespaces) {
+  console.log('Namespace:', ns.name);
+}
 ```
 
 </TabItem>

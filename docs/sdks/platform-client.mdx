@@ -1,12 +1,12 @@
 ---
 sidebar_position: 3
-title: "SDK Architecture: Core vs. Service Client"
+title: Architecture
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# SDK Architecture: Core vs. Service Client
+# Architecture
 
 Some SDK functionality — including policy management and authorization decisions — is provided through a **platform service client** rather than through the core SDK. This page explains the difference and when you'll use each.
 
@@ -62,8 +62,19 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See the Auth Providers guide for authProvider setup.
+
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+});
+
+// OpenTDF eagerly binds DPoP keys to the auth provider.
+// Await ready before creating PlatformClient.
+const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+await client.ready;
 
 const platform = new PlatformClient({
     authProvider,
@@ -73,5 +84,3 @@ const platform = new PlatformClient({
 
 </TabItem>
 </Tabs>
-
-For credential configuration, see the Auth Providers guide.
