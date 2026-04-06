@@ -359,10 +359,31 @@ open(options: ReadOptions): TDFReader
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. See the signature tab for your language for the expected type. For JavaScript, `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). |
-| Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `reader` | `io.ReadSeeker` | The encrypted TDF to open. |
+| `opts` | `...TDFReaderOption` | Optional decryption settings. See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `channel` | `SeekableByteChannel` | The encrypted TDF to open. |
+| `config` | `Config.TDFReaderConfig` | Decryption settings. Use `Config.newTDFReaderConfig()` for defaults. See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `ReadOptions` | A single options object. `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+</Tabs>
 
 **Returns**
 
