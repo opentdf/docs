@@ -40,6 +40,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Add SPA fallback for Surge
+        if: steps.build.outcome == 'success'
+        run: cp build/index.html build/200.html
+
       - name: Write PR metadata
         if: always()
         run: |

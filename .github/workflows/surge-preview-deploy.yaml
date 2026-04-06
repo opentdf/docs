@@ -119,6 +119,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Add SPA fallback for Surge
+        run: cp build/index.html build/200.html
+
       - name: Deploy to Surge
         run: npx surge build/ https://opentdf-docs-pr-${{ inputs.pr_number }}.surge.sh
         env:

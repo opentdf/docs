@@ -7,6 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
+import AssertionExamples from '../../code_samples/tdf/assertion_examples.mdx'
 
 # TDF
 
@@ -21,8 +22,9 @@ This page covers the core TDF operations:
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
+- **[Assertions](#assertions)** — signed metadata: types, scopes, signing, and verification
 - **[Session Encryption](#session-encryption)** — provide your own RSA key for KAS response encryption
-- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`, `AssertionConfig`
 - **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
@@ -554,6 +556,10 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
 
+:::tip Why use BulkDecrypt?
+Calling `LoadTDF` in a loop issues a separate KAS rewrap request per TDF. `BulkDecrypt` batches all rewrap requests by KAS endpoint so that *N* TDFs targeting the same KAS require only one round-trip instead of *N*. Use it whenever you need to decrypt more than a handful of TDFs.
+:::
+
 **Signature**
 
 ```go
@@ -576,7 +582,15 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
 | `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
-Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
+**Options**
+
+| Option | Description |
+|--------|-------------|
+| `WithTDFs(tdfs...)` | **(Required)** The TDFs to decrypt. |
+| `WithBulkKasAllowlist([]string{...})` | Restrict which KAS endpoints may be contacted. Only listed URLs are allowed; requests to unlisted KAS endpoints fail with an error per TDF. If omitted and a KAS registry is configured, the SDK uses the registry as the allowlist. |
+| `WithBulkIgnoreAllowlist(true)` | Bypass KAS allowlist checks entirely. A warning is logged for each KAS URL contacted. Use only for testing or fully trusted environments. |
+| `WithTDFType(tdfType)` | Specify the TDF format explicitly. Currently only `sdk.Standard` (TDF3 / ZIP-based) is supported. If omitted, the SDK auto-detects the format from each reader. |
+| `WithTDF3DecryptOptions(opts...)` | Pass additional reader options (e.g., session key, assertion verification) through to each TDF3 decryptor. These are the same options accepted by `LoadTDF`. |
 
 **Returns**
 
@@ -585,7 +599,11 @@ Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints ma
 
 **Errors**
 
-Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
+`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
+
+- Each element corresponds to a TDF by position in the original `WithTDFs` call.
+- `nil` entries indicate success; non-nil entries describe why that TDF failed.
+- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 **Example**
 
@@ -620,7 +638,11 @@ if err != nil {
 }
 ```
 
-To inspect the prepared request before executing:
+**PrepareBulkDecrypt** splits the operation into two phases — rewrap (network) and decrypt (CPU) — so you can act between them:
+
+- **Inspect obligations** — after `PrepareBulkDecrypt`, each `BulkTDF` has its `TriggeredObligations` populated. Check these before decrypting payloads (see [Obligations in bulk decrypt](#obligations-in-bulk-decrypt)).
+- **Conditional decryption** — skip TDFs that don't meet your criteria without wasting CPU on decryption.
+- **Monitoring** — separate the network-bound rewrap phase from the CPU-bound decryption phase for progress reporting or latency attribution.
 
 ```go
 import (
@@ -1135,6 +1157,60 @@ client, err := sdk.New("http://localhost:8080",
 
 ---
 
+## Assertions
+
+**Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
+
+Every assertion is bound to the TDF's data encryption key (DEK) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+
+### Assertion Types
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `HandlingAssertion` | `"handling"` | Data handling and processing instructions — e.g., retention policies, access restrictions, DLP rules. |
+| `BaseAssertion` | `"other"` | General-purpose metadata — e.g., audit labels, content identifiers, provenance records. |
+
+### Scopes
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `TrustedDataObjScope` | `"tdo"` | Assertion applies to the entire TDF object. |
+| `PayloadScope` | `"payload"` | Assertion applies only to the encrypted payload. |
+
+### AppliesToState
+
+| Constant | Value | When to process |
+|----------|-------|-----------------|
+| `Encrypted` | `"encrypted"` | Process **before** decryption — useful for access-control checks, audit logging, or routing decisions that don't require seeing the plaintext. |
+| `Unencrypted` | `"unencrypted"` | Process **after** decryption — useful for content filtering, retention enforcement, or any logic that inspects the plaintext. |
+
+### Statement
+
+Each assertion carries a `Statement` with three fields:
+
+| Field | Description |
+|-------|-------------|
+| `Format` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | The assertion payload as a string — typically a JSON object. |
+
+### Signing and Verification
+
+By default, every assertion is bound to the TDF using the DEK with HMAC-SHA256 (`HS256`). This binding ensures the assertion cannot be tampered with or detached, but verification requires the DEK — which means only entities that can decrypt the TDF can verify the binding.
+
+To enable **independent verification** (where a verifier doesn't need the DEK), sign the assertion with an RSA private key (`RS256`) at encrypt time and provide the corresponding public key at decrypt time.
+
+| Algorithm | Constant | Key type | Use case |
+|-----------|----------|----------|----------|
+| HMAC-SHA256 | `AssertionKeyAlgHS256` | Symmetric (byte slice / DEK) | Default binding — tamper detection for anyone who can decrypt. |
+| RSA-SHA256 | `AssertionKeyAlgRS256` | RSA key pair or `crypto.Signer` | Independent verification — any holder of the public key can verify. |
+
+<AssertionExamples />
+
+See the [Encrypt Options](#encrypt-options) and [Decrypt Options](#decrypt-options) sections for the full option reference, including per-option details for `WithAssertions` and `WithAssertionVerificationKeys`.
+
+---
+
 ## Type Reference
 
 The following types are returned by or passed to the methods above.
@@ -1327,6 +1403,76 @@ for _, a := range manifest.Assertions {
     fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
 }
 ```
+
+---
+
+### AssertionConfig
+
+`AssertionConfig` is the input type passed to `WithAssertions` when creating a TDF. It defines the assertion content, classification, and optional signing key.
+
+**Fields**
+
+| Field | Go | Java | Required | Description |
+|-------|-----|------|----------|-------------|
+| ID | `ID string` | `String id` | Yes | Unique identifier for the assertion. Used to look up verification keys on decrypt. |
+| Type | `Type AssertionType` | `Type type` | Yes | `HandlingAssertion` (`"handling"`) or `BaseAssertion` (`"other"`). |
+| Scope | `Scope Scope` | `Scope scope` | Yes | `TrustedDataObjScope` (`"tdo"`) or `PayloadScope` (`"payload"`). |
+| AppliesToState | `AppliesToState AppliesToState` | `AppliesToState appliesToState` | Yes | `Encrypted` or `Unencrypted`. |
+| Statement | `Statement Statement` | `Statement statement` | No | The assertion content. See [Statement (type)](#statement-type). |
+| SigningKey | `SigningKey AssertionKey` | `AssertionKey signingKey` | No | Custom signing key. If empty, the assertion is bound with the DEK using HS256. See [AssertionKey](#assertionkey). |
+
+---
+
+### Assertion
+
+`Assertion` is the signed form stored in the TDF [manifest](#manifest-object). Accessible via `tdfReader.Manifest().Assertions` after decryption.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ID` | `string` | Assertion identifier (matches the `AssertionConfig.ID` used at encrypt time). |
+| `Type` | `AssertionType` | `"handling"` or `"other"`. |
+| `Scope` | `Scope` | `"tdo"` or `"payload"`. |
+| `AppliesToState` | `AppliesToState` | `"encrypted"` or `"unencrypted"`. |
+| `Statement` | `Statement` | The assertion content. |
+| `Binding` | `Binding` | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+
+---
+
+### Statement (type)
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Format` | `string` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | `string` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | `string` | The assertion payload — typically a JSON object serialized as a string. |
+
+---
+
+### AssertionKey
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Alg` | `AssertionKeyAlg` | `AssertionKeyAlgRS256` (`"RS256"`) for RSA-SHA256, or `AssertionKeyAlgHS256` (`"HS256"`) for HMAC-SHA256. |
+| `Key` | `interface{}` / `Object` | For RS256: an RSA private key (encrypt) or public key (verify). For HS256: a byte slice / shared secret. Supports `crypto.Signer` for hardware-backed keys. |
+
+---
+
+### AssertionVerificationKeys
+
+Passed to `WithAssertionVerificationKeys` when loading a TDF. Maps assertion IDs to the public keys used to verify their signatures.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `DefaultKey` | `AssertionKey` | Fallback key used when no ID-specific key is found. |
+| `Keys` | `map[string]AssertionKey` | Map of assertion ID to verification key. |
 
 ---
 
