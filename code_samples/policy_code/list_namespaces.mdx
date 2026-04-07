@@ -62,6 +62,12 @@ for _, namespace := range resp.GetNamespaces() {
 To list inactive namespaces or paginate:
 
 ```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+)
+
 resp, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{
 	State: common.ActiveStateEnum_ACTIVE_STATE_ENUM_INACTIVE,
 	Pagination: &policy.PageRequest{
