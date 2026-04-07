@@ -43,7 +43,7 @@ await platform.v1.namespace.listNamespaces({ ... })
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: namespaces
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
 resp, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
 if err != nil {
 	log.Fatal(err)

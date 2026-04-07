@@ -144,7 +144,7 @@ Provide one of the following (exactly one is required):
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: namespaces
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
 // Look up by UUID
 resp, err := client.Namespaces.GetNamespace(context.Background(),
 	&namespaces.GetNamespaceRequest{
@@ -260,7 +260,10 @@ await platform.v1.namespace.updateNamespace({ ... })
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: common, namespaces
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+)
 resp, err := client.Namespaces.UpdateNamespace(context.Background(),
 	&namespaces.UpdateNamespaceRequest{
 		Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -365,7 +368,7 @@ await platform.v1.namespace.deactivateNamespace({ ... })
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: namespaces
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
 _, err = client.Namespaces.DeactivateNamespace(context.Background(),
 	&namespaces.DeactivateNamespaceRequest{
 		Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -429,7 +432,7 @@ Attributes and attribute values are deactivated, not permanently deleted.
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 // Look up by FQN
 resp, err := client.Attributes.GetAttribute(context.Background(),
 	&attributes.GetAttributeRequest{
@@ -496,7 +499,10 @@ for (const v of resp.attribute?.values ?? []) {
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: common, attributes
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+)
 resp, err := client.Attributes.UpdateAttribute(context.Background(),
 	&attributes.UpdateAttributeRequest{
 		Id: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -560,7 +566,7 @@ console.log(`Updated attribute ID: ${resp.attribute?.id}`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 resp, err := client.Attributes.DeactivateAttribute(context.Background(),
 	&attributes.DeactivateAttributeRequest{
 		Id: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -616,7 +622,7 @@ Attribute values are the individual members of an attribute (e.g., `secret`, `to
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 resp, err := client.Attributes.CreateAttributeValue(context.Background(),
 	&attributes.CreateAttributeValueRequest{
 		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -671,7 +677,7 @@ console.log(`Created value: ${resp.value?.value} (ID: ${resp.value?.id})`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 resp, err := client.Attributes.ListAttributeValues(context.Background(),
 	&attributes.ListAttributeValuesRequest{
 		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -729,7 +735,7 @@ for (const v of resp.values) {
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 // Look up by FQN
 resp, err := client.Attributes.GetAttributeValue(context.Background(),
 	&attributes.GetAttributeValueRequest{
@@ -787,7 +793,7 @@ console.log(`Value: ${resp.value?.value} (FQN: ${resp.value?.fqn})`);
 Batch-fetch multiple attribute values by their FQNs in a single request. Returns a map keyed by FQN, each entry containing both the parent attribute definition and the specific value.
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 resp, err := client.Attributes.GetAttributeValuesByFqns(context.Background(),
 	&attributes.GetAttributeValuesByFqnsRequest{
 		Fqns: []string{
@@ -859,7 +865,10 @@ for (const [fqn, entry] of Object.entries(resp.fqnAttributeValues)) {
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: common, attributes
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+)
 resp, err := client.Attributes.UpdateAttributeValue(context.Background(),
 	&attributes.UpdateAttributeValueRequest{
 		Id: "v1b2c3d4-0000-0000-0000-000000000001",
@@ -923,7 +932,7 @@ console.log(`Updated value ID: ${resp.value?.id}`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: attributes
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
 resp, err := client.Attributes.DeactivateAttributeValue(context.Background(),
 	&attributes.DeactivateAttributeValueRequest{
 		Id: "v1b2c3d4-0000-0000-0000-000000000001",
@@ -987,7 +996,7 @@ Subject condition sets are permanently deleted (not deactivated).
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.ListSubjectConditionSets(context.Background(),
 	&subjectmapping.ListSubjectConditionSetsRequest{},
 )
@@ -1040,7 +1049,7 @@ for (const scs of resp.subjectConditionSets) {
 The response also includes `AssociatedSubjectMappings` — all subject mappings currently referencing this condition set.
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.GetSubjectConditionSet(context.Background(),
 	&subjectmapping.GetSubjectConditionSetRequest{
 		Id: "a0b1c2d3-0000-0000-0000-000000000099",
@@ -1098,7 +1107,10 @@ console.log(`Associated subject mappings: ${resp.associatedSubjectMappings.lengt
 Providing `SubjectSets` replaces the entire condition tree. Omit it to update metadata only.
 
 ```go
-// Imports: policy, subjectmapping
+import (
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
 resp, err := client.SubjectMapping.UpdateSubjectConditionSet(context.Background(),
 	&subjectmapping.UpdateSubjectConditionSetRequest{
 		Id: "a0b1c2d3-0000-0000-0000-000000000099",
@@ -1200,7 +1212,7 @@ console.log(`Updated SCS ID: ${resp.subjectConditionSet?.id}`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.DeleteSubjectConditionSet(context.Background(),
 	&subjectmapping.DeleteSubjectConditionSetRequest{
 		Id: "a0b1c2d3-0000-0000-0000-000000000099",
@@ -1254,7 +1266,7 @@ console.log(`Deleted SCS ID: ${resp.subjectConditionSet?.id}`);
 Permanently deletes all subject condition sets that are not referenced by any subject mapping. Use this as a maintenance operation to clean up orphaned condition sets.
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.DeleteAllUnmappedSubjectConditionSets(context.Background(),
 	&subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest{},
 )
@@ -1310,7 +1322,7 @@ Subject mappings are permanently deleted (not deactivated). There is no restore 
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
 	&subjectmapping.GetSubjectMappingRequest{
 		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
@@ -1364,7 +1376,10 @@ console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: policy, subjectmapping
+import (
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
 // Replace the actions list on an existing subject mapping
 resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
 	&subjectmapping.UpdateSubjectMappingRequest{
@@ -1435,7 +1450,7 @@ console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
 <TabItem value="go" label="Go">
 
 ```go
-// Imports: subjectmapping
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
 	&subjectmapping.DeleteSubjectMappingRequest{
 		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
@@ -1489,7 +1504,10 @@ console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
 Given a list of subject properties (key-value pairs from an entity's claims or attributes), return all subject mappings whose condition sets match. This is used to determine which access grants apply to a given entity.
 
 ```go
-// Imports: policy, subjectmapping
+import (
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
 resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
 	&subjectmapping.MatchSubjectMappingsRequest{
 		SubjectProperties: []*policy.SubjectProperty{
