@@ -379,7 +379,7 @@ await validateAttributes(platformUrl, auth, fqns)
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `fqns` | `[]string` | Yes | Attribute value FQNs to validate (up to 250 per call). |
+| `fqns` | `list of strings` | Yes | Attribute value FQNs to validate (up to 250 per call). |
 
 **Example**
 
@@ -490,7 +490,7 @@ sdk.getEntityAttributes(entity)
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getEntitlements({ ... })
+await platform.v2.authorization.getEntitlements({ ... })
 ```
 
 The JS SDK does not expose a standalone `getEntityAttributes` function. Use `getEntitlements` via `PlatformClient` in a Node.js server environment.
@@ -619,7 +619,7 @@ Other supported entity types (placed inside the `entities` array):
 
 **Returns**
 
-A list of [attribute value](/sdks/policy#attribute-value-object) FQN strings that the entity is entitled to access.
+**Go/Java:** A list of [attribute value](/sdks/policy#attribute-value-object) FQN strings that the entity is entitled to access. **JavaScript:** An [EntityEntitlements](/sdks/authorization#entityentitlements) response from `getEntitlements`, containing a map of FQNs to permitted actions.
 
 :::warning Authorization required
 Querying another entity's attributes requires your caller to have appropriate platform permissions on the `GetEntitlements` endpoint. Without this, the call will return a `permission_denied` error.
