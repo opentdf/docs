@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: Authentication
 ---
 
@@ -13,6 +13,41 @@ The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-c
 :::tip Not sure which method to use?
 The JavaScript SDK is designed for **browser applications**. If your app already has an access token, use [Access Token](#access-token). If your OIDC flow provides a refresh token, use [Refresh Token](#refresh-token) for automatic renewal. For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
 :::
+
+## Setup
+
+All examples on this page assume you have installed the SDK and imported the base packages:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+```
+
+</TabItem>
+</Tabs>
+
+---
 
 ## Client Credentials
 
