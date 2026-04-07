@@ -16,7 +16,7 @@ import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Managing Policy
 
-Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
+Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**. See [Policy](/components/policy) for the concept overview. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
 
 ## Setup
 
@@ -102,6 +102,44 @@ Namespaces are deactivated, not permanently deleted. There is no hard-delete ope
 
 <details id="get-namespace">
 <summary>Get a Namespace</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Namespaces.GetNamespace(ctx, &namespaces.GetNamespaceRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().getNamespaceBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.getNamespace({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The namespace UUID. |
+| `fqn` | `string` (URI) | The namespace FQN (e.g., `https://example.com`). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -132,7 +170,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Namespace by FQN: %s\n", respByFqn.GetNamespace().GetName())
-
 ```
 
 </TabItem>
@@ -156,15 +193,12 @@ var reqByFqn = GetNamespaceRequest.newBuilder()
 var respByFqn = sdk.getServices().namespaces()
     .getNamespaceBlocking(reqByFqn, Collections.emptyMap()).execute();
 System.out.println("Namespace by FQN: " + respByFqn.getNamespace().getName());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 // Look up by UUID
 let resp = await platform.v1.namespace.getNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
 console.log(`Namespace: ${resp.namespace?.name} (ID: ${resp.namespace?.id})`);
@@ -172,15 +206,56 @@ console.log(`Namespace: ${resp.namespace?.name} (ID: ${resp.namespace?.id})`);
 // Alternatively, look up by FQN
 resp = await platform.v1.namespace.getNamespace({ fqn: 'https://example.com' });
 console.log(`Namespace by FQN: ${resp.namespace?.name}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single `Namespace` object with `id`, `name`, `fqn`, `active` state, `metadata`, and timestamps.
+
 </details>
 
 <details id="update-namespace">
 <summary>Update a Namespace</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Namespaces.UpdateNamespace(ctx, &namespaces.UpdateNamespaceRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().updateNamespaceBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.updateNamespace({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The namespace ID to update. |
+| `metadata` | `MetadataMutable` | No | Labels and annotations. |
+| `metadataUpdateBehavior` | `MetadataUpdateEnum` | No | `REPLACE` overwrites all labels; `EXTEND` merges with existing. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -202,10 +277,7 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Updated namespace ID: %s\n", resp.GetNamespace().GetId())
-
 ```
-
-`MetadataUpdateEnum_METADATA_UPDATE_ENUM_REPLACE` overwrites all existing labels. Use `METADATA_UPDATE_ENUM_EXTEND` to merge with existing labels.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -229,30 +301,66 @@ var req = UpdateNamespaceRequest.newBuilder()
 var resp = sdk.getServices().namespaces()
     .updateNamespaceBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Updated namespace ID: " + resp.getNamespace().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.namespace.updateNamespace({
   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   metadata: { labels: { owner: 'platform-team', env: 'production' } },
   metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_REPLACE',
 });
 console.log(`Updated namespace ID: ${resp.namespace?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated `Namespace` object.
+
 </details>
 
 <details id="deactivate-namespace">
 <summary>Deactivate a Namespace</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Namespaces.DeactivateNamespace(ctx, &namespaces.DeactivateNamespaceRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().deactivateNamespaceBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.deactivateNamespace({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The namespace ID to deactivate. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -267,7 +375,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Println("Namespace deactivated.")
-
 ```
 
 </TabItem>
@@ -283,27 +390,24 @@ var req = DeactivateNamespaceRequest.newBuilder()
 sdk.getServices().namespaces()
     .deactivateNamespaceBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Namespace deactivated.");
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 await platform.v1.namespace.deactivateNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
 console.log('Namespace deactivated.');
-
 ```
 
 </TabItem>
 </Tabs>
-</details>
 
-:::tip Listing inactive namespaces
-By default, `ListNamespaces` returns only active namespaces. To include inactive ones, set `State` to `ACTIVE_STATE_ENUM_INACTIVE` or `ACTIVE_STATE_ENUM_ANY` on the request.
-:::
+**Returns**
+
+Empty response. The namespace is soft-deleted and will no longer appear in `ListNamespaces` unless you filter by `INACTIVE` or `ANY` state.
+
+</details>
 
 ---
 

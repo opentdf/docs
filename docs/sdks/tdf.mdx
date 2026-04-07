@@ -1214,7 +1214,7 @@ client, err := sdk.New("http://localhost:8080",
 
 **Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
 
-Every assertion is bound to the TDF's data encryption key (DEK) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+Every assertion is bound to the TDF's [data encryption key (DEK)](/spec/protocol) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
 
 ### Assertion Types
 

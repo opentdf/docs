@@ -3,20 +3,54 @@ import TabItem from '@theme/TabItem';
 
 <details id="list-namespaces">
 <summary>List Namespaces</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().listNamespacesBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.listNamespaces({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `state` | `ActiveStateEnum` | No | Filter by state: `ACTIVE` (default), `INACTIVE`, or `ANY`. |
+| `pagination` | `PageRequest` | No | Pagination options (limit, offset). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 // Imports: namespaces
-
-// List All Namespaces
-namespaces, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+resp, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
 if err != nil {
 	log.Fatal(err)
 }
-for _, namespace := range namespaces.GetNamespaces() {
+for _, namespace := range resp.GetNamespaces() {
 	log.Printf("Namespace: %s\n", namespace.GetName())
-
+}
 ```
 
 </TabItem>
@@ -30,15 +64,21 @@ import ListNamespacesExample from '@site/code_samples/java/list-namespaces.mdx';
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-
-// List All Namespaces
 const resp = await platform.v1.namespace.listNamespaces({});
 for (const ns of resp.namespaces) {
   console.log('Namespace:', ns.name);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of `Namespace` objects, each with `id`, `name`, `fqn`, `active` state, and timestamps. Includes pagination metadata.
+
+:::tip Listing inactive namespaces
+By default, `ListNamespaces` returns only active namespaces. To include inactive ones, set `state` to `INACTIVE` or `ANY` on the request.
+:::
+
 </details>

@@ -2,14 +2,48 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="creating-a-namespace">
-<summary>Creating a Namespace</summary>
+<summary>Create a Namespace</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Namespaces.CreateNamespace(ctx, &namespaces.CreateNamespaceRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().createNamespaceBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.createNamespace({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `string` | Yes | A valid hostname (e.g., `opentdf.io`, `example.com`). |
+| `metadata` | `MetadataMutable` | No | Labels and annotations to attach to the namespace. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 // Imports: namespaces
-
-// Create Namespace
 namespace := &namespaces.CreateNamespaceRequest{
 	Name: "opentdf.io",
 }
@@ -31,14 +65,17 @@ import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-// Create Namespace
 const resp = await platform.v1.namespace.createNamespace({
   name: 'opentdf.io',
 });
 console.log('Created namespace:', resp.namespace?.id);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created `Namespace` object with `id`, `name`, `fqn`, and timestamps.
+
 </details>
