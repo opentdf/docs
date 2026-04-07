@@ -2,7 +2,46 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="create-subject-mapping">
-<summary>Create Subject Mapping</summary>
+<summary>Create a Subject Mapping</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.CreateSubjectMapping(ctx, &subjectmapping.CreateSubjectMappingRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().createSubjectMappingBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.createSubjectMapping({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeValueId` | `string` (UUID) | Yes | The attribute value this mapping grants access to. |
+| `actions` | `[]Action` | Yes | Permitted actions (e.g., `STANDARD_ACTION_DECRYPT`). |
+| `existingSubjectConditionSetId` | `string` (UUID) | Yes* | ID of an existing subject condition set. Required unless `newSubjectConditionSet` is provided. |
+| `newSubjectConditionSet` | `SubjectConditionSetCreate` | No | Inline a new condition set instead of referencing an existing one. |
+| `metadata` | `object` | No | Key-value [labels](/sdks/policy#metadata). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -28,7 +67,7 @@ subjectMapping := &subjectmapping.CreateSubjectMappingRequest{
 _, err = client.SubjectMapping.CreateSubjectMapping(context.Background(), subjectMapping)
 if err != nil {
 	log.Fatal(err)
-
+}
 ```
 
 </TabItem>
@@ -42,16 +81,19 @@ import CreateSubjectMappingExample from '@site/code_samples/java/create-subject-
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-
 // Create Subject Mapping
 await platform.v1.subjectMapping.createSubjectMapping({
   attributeValueId: '224c9d29-2cd4-4a38-b6ad-5f025ca93a8c',
   actions: [{ name: 'decrypt' }],
   existingSubjectConditionSetId: '890b26db-4ee4-447f-ae8a-2862d922eeef',
 });
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Subject Mapping object](/sdks/policy#subject-mapping-object).
+
 </details>

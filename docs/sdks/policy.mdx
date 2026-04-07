@@ -1378,11 +1378,48 @@ Subject condition sets are permanently deleted (not deactivated).
 
 <details id="list-subject-condition-sets">
 <summary>List Subject Condition Sets</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.ListSubjectConditionSets(ctx, &subjectmapping.ListSubjectConditionSetsRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().listSubjectConditionSetsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.listSubjectConditionSets({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pagination.limit` | `int` | No | Maximum results per page. |
+| `pagination.offset` | `int` | No | Number of results to skip. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
 resp, err := client.SubjectMapping.ListSubjectConditionSets(context.Background(),
 	&subjectmapping.ListSubjectConditionSetsRequest{},
 )
@@ -1392,7 +1429,6 @@ if err != nil {
 for _, scs := range resp.GetSubjectConditionSets() {
 	log.Printf("SCS ID: %s\n", scs.GetId())
 }
-
 ```
 
 </TabItem>
@@ -1407,35 +1443,70 @@ var resp = sdk.getServices().subjectMappings()
 for (var scs : resp.getSubjectConditionSetsList()) {
     System.out.println("SCS ID: " + scs.getId());
 }
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.listSubjectConditionSets({});
 for (const scs of resp.subjectConditionSets) {
   console.log(`SCS ID: ${scs.id}`);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Subject Condition Set objects](#subject-condition-set-object). Includes pagination metadata.
+
 </details>
 
 <details id="get-subject-condition-set">
 <summary>Get a Subject Condition Set</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-The response also includes `AssociatedSubjectMappings` — all subject mappings currently referencing this condition set.
+```go
+client.SubjectMapping.GetSubjectConditionSet(ctx, &subjectmapping.GetSubjectConditionSetRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().getSubjectConditionSetBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.getSubjectConditionSet({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
 resp, err := client.SubjectMapping.GetSubjectConditionSet(context.Background(),
 	&subjectmapping.GetSubjectConditionSetRequest{
 		Id: "a0b1c2d3-0000-0000-0000-000000000099",
@@ -1447,7 +1518,6 @@ if err != nil {
 scs := resp.GetSubjectConditionSet()
 log.Printf("SCS ID: %s\n", scs.GetId())
 log.Printf("Associated subject mappings: %d\n", len(resp.GetAssociatedSubjectMappings()))
-
 ```
 
 </TabItem>
@@ -1464,29 +1534,68 @@ var resp = sdk.getServices().subjectMappings()
     .getSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
 System.out.println("SCS ID: " + resp.getSubjectConditionSet().getId());
 System.out.println("Associated mappings: " + resp.getAssociatedSubjectMappingsList().size());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.getSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
 });
 console.log(`SCS ID: ${resp.subjectConditionSet?.id}`);
 console.log(`Associated subject mappings: ${resp.associatedSubjectMappings.length}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The [Subject Condition Set object](#subject-condition-set-object), plus `associatedSubjectMappings` — all subject mappings currently referencing this condition set.
+
 </details>
 
 <details id="update-subject-condition-set">
 <summary>Update a Subject Condition Set</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.UpdateSubjectConditionSet(ctx, &subjectmapping.UpdateSubjectConditionSetRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().updateSubjectConditionSetBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.updateSubjectConditionSet({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID to update. |
+| `subjectSets` | `[]SubjectSet` | No | Replaces the entire condition tree. Omit to update metadata only. |
+| `metadata` | `object` | No | Key-value [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -1590,10 +1699,50 @@ console.log(`Updated SCS ID: ${resp.subjectConditionSet?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Subject Condition Set object](#subject-condition-set-object).
+
 </details>
 
 <details id="delete-subject-condition-set">
 <summary>Delete a Subject Condition Set</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.DeleteSubjectConditionSet(ctx, &subjectmapping.DeleteSubjectConditionSetRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().deleteSubjectConditionSetBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.deleteSubjectConditionSet({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID to delete. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -1642,14 +1791,52 @@ console.log(`Deleted SCS ID: ${resp.subjectConditionSet?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The deleted [Subject Condition Set object](#subject-condition-set-object). This is a hard delete — the object is permanently removed.
+
 </details>
 
 <details id="delete-all-unmapped-subject-condition-sets">
 <summary>Delete All Unmapped Subject Condition Sets</summary>
+
+Permanently deletes all subject condition sets that are not referenced by any subject mapping. Use this as a maintenance operation to clean up orphaned condition sets.
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-Permanently deletes all subject condition sets that are not referenced by any subject mapping. Use this as a maintenance operation to clean up orphaned condition sets.
+```go
+client.SubjectMapping.DeleteAllUnmappedSubjectConditionSets(ctx, &subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest{})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().deleteAllUnmappedSubjectConditionSetsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({})
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+None.
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
@@ -1689,6 +1876,11 @@ console.log(`Deleted ${resp.subjectConditionSets.length} unmapped subject condit
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of all deleted [Subject Condition Set objects](#subject-condition-set-object).
+
 </details>
 
 ### Subject Condition Set Object
@@ -1718,11 +1910,47 @@ Subject mappings are permanently deleted (not deactivated). There is no restore 
 
 <details id="get-subject-mapping">
 <summary>Get a Subject Mapping</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.GetSubjectMapping(ctx, &subjectmapping.GetSubjectMappingRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().getSubjectMappingBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.getSubjectMapping({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
 resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
 	&subjectmapping.GetSubjectMappingRequest{
 		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
@@ -1734,7 +1962,6 @@ if err != nil {
 sm := resp.GetSubjectMapping()
 log.Printf("Subject Mapping ID: %s, Attribute Value ID: %s\n",
 	sm.GetId(), sm.GetAttributeValue().GetId())
-
 ```
 
 </TabItem>
@@ -1750,28 +1977,68 @@ var req = GetSubjectMappingRequest.newBuilder()
 var resp = sdk.getServices().subjectMappings()
     .getSubjectMappingBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.getSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
 });
 console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Subject Mapping object](#subject-mapping-object).
+
 </details>
 
 <details id="update-subject-mapping">
 <summary>Update a Subject Mapping</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.UpdateSubjectMapping(ctx, &subjectmapping.UpdateSubjectMappingRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().updateSubjectMappingBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.updateSubjectMapping({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID to update. |
+| `actions` | `[]Action` | No | Replaces the entire actions list. Omit to leave unchanged. |
+| `subjectConditionSetId` | `string` (UUID) | No | Swap the linked condition set. |
+| `metadata` | `object` | No | Key-value [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -1780,7 +2047,7 @@ import (
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 )
-// Replace the actions list on an existing subject mapping
+
 resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
 	&subjectmapping.UpdateSubjectMappingRequest{
 		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
@@ -1791,18 +2058,13 @@ resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
 				},
 			},
 		},
-		// Optionally replace the subject condition set:
-		// SubjectConditionSetId: "new-scs-uuid",
 	},
 )
 if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Updated subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-
 ```
-
-Providing `Actions` replaces the entire actions list. Omit it to leave actions unchanged. Providing `SubjectConditionSetId` swaps the linked condition set.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -1823,34 +2085,71 @@ var req = UpdateSubjectMappingRequest.newBuilder()
 var resp = sdk.getServices().subjectMappings()
     .updateSubjectMappingBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.updateSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
   actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
 });
 console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Subject Mapping object](#subject-mapping-object).
+
 </details>
 
 <details id="delete-subject-mapping">
 <summary>Delete a Subject Mapping</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.DeleteSubjectMapping(ctx, &subjectmapping.DeleteSubjectMappingRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().deleteSubjectMappingBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.deleteSubjectMapping({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID to delete. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
 resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
 	&subjectmapping.DeleteSubjectMappingRequest{
 		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
@@ -1860,7 +2159,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Deleted subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-
 ```
 
 </TabItem>
@@ -1876,38 +2174,75 @@ var req = DeleteSubjectMappingRequest.newBuilder()
 var resp = sdk.getServices().subjectMappings()
     .deleteSubjectMappingBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
 });
 console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The deleted [Subject Mapping object](#subject-mapping-object). This is a hard delete — the object is permanently removed.
+
 </details>
 
 <details id="match-subject-mappings">
 <summary>Match Subject Mappings</summary>
+
+Given a list of subject properties (key-value pairs from an entity's token claims), returns all subject mappings whose condition sets match. Use this to determine which access grants apply to a given entity.
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-Given a list of subject properties (key-value pairs from an entity's claims or attributes), return all subject mappings whose condition sets match. This is used to determine which access grants apply to a given entity.
+```go
+client.SubjectMapping.MatchSubjectMappings(ctx, &subjectmapping.MatchSubjectMappingsRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().matchSubjectMappingsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.matchSubjectMappings({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subjectProperties` | `[]SubjectProperty` | Yes | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 import (
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
 )
+
 resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
 	&subjectmapping.MatchSubjectMappingsRequest{
 		SubjectProperties: []*policy.SubjectProperty{
@@ -1922,7 +2257,6 @@ if err != nil {
 for _, sm := range resp.GetSubjectMappings() {
 	log.Printf("Matched subject mapping ID: %s\n", sm.GetId())
 }
-
 ```
 
 </TabItem>
@@ -1948,15 +2282,12 @@ var resp = sdk.getServices().subjectMappings()
 for (var sm : resp.getSubjectMappingsList()) {
     System.out.println("Matched subject mapping ID: " + sm.getId());
 }
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.subjectMapping.matchSubjectMappings({
   subjectProperties: [
     { externalSelectorValue: '.clientId', externalValue: 'my-service' },
@@ -1966,11 +2297,15 @@ const resp = await platform.v1.subjectMapping.matchSubjectMappings({
 for (const sm of resp.subjectMappings) {
   console.log(`Matched subject mapping ID: ${sm.id}`);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Subject Mapping objects](#subject-mapping-object) whose condition sets matched the provided subject properties.
+
 </details>
 
 ### Subject Mapping Object

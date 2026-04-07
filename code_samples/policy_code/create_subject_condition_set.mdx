@@ -2,7 +2,43 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="create-subject-condition-set">
-<summary>Create Subject Condition Set</summary>
+<summary>Create a Subject Condition Set</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.SubjectMapping.CreateSubjectConditionSet(ctx, &subjectmapping.CreateSubjectConditionSetRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().createSubjectConditionSetBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.createSubjectConditionSet({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subjectSets` | `[]SubjectSet` | Yes | One or more subject sets. Each contains condition groups with conditions that match against entity token claims. Subject sets are evaluated with AND logic. |
+| `metadata` | `object` | No | Key-value [labels](/sdks/policy#metadata). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -96,4 +132,9 @@ console.log(
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Subject Condition Set object](/sdks/policy#subject-condition-set-object).
+
 </details>
