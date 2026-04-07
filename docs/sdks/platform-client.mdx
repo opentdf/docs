@@ -196,7 +196,7 @@ This pattern applies to all platform objects. Each SDK page includes type refere
 
 ### Related Objects in Responses
 
-Some `Get` responses include related objects alongside the requested resource. For example, `GetSubjectConditionSet` returns the condition set plus all subject mappings that reference it:
+`GetSubjectConditionSet` returns the condition set plus all subject mappings that reference it. This is currently the only `Get` response that includes related objects — other `Get` operations return only the requested resource.
 
 ```go
 resp, err := client.SubjectMapping.GetSubjectConditionSet(ctx, req)
