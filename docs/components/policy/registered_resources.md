@@ -66,7 +66,7 @@ When getting a Registered Resource by name without specifying a namespace, and b
 
 ### Namespace Deletion Cascade
 
-Deleting a namespace cascades to delete all Registered Resources (and their values) within that namespace.
+Deactivating a namespace (the default operation exposed via the SDK and CLI) soft-deletes the namespace but does not affect its child Registered Resources. However, an unsafe hard-delete of a namespace cascades to permanently delete all Registered Resources (and their values) within that namespace.
 
 ### `NamespacedPolicy` Enforcement
 
