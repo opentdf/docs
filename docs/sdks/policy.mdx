@@ -16,9 +16,111 @@ import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Managing Policy
 
-Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
+Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**. See [Policy](/components/policy) for the concept overview. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
+
+## Setup
+
+All examples on this page assume you have created a platform client. See [Authentication](/sdks/authentication) for full details including DPoP key binding.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// All Go snippets below use `client` and `context.Background()`.
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.*;
+
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("opentdf", "secret")
+    .useInsecurePlaintextConnection(true)
+    .build();
+
+// All Java snippets below use `sdk`.
+// Remember to call sdk.close() when done.
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
+
+// All JavaScript snippets below use `platform`.
+```
+
+</TabItem>
+</Tabs>
 
 <JsAuthNote />
+
+### Metadata
+
+All policy objects support optional metadata. When creating or updating a resource, you can pass a `metadata` object containing `labels` — a flat map of string key-value pairs:
+
+```json
+{
+  "labels": {
+    "owner": "platform-team",
+    "env": "production"
+  }
+}
+```
+
+`labels` is the only supported field. Other fields are silently ignored. When updating, use `metadataUpdateBehavior` to control whether labels are replaced or merged (see [Update a Namespace](#update-namespace) for an example).
+
+### Pagination
+
+All `List` operations return a `pagination` object alongside the results:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `currentOffset` | `int` | The offset that was requested. |
+| `nextOffset` | `int` | The offset to use for the next page. Empty when no more results remain. |
+| `total` | `int` | Total count of results across all pages. |
+
+Example response shape (Go):
+
+```go
+resp, err := client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{
+    Pagination: &policy.PageRequest{Limit: 10, Offset: 0},
+})
+// resp.GetPagination().GetCurrentOffset() == 0
+// resp.GetPagination().GetNextOffset() == 10
+// resp.GetPagination().GetTotal() == 42
+```
 
 ---
 
@@ -36,110 +138,103 @@ Namespaces are deactivated, not permanently deleted. There is no hard-delete ope
 
 <details id="get-namespace">
 <summary>Get a Namespace</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Look up by UUID
-	resp, err := client.Namespaces.GetNamespace(context.Background(),
-		&namespaces.GetNamespaceRequest{
-			Identifier: &namespaces.GetNamespaceRequest_NamespaceId{
-				NamespaceId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Namespace: %s (ID: %s)\n", resp.GetNamespace().GetName(), resp.GetNamespace().GetId())
-
-	// Alternatively, look up by FQN
-	respByFqn, err := client.Namespaces.GetNamespace(context.Background(),
-		&namespaces.GetNamespaceRequest{
-			Identifier: &namespaces.GetNamespaceRequest_Fqn{
-				Fqn: "https://example.com",
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Namespace by FQN: %s\n", respByFqn.GetNamespace().GetName())
-}
+client.Namespaces.GetNamespace(ctx, &namespaces.GetNamespaceRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.namespaces.GetNamespaceRequest;
-import java.util.Collections;
-
-public class GetNamespaceExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        // Look up by UUID
-        var req = GetNamespaceRequest.newBuilder()
-            .setNamespaceId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
-            .build();
-        var resp = sdk.getServices().namespaces()
-            .getNamespaceBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Namespace: " + resp.getNamespace().getName());
-
-        // Alternatively, look up by FQN
-        var reqByFqn = GetNamespaceRequest.newBuilder()
-            .setFqn("https://example.com")
-            .build();
-        var respByFqn = sdk.getServices().namespaces()
-            .getNamespaceBlocking(reqByFqn, Collections.emptyMap()).execute();
-        System.out.println("Namespace by FQN: " + respByFqn.getNamespace().getName());
-
-        sdk.close();
-    }
-}
+sdk.getServices().namespaces().getNamespaceBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.namespace.getNamespace({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The namespace UUID. |
+| `fqn` | `string` (URI) | The namespace FQN (e.g., `https://example.com`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
+// Look up by UUID
+resp, err := client.Namespaces.GetNamespace(context.Background(),
+	&namespaces.GetNamespaceRequest{
+		Identifier: &namespaces.GetNamespaceRequest_NamespaceId{
+			NamespaceId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Namespace: %s (ID: %s)\n", resp.GetNamespace().GetName(), resp.GetNamespace().GetId())
+
+// Alternatively, look up by FQN
+respByFqn, err := client.Namespaces.GetNamespace(context.Background(),
+	&namespaces.GetNamespaceRequest{
+		Identifier: &namespaces.GetNamespaceRequest_Fqn{
+			Fqn: "https://example.com",
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Namespace by FQN: %s\n", respByFqn.GetNamespace().GetName())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.namespaces.GetNamespaceRequest;
+
+// Look up by UUID
+var req = GetNamespaceRequest.newBuilder()
+    .setNamespaceId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .build();
+var resp = sdk.getServices().namespaces()
+    .getNamespaceBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Namespace: " + resp.getNamespace().getName());
+
+// Alternatively, look up by FQN
+var reqByFqn = GetNamespaceRequest.newBuilder()
+    .setFqn("https://example.com")
+    .build();
+var respByFqn = sdk.getServices().namespaces()
+    .getNamespaceBlocking(reqByFqn, Collections.emptyMap()).execute();
+System.out.println("Namespace by FQN: " + respByFqn.getNamespace().getName());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 // Look up by UUID
 let resp = await platform.v1.namespace.getNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
 console.log(`Namespace: ${resp.namespace?.name} (ID: ${resp.namespace?.id})`);
@@ -151,109 +246,106 @@ console.log(`Namespace by FQN: ${resp.namespace?.name}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Namespace object](#namespace-object). Namespace names are unique — an FQN always resolves to exactly one namespace or an error.
+
 </details>
 
 <details id="update-namespace">
 <summary>Update a Namespace</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/common"
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Namespaces.UpdateNamespace(context.Background(),
-		&namespaces.UpdateNamespaceRequest{
-			Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-			Metadata: &common.MetadataMutable{
-				Labels: map[string]string{
-					"owner": "platform-team",
-					"env":   "production",
-				},
-			},
-			MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_REPLACE,
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated namespace ID: %s\n", resp.GetNamespace().GetId())
-}
+client.Namespaces.UpdateNamespace(ctx, &namespaces.UpdateNamespaceRequest{...})
 ```
-
-`MetadataUpdateEnum_METADATA_UPDATE_ENUM_REPLACE` overwrites all existing labels. Use `METADATA_UPDATE_ENUM_EXTEND` to merge with existing labels.
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.namespaces.UpdateNamespaceRequest;
-import io.opentdf.platform.common.Common.MetadataMutable;
-import io.opentdf.platform.common.Common.MetadataUpdateEnum;
-import java.util.Collections;
-
-public class UpdateNamespaceExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var metadata = MetadataMutable.newBuilder()
-            .putLabels("owner", "platform-team")
-            .putLabels("env", "production")
-            .build();
-
-        var req = UpdateNamespaceRequest.newBuilder()
-            .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
-            .setMetadata(metadata)
-            .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_REPLACE)
-            .build();
-
-        var resp = sdk.getServices().namespaces()
-            .updateNamespaceBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated namespace ID: " + resp.getNamespace().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().namespaces().updateNamespaceBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.namespace.updateNamespace({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The namespace ID to update. |
+| `metadata` | [`Metadata`](#metadata) | No | Labels to attach, e.g., `{"labels": {"owner": "platform-team"}}`. |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` overwrites all existing labels. `METADATA_UPDATE_ENUM_EXTEND` merges new labels into existing ones. If omitted, defaults to `EXTEND`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+)
+resp, err := client.Namespaces.UpdateNamespace(context.Background(),
+	&namespaces.UpdateNamespaceRequest{
+		Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+		Metadata: &common.MetadataMutable{
+			Labels: map[string]string{
+				"owner": "platform-team",
+				"env":   "production",
+			},
+		},
+		MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_REPLACE,
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Updated namespace ID: %s\n", resp.GetNamespace().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.namespaces.UpdateNamespaceRequest;
+import io.opentdf.platform.common.Common.MetadataMutable;
+import io.opentdf.platform.common.Common.MetadataUpdateEnum;
+
+var metadata = MetadataMutable.newBuilder()
+    .putLabels("owner", "platform-team")
+    .putLabels("env", "production")
+    .build();
+
+var req = UpdateNamespaceRequest.newBuilder()
+    .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .setMetadata(metadata)
+    .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_REPLACE)
+    .build();
+
+var resp = sdk.getServices().namespaces()
+    .updateNamespaceBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated namespace ID: " + resp.getNamespace().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.namespace.updateNamespace({
   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   metadata: { labels: { owner: 'platform-team', env: 'production' } },
@@ -264,107 +356,115 @@ console.log(`Updated namespace ID: ${resp.namespace?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Namespace object](#namespace-object).
+
 </details>
 
 <details id="deactivate-namespace">
 <summary>Deactivate a Namespace</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = client.Namespaces.DeactivateNamespace(context.Background(),
-		&namespaces.DeactivateNamespaceRequest{
-			Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Namespace deactivated.")
-}
+client.Namespaces.DeactivateNamespace(ctx, &namespaces.DeactivateNamespaceRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.namespaces.DeactivateNamespaceRequest;
-import java.util.Collections;
-
-public class DeactivateNamespaceExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = DeactivateNamespaceRequest.newBuilder()
-            .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
-            .build();
-
-        sdk.getServices().namespaces()
-            .deactivateNamespaceBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Namespace deactivated.");
-
-        sdk.close();
-    }
-}
+sdk.getServices().namespaces().deactivateNamespaceBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.namespace.deactivateNamespace({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The namespace ID to deactivate. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
+_, err = client.Namespaces.DeactivateNamespace(context.Background(),
+	&namespaces.DeactivateNamespaceRequest{
+		Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println("Namespace deactivated.")
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.namespaces.DeactivateNamespaceRequest;
+
+var req = DeactivateNamespaceRequest.newBuilder()
+    .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .build();
+
+sdk.getServices().namespaces()
+    .deactivateNamespaceBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Namespace deactivated.");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 await platform.v1.namespace.deactivateNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
 console.log('Namespace deactivated.');
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+Empty response. The namespace is soft-deleted and will no longer appear in `ListNamespaces` unless you filter by `INACTIVE` or `ANY` state.
+
 </details>
 
-:::tip Listing inactive namespaces
-By default, `ListNamespaces` returns only active namespaces. To include inactive ones, set `State` to `ACTIVE_STATE_ENUM_INACTIVE` or `ACTIVE_STATE_ENUM_ANY` on the request.
-:::
+### Namespace Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `name` | `string` | The hostname used to scope attributes (e.g., `opentdf.io`). |
+| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io`. |
+| `active` | `bool` | `true` until explicitly deactivated. |
+| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
+| `createdAt` | `timestamp` | When the namespace was created. |
+| `updatedAt` | `timestamp` | When the namespace was last modified. |
 
 ---
 
 ## Attributes
 
-An **attribute** defines a classification dimension (e.g., `classification`, `department`). Each attribute belongs to a namespace, has a rule (`ALL_OF`, `ANY_OF`, or `HIERARCHY`), and contains one or more values.
+An **attribute** defines a classification dimension (e.g., `classification`, `department`). Each attribute belongs to a namespace, has a rule (All Of, Any Of, or Hierarchy), and contains one or more values.
 
 :::note Soft-delete only
 Attributes and attribute values are deactivated, not permanently deleted.
@@ -376,44 +476,64 @@ Attributes and attribute values are deactivated, not permanently deleted.
 
 <details id="get-attribute">
 <summary>Get an Attribute</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.Attributes.GetAttribute(ctx, &attributes.GetAttributeRequest{...})
+```
 
-import (
-	"context"
-	"log"
+</TabItem>
+<TabItem value="java" label="Java">
 
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
+```java
+sdk.getServices().attributes().getAttributeBlocking(req, metadata).execute()
+```
 
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-	// Look up by FQN
-	resp, err := client.Attributes.GetAttribute(context.Background(),
-		&attributes.GetAttributeRequest{
-			Identifier: &attributes.GetAttributeRequest_Fqn{
-				Fqn: "https://example.com/attr/classification",
-			},
+```typescript
+await platform.v1.attributes.getAttribute({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The attribute UUID. |
+| `fqn` | `string` | The attribute FQN (e.g., `https://example.com/attr/classification`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.GetAttribute(context.Background(),
+	&attributes.GetAttributeRequest{
+		Identifier: &attributes.GetAttributeRequest_Fqn{
+			Fqn: "https://example.com/attr/classification",
 		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	attr := resp.GetAttribute()
-	log.Printf("Attribute: %s, Rule: %s\n", attr.GetName(), attr.GetRule())
-	for _, v := range attr.GetValues() {
-		log.Printf("  Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
-	}
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+attr := resp.GetAttribute()
+log.Printf("Attribute: %s, Rule: %s\n", attr.GetName(), attr.GetRule())
+for _, v := range attr.GetValues() {
+	log.Printf("  Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
 }
 ```
 
@@ -421,34 +541,18 @@ func main() {
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.attributes.GetAttributeRequest;
-import java.util.Collections;
 
-public class GetAttributeExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+var req = GetAttributeRequest.newBuilder()
+    .setFqn("https://example.com/attr/classification")
+    .build();
 
-        var req = GetAttributeRequest.newBuilder()
-            .setFqn("https://example.com/attr/classification")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .getAttributeBlocking(req, Collections.emptyMap()).execute();
-        var attr = resp.getAttribute();
-        System.out.println("Attribute: " + attr.getName() + " (" + attr.getFqn() + ")");
-        for (var value : attr.getValuesList()) {
-            System.out.println("  Value: " + value.getValue() + " (ID: " + value.getId() + ")");
-        }
-
-        sdk.close();
-    }
+var resp = sdk.getServices().attributes()
+    .getAttributeBlocking(req, Collections.emptyMap()).execute();
+var attr = resp.getAttribute();
+System.out.println("Attribute: " + attr.getName() + " (" + attr.getFqn() + ")");
+for (var value : attr.getValuesList()) {
+    System.out.println("  Value: " + value.getValue() + " (ID: " + value.getId() + ")");
 }
 ```
 
@@ -456,18 +560,6 @@ public class GetAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
-// Look up by FQN
 const resp = await platform.v1.attributes.getAttribute({
   fqn: 'https://example.com/attr/classification',
 });
@@ -479,101 +571,101 @@ for (const v of resp.attribute?.values ?? []) {
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Attribute object](#attribute-object) with nested values.
+
 </details>
 
 <details id="update-attribute">
 <summary>Update an Attribute</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/common"
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.UpdateAttribute(context.Background(),
-		&attributes.UpdateAttributeRequest{
-			Id: "a1b2c3d4-0000-0000-0000-000000000001",
-			Metadata: &common.MetadataMutable{
-				Labels: map[string]string{"reviewed": "true"},
-			},
-			MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_EXTEND,
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated attribute ID: %s\n", resp.GetAttribute().GetId())
-}
+client.Attributes.UpdateAttribute(ctx, &attributes.UpdateAttributeRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.UpdateAttributeRequest;
-import io.opentdf.platform.common.Common.MetadataMutable;
-import io.opentdf.platform.common.Common.MetadataUpdateEnum;
-import java.util.Collections;
-
-public class UpdateAttributeExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = UpdateAttributeRequest.newBuilder()
-            .setId("a1b2c3d4-0000-0000-0000-000000000001")
-            .setMetadata(MetadataMutable.newBuilder()
-                .putLabels("reviewed", "true")
-                .build())
-            .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_EXTEND)
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .updateAttributeBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated attribute ID: " + resp.getAttribute().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().updateAttributeBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.updateAttribute({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The attribute ID to update. |
+| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+)
+
+resp, err := client.Attributes.UpdateAttribute(context.Background(),
+	&attributes.UpdateAttributeRequest{
+		Id: "a1b2c3d4-0000-0000-0000-000000000001",
+		Metadata: &common.MetadataMutable{
+			Labels: map[string]string{"reviewed": "true"},
+		},
+		MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_EXTEND,
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Updated attribute ID: %s\n", resp.GetAttribute().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.UpdateAttributeRequest;
+import io.opentdf.platform.common.Common.MetadataMutable;
+import io.opentdf.platform.common.Common.MetadataUpdateEnum;
+
+var req = UpdateAttributeRequest.newBuilder()
+    .setId("a1b2c3d4-0000-0000-0000-000000000001")
+    .setMetadata(MetadataMutable.newBuilder()
+        .putLabels("reviewed", "true")
+        .build())
+    .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_EXTEND)
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .updateAttributeBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated attribute ID: " + resp.getAttribute().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.updateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
   metadata: { labels: { reviewed: 'true' } },
@@ -584,90 +676,86 @@ console.log(`Updated attribute ID: ${resp.attribute?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Attribute object](#attribute-object).
+
 </details>
 
 <details id="deactivate-attribute">
 <summary>Deactivate an Attribute</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.DeactivateAttribute(context.Background(),
-		&attributes.DeactivateAttributeRequest{
-			Id: "a1b2c3d4-0000-0000-0000-000000000001",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deactivated attribute: %s\n", resp.GetAttribute().GetId())
-}
+client.Attributes.DeactivateAttribute(ctx, &attributes.DeactivateAttributeRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.DeactivateAttributeRequest;
-import java.util.Collections;
-
-public class DeactivateAttributeExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = DeactivateAttributeRequest.newBuilder()
-            .setId("a1b2c3d4-0000-0000-0000-000000000001")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .deactivateAttributeBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deactivated attribute: " + resp.getAttribute().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().deactivateAttributeBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.deactivateAttribute({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The attribute ID to deactivate. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.DeactivateAttribute(context.Background(),
+	&attributes.DeactivateAttributeRequest{
+		Id: "a1b2c3d4-0000-0000-0000-000000000001",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Deactivated attribute: %s\n", resp.GetAttribute().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.DeactivateAttributeRequest;
+
+var req = DeactivateAttributeRequest.newBuilder()
+    .setId("a1b2c3d4-0000-0000-0000-000000000001")
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .deactivateAttributeBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deactivated attribute: " + resp.getAttribute().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.deactivateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
 });
@@ -676,6 +764,11 @@ console.log(`Deactivated attribute: ${resp.attribute?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+Empty response. The attribute is soft-deleted and will no longer appear in `ListAttributes` unless you filter by `INACTIVE` or `ANY` state.
+
 </details>
 
 ### Attribute Values
@@ -684,88 +777,81 @@ Attribute values are the individual members of an attribute (e.g., `secret`, `to
 
 <details id="create-attribute-value">
 <summary>Create an Attribute Value</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.CreateAttributeValue(context.Background(),
-		&attributes.CreateAttributeValueRequest{
-			AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
-			Value:       "top-secret",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created value: %s (ID: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetId())
-}
+client.Attributes.CreateAttributeValue(ctx, &attributes.CreateAttributeValueRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
-import java.util.Collections;
-
-public class CreateAttributeValueExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = CreateAttributeValueRequest.newBuilder()
-            .setAttributeId("a1b2c3d4-0000-0000-0000-000000000001")
-            .setValue("top-secret")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .createAttributeValueBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Created value: " + resp.getValue().getValue() + " (ID: " + resp.getValue().getId() + ")");
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().createAttributeValueBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.createAttributeValue({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
+| `value` | `string` | Yes | The value string (e.g., `top-secret`). |
+| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.CreateAttributeValue(context.Background(),
+	&attributes.CreateAttributeValueRequest{
+		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
+		Value:       "top-secret",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Created value: %s (ID: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.CreateAttributeValueRequest;
+
+var req = CreateAttributeValueRequest.newBuilder()
+    .setAttributeId("a1b2c3d4-0000-0000-0000-000000000001")
+    .setValue("top-secret")
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .createAttributeValueBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Created value: " + resp.getValue().getValue() + " (ID: " + resp.getValue().getId() + ")");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.createAttributeValue({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
   value: 'top-secret',
@@ -775,43 +861,67 @@ console.log(`Created value: ${resp.value?.value} (ID: ${resp.value?.id})`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="list-attribute-values">
 <summary>List Attribute Values</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.Attributes.ListAttributeValues(ctx, &attributes.ListAttributeValuesRequest{...})
+```
 
-import (
-	"context"
-	"log"
+</TabItem>
+<TabItem value="java" label="Java">
 
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
+```java
+sdk.getServices().attributes().listAttributeValuesBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.listAttributeValues({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
+| `state` | `string` | No | Filter by state: `ACTIVE` (default), `INACTIVE`, or `ANY`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.ListAttributeValues(context.Background(),
+	&attributes.ListAttributeValuesRequest{
+		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
+	},
 )
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.ListAttributeValues(context.Background(),
-		&attributes.ListAttributeValuesRequest{
-			AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, v := range resp.GetValues() {
-		log.Printf("Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
-	}
+if err != nil {
+	log.Fatal(err)
+}
+for _, v := range resp.GetValues() {
+	log.Printf("Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
 }
 ```
 
@@ -819,32 +929,16 @@ func main() {
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.attributes.ListAttributeValuesRequest;
-import java.util.Collections;
 
-public class ListAttributeValuesExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+var req = ListAttributeValuesRequest.newBuilder()
+    .setAttributeId("a1b2c3d4-0000-0000-0000-000000000001")
+    .build();
 
-        var req = ListAttributeValuesRequest.newBuilder()
-            .setAttributeId("a1b2c3d4-0000-0000-0000-000000000001")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .listAttributeValuesBlocking(req, Collections.emptyMap()).execute();
-        for (var value : resp.getValuesList()) {
-            System.out.println("Value: " + value.getValue() + " (ID: " + value.getId() + ")");
-        }
-
-        sdk.close();
-    }
+var resp = sdk.getServices().attributes()
+    .listAttributeValuesBlocking(req, Collections.emptyMap()).execute();
+for (var value : resp.getValuesList()) {
+    System.out.println("Value: " + value.getValue() + " (ID: " + value.getId() + ")");
 }
 ```
 
@@ -852,17 +946,6 @@ public class ListAttributeValuesExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
 const resp = await platform.v1.attributes.listAttributeValues({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
 });
@@ -873,94 +956,91 @@ for (const v of resp.values) {
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Attribute Value objects](#attribute-value-object).
+
 </details>
 
 <details id="get-attribute-value">
 <summary>Get an Attribute Value</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Look up by FQN
-	resp, err := client.Attributes.GetAttributeValue(context.Background(),
-		&attributes.GetAttributeValueRequest{
-			Identifier: &attributes.GetAttributeValueRequest_Fqn{
-				Fqn: "https://example.com/attr/classification/value/secret",
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Value: %s (FQN: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetFqn())
-}
+client.Attributes.GetAttributeValue(ctx, &attributes.GetAttributeValueRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.GetAttributeValueRequest;
-import java.util.Collections;
-
-public class GetAttributeValueExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = GetAttributeValueRequest.newBuilder()
-            .setFqn("https://example.com/attr/classification/value/secret")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .getAttributeValueBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Value: " + resp.getValue().getValue() + " (FQN: " + resp.getValue().getFqn() + ")");
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().getAttributeValueBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.getAttributeValue({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
-// Look up by FQN
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The value UUID. |
+| `fqn` | `string` | The value FQN (e.g., `https://example.com/attr/classification/value/secret`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.GetAttributeValue(context.Background(),
+	&attributes.GetAttributeValueRequest{
+		Identifier: &attributes.GetAttributeValueRequest_Fqn{
+			Fqn: "https://example.com/attr/classification/value/secret",
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Value: %s (FQN: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetFqn())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.GetAttributeValueRequest;
+
+var req = GetAttributeValueRequest.newBuilder()
+    .setFqn("https://example.com/attr/classification/value/secret")
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .getAttributeValueBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Value: " + resp.getValue().getValue() + " (FQN: " + resp.getValue().getFqn() + ")");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.getAttributeValue({
   fqn: 'https://example.com/attr/classification/value/secret',
 });
@@ -969,52 +1049,72 @@ console.log(`Value: ${resp.value?.value} (FQN: ${resp.value?.fqn})`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="get-attribute-values-by-fqns">
 <summary>Get Attribute Values by FQNs</summary>
-<Tabs>
-<TabItem value="go" label="Go">
 
 Batch-fetch multiple attribute values by their FQNs in a single request. Returns a map keyed by FQN, each entry containing both the parent attribute definition and the specific value.
 
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
-package main
+client.Attributes.GetAttributeValuesByFqns(ctx, &attributes.GetAttributeValuesByFqnsRequest{...})
+```
 
-import (
-	"context"
-	"log"
+</TabItem>
+<TabItem value="java" label="Java">
 
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
+```java
+sdk.getServices().attributes().getAttributeValuesByFqnsBlocking(req, metadata).execute()
+```
 
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-	resp, err := client.Attributes.GetAttributeValuesByFqns(context.Background(),
-		&attributes.GetAttributeValuesByFqnsRequest{
-			Fqns: []string{
-				"https://example.com/attr/classification/value/secret",
-				"https://example.com/attr/department/value/engineering",
-			},
+```typescript
+await platform.v1.attributes.getAttributeValuesByFqns({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fqns` | `[]string` | Yes | Attribute value FQNs to look up. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.GetAttributeValuesByFqns(context.Background(),
+	&attributes.GetAttributeValuesByFqnsRequest{
+		Fqns: []string{
+			"https://example.com/attr/classification/value/secret",
+			"https://example.com/attr/department/value/engineering",
 		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for fqn, entry := range resp.GetFqnAttributeValues() {
-		log.Printf("FQN: %s -> Attribute: %s, Value: %s\n",
-			fqn,
-			entry.GetAttribute().GetName(),
-			entry.GetValue().GetValue(),
-		)
-	}
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+for fqn, entry := range resp.GetFqnAttributeValues() {
+	log.Printf("FQN: %s -> Attribute: %s, Value: %s\n",
+		fqn, entry.GetAttribute().GetName(), entry.GetValue().GetValue())
 }
 ```
 
@@ -1022,54 +1122,28 @@ func main() {
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.attributes.GetAttributeValuesByFqnsRequest;
-import java.util.Collections;
 import java.util.List;
 
-public class GetAttributeValuesByFqnsExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+var req = GetAttributeValuesByFqnsRequest.newBuilder()
+    .addAllFqns(List.of(
+        "https://example.com/attr/classification/value/secret",
+        "https://example.com/attr/department/value/engineering"
+    ))
+    .build();
 
-        var req = GetAttributeValuesByFqnsRequest.newBuilder()
-            .addAllFqns(List.of(
-                "https://example.com/attr/classification/value/secret",
-                "https://example.com/attr/department/value/engineering"
-            ))
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .getAttributeValuesByFqnsBlocking(req, Collections.emptyMap()).execute();
-        resp.getFqnAttributeValuesMap().forEach((fqn, entry) ->
-            System.out.println("FQN: " + fqn + " -> Attribute: " + entry.getAttribute().getName() + ", Value: " + entry.getValue().getValue())
-        );
-
-        sdk.close();
-    }
-}
+var resp = sdk.getServices().attributes()
+    .getAttributeValuesByFqnsBlocking(req, Collections.emptyMap()).execute();
+resp.getFqnAttributeValuesMap().forEach((fqn, entry) ->
+    System.out.println("FQN: " + fqn + " -> Attribute: " + entry.getAttribute().getName() +
+        ", Value: " + entry.getValue().getValue())
+);
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
 const resp = await platform.v1.attributes.getAttributeValuesByFqns({
   fqns: [
     'https://example.com/attr/classification/value/secret',
@@ -1083,101 +1157,101 @@ for (const [fqn, entry] of Object.entries(resp.fqnAttributeValues)) {
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A map of FQN to `{attribute, value}` pairs. Each entry contains the parent [Attribute object](#attribute-object) and the specific [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="update-attribute-value">
 <summary>Update an Attribute Value</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/common"
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.UpdateAttributeValue(context.Background(),
-		&attributes.UpdateAttributeValueRequest{
-			Id: "v1b2c3d4-0000-0000-0000-000000000001",
-			Metadata: &common.MetadataMutable{
-				Labels: map[string]string{"deprecated": "false"},
-			},
-			MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_EXTEND,
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated value ID: %s\n", resp.GetValue().GetId())
-}
+client.Attributes.UpdateAttributeValue(ctx, &attributes.UpdateAttributeValueRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.UpdateAttributeValueRequest;
-import io.opentdf.platform.common.Common.MetadataMutable;
-import io.opentdf.platform.common.Common.MetadataUpdateEnum;
-import java.util.Collections;
-
-public class UpdateAttributeValueExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = UpdateAttributeValueRequest.newBuilder()
-            .setId("v1b2c3d4-0000-0000-0000-000000000001")
-            .setMetadata(MetadataMutable.newBuilder()
-                .putLabels("deprecated", "false")
-                .build())
-            .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_EXTEND)
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .updateAttributeValueBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated value ID: " + resp.getValue().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().updateAttributeValueBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.updateAttributeValue({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The value ID to update. |
+| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/attributes"
+)
+
+resp, err := client.Attributes.UpdateAttributeValue(context.Background(),
+	&attributes.UpdateAttributeValueRequest{
+		Id: "v1b2c3d4-0000-0000-0000-000000000001",
+		Metadata: &common.MetadataMutable{
+			Labels: map[string]string{"deprecated": "false"},
+		},
+		MetadataUpdateBehavior: common.MetadataUpdateEnum_METADATA_UPDATE_ENUM_EXTEND,
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Updated value ID: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.UpdateAttributeValueRequest;
+import io.opentdf.platform.common.Common.MetadataMutable;
+import io.opentdf.platform.common.Common.MetadataUpdateEnum;
+
+var req = UpdateAttributeValueRequest.newBuilder()
+    .setId("v1b2c3d4-0000-0000-0000-000000000001")
+    .setMetadata(MetadataMutable.newBuilder()
+        .putLabels("deprecated", "false")
+        .build())
+    .setMetadataUpdateBehavior(MetadataUpdateEnum.METADATA_UPDATE_ENUM_EXTEND)
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .updateAttributeValueBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated value ID: " + resp.getValue().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.updateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
   metadata: { labels: { deprecated: 'false' } },
@@ -1188,90 +1262,86 @@ console.log(`Updated value ID: ${resp.value?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="deactivate-attribute-value">
 <summary>Deactivate an Attribute Value</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Attributes.DeactivateAttributeValue(context.Background(),
-		&attributes.DeactivateAttributeValueRequest{
-			Id: "v1b2c3d4-0000-0000-0000-000000000001",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deactivated value: %s\n", resp.GetValue().GetId())
-}
+client.Attributes.DeactivateAttributeValue(ctx, &attributes.DeactivateAttributeValueRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.attributes.DeactivateAttributeValueRequest;
-import java.util.Collections;
-
-public class DeactivateAttributeValueExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = DeactivateAttributeValueRequest.newBuilder()
-            .setId("v1b2c3d4-0000-0000-0000-000000000001")
-            .build();
-
-        var resp = sdk.getServices().attributes()
-            .deactivateAttributeValueBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deactivated value: " + resp.getValue().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().attributes().deactivateAttributeValueBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.attributes.deactivateAttributeValue({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The value ID to deactivate. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
+resp, err := client.Attributes.DeactivateAttributeValue(context.Background(),
+	&attributes.DeactivateAttributeValueRequest{
+		Id: "v1b2c3d4-0000-0000-0000-000000000001",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Deactivated value: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.attributes.DeactivateAttributeValueRequest;
+
+var req = DeactivateAttributeValueRequest.newBuilder()
+    .setId("v1b2c3d4-0000-0000-0000-000000000001")
+    .build();
+
+var resp = sdk.getServices().attributes()
+    .deactivateAttributeValueBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deactivated value: " + resp.getValue().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.attributes.deactivateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
 });
@@ -1280,7 +1350,40 @@ console.log(`Deactivated value: ${resp.value?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+Empty response. The value is soft-deleted and will no longer appear in listings unless you filter by `INACTIVE` or `ANY` state.
+
 </details>
+
+### Attribute Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `name` | `string` | The attribute name (e.g., `department`, `clearance`). |
+| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io/attr/department`. |
+| `rule` | `string` | Access rule: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF`, or `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY`. |
+| `values` | `[]Value` | The [attribute values](#attribute-value-object) defined under this attribute. |
+| `namespace` | `Namespace` | The parent [Namespace](#namespace-object). |
+| `active` | `bool` | `true` until explicitly deactivated. |
+| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
+| `createdAt` | `timestamp` | When the attribute was created. |
+| `updatedAt` | `timestamp` | When the attribute was last modified. |
+
+### Attribute Value Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `value` | `string` | The value string (e.g., `finance`, `confidential`). |
+| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io/attr/department/value/finance`. |
+| `attribute` | `Attribute` | The parent [Attribute](#attribute-object). |
+| `active` | `bool` | `true` until explicitly deactivated. |
+| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
+| `createdAt` | `timestamp` | When the value was created. |
+| `updatedAt` | `timestamp` | When the value was last modified. |
 
 ---
 
@@ -1296,37 +1399,60 @@ Subject condition sets are permanently deleted (not deactivated).
 
 <details id="list-subject-condition-sets">
 <summary>List Subject Condition Sets</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.SubjectMapping.ListSubjectConditionSets(ctx, &subjectmapping.ListSubjectConditionSetsRequest{...})
+```
 
-import (
-	"context"
-	"log"
+</TabItem>
+<TabItem value="java" label="Java">
 
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
+```java
+sdk.getServices().subjectMappings().listSubjectConditionSetsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.listSubjectConditionSets({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | No | Filter to condition sets in this namespace. |
+| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN (e.g., `https://example.com`). Alternative to `namespaceId`. |
+| `pagination.limit` | `int` | No | Maximum results per page. |
+| `pagination.offset` | `int` | No | Number of results to skip. |
+
+Without a namespace filter, returns all subject condition sets across all namespaces.
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
+resp, err := client.SubjectMapping.ListSubjectConditionSets(context.Background(),
+	&subjectmapping.ListSubjectConditionSetsRequest{},
 )
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.ListSubjectConditionSets(context.Background(),
-		&subjectmapping.ListSubjectConditionSetsRequest{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, scs := range resp.GetSubjectConditionSets() {
-		log.Printf("SCS ID: %s\n", scs.GetId())
-	}
+if err != nil {
+	log.Fatal(err)
+}
+for _, scs := range resp.GetSubjectConditionSets() {
+	log.Printf("SCS ID: %s\n", scs.GetId())
 }
 ```
 
@@ -1334,29 +1460,13 @@ func main() {
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.subjectmapping.ListSubjectConditionSetsRequest;
-import java.util.Collections;
 
-public class ListSubjectConditionSetsExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = ListSubjectConditionSetsRequest.newBuilder().build();
-        var resp = sdk.getServices().subjectMappings()
-            .listSubjectConditionSetsBlocking(req, Collections.emptyMap()).execute();
-        for (var scs : resp.getSubjectConditionSetsList()) {
-            System.out.println("SCS ID: " + scs.getId());
-        }
-
-        sdk.close();
-    }
+var req = ListSubjectConditionSetsRequest.newBuilder().build();
+var resp = sdk.getServices().subjectMappings()
+    .listSubjectConditionSetsBlocking(req, Collections.emptyMap()).execute();
+for (var scs : resp.getSubjectConditionSetsList()) {
+    System.out.println("SCS ID: " + scs.getId());
 }
 ```
 
@@ -1364,17 +1474,6 @@ public class ListSubjectConditionSetsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
 const resp = await platform.v1.subjectMapping.listSubjectConditionSets({});
 for (const scs of resp.subjectConditionSets) {
   console.log(`SCS ID: ${scs.id}`);
@@ -1383,95 +1482,89 @@ for (const scs of resp.subjectConditionSets) {
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Subject Condition Set objects](#subject-condition-set-object). Includes [pagination](#pagination) metadata.
+
 </details>
 
 <details id="get-subject-condition-set">
 <summary>Get a Subject Condition Set</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-The response also includes `AssociatedSubjectMappings` — all subject mappings currently referencing this condition set.
-
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.GetSubjectConditionSet(context.Background(),
-		&subjectmapping.GetSubjectConditionSetRequest{
-			Id: "a0b1c2d3-0000-0000-0000-000000000099",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	scs := resp.GetSubjectConditionSet()
-	log.Printf("SCS ID: %s\n", scs.GetId())
-	log.Printf("Associated subject mappings: %d\n", len(resp.GetAssociatedSubjectMappings()))
-}
+client.SubjectMapping.GetSubjectConditionSet(ctx, &subjectmapping.GetSubjectConditionSetRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.GetSubjectConditionSetRequest;
-import java.util.Collections;
-
-public class GetSubjectConditionSetExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = GetSubjectConditionSetRequest.newBuilder()
-            .setId("a0b1c2d3-0000-0000-0000-000000000099")
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .getSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("SCS ID: " + resp.getSubjectConditionSet().getId());
-        System.out.println("Associated mappings: " + resp.getAssociatedSubjectMappingsList().size());
-
-        sdk.close();
-    }
-}
+sdk.getServices().subjectMappings().getSubjectConditionSetBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.subjectMapping.getSubjectConditionSet({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
+resp, err := client.SubjectMapping.GetSubjectConditionSet(context.Background(),
+	&subjectmapping.GetSubjectConditionSetRequest{
+		Id: "a0b1c2d3-0000-0000-0000-000000000099",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+scs := resp.GetSubjectConditionSet()
+log.Printf("SCS ID: %s\n", scs.GetId())
+log.Printf("Associated subject mappings: %d\n", len(resp.GetAssociatedSubjectMappings()))
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.subjectmapping.GetSubjectConditionSetRequest;
+
+var req = GetSubjectConditionSetRequest.newBuilder()
+    .setId("a0b1c2d3-0000-0000-0000-000000000099")
+    .build();
+
+var resp = sdk.getServices().subjectMappings()
+    .getSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
+System.out.println("SCS ID: " + resp.getSubjectConditionSet().getId());
+System.out.println("Associated mappings: " + resp.getAssociatedSubjectMappingsList().size());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.subjectMapping.getSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
 });
@@ -1481,110 +1574,123 @@ console.log(`Associated subject mappings: ${resp.associatedSubjectMappings.lengt
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The [Subject Condition Set object](#subject-condition-set-object), plus `associatedSubjectMappings` — all subject mappings currently referencing this condition set.
+
 </details>
 
 <details id="update-subject-condition-set">
 <summary>Update a Subject Condition Set</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-Providing `SubjectSets` replaces the entire condition tree. Omit it to update metadata only.
-
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy"
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.UpdateSubjectConditionSet(context.Background(),
-		&subjectmapping.UpdateSubjectConditionSetRequest{
-			Id: "a0b1c2d3-0000-0000-0000-000000000099",
-			SubjectSets: []*policy.SubjectSet{
-				{
-					ConditionGroups: []*policy.ConditionGroup{
-						{
-							BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
-							Conditions: []*policy.Condition{
-								{
-									SubjectExternalSelectorValue: ".clientId",
-									Operator:                     policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
-									SubjectExternalValues:        []string{"my-service", "my-other-service"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated SCS ID: %s\n", resp.GetSubjectConditionSet().GetId())
-}
+client.SubjectMapping.UpdateSubjectConditionSet(ctx, &subjectmapping.UpdateSubjectConditionSetRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
+sdk.getServices().subjectMappings().updateSubjectConditionSetBlocking(req, metadata).execute()
+```
 
-import io.opentdf.platform.sdk.*;
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.updateSubjectConditionSet({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID to update. |
+| `subjectSets` | `[]SubjectSet` | No | Replaces the entire condition tree. Omit to update metadata only. |
+| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+Providing `SubjectSets` replaces the entire condition tree. Omit it to update metadata only.
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
+resp, err := client.SubjectMapping.UpdateSubjectConditionSet(context.Background(),
+	&subjectmapping.UpdateSubjectConditionSetRequest{
+		Id: "a0b1c2d3-0000-0000-0000-000000000099",
+		SubjectSets: []*policy.SubjectSet{
+			{
+				ConditionGroups: []*policy.ConditionGroup{
+					{
+						BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+						Conditions: []*policy.Condition{
+							{
+								SubjectExternalSelectorValue: ".clientId",
+								Operator:                     policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+								SubjectExternalValues:        []string{"my-service", "my-other-service"},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Updated SCS ID: %s\n", resp.GetSubjectConditionSet().GetId())
+
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
 import io.opentdf.platform.policy.*;
 import io.opentdf.platform.policy.subjectmapping.UpdateSubjectConditionSetRequest;
-import java.util.Collections;
 
-public class UpdateSubjectConditionSetExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+var condition = Condition.newBuilder()
+    .setSubjectExternalSelectorValue(".clientId")
+    .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+    .addSubjectExternalValues("my-service")
+    .addSubjectExternalValues("my-other-service")
+    .build();
 
-        var condition = Condition.newBuilder()
-            .setSubjectExternalSelectorValue(".clientId")
-            .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
-            .addSubjectExternalValues("my-service")
-            .addSubjectExternalValues("my-other-service")
-            .build();
+var conditionGroup = ConditionGroup.newBuilder()
+    .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+    .addConditions(condition)
+    .build();
 
-        var conditionGroup = ConditionGroup.newBuilder()
-            .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
-            .addConditions(condition)
-            .build();
+var subjectSet = SubjectSet.newBuilder()
+    .addConditionGroups(conditionGroup)
+    .build();
 
-        var subjectSet = SubjectSet.newBuilder()
-            .addConditionGroups(conditionGroup)
-            .build();
+var req = UpdateSubjectConditionSetRequest.newBuilder()
+    .setId("a0b1c2d3-0000-0000-0000-000000000099")
+    .addSubjectSets(subjectSet)
+    .build();
 
-        var req = UpdateSubjectConditionSetRequest.newBuilder()
-            .setId("a0b1c2d3-0000-0000-0000-000000000099")
-            .addSubjectSets(subjectSet)
-            .build();
+var resp = sdk.getServices().subjectMappings()
+    .updateSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated SCS ID: " + resp.getSubjectConditionSet().getId());
 
-        var resp = sdk.getServices().subjectMappings()
-            .updateSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated SCS ID: " + resp.getSubjectConditionSet().getId());
-
-        sdk.close();
-    }
-}
 ```
 
 </TabItem>
@@ -1592,15 +1698,6 @@ public class UpdateSubjectConditionSetExample {
 
 ```typescript
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
 
 const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
@@ -1622,77 +1719,86 @@ const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
   ],
 });
 console.log(`Updated SCS ID: ${resp.subjectConditionSet?.id}`);
+
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Subject Condition Set object](#subject-condition-set-object).
+
 </details>
 
 <details id="delete-subject-condition-set">
 <summary>Delete a Subject Condition Set</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.DeleteSubjectConditionSet(context.Background(),
-		&subjectmapping.DeleteSubjectConditionSetRequest{
-			Id: "a0b1c2d3-0000-0000-0000-000000000099",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deleted SCS ID: %s\n", resp.GetSubjectConditionSet().GetId())
-}
+client.SubjectMapping.DeleteSubjectConditionSet(ctx, &subjectmapping.DeleteSubjectConditionSetRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
+sdk.getServices().subjectMappings().deleteSubjectConditionSetBlocking(req, metadata).execute()
+```
 
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.DeleteSubjectConditionSetRequest;
-import java.util.Collections;
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-public class DeleteSubjectConditionSetExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+```typescript
+await platform.v1.subjectMapping.deleteSubjectConditionSet({ ... })
+```
 
-        var req = DeleteSubjectConditionSetRequest.newBuilder()
-            .setId("a0b1c2d3-0000-0000-0000-000000000099")
-            .build();
+</TabItem>
+</Tabs>
 
-        var resp = sdk.getServices().subjectMappings()
-            .deleteSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deleted SCS ID: " + resp.getSubjectConditionSet().getId());
+**Parameters**
 
-        sdk.close();
-    }
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject condition set ID to delete. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+resp, err := client.SubjectMapping.DeleteSubjectConditionSet(context.Background(),
+	&subjectmapping.DeleteSubjectConditionSetRequest{
+		Id: "a0b1c2d3-0000-0000-0000-000000000099",
+	},
+)
+if err != nil {
+	log.Fatal(err)
 }
+log.Printf("Deleted SCS ID: %s\n", resp.GetSubjectConditionSet().GetId())
+
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.subjectmapping.DeleteSubjectConditionSetRequest;
+
+var req = DeleteSubjectConditionSetRequest.newBuilder()
+    .setId("a0b1c2d3-0000-0000-0000-000000000099")
+    .build();
+
+var resp = sdk.getServices().subjectMappings()
+    .deleteSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deleted SCS ID: " + resp.getSubjectConditionSet().getId());
+
 ```
 
 </TabItem>
@@ -1700,88 +1806,86 @@ public class DeleteSubjectConditionSetExample {
 
 ```typescript
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
 
 const resp = await platform.v1.subjectMapping.deleteSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
 });
 console.log(`Deleted SCS ID: ${resp.subjectConditionSet?.id}`);
+
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The deleted [Subject Condition Set object](#subject-condition-set-object). This is a hard delete — the object is permanently removed.
+
 </details>
 
 <details id="delete-all-unmapped-subject-condition-sets">
 <summary>Delete All Unmapped Subject Condition Sets</summary>
-<Tabs>
-<TabItem value="go" label="Go">
 
 Permanently deletes all subject condition sets that are not referenced by any subject mapping. Use this as a maintenance operation to clean up orphaned condition sets.
 
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.DeleteAllUnmappedSubjectConditionSets(context.Background(),
-		&subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deleted %d unmapped subject condition sets.\n", len(resp.GetSubjectConditionSets()))
-}
+client.SubjectMapping.DeleteAllUnmappedSubjectConditionSets(ctx, &subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest{})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
+sdk.getServices().subjectMappings().deleteAllUnmappedSubjectConditionSetsBlocking(req, metadata).execute()
+```
 
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest;
-import java.util.Collections;
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-public class DeleteAllUnmappedSubjectConditionSetsExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+```typescript
+await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({})
+```
 
-        var req = DeleteAllUnmappedSubjectConditionSetsRequest.newBuilder().build();
-        var resp = sdk.getServices().subjectMappings()
-            .deleteAllUnmappedSubjectConditionSetsBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deleted " + resp.getSubjectConditionSetsList().size() + " unmapped subject condition sets.");
+</TabItem>
+</Tabs>
 
-        sdk.close();
-    }
+**Parameters**
+
+None.
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+resp, err := client.SubjectMapping.DeleteAllUnmappedSubjectConditionSets(context.Background(),
+	&subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest{},
+)
+if err != nil {
+	log.Fatal(err)
 }
+log.Printf("Deleted %d unmapped subject condition sets.\n", len(resp.GetSubjectConditionSets()))
+
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.subjectmapping.DeleteAllUnmappedSubjectConditionSetsRequest;
+
+var req = DeleteAllUnmappedSubjectConditionSetsRequest.newBuilder().build();
+var resp = sdk.getServices().subjectMappings()
+    .deleteAllUnmappedSubjectConditionSetsBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deleted " + resp.getSubjectConditionSetsList().size() + " unmapped subject condition sets.");
+
 ```
 
 </TabItem>
@@ -1789,23 +1893,119 @@ public class DeleteAllUnmappedSubjectConditionSetsExample {
 
 ```typescript
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
 
 const resp = await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({});
 console.log(`Deleted ${resp.subjectConditionSets.length} unmapped subject condition sets.`);
+
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of all deleted [Subject Condition Set objects](#subject-condition-set-object).
+
 </details>
+
+### Subject Condition Set Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `subjectSets` | `[]SubjectSet` | One or more [subject sets](#subjectset), evaluated with **AND** logic — all must match. |
+| `namespace` | `Namespace` | The parent [Namespace](#namespace-object), if assigned. |
+| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
+| `createdAt` | `timestamp` | When the condition set was created. |
+| `updatedAt` | `timestamp` | When the condition set was last modified. |
+
+### Condition Structure
+
+A Subject Condition Set contains a tree of nested objects that define which entities match. Here's how they fit together:
+
+```
+SubjectConditionSet
+└── subjectSets[]              ← AND across sets
+    └── conditionGroups[]      ← AND across groups
+        ├── booleanOperator    ← AND or OR across conditions within this group
+        └── conditions[]
+            ├── subjectExternalSelectorValue   ← claim path (e.g., ".clientId")
+            ├── operator                        ← IN, NOT_IN, or IN_CONTAINS
+            └── subjectExternalValues[]         ← expected values
+```
+
+**Evaluation logic:** All subject sets must match (AND). Within each set, all condition groups must match (AND). Within each group, conditions are combined by the group's `booleanOperator` (AND or OR).
+
+### SubjectSet
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `conditionGroups` | `[]ConditionGroup` | One or more [condition groups](#conditiongroup). All groups must match (AND logic). |
+
+### ConditionGroup
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `booleanOperator` | `string` | How to combine conditions: `CONDITION_BOOLEAN_TYPE_ENUM_AND` or `CONDITION_BOOLEAN_TYPE_ENUM_OR`. |
+| `conditions` | `[]Condition` | One or more [conditions](#condition) to evaluate. |
+
+### Condition
+
+A single claim match against an entity's token.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `subjectExternalSelectorValue` | `string` | A selector path into the entity's flattened token claims (e.g., `.clientId`, `.realm_access.roles`). |
+| `operator` | `string` | Comparison operator (see below). |
+| `subjectExternalValues` | `[]string` | The values to compare against. |
+
+**Operators:**
+
+| Operator | Description |
+|----------|-------------|
+| `SUBJECT_MAPPING_OPERATOR_ENUM_IN` | The claim value must exactly match one of the `subjectExternalValues`. |
+| `SUBJECT_MAPPING_OPERATOR_ENUM_NOT_IN` | The claim value must not match any of the `subjectExternalValues`. |
+| `SUBJECT_MAPPING_OPERATOR_ENUM_IN_CONTAINS` | The claim value must contain (substring match) one of the `subjectExternalValues`. |
+
+**Example:** "Match entities whose `.clientId` is `my-service` AND whose `.realm_access.roles` contains `developer`":
+
+```json
+{
+  "subjectSets": [
+    {
+      "conditionGroups": [
+        {
+          "booleanOperator": "CONDITION_BOOLEAN_TYPE_ENUM_AND",
+          "conditions": [
+            {
+              "subjectExternalSelectorValue": ".clientId",
+              "operator": "SUBJECT_MAPPING_OPERATOR_ENUM_IN",
+              "subjectExternalValues": ["my-service"]
+            },
+            {
+              "subjectExternalSelectorValue": ".realm_access.roles",
+              "operator": "SUBJECT_MAPPING_OPERATOR_ENUM_IN_CONTAINS",
+              "subjectExternalValues": ["developer"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### SubjectProperty
+
+Used in [MatchSubjectMappings](#match-subject-mappings) to test which subject mappings match a given set of entity claims.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `externalSelectorValue` | `string` | A selector path into the entity's token claims (e.g., `.clientId`, `.realm_access.roles`). |
+| `externalValue` | `string` | The claim value to test against (e.g., `my-service`, `developer`). |
+
+---
+
 ## Subject Mappings
 
 A **subject mapping** links a subject condition set to a specific attribute value and a set of permitted actions (e.g., `DECRYPT`). It answers the question: *"which entities are allowed to do what with data carrying this attribute value?"*
@@ -1820,88 +2020,79 @@ Subject mappings are permanently deleted (not deactivated). There is no restore 
 
 <details id="get-subject-mapping">
 <summary>Get a Subject Mapping</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
-		&subjectmapping.GetSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sm := resp.GetSubjectMapping()
-	log.Printf("Subject Mapping ID: %s, Attribute Value ID: %s\n",
-		sm.GetId(), sm.GetAttributeValue().GetId())
-}
+client.SubjectMapping.GetSubjectMapping(ctx, &subjectmapping.GetSubjectMappingRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.GetSubjectMappingRequest;
-import java.util.Collections;
-
-public class GetSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = GetSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .getSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().subjectMappings().getSubjectMappingBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.subjectMapping.getSubjectMapping({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
+resp, err := client.SubjectMapping.GetSubjectMapping(context.Background(),
+	&subjectmapping.GetSubjectMappingRequest{
+		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+sm := resp.GetSubjectMapping()
+log.Printf("Subject Mapping ID: %s, Attribute Value ID: %s\n",
+	sm.GetId(), sm.GetAttributeValue().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.subjectmapping.GetSubjectMappingRequest;
+
+var req = GetSubjectMappingRequest.newBuilder()
+    .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+    .build();
+
+var resp = sdk.getServices().subjectMappings()
+    .getSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.subjectMapping.getSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
 });
@@ -1910,109 +2101,106 @@ console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Subject Mapping object](#subject-mapping-object).
+
 </details>
 
 <details id="update-subject-mapping">
 <summary>Update a Subject Mapping</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy"
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Replace the actions list on an existing subject mapping
-	resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
-		&subjectmapping.UpdateSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-			Actions: []*policy.Action{
-				{
-					Value: &policy.Action_Standard{
-						Standard: policy.Action_STANDARD_ACTION_DECRYPT,
-					},
-				},
-			},
-			// Optionally replace the subject condition set:
-			// SubjectConditionSetId: "new-scs-uuid",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Updated subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-}
+client.SubjectMapping.UpdateSubjectMapping(ctx, &subjectmapping.UpdateSubjectMappingRequest{...})
 ```
-
-Providing `Actions` replaces the entire actions list. Omit it to leave actions unchanged. Providing `SubjectConditionSetId` swaps the linked condition set.
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.Action;
-import io.opentdf.platform.policy.subjectmapping.UpdateSubjectMappingRequest;
-import java.util.Collections;
-
-public class UpdateSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var decryptAction = Action.newBuilder()
-            .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT)
-            .build();
-
-        var req = UpdateSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .addActions(decryptAction)
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .updateSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().subjectMappings().updateSubjectMappingBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.subjectMapping.updateSubjectMapping({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID to update. |
+| `actions` | [`[]Action`](#action) | No | Replaces the entire actions list. Omit to leave unchanged. |
+| `subjectConditionSetId` | `string` (UUID) | No | Swap the linked condition set. |
+| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+)
+
+resp, err := client.SubjectMapping.UpdateSubjectMapping(context.Background(),
+	&subjectmapping.UpdateSubjectMappingRequest{
+		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+		Actions: []*policy.Action{
+			{
+				Value: &policy.Action_Standard{
+					Standard: policy.Action_STANDARD_ACTION_DECRYPT,
+				},
+			},
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Updated subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.Action;
+import io.opentdf.platform.policy.subjectmapping.UpdateSubjectMappingRequest;
+
+var decryptAction = Action.newBuilder()
+    .setStandard(Action.StandardAction.STANDARD_ACTION_DECRYPT)
+    .build();
+
+var req = UpdateSubjectMappingRequest.newBuilder()
+    .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+    .addActions(decryptAction)
+    .build();
+
+var resp = sdk.getServices().subjectMappings()
+    .updateSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.subjectMapping.updateSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
   actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
@@ -2022,90 +2210,86 @@ console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Subject Mapping object](#subject-mapping-object).
+
 </details>
 
 <details id="delete-subject-mapping">
 <summary>Delete a Subject Mapping</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
-		&subjectmapping.DeleteSubjectMappingRequest{
-			Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Deleted subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
-}
+client.SubjectMapping.DeleteSubjectMapping(ctx, &subjectmapping.DeleteSubjectMappingRequest{...})
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.policy.subjectmapping.DeleteSubjectMappingRequest;
-import java.util.Collections;
-
-public class DeleteSubjectMappingExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
-
-        var req = DeleteSubjectMappingRequest.newBuilder()
-            .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .deleteSubjectMappingBlocking(req, Collections.emptyMap()).execute();
-        System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().getId());
-
-        sdk.close();
-    }
-}
+sdk.getServices().subjectMappings().deleteSubjectMappingBlocking(req, metadata).execute()
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+await platform.v1.subjectMapping.deleteSubjectMapping({ ... })
+```
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
+</TabItem>
+</Tabs>
 
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The subject mapping ID to delete. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
+resp, err := client.SubjectMapping.DeleteSubjectMapping(context.Background(),
+	&subjectmapping.DeleteSubjectMappingRequest{
+		Id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Deleted subject mapping ID: %s\n", resp.GetSubjectMapping().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.subjectmapping.DeleteSubjectMappingRequest;
+
+var req = DeleteSubjectMappingRequest.newBuilder()
+    .setId("890b26db-4ee4-447f-ae8a-2862d922eeef")
+    .build();
+
+var resp = sdk.getServices().subjectMappings()
+    .deleteSubjectMappingBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
 const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
 });
@@ -2114,49 +2298,74 @@ console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The deleted [Subject Mapping object](#subject-mapping-object). This is a hard delete — the object is permanently removed.
+
 </details>
 
 <details id="match-subject-mappings">
 <summary>Match Subject Mappings</summary>
+
+Given a list of subject properties (key-value pairs from an entity's token claims), returns all subject mappings whose condition sets match. Use this to determine which access grants apply to a given entity.
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
-Given a list of subject properties (key-value pairs from an entity's claims or attributes), return all subject mappings whose condition sets match. This is used to determine which access grants apply to a given entity.
+```go
+client.SubjectMapping.MatchSubjectMappings(ctx, &subjectmapping.MatchSubjectMappingsRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().matchSubjectMappingsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.matchSubjectMappings({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subjectProperties` | `[]SubjectProperty` | Yes | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
-package main
-
 import (
-	"context"
-	"log"
-
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
 )
 
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
-		&subjectmapping.MatchSubjectMappingsRequest{
-			SubjectProperties: []*policy.SubjectProperty{
-				{ExternalSelectorValue: ".clientId", ExternalValue: "my-service"},
-				{ExternalSelectorValue: ".realm_access.roles", ExternalValue: "developer"},
-			},
+resp, err := client.SubjectMapping.MatchSubjectMappings(context.Background(),
+	&subjectmapping.MatchSubjectMappingsRequest{
+		SubjectProperties: []*policy.SubjectProperty{
+			{ExternalSelectorValue: ".clientId", ExternalValue: "my-service"},
+			{ExternalSelectorValue: ".realm_access.roles", ExternalValue: "developer"},
 		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, sm := range resp.GetSubjectMappings() {
-		log.Printf("Matched subject mapping ID: %s\n", sm.GetId())
-	}
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+for _, sm := range resp.GetSubjectMappings() {
+	log.Printf("Matched subject mapping ID: %s\n", sm.GetId())
 }
 ```
 
@@ -2164,40 +2373,24 @@ func main() {
 <TabItem value="java" label="Java">
 
 ```java
-package io.opentdf.platform;
-
-import io.opentdf.platform.sdk.*;
 import io.opentdf.platform.policy.SubjectProperty;
 import io.opentdf.platform.policy.subjectmapping.MatchSubjectMappingsRequest;
-import java.util.Collections;
 
-public class MatchSubjectMappingsExample {
-    public static void main(String[] args) throws Exception {
-        SDK sdk = SDKBuilder.newBuilder()
-            .platformEndpoint("http://localhost:8080")
-            .clientSecret("opentdf", "secret")
-            .useInsecurePlaintextConnection(true)
-            .build();
+var req = MatchSubjectMappingsRequest.newBuilder()
+    .addSubjectProperties(SubjectProperty.newBuilder()
+        .setExternalSelectorValue(".clientId")
+        .setExternalValue("my-service")
+        .build())
+    .addSubjectProperties(SubjectProperty.newBuilder()
+        .setExternalSelectorValue(".realm_access.roles")
+        .setExternalValue("developer")
+        .build())
+    .build();
 
-        var req = MatchSubjectMappingsRequest.newBuilder()
-            .addSubjectProperties(SubjectProperty.newBuilder()
-                .setExternalSelectorValue(".clientId")
-                .setExternalValue("my-service")
-                .build())
-            .addSubjectProperties(SubjectProperty.newBuilder()
-                .setExternalSelectorValue(".realm_access.roles")
-                .setExternalValue("developer")
-                .build())
-            .build();
-
-        var resp = sdk.getServices().subjectMappings()
-            .matchSubjectMappingsBlocking(req, Collections.emptyMap()).execute();
-        for (var sm : resp.getSubjectMappingsList()) {
-            System.out.println("Matched subject mapping ID: " + sm.getId());
-        }
-
-        sdk.close();
-    }
+var resp = sdk.getServices().subjectMappings()
+    .matchSubjectMappingsBlocking(req, Collections.emptyMap()).execute();
+for (var sm : resp.getSubjectMappingsList()) {
+    System.out.println("Matched subject mapping ID: " + sm.getId());
 }
 ```
 
@@ -2205,17 +2398,6 @@ public class MatchSubjectMappingsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
 const resp = await platform.v1.subjectMapping.matchSubjectMappings({
   subjectProperties: [
     { externalSelectorValue: '.clientId', externalValue: 'my-service' },
@@ -2229,694 +2411,52 @@ for (const sm of resp.subjectMappings) {
 
 </TabItem>
 </Tabs>
-</details>
 
----
+**Returns**
 
-## Obligations
-
-An **obligation** is a PDP-to-PEP directive that accompanies an access decision: "permit, provided these controls are enforced." Obligations are scoped to a namespace and can carry multiple values and triggers. See [Obligations](/components/policy/obligations) for the policy concept.
-
-Access to the Obligations service:
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-client, err := sdk.New("http://localhost:8080",
-    sdk.WithClientCredentials("client-id", "client-secret", nil),
-)
-if err != nil {
-    log.Fatal(err)
-}
-
-// sdk.Obligations provides the full ObligationsServiceClient interface.
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
-// platform.v1.obligation provides the full Obligations service interface.
-```
-
-</TabItem>
-</Tabs>
-
-### Obligation Definitions
-
-<details id="list-obligations">
-<summary>List Obligations</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/obligations"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Obligations.ListObligations(context.Background(),
-		&obligations.ListObligationsRequest{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, obl := range resp.GetObligations() {
-		log.Printf("Obligation: %s  FQN: %s\n", obl.GetName(), obl.GetFqn())
-	}
-}
-```
-
-To filter by namespace, set `NamespaceId` or `NamespaceFqn` on the request:
-
-```go
-resp, err := client.Obligations.ListObligations(context.Background(),
-    &obligations.ListObligationsRequest{
-        NamespaceFqn: "https://example.com",
-    },
-)
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.listObligations({});
-
-for (const obl of resp.obligations) {
-  console.log(`Obligation: ${obl.name}  FQN: ${obl.fqn}`);
-}
-```
-
-To filter by namespace:
-
-```typescript
-const resp = await platform.v1.obligation.listObligations({
-  namespaceFqn: 'https://example.com',
-});
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="get-obligation">
-<summary>Get an Obligation</summary>
-
-Look up by ID or FQN (one is required):
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/obligations"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Obligations.GetObligation(context.Background(),
-		&obligations.GetObligationRequest{
-			Fqn: "https://example.com/obl/drm",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Obligation ID: %s\n", resp.GetObligation().GetId())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.getObligation({
-  fqn: 'https://example.com/obl/drm',
-});
-
-console.log(`Obligation ID: ${resp.obligation?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="get-obligations-by-fqns">
-<summary>Get Obligations by FQNs</summary>
-
-Batch-fetch multiple obligations by FQN. Returns a map of FQN to `Obligation`:
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.GetObligationsByFQNs(context.Background(),
-    &obligations.GetObligationsByFQNsRequest{
-        Fqns: []string{
-            "https://example.com/obl/drm",
-            "https://example.com/obl/audit",
-        },
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-for fqn, obl := range resp.GetFqnObligationMap() {
-    log.Printf("%s → %s\n", fqn, obl.GetId())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.getObligationsByFQNs({
-  fqns: [
-    'https://example.com/obl/drm',
-    'https://example.com/obl/audit',
-  ],
-});
-
-for (const [fqn, obl] of Object.entries(resp.fqnObligationMap)) {
-  console.log(`${fqn} → ${obl.id}`);
-}
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="create-obligation">
-<summary>Create an Obligation</summary>
-
-Provide either a `NamespaceId` or `NamespaceFqn` (one is required), plus a `Name`. Values can be created inline or added later via [Create Obligation Value](#create-obligation-value):
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/obligations"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Obligations.CreateObligation(context.Background(),
-		&obligations.CreateObligationRequest{
-			NamespaceFqn: "https://example.com",
-			Name:         "drm",
-			Values:       []string{"watermarking", "no-download"},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created obligation: %s  FQN: %s\n",
-		resp.GetObligation().GetId(), resp.GetObligation().GetFqn())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.createObligation({
-  namespaceFqn: 'https://example.com',
-  name: 'drm',
-  values: ['watermarking', 'no-download'],
-});
-
-console.log(`Created obligation: ${resp.obligation?.id}  FQN: ${resp.obligation?.fqn}`);
-```
-
-</TabItem>
-</Tabs>
-
-The resulting FQN follows the convention `<namespace>/obl/<name>` (e.g. `https://example.com/obl/drm`).
+A list of [Subject Mapping objects](#subject-mapping-object) whose condition sets matched the provided subject properties.
 
 </details>
 
-<details id="update-obligation">
-<summary>Update an Obligation</summary>
+### Action
 
-Only the fields you set are updated. Provide the obligation `Id`:
+An action represents what an entity is permitted to do with data. The platform ships with four **standard actions** that cannot be deleted:
 
-<Tabs>
-<TabItem value="go" label="Go">
+| Standard Action | Description |
+|-----------------|-------------|
+| `read` | Read/decrypt data. Used in all TDF decrypt flows. |
+| `create` | Create new data. |
+| `update` | Update existing data. |
+| `delete` | Delete data. |
 
-```go
-resp, err := client.Obligations.UpdateObligation(context.Background(),
-    &obligations.UpdateObligationRequest{
-        Id:   "3f4a7c12-...",
-        Name: "digital-rights",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Updated obligation FQN: %s\n", resp.GetObligation().GetFqn())
-```
+You can also define **custom actions** (e.g., `download`, `queue-to-print`, `send_email`). Custom actions are globally unique, not namespaced, and are lowercased when stored. See [Actions](/components/policy/actions) for more.
 
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.updateObligation({
-  id: '3f4a7c12-...',
-  name: 'digital-rights',
-});
-
-console.log(`Updated obligation FQN: ${resp.obligation?.fqn}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="delete-obligation">
-<summary>Delete an Obligation</summary>
-
-Provide either `Id` or `Fqn`:
-
-<Tabs>
-<TabItem value="go" label="Go">
+Actions are specified by `name` in the SDK:
 
 ```go
-resp, err := client.Obligations.DeleteObligation(context.Background(),
-    &obligations.DeleteObligationRequest{
-        Fqn: "https://example.com/obl/drm",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Deleted obligation: %s\n", resp.GetObligation().GetId())
+// Go
+&policy.Action{Name: "read"}
 ```
 
-</TabItem>
-<TabItem value="js" label="JavaScript">
+```java
+// Java
+Action.newBuilder().setName("read").build();
+```
 
 ```typescript
-const resp = await platform.v1.obligation.deleteObligation({
-  fqn: 'https://example.com/obl/drm',
-});
-
-console.log(`Deleted obligation: ${resp.obligation?.id}`);
+// JavaScript
+{ name: 'read' }
 ```
 
-</TabItem>
-</Tabs>
-</details>
-
----
-
-### Obligation Values
-
-Each obligation can carry one or more values. Value FQNs follow the convention `<namespace>/obl/<obligation_name>/value/<value>` (e.g. `https://example.com/obl/drm/value/watermarking`).
-
-<details id="get-obligation-value">
-<summary>Get an Obligation Value</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.GetObligationValue(context.Background(),
-    &obligations.GetObligationValueRequest{
-        Fqn: "https://example.com/obl/drm/value/watermarking",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Value ID: %s\n", resp.GetValue().GetId())
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.getObligationValue({
-  fqn: 'https://example.com/obl/drm/value/watermarking',
-});
-
-console.log(`Value ID: ${resp.value?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="get-obligation-values-by-fqns">
-<summary>Get Obligation Values by FQNs</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.GetObligationValuesByFQNs(context.Background(),
-    &obligations.GetObligationValuesByFQNsRequest{
-        Fqns: []string{
-            "https://example.com/obl/drm/value/watermarking",
-            "https://example.com/obl/drm/value/no-download",
-        },
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-for fqn, val := range resp.GetFqnValueMap() {
-    log.Printf("%s → %s\n", fqn, val.GetId())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.getObligationValuesByFQNs({
-  fqns: [
-    'https://example.com/obl/drm/value/watermarking',
-    'https://example.com/obl/drm/value/no-download',
-  ],
-});
-
-for (const [fqn, val] of Object.entries(resp.fqnValueMap)) {
-  console.log(`${fqn} → ${val.id}`);
-}
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="create-obligation-value">
-<summary>Create an Obligation Value</summary>
-
-Provide either `ObligationId` or `ObligationFqn`, plus the `Value` string:
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/obligations"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Obligations.CreateObligationValue(context.Background(),
-		&obligations.CreateObligationValueRequest{
-			ObligationFqn: "https://example.com/obl/drm",
-			Value:         "encrypt-at-rest",
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created value: %s  FQN: %s\n",
-		resp.GetValue().GetId(), resp.GetValue().GetFqn())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.createObligationValue({
-  obligationFqn: 'https://example.com/obl/drm',
-  value: 'encrypt-at-rest',
-});
-
-console.log(`Created value: ${resp.value?.id}  FQN: ${resp.value?.fqn}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="update-obligation-value">
-<summary>Update an Obligation Value</summary>
-
-Provide the value `Id`. Triggers provided here **replace** all existing triggers for the value:
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.UpdateObligationValue(context.Background(),
-    &obligations.UpdateObligationValueRequest{
-        Id:    "9a1b2c3d-...",
-        Value: "encrypt-at-rest-v2",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Updated value FQN: %s\n", resp.GetValue().GetFqn())
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.updateObligationValue({
-  id: '9a1b2c3d-...',
-  value: 'encrypt-at-rest-v2',
-});
-
-console.log(`Updated value FQN: ${resp.value?.fqn}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="delete-obligation-value">
-<summary>Delete an Obligation Value</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.DeleteObligationValue(context.Background(),
-    &obligations.DeleteObligationValueRequest{
-        Fqn: "https://example.com/obl/drm/value/watermarking",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Deleted value: %s\n", resp.GetValue().GetId())
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.deleteObligationValue({
-  fqn: 'https://example.com/obl/drm/value/watermarking',
-});
-
-console.log(`Deleted value: ${resp.value?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
----
-
-### Triggers
-
-A trigger links an obligation value to a specific action + attribute value combination (and optionally a PEP identifier). When that action is performed on data carrying that attribute value, the obligation fires.
-
-<details id="add-obligation-trigger">
-<summary>Add an Obligation Trigger</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/common"
-	"github.com/opentdf/platform/protocol/go/policy/obligations"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-	client, err := sdk.New("http://localhost:8080",
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Obligations.AddObligationTrigger(context.Background(),
-		&obligations.AddObligationTriggerRequest{
-			ObligationValue: &common.IdFqnIdentifier{
-				Fqn: "https://example.com/obl/drm/value/watermarking",
-			},
-			Action: &common.IdNameIdentifier{
-				Name: "DECRYPT",
-			},
-			AttributeValue: &common.IdFqnIdentifier{
-				Fqn: "https://example.com/attr/classification/value/secret",
-			},
-		},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Added trigger: %s\n", resp.GetTrigger().GetId())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.addObligationTrigger({
-  obligationValue: { fqn: 'https://example.com/obl/drm/value/watermarking' },
-  action: { name: 'DECRYPT' },
-  attributeValue: { fqn: 'https://example.com/attr/classification/value/secret' },
-});
-
-console.log(`Added trigger: ${resp.trigger?.id}`);
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="list-obligation-triggers">
-<summary>List Obligation Triggers</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.ListObligationTriggers(context.Background(),
-    &obligations.ListObligationTriggersRequest{
-        NamespaceFqn: "https://example.com",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-for _, trigger := range resp.GetTriggers() {
-    log.Printf("Trigger ID: %s\n", trigger.GetId())
-}
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.listObligationTriggers({
-  namespaceFqn: 'https://example.com',
-});
-
-for (const trigger of resp.triggers) {
-  console.log(`Trigger ID: ${trigger.id}`);
-}
-```
-
-</TabItem>
-</Tabs>
-</details>
-
-<details id="remove-obligation-trigger">
-<summary>Remove an Obligation Trigger</summary>
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-resp, err := client.Obligations.RemoveObligationTrigger(context.Background(),
-    &obligations.RemoveObligationTriggerRequest{
-        Id: "7e8f9a0b-...",
-    },
-)
-if err != nil {
-    log.Fatal(err)
-}
-log.Printf("Removed trigger: %s\n", resp.GetTrigger().GetId())
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.removeObligationTrigger({
-  id: '7e8f9a0b-...',
-});
-
-console.log(`Removed trigger: ${resp.trigger?.id}`);
-```
-
-</TabItem>
-</Tabs>
-
-</details>
+### Subject Mapping Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `attributeValue` | `Value` | The [Attribute Value](#attribute-value-object) this mapping grants access to. |
+| `subjectConditionSet` | `SubjectConditionSet` | The [Subject Condition Set](#subject-condition-set-object) that determines which entities match. |
+| `actions` | [`[]Action`](#action) | Permitted [actions](#action) (e.g., `read`, `create`). |
+| `namespace` | `Namespace` | The parent [Namespace](#namespace-object), if assigned. |
+| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
+| `createdAt` | `timestamp` | When the mapping was created. |
+| `updatedAt` | `timestamp` | When the mapping was last modified. |

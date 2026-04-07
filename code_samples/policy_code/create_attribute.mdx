@@ -2,64 +2,68 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="create-attribute">
-<summary>Create Attribute</summary>
+<summary>Create an Attribute</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.Attributes.CreateAttribute(ctx, &attributes.CreateAttributeRequest{...})
+```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().createAttributeBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.createAttribute({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | Yes | The parent namespace ID. |
+| `name` | `string` | Yes | Attribute name (e.g., `classification`, `department`). |
+| `rule` | `string` | Yes | Access rule: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ANY_OF`, or `HIERARCHY`. |
+| `values` | `[]string` | No | Initial values to create with the attribute. Can also be added later via [Create an Attribute Value](#create-attribute-value). |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
 import (
-	"context"
-	"crypto/rand"
-	"log"
-
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
 )
 
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// List namespaces to get a namespace ID
-	listResponse, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
-	if err != nil {
-		log.Fatalf("failed to list namespaces: %s", err)
-	}
-
-	if len(listResponse.GetNamespaces()) == 0 {
-		log.Fatal("no namespaces found")
-	}
-
-	namespaceID := listResponse.GetNamespaces()[0].GetId()
-
-	// Create a new attribute
-	attrRequest := &attributes.CreateAttributeRequest{
-		NamespaceId: namespaceID,
-		Name:        "role" + "-" + rand.Text()[:4],
+resp, err := client.Attributes.CreateAttribute(context.Background(),
+	&attributes.CreateAttributeRequest{
+		NamespaceId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+		Name:        "classification",
 		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
-		Values:      []string{"admin", "developer", "guest"},
-	}
-
-	attribute, err := client.Attributes.CreateAttribute(context.Background(), attrRequest)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created attribute: %s with ID: %s in namespace: %s\n", attribute.GetAttribute().Name, attribute.GetAttribute().GetId(), namespaceID)
+		Values:      []string{"public", "confidential", "secret"},
+	},
+)
+if err != nil {
+	log.Fatal(err)
 }
+log.Printf("Created attribute: %s (ID: %s)\n",
+	resp.GetAttribute().GetName(), resp.GetAttribute().GetId())
 ```
 
 </TabItem>
@@ -73,40 +77,22 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
-const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
-});
-
-// List namespaces to get a namespace ID
-const nsResp = await platform.v1.namespace.listNamespaces({});
-if (nsResp.namespaces.length === 0) {
-  throw new Error('no namespaces found');
-}
-const namespaceId = nsResp.namespaces[0].id;
-
-// Create a new attribute
-const attrResp = await platform.v1.attributes.createAttribute({
-  namespaceId,
-  name: 'role',
+const resp = await platform.v1.attributes.createAttribute({
+  namespaceId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+  name: 'classification',
   rule: AttributeRuleTypeEnum.ANY_OF,
-  values: ['admin', 'developer', 'guest'],
+  values: ['public', 'confidential', 'secret'],
 });
-console.log(
-  'Created attribute:',
-  attrResp.attribute?.name,
-  'with ID:',
-  attrResp.attribute?.id
-);
+console.log('Created attribute:', resp.attribute?.name, 'ID:', resp.attribute?.id);
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Attribute object](/sdks/policy#attribute-object).
+
 </details>
