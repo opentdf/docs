@@ -18,6 +18,13 @@ All examples on this page assume you have created a platform client. See [Authen
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
 client, err := sdk.New("http://localhost:8080",
     sdk.WithClientCredentials("opentdf", "secret", nil),
 )
