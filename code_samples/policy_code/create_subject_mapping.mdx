@@ -37,7 +37,7 @@ await platform.v1.subjectMapping.createSubjectMapping({ ... })
 | `attributeValueId` | `string` (UUID) | Yes | The attribute value this mapping grants access to. |
 | `actions` | [`[]Action`](/sdks/policy#action) | Yes | Permitted [actions](/sdks/policy#action) (e.g., `read`, `create`). |
 | `existingSubjectConditionSetId` | `string` (UUID) | Yes* | ID of an existing subject condition set. Required unless `newSubjectConditionSet` is provided. |
-| `newSubjectConditionSet` | `object` | No | Create a new condition set inline instead of referencing an existing one. Contains a `subjectSets` array — see [Condition Structure](/sdks/policy#condition-structure) for the full shape. |
+| `newSubjectConditionSet` | `object` | Yes* | Create a new condition set inline. Required unless `existingSubjectConditionSetId` is provided. Contains a `subjectSets` array — see [Condition Structure](/sdks/policy#condition-structure). |
 | `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata). |
 
 **Example**

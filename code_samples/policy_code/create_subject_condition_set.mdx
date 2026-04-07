@@ -34,7 +34,7 @@ await platform.v1.subjectMapping.createSubjectConditionSet({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `subjectSets` | `[]SubjectSet` | Yes | One or more subject sets. Each contains condition groups with conditions that match against entity token claims. Subject sets are evaluated with AND logic. |
+| `subjectConditionSet.subjectSets` | `[]SubjectSet` | Yes | One or more subject sets. Each contains condition groups with conditions that match against entity token claims. Subject sets are evaluated with AND logic. See [Condition Structure](/sdks/policy#condition-structure). |
 | `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata). |
 
 **Example**
