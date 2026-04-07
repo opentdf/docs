@@ -134,6 +134,9 @@ EntityIdentifier.newBuilder()
 | Client ID | `ForClientID(id)` | `.setClientId(id)` | `'clientId'` |
 | Username | `ForUserName(name)` | `.setUserName(name)` | `'userName'` |
 | JWT Token | `ForToken(jwt)` | `.setToken(Token.newBuilder().setJwt(jwt))` | `'token'` |
+| Claims | — | `.setClaims(claims)` | `'claims'` |
+
+Claims are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
 
 ---
 
