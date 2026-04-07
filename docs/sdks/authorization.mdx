@@ -135,8 +135,10 @@ EntityIdentifier.newBuilder()
 | Username | `ForUserName(name)` | `.setUserName(name)` | `'userName'` |
 | JWT Token | `ForToken(jwt)` | `.setToken(Token.newBuilder().setJwt(jwt))` | `'token'` |
 | Claims | — | `.setClaims(claims)` | `'claims'` |
+| Registered Resource | — | `.setRegisteredResourceValueFqn(fqn)` | `'registeredResourceValueFqn'` |
 
-Claims are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
+- **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
+- **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
 
 ---
 
@@ -999,12 +1001,13 @@ The result for a single resource in a decision response.
 
 ### Resource
 
-Identifies the data being accessed, by its attribute value FQNs (the same FQNs embedded in a TDF policy).
+Identifies the data being accessed. A resource can be specified in two ways:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `ephemeralId` | `string` | An ID you assign for correlating with the response. Used in bulk requests. |
-| `attributeValues.fqns` | `[]string` | Attribute value FQNs on the resource (1–20). |
+| `attributeValues.fqns` | `[]string` | Attribute value FQNs on the resource (1–20). Use this for TDF payloads or any resource identified by attribute values. |
+| `registeredResourceValueFqn` | `string` (URI) | A [registered resource](/components/policy/registered_resources) value FQN stored in platform policy. Alternative to `attributeValues`. |
 
 ```go
 // Go
