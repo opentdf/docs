@@ -7,59 +7,34 @@ import TabItem from '@theme/TabItem';
 <TabItem value="go" label="Go">
 
 ```go
-package main
+// Imports: rand, policy, attributes, namespaces
 
-import (
-	"context"
-	"crypto/rand"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy"
-	"github.com/opentdf/platform/protocol/go/policy/attributes"
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// List namespaces to get a namespace ID
-	listResponse, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
-	if err != nil {
-		log.Fatalf("failed to list namespaces: %s", err)
-	}
-
-	if len(listResponse.GetNamespaces()) == 0 {
-		log.Fatal("no namespaces found")
-	}
-
-	namespaceID := listResponse.GetNamespaces()[0].GetId()
-
-	// Create a new attribute
-	attrRequest := &attributes.CreateAttributeRequest{
-		NamespaceId: namespaceID,
-		Name:        "role" + "-" + rand.Text()[:4],
-		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
-		Values:      []string{"admin", "developer", "guest"},
-	}
-
-	attribute, err := client.Attributes.CreateAttribute(context.Background(), attrRequest)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created attribute: %s with ID: %s in namespace: %s\n", attribute.GetAttribute().Name, attribute.GetAttribute().GetId(), namespaceID)
+// List namespaces to get a namespace ID
+listResponse, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+if err != nil {
+	log.Fatalf("failed to list namespaces: %s", err)
 }
+
+if len(listResponse.GetNamespaces()) == 0 {
+	log.Fatal("no namespaces found")
+}
+
+namespaceID := listResponse.GetNamespaces()[0].GetId()
+
+// Create a new attribute
+attrRequest := &attributes.CreateAttributeRequest{
+	NamespaceId: namespaceID,
+	Name:        "role" + "-" + rand.Text()[:4],
+	Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+	Values:      []string{"admin", "developer", "guest"},
+}
+
+attribute, err := client.Attributes.CreateAttribute(context.Background(), attrRequest)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Created attribute: %s with ID: %s in namespace: %s\n", attribute.GetAttribute().Name, attribute.GetAttribute().GetId(), namespaceID)
+
 ```
 
 </TabItem>
@@ -73,13 +48,7 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
 
 // List namespaces to get a namespace ID
 const nsResp = await platform.v1.namespace.listNamespaces({});
@@ -101,6 +70,7 @@ console.log(
   'with ID:',
   attrResp.attribute?.id
 );
+
 ```
 
 </TabItem>

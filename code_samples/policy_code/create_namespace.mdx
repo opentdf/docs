@@ -7,39 +7,14 @@ import TabItem from '@theme/TabItem';
 <TabItem value="go" label="Go">
 
 ```go
-package main
+// Imports: namespaces
+namespace := &namespaces.CreateNamespaceRequest{
+	Name: "opentdf.io",
+}
 
-import (
-	"context"
-	"log"
-
-	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
-)
-
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create Namespace
-	namespace := &namespaces.CreateNamespaceRequest{
-		Name: "opentdf.io",
-	}
-
-	_, err = client.Namespaces.CreateNamespace(context.Background(), namespace)
-	if err != nil {
-		log.Fatal(err)
-	}
+_, err = client.Namespaces.CreateNamespace(context.Background(), namespace)
+if err != nil {
+	log.Fatal(err)
 }
 ```
 
@@ -54,18 +29,12 @@ import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
 // Create Namespace
 const resp = await platform.v1.namespace.createNamespace({
   name: 'opentdf.io',
 });
 console.log('Created namespace:', resp.namespace?.id);
+
 ```
 
 </TabItem>

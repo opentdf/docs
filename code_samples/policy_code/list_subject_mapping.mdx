@@ -7,40 +7,17 @@ import TabItem from '@theme/TabItem';
 <TabItem value="go" label="Go">
 
 ```go
-package main
+// Imports: subjectmapping
 
-import (
-	"context"
-	"log"
+// List Subject Mapping
 
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
+subjectmappings, err := client.SubjectMapping.ListSubjectMappings(context.Background(), &subjectmapping.ListSubjectMappingsRequest{})
+if err != nil {
+	log.Fatal(err)
+}
 
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// List Subject Mapping
-
-	subjectmappings, err := client.SubjectMapping.ListSubjectMappings(context.Background(), &subjectmapping.ListSubjectMappingsRequest{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, sm := range subjectmappings.GetSubjectMappings() {
-		log.Printf("Subject Mapping: %s", sm.GetId())
-	}
+for _, sm := range subjectmappings.GetSubjectMappings() {
+	log.Printf("Subject Mapping: %s", sm.GetId())
 }
 
 ```
@@ -56,18 +33,12 @@ import ListSubjectMappingsExample from '@site/code_samples/java/list-subject-map
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
 // List Subject Mappings
 const resp = await platform.v1.subjectMapping.listSubjectMappings({});
 for (const sm of resp.subjectMappings) {
   console.log('Subject Mapping:', sm.id);
 }
+
 ```
 
 </TabItem>
