@@ -1894,6 +1894,15 @@ A list of all deleted [Subject Condition Set objects](#subject-condition-set-obj
 | `createdAt` | `timestamp` | When the condition set was created. |
 | `updatedAt` | `timestamp` | When the condition set was last modified. |
 
+### SubjectProperty
+
+Used in `MatchSubjectMappings` and within condition definitions. Each entry represents a claim from an entity's token.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `externalSelectorValue` | `string` | A JSONPath-style selector into the entity's token claims (e.g., `.clientId`, `.realm_access.roles`). |
+| `externalValue` | `string` | The value to match against (e.g., `my-service`, `developer`). |
+
 ---
 
 ## Subject Mappings
