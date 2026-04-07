@@ -134,7 +134,6 @@ EntityIdentifier.newBuilder()
 | Client ID | `ForClientID(id)` | `.setClientId(id)` | `'clientId'` |
 | Username | `ForUserName(name)` | `.setUserName(name)` | `'userName'` |
 | JWT Token | `ForToken(jwt)` | `.setToken(Token.newBuilder().setJwt(jwt))` | `'token'` |
-| UUID | — | `.setUuid(uuid)` | `'uuid'` |
 
 ---
 
@@ -222,7 +221,9 @@ if err != nil {
     log.Fatal(err)
 }
 
-log.Printf("Scoped entitlements: %v", entitlements.GetEntitlements())
+for _, e := range entitlements.GetEntitlements() {
+    fmt.Printf("Entitled to: %v\n", e.GetActionsPerAttributeValueFqn())
+}
 ```
 
 <details>
