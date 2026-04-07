@@ -245,38 +245,26 @@ You can limit entitlement queries to specific attribute hierarchies:
 
 ```go
 import (
-    "github.com/opentdf/platform/protocol/go/authorization"
-    "github.com/opentdf/platform/protocol/go/entity"
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
     "google.golang.org/protobuf/proto"
 )
 
-// Note: This example uses the v1 API as WithComprehensiveHierarchy is a v1-only feature
 func getEntitlementsWithScope(client *sdk.SDK) {
-    entitlementReq := &authorization.GetEntitlementsRequest{
-        EntityIdentifier: &authorization.EntityIdentifier{
-            EntityChain: &entity.EntityChain{
-                Entities: []*entity.Entity{
-                    {
-                        Id: "user-123",
-                        EntityType: &entity.Entity_EmailAddress{
-                            EmailAddress: "user@company.com",
-                        },
-                    },
-                },
-            },
-        },
-        // When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value
+    entitlementReq := &authorizationv2.GetEntitlementsRequest{
+        EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
+        // When true, returns all entitled values for attributes with hierarchy rules,
+        // propagating down from the entitled value
         WithComprehensiveHierarchy: proto.Bool(true),
     }
-    
-    entitlements, err := client.Authorization.GetEntitlements(
-        context.Background(), 
+
+    entitlements, err := client.AuthorizationV2.GetEntitlements(
+        context.Background(),
         entitlementReq,
     )
     if err != nil {
         log.Fatal(err)
     }
-    
+
     log.Printf("Scoped entitlements: %v", entitlements.GetEntitlements())
 }
 ```
