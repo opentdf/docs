@@ -101,6 +101,27 @@ All policy objects support optional metadata. When creating or updating a resour
 
 `labels` is the only supported field. Other fields are silently ignored. When updating, use `metadataUpdateBehavior` to control whether labels are replaced or merged (see [Update a Namespace](#update-namespace) for an example).
 
+### Pagination
+
+All `List` operations return a `pagination` object alongside the results:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `currentOffset` | `int` | The offset that was requested. |
+| `nextOffset` | `int` | The offset to use for the next page. Empty when no more results remain. |
+| `total` | `int` | Total count of results across all pages. |
+
+Example response shape (Go):
+
+```go
+resp, err := client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{
+    Pagination: &policy.PageRequest{Limit: 10, Offset: 0},
+})
+// resp.GetPagination().GetCurrentOffset() == 0
+// resp.GetPagination().GetNextOffset() == 10
+// resp.GetPagination().GetTotal() == 42
+```
+
 ---
 
 ## Namespaces
@@ -1460,7 +1481,7 @@ for (const scs of resp.subjectConditionSets) {
 
 **Returns**
 
-A list of [Subject Condition Set objects](#subject-condition-set-object). Includes pagination metadata.
+A list of [Subject Condition Set objects](#subject-condition-set-object). Includes [pagination](#pagination) metadata.
 
 </details>
 
