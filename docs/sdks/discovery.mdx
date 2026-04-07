@@ -177,7 +177,7 @@ const attrs = await listAttributes(platformUrl, auth, 'opentdf.io');
 
 **Returns**
 
-A list of `Attribute` objects, each with `fqn`, `rule`, and nested `values`. Paginates automatically — you always get the full list back without managing page tokens.
+A list of [Attribute](/sdks/policy#attribute-object) objects, each with nested [values](/sdks/policy#attribute-value-object). Paginates automatically — you always get the full list back without managing page tokens.
 
 ---
 
@@ -619,7 +619,7 @@ Other supported entity types (placed inside the `entities` array):
 
 **Returns**
 
-A list of attribute value FQN strings that the entity is entitled to access.
+A list of [attribute value](/sdks/policy#attribute-value-object) FQN strings that the entity is entitled to access.
 
 :::warning Authorization required
 Querying another entity's attributes requires your caller to have appropriate platform permissions on the `GetEntitlements` endpoint. Without this, the call will return a `permission_denied` error.
