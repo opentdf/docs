@@ -35,7 +35,7 @@ await platform.v1.namespace.createNamespace({ ... })
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | `string` | Yes | A valid hostname (e.g., `opentdf.io`, `example.com`). |
-| `metadata` | `object` | No | Key-value [labels](/sdks/policy#metadata), e.g., `{"labels": {"owner": "platform-team"}}`. |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata), e.g., `{"labels": {"owner": "platform-team"}}`. |
 
 **Example**
 

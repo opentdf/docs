@@ -38,7 +38,7 @@ await platform.v1.attributes.createAttribute({ ... })
 | `name` | `string` | Yes | Attribute name (e.g., `classification`, `department`). |
 | `rule` | `string` | Yes | Access rule: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ANY_OF`, or `HIERARCHY`. |
 | `values` | `[]string` | No | Initial values to create with the attribute. Can also be added later via [Create an Attribute Value](#create-attribute-value). |
-| `metadata` | `object` | No | Key-value [labels](/sdks/policy#metadata). |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata). |
 
 **Example**
 
