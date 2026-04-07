@@ -194,30 +194,3 @@ for (const e of resp.entitlements) {
 
 This pattern applies to all platform objects. Each SDK page includes type reference tables listing the available fields.
 
-### Related Objects in Responses
-
-`GetSubjectConditionSet` returns the condition set plus all subject mappings that reference it. This is currently the only `Get` response that includes related objects — other `Get` operations return only the requested resource.
-
-```go
-resp, err := client.SubjectMapping.GetSubjectConditionSet(ctx, req)
-scs := resp.GetSubjectConditionSet()                // the condition set itself
-mappings := resp.GetAssociatedSubjectMappings()      // []SubjectMapping that use this SCS
-fmt.Printf("This condition set is used by %d subject mappings\n", len(mappings))
-```
-
-```java
-var resp = sdk.getServices().subjectMappings()
-    .getSubjectConditionSetBlocking(req, Collections.emptyMap()).execute();
-var scs = resp.getSubjectConditionSet();             // the condition set itself
-var mappings = resp.getAssociatedSubjectMappingsList(); // List<SubjectMapping> that use this SCS
-System.out.println("Used by " + mappings.size() + " subject mappings");
-```
-
-```typescript
-const resp = await platform.v1.subjectMapping.getSubjectConditionSet({ id: '...' });
-resp.subjectConditionSet;              // the condition set itself
-resp.associatedSubjectMappings;        // SubjectMapping[] that use this SCS
-console.log(`Used by ${resp.associatedSubjectMappings.length} subject mappings`);
-```
-
-This is useful for understanding dependencies before updating or deleting a resource — for example, checking whether a condition set is in use before removing it.
