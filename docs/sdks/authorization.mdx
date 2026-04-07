@@ -24,111 +24,59 @@ OpenTDF's authorization system provides two primary methods for access control: 
 2. **During Resource Access**: Use `GetDecision` to enforce access controls when accessing specific resources
 3. **For Bulk Operations**: Use `GetDecisionBulk` for efficient batch authorization
 
-## Authentication Setup
+## Setup
 
-All authorization calls require proper authentication. Here's how to set up the SDK client:
-
-<JsAuthNote />
+All examples on this page assume you have created a platform client. See [Authentication](/sdks/authentication) for full details including DPoP key binding.
 
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "log"
-    
-    "github.com/opentdf/platform/protocol/go/authorization"
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/entity"
-    "github.com/opentdf/platform/protocol/go/policy"
-    "github.com/opentdf/platform/sdk"
-    "google.golang.org/protobuf/proto"
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("opentdf", "secret", nil),
 )
-
-func main() {
-    platformEndpoint := "http://localhost:8080"
-    
-    // Create authenticated client
-    client, err := sdk.New(
-        platformEndpoint,
-        sdk.WithClientCredentials("opentdf", "secret", nil),
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Client is ready for authorization calls
+if err != nil {
+    log.Fatal(err)
 }
+
+// All Go snippets below use `client` and `context.Background()`.
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
-import io.opentdf.platform.sdk.*;
-import io.opentdf.platform.authorization.*;
-import io.opentdf.platform.entity.*;
-import io.opentdf.platform.policy.*;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("opentdf", "secret")
+    .useInsecurePlaintextConnection(true)
+    .build();
 
-public class AuthorizationSetup {
-    public static void main(String[] args) {
-        String clientId = "opentdf";
-        String clientSecret = "secret";
-        String platformEndpoint = "http://localhost:8080";
-        
-        SDKBuilder builder = new SDKBuilder();
-        SDK sdk = builder.platformEndpoint(platformEndpoint)
-            .clientSecret(clientId, clientSecret)
-            .useInsecurePlaintextConnection(true)
-            .build();
-                
-        // SDK is ready for authorization calls
-    }
-}
+// All Java snippets below use `sdk`.
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-// Option 1: Using interceptors (recommended for new code)
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platformClient = new PlatformClient({
   interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
+    clientId: 'opentdf', clientSecret: 'secret',
     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
   }))],
   platformUrl: 'http://localhost:8080',
 });
 
-// Option 2: Legacy AuthProvider (deprecated — use interceptors for new code)
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
-
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-  clientId: 'opentdf',
-  clientSecret: 'secret',
-  oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-});
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
-await client.ready;
-
-const platformClient2 = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
+// All JavaScript snippets below use `platformClient`.
 ```
 
 </TabItem>
 </Tabs>
+
+<JsAuthNote />
 
 ## Getting Entitlements
 
@@ -145,6 +93,8 @@ Use `GetEntitlements` to discover what attribute values an entity can access. Th
 #### V2 API (Recommended)
 
 ```go
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+
 func getEntitlementsV2(client *sdk.SDK) {
     entitlementReq := &authorizationv2.GetEntitlementsRequest{
         EntityIdentifier: authorizationv2.ForEmail("bob@OrgA.com"),
@@ -170,6 +120,11 @@ func getEntitlementsV2(client *sdk.SDK) {
 <summary>V1 API (Legacy)</summary>
 
 ```go
+import (
+    "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getEntitlementsV1(client *sdk.SDK) {
     // V1 API also supports GetEntitlements, but uses a different request shape.
     // Here we use GetDecisions to show bulk decision-based entitlement discovery.
@@ -289,6 +244,12 @@ You can limit entitlement queries to specific attribute hierarchies:
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/entity"
+    "google.golang.org/protobuf/proto"
+)
+
 // Note: This example uses the v1 API as WithComprehensiveHierarchy is a v1-only feature
 func getEntitlementsWithScope(client *sdk.SDK) {
     entitlementReq := &authorization.GetEntitlementsRequest{
@@ -395,6 +356,11 @@ Use `GetDecision` when you need to authorize access to specific resources. This 
 #### V2 API (Recommended)
 
 ```go
+import (
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getDecisionV2(client *sdk.SDK) {
     decisionReq := &authorizationv2.GetDecisionRequest{
         EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
@@ -437,6 +403,11 @@ func getDecisionV2(client *sdk.SDK) {
 <summary>V1 API (Legacy)</summary>
 
 ```go
+import (
+    "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getDecisionV1(client *sdk.SDK) {
     // V1 API uses bulk decisions
     decisionRequests := []*authorization.DecisionRequest{{
@@ -602,6 +573,11 @@ For efficient batch processing, use bulk decision endpoints:
 #### V2 API (Recommended)
 
 ```go
+import (
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getBulkDecisionsV2(client *sdk.SDK) {
     bulkReq := &authorizationv2.GetDecisionBulkRequest{
         DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
@@ -656,6 +632,11 @@ func getBulkDecisionsV2(client *sdk.SDK) {
 <summary>V1 API (Legacy)</summary>
 
 ```go
+import (
+    "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getBulkDecisionsV1(client *sdk.SDK) {
     // V1 API uses GetDecisions for bulk processing
     decisionRequests := []*authorization.DecisionRequest{{
@@ -885,6 +866,11 @@ All five constructors work with every v2 authorization method: `GetDecision`, `G
 #### V2 API (Recommended)
 
 ```go
+import (
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
     decisionReq := &authorizationv2.GetDecisionRequest{
         EntityIdentifier: authorizationv2.ForToken(jwtToken),
@@ -915,6 +901,12 @@ func getDecisionWithTokenV2(client *sdk.SDK, jwtToken string) {
 <summary>V1 API (Legacy)</summary>
 
 ```go
+import (
+    "github.com/opentdf/platform/protocol/go/authorization"
+    "github.com/opentdf/platform/protocol/go/entity"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func getDecisionWithTokenV1(client *sdk.SDK, jwtToken string) {
     // V1 API uses bulk decisions with token entity
     decisionRequests := []*authorization.DecisionRequest{{
@@ -1048,6 +1040,8 @@ async function getDecisionWithToken(platformClient: PlatformClient, jwtToken: st
 ### Integration Patterns
 
 ```go
+import "github.com/opentdf/platform/protocol/go/authorization"
+
 // Example: Authorization middleware
 func authorizationMiddleware(next http.Handler, sdk *sdk.SDK) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1077,6 +1071,11 @@ Always implement comprehensive error handling for authorization calls:
 <TabItem value="go" label="Go">
 
 ```go
+import (
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
 func safeAuthorizationCall(client *sdk.SDK, req *authorizationv2.GetDecisionRequest) {
     decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
     
