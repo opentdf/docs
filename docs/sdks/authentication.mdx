@@ -14,6 +14,41 @@ The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-c
 See the [Authentication Decision Guide](/guides/authentication-guide) to choose the right approach for your use case.
 :::
 
+## Setup
+
+All examples on this page assume you have installed the SDK and imported the base packages:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+```
+
+</TabItem>
+</Tabs>
+
+---
+
 ## Client Credentials
 
 The most common authentication method for **backend services, scripts, and CI/CD pipelines**. Uses an [OAuth2](https://oauth.net/2/) client ID and secret to obtain tokens directly from the IdP.
