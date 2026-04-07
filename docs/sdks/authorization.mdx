@@ -968,6 +968,14 @@ handleDecisionResponse(decision)
 
 ---
 
+## Typical Workflow
+
+1. **During resource discovery**: Use [GetEntitlements](#getentitlements) to show users what data they can access — build UIs, pre-filter content, or understand an entity's overall access scope
+2. **During resource access**: Use [GetDecision](#getdecision) to enforce access controls when an entity attempts to access a specific resource
+3. **For bulk operations**: Use [GetDecisionBulk](#getdecisionbulk) for efficient batch authorization when checking multiple resources at once
+
+---
+
 ## Type Reference
 
 ### Decision
