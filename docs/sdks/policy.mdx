@@ -455,12 +455,50 @@ Attributes and attribute values are deactivated, not permanently deleted.
 
 <details id="get-attribute">
 <summary>Get an Attribute</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.GetAttribute(ctx, &attributes.GetAttributeRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().getAttributeBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.getAttribute({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The attribute UUID. |
+| `fqn` | `string` | The attribute FQN (e.g., `https://example.com/attr/classification`). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
-// Look up by FQN
+
 resp, err := client.Attributes.GetAttribute(context.Background(),
 	&attributes.GetAttributeRequest{
 		Identifier: &attributes.GetAttributeRequest_Fqn{
@@ -476,7 +514,6 @@ log.Printf("Attribute: %s, Rule: %s\n", attr.GetName(), attr.GetRule())
 for _, v := range attr.GetValues() {
 	log.Printf("  Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
 }
-
 ```
 
 </TabItem>
@@ -496,16 +533,12 @@ System.out.println("Attribute: " + attr.getName() + " (" + attr.getFqn() + ")");
 for (var value : attr.getValuesList()) {
     System.out.println("  Value: " + value.getValue() + " (ID: " + value.getId() + ")");
 }
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
-// Look up by FQN
 const resp = await platform.v1.attributes.getAttribute({
   fqn: 'https://example.com/attr/classification',
 });
@@ -513,15 +546,56 @@ console.log(`Attribute: ${resp.attribute?.name}, Rule: ${resp.attribute?.rule}`)
 for (const v of resp.attribute?.values ?? []) {
   console.log(`  Value: ${v.value} (ID: ${v.id})`);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Attribute object](#attribute-object) with nested values.
+
 </details>
 
 <details id="update-attribute">
 <summary>Update an Attribute</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.UpdateAttribute(ctx, &attributes.UpdateAttributeRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().updateAttributeBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.updateAttribute({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The attribute ID to update. |
+| `metadata` | `object` | No | Key-value [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -530,6 +604,7 @@ import (
 	"github.com/opentdf/platform/protocol/go/common"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
 )
+
 resp, err := client.Attributes.UpdateAttribute(context.Background(),
 	&attributes.UpdateAttributeRequest{
 		Id: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -543,7 +618,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Updated attribute ID: %s\n", resp.GetAttribute().GetId())
-
 ```
 
 </TabItem>
@@ -565,35 +639,72 @@ var req = UpdateAttributeRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .updateAttributeBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Updated attribute ID: " + resp.getAttribute().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.updateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
   metadata: { labels: { reviewed: 'true' } },
   metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_EXTEND',
 });
 console.log(`Updated attribute ID: ${resp.attribute?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Attribute object](#attribute-object).
+
 </details>
 
 <details id="deactivate-attribute">
 <summary>Deactivate an Attribute</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.DeactivateAttribute(ctx, &attributes.DeactivateAttributeRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().deactivateAttributeBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.deactivateAttribute({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The attribute ID to deactivate. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
 resp, err := client.Attributes.DeactivateAttribute(context.Background(),
 	&attributes.DeactivateAttributeRequest{
 		Id: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -603,7 +714,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Deactivated attribute: %s\n", resp.GetAttribute().GetId())
-
 ```
 
 </TabItem>
@@ -619,24 +729,25 @@ var req = DeactivateAttributeRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .deactivateAttributeBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Deactivated attribute: " + resp.getAttribute().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.deactivateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
 });
 console.log(`Deactivated attribute: ${resp.attribute?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+Empty response. The attribute is soft-deleted and will no longer appear in `ListAttributes` unless you filter by `INACTIVE` or `ANY` state.
+
 </details>
 
 ### Attribute Values
@@ -645,11 +756,49 @@ Attribute values are the individual members of an attribute (e.g., `secret`, `to
 
 <details id="create-attribute-value">
 <summary>Create an Attribute Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.CreateAttributeValue(ctx, &attributes.CreateAttributeValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().createAttributeValueBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.createAttributeValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
+| `value` | `string` | Yes | The value string (e.g., `top-secret`). |
+| `metadata` | `object` | No | Key-value [labels](#metadata). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
 resp, err := client.Attributes.CreateAttributeValue(context.Background(),
 	&attributes.CreateAttributeValueRequest{
 		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -660,7 +809,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Created value: %s (ID: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetId())
-
 ```
 
 </TabItem>
@@ -677,34 +825,72 @@ var req = CreateAttributeValueRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .createAttributeValueBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Created value: " + resp.getValue().getValue() + " (ID: " + resp.getValue().getId() + ")");
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.createAttributeValue({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
   value: 'top-secret',
 });
 console.log(`Created value: ${resp.value?.value} (ID: ${resp.value?.id})`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="list-attribute-values">
 <summary>List Attribute Values</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.ListAttributeValues(ctx, &attributes.ListAttributeValuesRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().listAttributeValuesBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.listAttributeValues({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
+| `state` | `string` | No | Filter by state: `ACTIVE` (default), `INACTIVE`, or `ANY`. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
 resp, err := client.Attributes.ListAttributeValues(context.Background(),
 	&attributes.ListAttributeValuesRequest{
 		AttributeId: "a1b2c3d4-0000-0000-0000-000000000001",
@@ -716,7 +902,6 @@ if err != nil {
 for _, v := range resp.GetValues() {
 	log.Printf("Value: %s (ID: %s)\n", v.GetValue(), v.GetId())
 }
-
 ```
 
 </TabItem>
@@ -734,36 +919,75 @@ var resp = sdk.getServices().attributes()
 for (var value : resp.getValuesList()) {
     System.out.println("Value: " + value.getValue() + " (ID: " + value.getId() + ")");
 }
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.listAttributeValues({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
 });
 for (const v of resp.values) {
   console.log(`Value: ${v.value} (ID: ${v.id})`);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Attribute Value objects](#attribute-value-object).
+
 </details>
 
 <details id="get-attribute-value">
 <summary>Get an Attribute Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.GetAttributeValue(ctx, &attributes.GetAttributeValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().getAttributeValueBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.getAttributeValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The value UUID. |
+| `fqn` | `string` | The value FQN (e.g., `https://example.com/attr/classification/value/secret`). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
-// Look up by FQN
+
 resp, err := client.Attributes.GetAttributeValue(context.Background(),
 	&attributes.GetAttributeValueRequest{
 		Identifier: &attributes.GetAttributeValueRequest_Fqn{
@@ -775,7 +999,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Value: %s (FQN: %s)\n", resp.GetValue().GetValue(), resp.GetValue().GetFqn())
-
 ```
 
 </TabItem>
@@ -791,36 +1014,72 @@ var req = GetAttributeValueRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .getAttributeValueBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Value: " + resp.getValue().getValue() + " (FQN: " + resp.getValue().getFqn() + ")");
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
-// Look up by FQN
 const resp = await platform.v1.attributes.getAttributeValue({
   fqn: 'https://example.com/attr/classification/value/secret',
 });
 console.log(`Value: ${resp.value?.value} (FQN: ${resp.value?.fqn})`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A single [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="get-attribute-values-by-fqns">
 <summary>Get Attribute Values by FQNs</summary>
-<Tabs>
-<TabItem value="go" label="Go">
 
 Batch-fetch multiple attribute values by their FQNs in a single request. Returns a map keyed by FQN, each entry containing both the parent attribute definition and the specific value.
 
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.GetAttributeValuesByFqns(ctx, &attributes.GetAttributeValuesByFqnsRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().getAttributeValuesByFqnsBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.getAttributeValuesByFqns({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fqns` | `[]string` | Yes | Attribute value FQNs to look up. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
 resp, err := client.Attributes.GetAttributeValuesByFqns(context.Background(),
 	&attributes.GetAttributeValuesByFqnsRequest{
 		Fqns: []string{
@@ -834,12 +1093,8 @@ if err != nil {
 }
 for fqn, entry := range resp.GetFqnAttributeValues() {
 	log.Printf("FQN: %s -> Attribute: %s, Value: %s\n",
-		fqn,
-		entry.GetAttribute().GetName(),
-		entry.GetValue().GetValue(),
-	)
+		fqn, entry.GetAttribute().GetName(), entry.GetValue().GetValue())
 }
-
 ```
 
 </TabItem>
@@ -859,17 +1114,15 @@ var req = GetAttributeValuesByFqnsRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .getAttributeValuesByFqnsBlocking(req, Collections.emptyMap()).execute();
 resp.getFqnAttributeValuesMap().forEach((fqn, entry) ->
-    System.out.println("FQN: " + fqn + " -> Attribute: " + entry.getAttribute().getName() + ", Value: " + entry.getValue().getValue())
+    System.out.println("FQN: " + fqn + " -> Attribute: " + entry.getAttribute().getName() +
+        ", Value: " + entry.getValue().getValue())
 );
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.getAttributeValuesByFqns({
   fqns: [
     'https://example.com/attr/classification/value/secret',
@@ -879,15 +1132,56 @@ const resp = await platform.v1.attributes.getAttributeValuesByFqns({
 for (const [fqn, entry] of Object.entries(resp.fqnAttributeValues)) {
   console.log(`FQN: ${fqn} -> Attribute: ${entry.attribute?.name}, Value: ${entry.value?.value}`);
 }
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A map of FQN to `{attribute, value}` pairs. Each entry contains the parent [Attribute object](#attribute-object) and the specific [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="update-attribute-value">
 <summary>Update an Attribute Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.UpdateAttributeValue(ctx, &attributes.UpdateAttributeValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().updateAttributeValueBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.updateAttributeValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The value ID to update. |
+| `metadata` | `object` | No | Key-value [labels](#metadata). |
+| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -896,6 +1190,7 @@ import (
 	"github.com/opentdf/platform/protocol/go/common"
 	"github.com/opentdf/platform/protocol/go/policy/attributes"
 )
+
 resp, err := client.Attributes.UpdateAttributeValue(context.Background(),
 	&attributes.UpdateAttributeValueRequest{
 		Id: "v1b2c3d4-0000-0000-0000-000000000001",
@@ -909,7 +1204,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Updated value ID: %s\n", resp.GetValue().GetId())
-
 ```
 
 </TabItem>
@@ -931,35 +1225,72 @@ var req = UpdateAttributeValueRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .updateAttributeValueBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Updated value ID: " + resp.getValue().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.updateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
   metadata: { labels: { deprecated: 'false' } },
   metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_EXTEND',
 });
 console.log(`Updated value ID: ${resp.value?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The updated [Attribute Value object](#attribute-value-object).
+
 </details>
 
 <details id="deactivate-attribute-value">
 <summary>Deactivate an Attribute Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Attributes.DeactivateAttributeValue(ctx, &attributes.DeactivateAttributeValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().attributes().deactivateAttributeValueBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.attributes.deactivateAttributeValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The value ID to deactivate. |
+
+**Example**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
 import "github.com/opentdf/platform/protocol/go/policy/attributes"
+
 resp, err := client.Attributes.DeactivateAttributeValue(context.Background(),
 	&attributes.DeactivateAttributeValueRequest{
 		Id: "v1b2c3d4-0000-0000-0000-000000000001",
@@ -969,7 +1300,6 @@ if err != nil {
 	log.Fatal(err)
 }
 log.Printf("Deactivated value: %s\n", resp.GetValue().GetId())
-
 ```
 
 </TabItem>
@@ -985,24 +1315,25 @@ var req = DeactivateAttributeValueRequest.newBuilder()
 var resp = sdk.getServices().attributes()
     .deactivateAttributeValueBlocking(req, Collections.emptyMap()).execute();
 System.out.println("Deactivated value: " + resp.getValue().getId());
-
 ```
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-
 const resp = await platform.v1.attributes.deactivateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
 });
 console.log(`Deactivated value: ${resp.value?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+Empty response. The value is soft-deleted and will no longer appear in listings unless you filter by `INACTIVE` or `ANY` state.
+
 </details>
 
 ### Attribute Object
