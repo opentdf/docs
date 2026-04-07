@@ -34,8 +34,12 @@ await platform.v1.subjectMapping.listSubjectMappings({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | No | Filter to mappings in this namespace. |
+| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN. Alternative to `namespaceId`. |
 | `pagination.limit` | `int` | No | Maximum results per page. |
 | `pagination.offset` | `int` | No | Number of results to skip. |
+
+Without a namespace filter, returns all subject mappings across all namespaces.
 
 **Example**
 
