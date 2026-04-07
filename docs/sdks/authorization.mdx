@@ -899,85 +899,6 @@ A list of [GetDecisionMultiResourceResponse](#getdecisionmultiresourceresponse) 
 
 ---
 
-## Best Practices
-
-### Performance
-
-- **Batch operations**: Use `GetDecisionBulk` for multiple authorization checks instead of calling `GetDecision` in a loop
-- **Cache entitlements**: Cache `GetEntitlements` results when appropriate (consider TTL)
-- **Scope queries**: Use `withComprehensiveHierarchy` only when you need expanded hierarchy values
-
-### Security
-
-- **Least privilege**: Request only the minimum necessary permissions
-- **Token validation**: Ensure JWT tokens are properly validated before passing to `ForToken`
-- **Obligation handling**: Always process and fulfill returned [obligations](/components/policy/obligations)
-- **Deny by default**: If an authorization call fails, deny access rather than allowing it
-
-### Integration Pattern
-
-```go
-import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-
-// Example: Authorization middleware
-func authorizationMiddleware(next http.Handler, client *sdk.SDK) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        decision, err := client.AuthorizationV2.GetDecision(
-            r.Context(),
-            &authorizationv2.GetDecisionRequest{
-                EntityIdentifier: authorizationv2.WithRequestToken(),
-                Action:           &policy.Action{Name: "access"},
-                Resource:         resourceFromPath(r.URL.Path),
-            },
-        )
-        if err != nil || decision.GetDecision().GetDecision() != authorizationv2.Decision_DECISION_PERMIT {
-            http.Error(w, "Access denied", http.StatusForbidden)
-            return
-        }
-        next.ServeHTTP(w, r)
-    })
-}
-```
-
-## Error Handling
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-```go
-import (
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
-)
-
-decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
-
-if err != nil {
-    // Log the error for debugging
-    log.Printf("Authorization error: %v", err)
-
-    // Deny by default (more secure)
-    handleAccessDenied()
-    return
-}
-
-// Process successful response
-handleDecisionResponse(decision)
-```
-
-</TabItem>
-</Tabs>
-
----
-
-## Typical Workflow
-
-1. **During resource discovery**: Use [GetEntitlements](#getentitlements) to show users what data they can access — build UIs, pre-filter content, or understand an entity's overall access scope
-2. **During resource access**: Use [GetDecision](#getdecision) to enforce access controls when an entity attempts to access a specific resource
-3. **For bulk operations**: Use [GetDecisionBulk](#getdecisionbulk) for efficient batch authorization when checking multiple resources at once
-
----
-
 ## Type Reference
 
 ### Decision
@@ -1065,3 +986,82 @@ Returned by [GetDecisionBulk](#getdecisionbulk). One per entity+action combinati
 |-------|------|-------------|
 | `allPermitted` | `bool` | Convenience flag — `true` if every resource in this group was permitted. |
 | `resourceDecisions` | [`[]ResourceDecision`](#resourcedecision) | Per-resource results with individual decisions and obligations. |
+
+---
+
+## Typical Workflow
+
+1. **During resource discovery**: Use [GetEntitlements](#getentitlements) to show users what data they can access — build UIs, pre-filter content, or understand an entity's overall access scope
+2. **During resource access**: Use [GetDecision](#getdecision) to enforce access controls when an entity attempts to access a specific resource
+3. **For bulk operations**: Use [GetDecisionBulk](#getdecisionbulk) for efficient batch authorization when checking multiple resources at once
+
+---
+
+## Best Practices
+
+### Performance
+
+- **Batch operations**: Use `GetDecisionBulk` for multiple authorization checks instead of calling `GetDecision` in a loop
+- **Cache entitlements**: Cache `GetEntitlements` results when appropriate (consider TTL)
+- **Scope queries**: Use `withComprehensiveHierarchy` only when you need expanded hierarchy values
+
+### Security
+
+- **Least privilege**: Request only the minimum necessary permissions
+- **Token validation**: Ensure JWT tokens are properly validated before passing to `ForToken`
+- **Obligation handling**: Always process and fulfill returned [obligations](/components/policy/obligations)
+- **Deny by default**: If an authorization call fails, deny access rather than allowing it
+
+### Integration Pattern
+
+```go
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+// Example: Authorization middleware
+func authorizationMiddleware(next http.Handler, client *sdk.SDK) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        decision, err := client.AuthorizationV2.GetDecision(
+            r.Context(),
+            &authorizationv2.GetDecisionRequest{
+                EntityIdentifier: authorizationv2.WithRequestToken(),
+                Action:           &policy.Action{Name: "access"},
+                Resource:         resourceFromPath(r.URL.Path),
+            },
+        )
+        if err != nil || decision.GetDecision().GetDecision() != authorizationv2.Decision_DECISION_PERMIT {
+            http.Error(w, "Access denied", http.StatusForbidden)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+## Error Handling
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+    "github.com/opentdf/platform/protocol/go/policy"
+)
+
+decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
+
+if err != nil {
+    // Log the error for debugging
+    log.Printf("Authorization error: %v", err)
+
+    // Deny by default (more secure)
+    handleAccessDenied()
+    return
+}
+
+// Process successful response
+handleDecisionResponse(decision)
+```
+
+</TabItem>
+</Tabs>
