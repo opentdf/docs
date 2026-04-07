@@ -53,7 +53,8 @@ function remarkTableWideCells({ threshold = 100 } = {}) {
           const cell = row.children[colIdx];
           cell.data = cell.data || {};
           cell.data.hProperties = cell.data.hProperties || {};
-          const existing = cell.data.hProperties.className || [];
+          let existing = cell.data.hProperties.className || [];
+          if (typeof existing === 'string') existing = [existing];
           cell.data.hProperties.className = Array.from(new Set([...existing, 'wide-cell']));
         }
       }

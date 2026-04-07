@@ -615,7 +615,8 @@ html[data-theme='dark'] div[class*="language-shell"] code::before {
 .markdown table td.wide-cell,
 .markdown table th.wide-cell {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
   min-width: 200px;
 }
 
