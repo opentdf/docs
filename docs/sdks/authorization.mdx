@@ -65,19 +65,76 @@ const platformClient = new PlatformClient({
 
 <JsAuthNote />
 
-### Entity Identifier Helpers (Go)
+### EntityIdentifier
 
-The Go v2 SDK provides convenience constructors that eliminate deeply nested proto construction:
+Every authorization call requires an `EntityIdentifier` — the entity (user, service, etc.) you're asking about. The entity can be identified by email, username, client ID, JWT token, or UUID.
+
+**Go** — use the v2 helper functions:
 
 | Helper | Description |
 |--------|-------------|
-| `authorizationv2.ForClientID(clientID)` | Identify by client ID |
 | `authorizationv2.ForEmail(email)` | Identify by email address |
+| `authorizationv2.ForClientID(clientID)` | Identify by client ID (service account / NPE) |
 | `authorizationv2.ForUserName(username)` | Identify by username |
-| `authorizationv2.ForToken(jwt)` | Resolve entity from JWT |
+| `authorizationv2.ForToken(jwt)` | Resolve entity from a JWT token |
 | `authorizationv2.WithRequestToken()` | Derive entity from the request's Authorization header |
 
-These work with all v2 methods: `GetDecision`, `GetDecisionBulk`, and `GetEntitlements`.
+```go
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+req := &authorizationv2.GetDecisionRequest{
+    EntityIdentifier: authorizationv2.ForEmail("alice@example.com"),
+    // ...
+}
+```
+
+**Java** — build the nested proto structure:
+
+```java
+EntityIdentifier.newBuilder()
+    .setEntityChain(
+        EntityChain.newBuilder()
+            .addEntities(
+                Entity.newBuilder()
+                    .setId("user-1")
+                    .setEmailAddress("alice@example.com")  // or .setClientId(), .setUserName(), etc.
+            )
+    )
+    .build()
+```
+
+**JavaScript** — use the `identifier` oneof:
+
+```typescript
+{
+  entityIdentifier: {
+    identifier: {
+      case: 'entityChain',
+      value: {
+        entities: [
+          {
+            ephemeralId: 'user-1',
+            entityType: {
+              case: 'emailAddress',    // or 'clientId', 'userName', 'token'
+              value: 'alice@example.com',
+            },
+          },
+        ],
+      },
+    },
+  },
+}
+```
+
+**Supported entity types:**
+
+| Type | Go helper | Java setter | JS `case` |
+|------|-----------|-------------|-----------|
+| Email | `ForEmail(email)` | `.setEmailAddress(email)` | `'emailAddress'` |
+| Client ID | `ForClientID(id)` | `.setClientId(id)` | `'clientId'` |
+| Username | `ForUserName(name)` | `.setUserName(name)` | `'userName'` |
+| JWT Token | `ForToken(jwt)` | `.setToken(Token.newBuilder().setJwt(jwt))` | `'token'` |
+| UUID | — | `.setUuid(uuid)` | `'uuid'` |
 
 ---
 
