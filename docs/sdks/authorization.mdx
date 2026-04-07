@@ -626,7 +626,7 @@ if (decision?.decision === Decision.PERMIT) {
 
 **Returns**
 
-A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/sdks/obligations) the consuming application must enforce.
+A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/components/policy/obligations) the consuming application must enforce.
 
 ---
 
@@ -911,7 +911,7 @@ A list of [GetDecisionMultiResourceResponse](#getdecisionmultiresourceresponse) 
 
 - **Least privilege**: Request only the minimum necessary permissions
 - **Token validation**: Ensure JWT tokens are properly validated before passing to `ForToken`
-- **Obligation handling**: Always process and fulfill returned [obligations](/sdks/obligations)
+- **Obligation handling**: Always process and fulfill returned [obligations](/components/policy/obligations)
 - **Deny by default**: If an authorization call fails, deny access rather than allowing it
 
 ### Integration Pattern
