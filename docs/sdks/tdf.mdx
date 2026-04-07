@@ -8,6 +8,7 @@ import TabItem from '@theme/TabItem';
 import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
 import AssertionExamples from '../../code_samples/tdf/assertion_examples.mdx'
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # TDF
 
@@ -30,6 +31,8 @@ This page covers the core TDF operations:
 ---
 
 ## Quick Start
+
+<JsAuthNote />
 
 Initialize a client and run an end-to-end encrypt/decrypt in one block.
 
@@ -120,15 +123,16 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { OpenTDF, AuthProviders } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+    }))],
+    platformUrl: 'https://platform.example.com',
 });
-
-const client = new OpenTDF({ authProvider, platformUrl: 'https://platform.example.com' });
 
 // Encrypt
 const enc = new TextEncoder();
@@ -183,11 +187,33 @@ async createTDF(options: CreateTDFOptions): Promise<DecoratedStream>
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Output destination | Required | Where the encrypted TDF bytes are written. |
-| Plaintext source | Required | The data to encrypt. See the signature tab for your language for the expected type. |
-| Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `writer` | `io.Writer` | Where the encrypted TDF bytes are written. |
+| `reader` | `io.ReadSeeker` | The plaintext data to encrypt. |
+| `opts` | `...TDFOption` | Encryption options. At minimum, a KAS endpoint must be specified (e.g., `sdk.WithKasInformation()`). See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `plaintext` | `InputStream` | The plaintext data to encrypt. |
+| `out` | `OutputStream` | Where the encrypted TDF bytes are written. |
+| `config` | `Config.TDFConfig` | Encryption options. At minimum, a KAS endpoint must be specified. See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `CreateTDFOptions` | A single options object containing the source, KAS endpoint, attributes, and other settings. See [Encrypt Options](#encrypt-options). |
+
+</TabItem>
+</Tabs>
 
 **Returns**
 
@@ -333,10 +359,31 @@ open(options: ReadOptions): TDFReader
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. See the signature tab for your language for the expected type. For JavaScript, `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). |
-| Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `reader` | `io.ReadSeeker` | The encrypted TDF to open. |
+| `opts` | `...TDFReaderOption` | Optional decryption settings. See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `channel` | `SeekableByteChannel` | The encrypted TDF to open. |
+| `config` | `Config.TDFReaderConfig` | Decryption settings. Use `Config.newTDFReaderConfig()` for defaults. See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `ReadOptions` | A single options object. `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). See [Decrypt Options](#decrypt-options). |
+
+</TabItem>
+</Tabs>
 
 **Returns**
 
@@ -556,6 +603,10 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
 
+:::tip Why use BulkDecrypt?
+Calling `LoadTDF` in a loop issues a separate KAS rewrap request per TDF. `BulkDecrypt` batches all rewrap requests by KAS endpoint so that *N* TDFs targeting the same KAS require only one round-trip instead of *N*. Use it whenever you need to decrypt more than a handful of TDFs.
+:::
+
 **Signature**
 
 ```go
@@ -578,7 +629,15 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
 | `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
-Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
+**Options**
+
+| Option | Description |
+|--------|-------------|
+| `WithTDFs(tdfs...)` | **(Required)** The TDFs to decrypt. |
+| `WithBulkKasAllowlist([]string{...})` | Restrict which KAS endpoints may be contacted. Only listed URLs are allowed; requests to unlisted KAS endpoints fail with an error per TDF. If omitted and a KAS registry is configured, the SDK uses the registry as the allowlist. |
+| `WithBulkIgnoreAllowlist(true)` | Bypass KAS allowlist checks entirely. A warning is logged for each KAS URL contacted. Use only for testing or fully trusted environments. |
+| `WithTDFType(tdfType)` | Specify the TDF format explicitly. Currently only `sdk.Standard` (TDF3 / ZIP-based) is supported. If omitted, the SDK auto-detects the format from each reader. |
+| `WithTDF3DecryptOptions(opts...)` | Pass additional reader options (e.g., session key, assertion verification) through to each TDF3 decryptor. These are the same options accepted by `LoadTDF`. |
 
 **Returns**
 
@@ -587,7 +646,11 @@ Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints ma
 
 **Errors**
 
-Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
+`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
+
+- Each element corresponds to a TDF by position in the original `WithTDFs` call.
+- `nil` entries indicate success; non-nil entries describe why that TDF failed.
+- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 **Example**
 
@@ -622,7 +685,11 @@ if err != nil {
 }
 ```
 
-To inspect the prepared request before executing:
+**PrepareBulkDecrypt** splits the operation into two phases — rewrap (network) and decrypt (CPU) — so you can act between them:
+
+- **Inspect obligations** — after `PrepareBulkDecrypt`, each `BulkTDF` has its `TriggeredObligations` populated. Check these before decrypting payloads (see [Obligations in bulk decrypt](#obligations-in-bulk-decrypt)).
+- **Conditional decryption** — skip TDFs that don't meet your criteria without wasting CPU on decryption.
+- **Monitoring** — separate the network-bound rewrap phase from the CPU-bound decryption phase for progress reporting or latency attribution.
 
 ```go
 import (
@@ -944,9 +1011,15 @@ for _, fqn := range obligations.FQNs {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+const client = new OpenTDF({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const reader = client.open({ source: ciphertextSource });
 const obligations = await reader.obligations();

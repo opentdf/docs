@@ -5,6 +5,7 @@ title: Troubleshooting
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # SDK Troubleshooting
 
@@ -41,17 +42,18 @@ curl https://<idp-endpoint>/
    otdfctl auth client-credentials <client-id> <client-secret>
    ```
 
-2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
+2. **Use a built-in token provider**: The SDK's token providers handle caching and auto-refresh automatically:
    ```js
-   import { AuthProviders } from '@opentdf/sdk';
+   import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-   const authProvider = AuthProviders.refreshAuthProvider({
-     clientId: 'your-client-id',
-     exchange: 'client',
-     clientSecret: 'your-client-secret',
-     oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
-   });
+   const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+     clientId: 'opentdf', clientSecret: 'secret',
+     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+   }))] };
+   const client = new OpenTDF({ ...auth, platformUrl });
    ```
+
+   <JsAuthNote />
 
 3. **Re-instantiate the SDK**: For Go and Java, create a new SDK instance with fresh credentials when a token error occurs.
 
@@ -320,7 +322,7 @@ exit status 1
 
 - **Go**: `client.ValidateAttributes(ctx, fqns)`
 - **Java**: `sdk.validateAttributes(fqns)`
-- **JavaScript**: `await validateAttributes(platformUrl, authProvider, fqns)`
+- **JavaScript**: `await validateAttributes(platformUrl, auth, fqns)`
 
 **Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
 
@@ -358,7 +360,12 @@ If you can't resolve an issue using this guide, here are the next steps:
 
 2. **Search existing GitHub Discussions** — many common questions are already answered in the [opentdf/platform discussions](https://github.com/opentdf/platform/discussions).
 
-3. **Open a GitHub issue** with:
+3. **Open a GitHub issue** on the relevant repo:
+   - [opentdf/platform](https://github.com/opentdf/platform/issues) — Go SDK and platform
+   - [opentdf/java-sdk](https://github.com/opentdf/java-sdk/issues) — Java SDK
+   - [opentdf/web-sdk](https://github.com/opentdf/web-sdk/issues) — JavaScript/TypeScript SDK
+
+   Include:
    - SDK language and version
    - Full error message (including stack trace if available)
    - Minimal code that reproduces the issue

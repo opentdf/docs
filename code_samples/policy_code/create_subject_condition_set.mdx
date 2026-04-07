@@ -76,6 +76,7 @@ import CreateSubjectConditionSetExample from '@site/code_samples/java/create-sub
 
 ```typescript
 import { create } from '@bufbuild/protobuf';
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import {
   ConditionBooleanTypeEnum,
@@ -86,7 +87,10 @@ import {
 } from '@opentdf/sdk/platform/policy/subjectmapping/subject_mapping_pb.js';
 
 const platform = new PlatformClient({
-  authProvider,
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
