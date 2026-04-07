@@ -96,6 +96,9 @@ All platform API calls return protobuf response objects. The way you access fiel
 
 **GetAttributeValue** — accessing a policy attribute value:
 
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
 resp, err := client.Attributes.GetAttributeValue(ctx, req)
 v := resp.GetValue()
@@ -103,6 +106,9 @@ v.GetValue()    // "confidential"
 v.GetFqn()      // "https://example.com/attr/classification/value/confidential"
 v.GetId()       // "a1b2c3d4-..."
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
 
 ```java
 var resp = sdk.getServices().attributes()
@@ -113,6 +119,9 @@ v.getFqn();     // "https://example.com/attr/classification/value/confidential"
 v.getId();      // "a1b2c3d4-..."
 ```
 
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
 ```typescript
 const resp = await platform.v1.attributes.getAttributeValue({ fqn: '...' });
 resp.value?.value;   // "confidential"
@@ -120,7 +129,13 @@ resp.value?.fqn;     // "https://example.com/attr/classification/value/confident
 resp.value?.id;      // "a1b2c3d4-..."
 ```
 
+</TabItem>
+</Tabs>
+
 **ListAttributeValues** — iterating over a list response:
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 resp, err := client.Attributes.ListAttributeValues(ctx, req)
@@ -129,6 +144,9 @@ for _, v := range resp.GetValues() {
     v.GetFqn()      // "https://example.com/attr/classification/value/confidential"
 }
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
 
 ```java
 var resp = sdk.getServices().attributes()
@@ -139,6 +157,9 @@ for (var v : resp.getValuesList()) {
 }
 ```
 
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
 ```typescript
 const resp = await platform.v1.attributes.listAttributeValues({ attributeId: '...' });
 for (const v of resp.values) {
@@ -147,7 +168,13 @@ for (const v of resp.values) {
 }
 ```
 
+</TabItem>
+</Tabs>
+
 **GetDecision** — accessing an authorization decision:
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 resp, err := client.AuthorizationV2.GetDecision(ctx, req)
@@ -156,6 +183,9 @@ d.GetDecision()              // DECISION_PERMIT or DECISION_DENY
 d.GetRequiredObligations()   // []string of obligation value FQNs
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
 ```java
 var resp = sdk.getServices().authorization().getDecision(req).get();
 var d = resp.getDecision();
@@ -163,13 +193,22 @@ d.getDecision();                // DECISION_PERMIT or DECISION_DENY
 d.getRequiredObligationsList(); // List<String> of obligation value FQNs
 ```
 
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
 ```typescript
 const resp = await platform.v2.authorization.getDecision({ ... });
 resp.decision?.decision;              // Decision.PERMIT or Decision.DENY
 resp.decision?.requiredObligations;   // string[] of obligation value FQNs
 ```
 
+</TabItem>
+</Tabs>
+
 **GetEntitlements** — accessing entity entitlements:
+
+<Tabs>
+<TabItem value="go" label="Go">
 
 ```go
 resp, err := client.AuthorizationV2.GetEntitlements(ctx, req)
@@ -178,6 +217,9 @@ for _, e := range resp.GetEntitlements() {
 }
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
 ```java
 var resp = sdk.getServices().authorization().getEntitlements(req).get();
 for (var e : resp.getEntitlementsList()) {
@@ -185,12 +227,18 @@ for (var e : resp.getEntitlementsList()) {
 }
 ```
 
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
 ```typescript
 const resp = await platform.v2.authorization.getEntitlements({ ... });
 for (const e of resp.entitlements) {
   e.actionsPerAttributeValueFqn;  // Record<string, Actions>
 }
 ```
+
+</TabItem>
+</Tabs>
 
 This pattern applies to all platform objects. Each SDK page includes type reference tables listing the available fields.
 
