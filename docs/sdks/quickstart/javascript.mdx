@@ -12,7 +12,7 @@ This guide covers the **JavaScript/TypeScript SDK** implementation. For other la
 ## Prerequisites
 
 - [Node.js LTS](https://nodejs.org/en/about/previous-releases)
-- Your OpenTDF platform running locally (from Getting Started guide)
+- Your OpenTDF platform running locally (from the [Getting Started guide](/quickstart))
 
 :::warning Platform Must Be Running
 Before you begin, **make sure your OpenTDF platform is running!**
@@ -34,7 +34,7 @@ See the [Managing the Platform](/getting-started/managing-platform) guide for de
 
 ## Step 1: Create a New Project {#step-1-js}
 
-Create a new directory and initialize a Node.js project:
+The JavaScript SDK is designed for **browser-based applications** — React, Angular, Vue, or any web app that runs in the browser. This quickstart uses Node.js so you can get a working project running quickly without scaffolding a full web app, but in production you'd integrate the SDK into your frontend build.
 
 ```bash
 mkdir opentdf-quickstart
@@ -65,12 +65,16 @@ Expected output:
 
 ## Step 3: Create Your Application {#step-3-js}
 
+:::note Local development only
+This quickstart uses `clientCredentialsTokenProvider` with the pre-configured Keycloak client (`opentdf`/`secret`) so you can focus on learning the SDK. In production browser apps, you would complete an OIDC login flow and pass the resulting refresh token to [`refreshTokenProvider()`](/sdks/authentication#refresh-token) instead — the JavaScript SDK is designed for browser use. See [Authentication](/sdks/authentication) for all options.
+:::
+
 ### JavaScript Implementation Code
 
 Create a file named `index.mjs`:
 
 ```javascript title="index.mjs"
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
 async function main() {
   console.log('🚀 Starting OpenTDF SDK Quickstart...');
@@ -79,16 +83,17 @@ async function main() {
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
   console.log(`📡 Connecting to platform: ${platformUrl}`);
 
-  // Create an auth provider with client credentials
-  console.log('🔐 Initializing auth provider with client credentials...');
-  const authProvider = await AuthProviders.clientSecretAuthProvider({
+  // For this quickstart we use client credentials (server-side only).
+  // In a browser app, use refreshTokenProvider() with your OIDC login flow instead.
+  const tokenProvider = clientCredentialsTokenProvider({
     clientId: 'opentdf',
     clientSecret: 'secret',
     oidcOrigin,
   });
 
   // Create a new OpenTDF client
-  const client = new OpenTDF({ authProvider, platformUrl });
+  console.log('🔐 Initializing client with auth interceptor...');
+  const client = new OpenTDF({ interceptors: [authTokenInterceptor(tokenProvider)], platformUrl });
   console.log('✅ SDK client initialized successfully');
 
   // Encrypt data
@@ -140,7 +145,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 node index.mjs
 ```console
 🚀 Starting OpenTDF SDK Quickstart...
 📡 Connecting to platform: https://platform.opentdf.local:8443
-🔐 Initializing auth provider with client credentials...
+🔐 Initializing client with auth interceptor...
 ✅ SDK client initialized successfully
 
 📝 Encrypting sensitive data...
@@ -185,21 +190,22 @@ For additional policy management examples including managing attributes, namespa
 Let's work with the "department" attribute and add a "marketing" value. If you completed the [Quickstart setup guide](/quickstart), the attribute may already exist with finance and engineering values. If not, we'll create it:
 
 ```javascript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists, attributeValueExists, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 const platformUrl = 'https://platform.opentdf.local:8443';
-const authProvider = await AuthProviders.clientSecretAuthProvider({
+const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
+
+// Client credentials for this quickstart only — use refreshTokenProvider() in browser apps
+const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
   clientId: 'opentdf',
   clientSecret: 'secret',
-  oidcOrigin: 'https://keycloak.opentdf.local:9443/auth/realms/opentdf',
-});
-
-// Create the OpenTDF client and wait for DPoP key binding.
-const client = new OpenTDF({ authProvider, platformUrl });
-await client.ready;
-const platform = new PlatformClient({ authProvider, platformUrl });
+  oidcOrigin,
+}))];
+const auth = { interceptors };
+const client = new OpenTDF({ ...auth, platformUrl });
+const platform = new PlatformClient({ ...auth, platformUrl });
 
 // First, ensure the namespace exists
 let namespaceId;
@@ -222,46 +228,36 @@ try {
   }
 }
 
-// Get or create the department attribute
-const listResp = await platform.v1.attributes.listAttributes({});
-let attribute = listResp.attributes.find(
-  (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
-);
-
-if (!attribute) {
-  const attrResp = await platform.v1.attributes.createAttribute({
+// Create the department attribute if it doesn't exist
+const deptFqn = 'https://opentdf.io/attr/department';
+if (!(await attributeExists(platformUrl, auth, deptFqn))) {
+  await platform.v1.attributes.createAttribute({
     namespaceId,
     name: 'department',
     rule: AttributeRuleTypeEnum.ANY_OF,
     values: ['marketing'],
   });
-  attribute = attrResp.attribute;
-  console.log(`✅ Created attribute: ${attribute?.name}`);
+  console.log('✅ Created department attribute with marketing value');
 } else {
-  console.log(`✅ Found existing attribute: ${attribute.name}`);
+  console.log('✅ Using existing department attribute');
 }
 
-// Check if "marketing" value already exists
-const targetValue = 'marketing';
-const valueExists = attribute?.values?.some((v) => v.value === targetValue);
-
-if (!valueExists) {
-  await platform.v1.attributes.createAttributeValue({
-    attributeId: attribute?.id,
-    value: targetValue,
-  });
-  console.log(`✅ Added '${targetValue}' value to department attribute`);
-} else {
-  console.log(`✅ Attribute 'department' already has '${targetValue}' value`);
-}
-
-console.log(`Full attribute FQN: https://opentdf.io/attr/department/value/${targetValue}`);
-
-// Re-fetch the attribute to get updated values with IDs
-const refreshedList = await platform.v1.attributes.listAttributes({});
-attribute = refreshedList.attributes.find(
+// Ensure the marketing value exists on the attribute
+const marketingFqn = `${deptFqn}/value/marketing`;
+const listResp = await platform.v1.attributes.listAttributes({});
+const attribute = listResp.attributes.find(
   (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
 );
+
+if (!(await attributeValueExists(platformUrl, auth, marketingFqn))) {
+  await platform.v1.attributes.createAttributeValue({
+    attributeId: attribute?.id,
+    value: 'marketing',
+  });
+  console.log('✅ Added marketing value to department attribute');
+}
+
+console.log(`Full attribute FQN: ${marketingFqn}`);
 ```
 
 :::warning
@@ -303,28 +299,23 @@ import {
 } from '@opentdf/sdk/platform/policy/objects_pb.js';
 
 // Get the attribute value ID for "marketing"
-const marketingValue = attribute?.values?.find((v) => v.value === targetValue);
+const marketingValue = attribute?.values?.find((v) => v.value === 'marketing');
 const attributeValueId = marketingValue?.id;
 
-// Create a subject condition set that matches your identity
+// Subject condition sets use a nested structure: sets → groups → conditions.
+// This one matches any entity whose .clientId claim includes 'opentdf'.
 const scsResp = await platform.v1.subjectMapping.createSubjectConditionSet({
   subjectConditionSet: {
-    subjectSets: [
-      {
-        conditionGroups: [
-          {
-            booleanOperator: ConditionBooleanTypeEnum.AND,
-            conditions: [
-              {
-                subjectExternalSelectorValue: '.clientId',
-                operator: SubjectMappingOperatorEnum.IN,
-                subjectExternalValues: ['opentdf'],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    subjectSets: [{
+      conditionGroups: [{
+        booleanOperator: ConditionBooleanTypeEnum.AND,
+        conditions: [{
+          subjectExternalSelectorValue: '.clientId',
+          operator: SubjectMappingOperatorEnum.IN,
+          subjectExternalValues: ['opentdf'],
+        }],
+      }],
+    }],
   },
 });
 
@@ -396,7 +387,7 @@ For reference, here's a complete example showing all the pieces together:
 
 ```javascript title="index.mjs"
 import fs from 'node:fs';
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists, attributeValueExists, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 import {
   AttributeRuleTypeEnum,
@@ -408,17 +399,15 @@ async function main() {
   const platformUrl = 'https://platform.opentdf.local:8443';
   const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
 
-  // Create auth provider
-  const authProvider = await AuthProviders.clientSecretAuthProvider({
+  // Client credentials for this quickstart only — use refreshTokenProvider() in browser apps
+  const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
     clientId: 'opentdf',
     clientSecret: 'secret',
     oidcOrigin,
-  });
-
-  // Create the OpenTDF client and wait for DPoP key binding.
-  const client = new OpenTDF({ authProvider, platformUrl });
-  await client.ready;
-  const platform = new PlatformClient({ authProvider, platformUrl });
+  }))];
+  const auth = { interceptors };
+  const client = new OpenTDF({ ...auth, platformUrl });
+  const platform = new PlatformClient({ ...auth, platformUrl });
 
   // 1. Create namespace (or use existing)
   let namespaceId;
@@ -430,7 +419,6 @@ async function main() {
     console.log(`✅ Created namespace: ${namespaceId}`);
   } catch (err) {
     if (err.message?.includes('already_exists')) {
-      // Namespace exists — fetch it directly by FQN
       const getNsResp = await platform.v1.namespace.getNamespace({
         identifier: { case: 'fqn', value: 'https://opentdf.io' },
       });
@@ -441,36 +429,32 @@ async function main() {
     }
   }
 
-  // 2. Create attribute with marketing value (or use existing)
-  let attribute;
-  try {
-    const attrResp = await platform.v1.attributes.createAttribute({
+  // 2. Create the department attribute if it doesn't exist
+  const deptFqn = 'https://opentdf.io/attr/department';
+  if (!(await attributeExists(platformUrl, auth, deptFqn))) {
+    await platform.v1.attributes.createAttribute({
       namespaceId,
       name: 'department',
       rule: AttributeRuleTypeEnum.ANY_OF,
       values: ['marketing'],
     });
-    attribute = attrResp.attribute;
-    console.log(`✅ Created attribute: ${attribute?.name}`);
-  } catch (err) {
-    if (err.message?.includes('already_exists')) {
-      const listResp = await platform.v1.attributes.listAttributes({});
-      attribute = listResp.attributes.find(
-        (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
-      );
-      console.log(`✅ Using existing attribute: ${attribute?.name}`);
+    console.log('✅ Created department attribute with marketing value');
+  } else {
+    console.log('✅ Using existing department attribute');
+  }
 
-      // Ensure the 'marketing' value exists on the attribute
-      if (attribute && !attribute.values?.some((v) => v.value === 'marketing')) {
-        await platform.v1.attributes.createAttributeValue({
-          attributeId: attribute.id,
-          value: 'marketing',
-        });
-        console.log(`✅ Added 'marketing' value to department attribute`);
-      }
-    } else {
-      throw err;
-    }
+  // Ensure the marketing value exists on the attribute
+  const marketingFqn = `${deptFqn}/value/marketing`;
+  if (!(await attributeValueExists(platformUrl, auth, marketingFqn))) {
+    const listResp = await platform.v1.attributes.listAttributes({});
+    const attribute = listResp.attributes.find(
+      (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
+    );
+    await platform.v1.attributes.createAttributeValue({
+      attributeId: attribute?.id,
+      value: 'marketing',
+    });
+    console.log('✅ Added marketing value to department attribute');
   }
 
   // 3. Encrypt data with the marketing attribute
@@ -493,35 +477,30 @@ async function main() {
   console.log('✅ TDF saved to encrypted.tdf');
 
   // 5. Grant yourself access to the marketing attribute
-  // Re-fetch to get value IDs
-  const refreshedList = await platform.v1.attributes.listAttributes({});
-  attribute = refreshedList.attributes.find(
+  // Fetch the attribute to get the marketing value ID for the subject mapping
+  const attrList = await platform.v1.attributes.listAttributes({});
+  const deptAttr = attrList.attributes.find(
     (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
   );
-
-  const marketingValue = attribute?.values?.find((v) => v.value === 'marketing');
+  const marketingValue = deptAttr?.values?.find((v) => v.value === 'marketing');
   if (!marketingValue?.id) {
     throw new Error('Marketing value not found in department attribute');
   }
 
+  // Subject condition sets use a nested structure: sets → groups → conditions.
+  // This one matches any entity whose .clientId claim includes 'opentdf'.
   const scsResp = await platform.v1.subjectMapping.createSubjectConditionSet({
     subjectConditionSet: {
-      subjectSets: [
-        {
-          conditionGroups: [
-            {
-              booleanOperator: ConditionBooleanTypeEnum.AND,
-              conditions: [
-                {
-                  subjectExternalSelectorValue: '.clientId',
-                  operator: SubjectMappingOperatorEnum.IN,
-                  subjectExternalValues: ['opentdf'],
-                },
-              ],
-            },
-          ],
-        },
-      ],
+      subjectSets: [{
+        conditionGroups: [{
+          booleanOperator: ConditionBooleanTypeEnum.AND,
+          conditions: [{
+            subjectExternalSelectorValue: '.clientId',
+            operator: SubjectMappingOperatorEnum.IN,
+            subjectExternalValues: ['opentdf'],
+          }],
+        }],
+      }],
     },
   });
 

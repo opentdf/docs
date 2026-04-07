@@ -5,6 +5,7 @@ title: Authorization
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Making Authorization Decisions
 
@@ -26,6 +27,8 @@ OpenTDF's authorization system provides two primary methods for access control: 
 ## Authentication Setup
 
 All authorization calls require proper authentication. Here's how to set up the SDK client:
+
+<JsAuthNote />
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -94,10 +97,22 @@ public class AuthorizationSetup {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
-import { platformConnect, PlatformClient } from '@opentdf/sdk/platform';
+// Option 1: Using interceptors (recommended for new code)
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
 
-// Option 1: Using AuthProvider (recommended when also using TDF client)
+const platformClient = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf',
+    clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
+
+// Option 2: Legacy AuthProvider (deprecated — use interceptors for new code)
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
 const authProvider = await AuthProviders.clientSecretAuthProvider({
   clientId: 'opentdf',
   clientSecret: 'secret',
@@ -106,21 +121,9 @@ const authProvider = await AuthProviders.clientSecretAuthProvider({
 const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
 await client.ready;
 
-const platformClient = new PlatformClient({
+const platformClient2 = new PlatformClient({
   authProvider,
   platformUrl: 'http://localhost:8080',
-});
-
-// Option 2: Using a raw interceptor (when you manage tokens yourself)
-const accessToken = 'your-access-token-here';
-const interceptor: platformConnect.Interceptor = (next) => async (req) => {
-  req.header.set('Authorization', `Bearer ${accessToken}`);
-  return next(req);
-};
-
-const platformClient2 = new PlatformClient({
-  platformUrl: 'http://localhost:8080',
-  interceptors: [interceptor],
 });
 ```
 

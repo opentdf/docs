@@ -5,12 +5,15 @@ title: Discovery
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Discovery
 
 Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
 
 The Go, Java, and JavaScript SDKs provide five methods to discover and validate attributes without manual platform queries.
+
+<JsAuthNote />
 
 ---
 
@@ -65,9 +68,14 @@ List<Attribute> attrs = sdk.listAttributes("opentdf.io");
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { listAttributes } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, listAttributes } from '@opentdf/sdk';
 
-const attrs = await listAttributes(platformUrl, authProvider);
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
+
+const attrs = await listAttributes(platformUrl, auth);
 
 for (const a of attrs) {
     console.log(a.fqn, a.rule);
@@ -80,7 +88,7 @@ for (const a of attrs) {
 To filter by namespace:
 
 ```ts
-const attrs = await listAttributes(platformUrl, authProvider, 'opentdf.io');
+const attrs = await listAttributes(platformUrl, auth, 'opentdf.io');
 ```
 
 </TabItem>
@@ -127,9 +135,14 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { attributeExists } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists } from '@opentdf/sdk';
 
-const exists = await attributeExists(platformUrl, authProvider, 'https://opentdf.io/attr/department');
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
+
+const exists = await attributeExists(platformUrl, auth, 'https://opentdf.io/attr/department');
 if (!exists) {
     console.log('attribute does not exist — create it before use');
 }
@@ -177,9 +190,14 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { attributeValueExists } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, attributeValueExists } from '@opentdf/sdk';
 
-const exists = await attributeValueExists(platformUrl, authProvider, 'https://opentdf.io/attr/department/value/finance');
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
+
+const exists = await attributeValueExists(platformUrl, auth, 'https://opentdf.io/attr/department/value/finance');
 if (!exists) {
     console.log('value does not exist on this attribute');
 }
@@ -245,7 +263,12 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+}))] };
 
 const fqns = [
     'https://opentdf.io/attr/department/value/marketing',
@@ -253,7 +276,7 @@ const fqns = [
 ];
 
 try {
-    await validateAttributes(platformUrl, authProvider, fqns);
+    await validateAttributes(platformUrl, auth, fqns);
 } catch (e) {
     if (e instanceof AttributeNotFoundError) {
         console.error('attribute validation failed:', e.message);
@@ -356,7 +379,7 @@ The JavaScript SDK does not expose a `getEntityAttributes` convenience function 
 ```ts
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const platform = new PlatformClient({ authProvider, platformUrl });
+const platform = new PlatformClient({ ...auth, platformUrl });
 
 // By email address
 const resp = await platform.v2.authorization.getEntitlements({
@@ -495,20 +518,20 @@ try (SDK sdk = new SDKBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```ts
-import { OpenTDF, AuthProviders, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF, listAttributes, attributeExists, validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
+// Define auth once — reuse for standalone functions and the OpenTDF client
+const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
     oidcOrigin: oidcEndpoint,
-});
+}))] };
 
 // 1. See what's available on the platform
-const attrs = await listAttributes(platformUrl, authProvider);
+const attrs = await listAttributes(platformUrl, auth);
 console.log(`platform has ${attrs.length} active attributes`);
 
 // 2. Check a specific attribute exists before using it
-const exists = await attributeExists(platformUrl, authProvider, 'https://opentdf.io/attr/department');
+const exists = await attributeExists(platformUrl, auth, 'https://opentdf.io/attr/department');
 if (!exists) {
     console.error('attribute missing — create it first');
     process.exit(1);
@@ -517,7 +540,7 @@ if (!exists) {
 // 3. Validate the specific values before encrypting
 const required = ['https://opentdf.io/attr/department/value/marketing'];
 try {
-    await validateAttributes(platformUrl, authProvider, required);
+    await validateAttributes(platformUrl, auth, required);
 } catch (e) {
     if (e instanceof AttributeNotFoundError) {
         console.error('required attributes missing — create them first:', e.message);
@@ -527,7 +550,7 @@ try {
 }
 
 // 4. Encrypt with confidence
-const client = new OpenTDF({ authProvider, platformUrl });
+const client = new OpenTDF({ ...auth, platformUrl });
 const ciphertext = await client.createTDF({
     source: { type: 'stream', location: dataStream },
     attributes: required,

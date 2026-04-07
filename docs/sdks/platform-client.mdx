@@ -5,6 +5,7 @@ title: Architecture
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Architecture
 
@@ -24,6 +25,8 @@ This is the same pattern used by cloud provider SDKs — you instantiate a typed
 
 ## Initializing the SDK client
 
+<JsAuthNote />
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -32,7 +35,7 @@ import (
     "github.com/opentdf/platform/sdk"
     // Plus the service-specific package for each call, e.g.:
     "github.com/opentdf/platform/protocol/go/policy/namespaces"
-    "github.com/opentdf/platform/protocol/go/authorization"
+    authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 )
 
 client, err := sdk.New("http://localhost:8080",
@@ -42,6 +45,13 @@ if err != nil {
     log.Fatal(err)
 }
 defer client.Close()
+
+// Platform services are accessed directly on the client, e.g.:
+resp, err := client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{})
+
+decision, err := client.AuthorizationV2.GetDecision(ctx, &authorization.GetDecisionRequest{
+    // ...
+})
 ```
 
 </TabItem>
@@ -62,24 +72,19 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-});
+const auth = {
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+};
 
-// OpenTDF eagerly binds DPoP keys to the auth provider.
-// Await ready before creating PlatformClient.
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
-await client.ready;
-
-const platform = new PlatformClient({
-    authProvider,
-    platformUrl: 'http://localhost:8080',
-});
+const client = new OpenTDF({ ...auth, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:8080' });
 ```
 
 </TabItem>
