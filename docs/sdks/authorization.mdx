@@ -354,7 +354,7 @@ console.log('Scoped entitlements:', response.entitlements);
 
 **Returns**
 
-A list of `EntityEntitlements`, each containing a map of attribute value FQNs to the actions the entity can perform on them.
+A list of [EntityEntitlements](#entityentitlements) objects, each containing a map of attribute value FQNs to the actions the entity can perform on them.
 
 ---
 
@@ -620,7 +620,7 @@ if (decision?.decision === Decision.PERMIT) {
 
 **Returns**
 
-A `Decision` with a permit/deny result and any required [obligations](/sdks/obligations) the consuming application must enforce.
+A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/sdks/obligations) the consuming application must enforce.
 
 ---
 
@@ -889,7 +889,7 @@ for (const resp of response.decisionResponses) {
 
 **Returns**
 
-A list of `GetDecisionMultiResourceResponse`, each containing an `allPermitted` flag and per-resource `ResourceDecision` entries with permit/deny and any required obligations.
+A list of [GetDecisionMultiResourceResponse](#getdecisionmultiresourceresponse) objects, each containing an `allPermitted` flag and per-resource [ResourceDecision](#resourcedecision) entries.
 
 ---
 
@@ -961,3 +961,92 @@ handleDecisionResponse(decision)
 
 </TabItem>
 </Tabs>
+
+---
+
+## Type Reference
+
+### Decision
+
+The authorization result.
+
+| Value | Description |
+|-------|-------------|
+| `DECISION_PERMIT` | Access is granted. Check `requiredObligations` for any controls the PEP must enforce. |
+| `DECISION_DENY` | Access is denied. |
+
+### ResourceDecision
+
+The result for a single resource in a decision response.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ephemeralResourceId` | `string` | Correlates with the `ephemeralId` set on the request's [Resource](#resource). |
+| `decision` | [`Decision`](#decision) | Permit or deny. |
+| `requiredObligations` | `[]string` | Obligation value FQNs the PEP must fulfill (e.g., `https://example.com/obl/drm/value/watermarking`). Empty if none required. |
+
+### Resource
+
+Identifies the data being accessed, by its attribute value FQNs (the same FQNs embedded in a TDF policy).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ephemeralId` | `string` | An ID you assign for correlating with the response. Used in bulk requests. |
+| `attributeValues.fqns` | `[]string` | Attribute value FQNs on the resource (1–20). |
+
+```go
+// Go
+&authorizationv2.Resource{
+    EphemeralId: "resource-1",
+    Resource: &authorizationv2.Resource_AttributeValues_{
+        AttributeValues: &authorizationv2.Resource_AttributeValues{
+            Fqns: []string{"https://example.com/attr/classification/value/secret"},
+        },
+    },
+}
+```
+
+```typescript
+// JavaScript
+{
+  ephemeralId: 'resource-1',
+  resource: {
+    case: 'attributeValues',
+    value: { fqns: ['https://example.com/attr/classification/value/secret'] },
+  },
+}
+```
+
+### EntityEntitlements
+
+Returned by [GetEntitlements](#getentitlements). One per entity, mapping attribute value FQNs to the actions that entity can perform.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ephemeralId` | `string` | Correlates with the entity in the request. |
+| `actionsPerAttributeValueFqn` | `map<string, ActionsList>` | Keys are attribute value FQNs. Values are lists of [actions](/sdks/policy#action) the entity can perform on data carrying that attribute value. |
+
+```go
+for _, e := range resp.GetEntitlements() {
+    for fqn, actions := range e.GetActionsPerAttributeValueFqn() {
+        fmt.Printf("FQN: %s → actions: %v\n", fqn, actions.GetActions())
+    }
+}
+```
+
+```typescript
+for (const e of resp.entitlements) {
+  for (const [fqn, actions] of Object.entries(e.actionsPerAttributeValueFqn)) {
+    console.log(`FQN: ${fqn} → actions:`, actions.actions);
+  }
+}
+```
+
+### GetDecisionMultiResourceResponse
+
+Returned by [GetDecisionBulk](#getdecisionbulk). One per entity+action combination in the request.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `allPermitted` | `bool` | Convenience flag — `true` if every resource in this group was permitted. |
+| `resourceDecisions` | [`[]ResourceDecision`](#resourcedecision) | Per-resource results with individual decisions and obligations. |
