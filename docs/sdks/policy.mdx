@@ -12,10 +12,13 @@ import ListAttributes from '../../code_samples/policy_code/list_attributes.mdx'
 import CreateConditionSet from '../../code_samples/policy_code/create_subject_condition_set.mdx'
 import CreateSubjectMapping from '../../code_samples/policy_code/create_subject_mapping.mdx'
 import ListSubjectMapping from '../../code_samples/policy_code/list_subject_mapping.mdx'
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # Managing Policy
 
 Policy in OpenTDF is the set of rules that govern who can access data and under what conditions. It is made up of **namespaces**, **attributes**, **subject mappings**, and **subject condition sets**. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
+
+<JsAuthNote />
 
 ---
 
@@ -126,10 +129,16 @@ public class GetNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 // Look up by UUID
 let resp = await platform.v1.namespace.getNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
@@ -234,10 +243,16 @@ public class UpdateNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.namespace.updateNamespace({
   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
@@ -322,10 +337,16 @@ public class DeactivateNamespaceExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 await platform.v1.namespace.deactivateNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
 console.log('Namespace deactivated.');
@@ -435,10 +456,16 @@ public class GetAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 // Look up by FQN
 const resp = await platform.v1.attributes.getAttribute({
@@ -536,10 +563,16 @@ public class UpdateAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.updateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
@@ -624,10 +657,16 @@ public class DeactivateAttributeExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.deactivateAttribute({
   id: 'a1b2c3d4-0000-0000-0000-000000000001',
@@ -716,10 +755,16 @@ public class CreateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.createAttributeValue({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
@@ -807,10 +852,16 @@ public class ListAttributeValuesExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.listAttributeValues({
   attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
@@ -898,10 +949,16 @@ public class GetAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 // Look up by FQN
 const resp = await platform.v1.attributes.getAttributeValue({
@@ -1002,10 +1059,16 @@ public class GetAttributeValuesByFqnsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.getAttributeValuesByFqns({
   fqns: [
@@ -1104,10 +1167,16 @@ public class UpdateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.updateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
@@ -1192,10 +1261,16 @@ public class DeactivateAttributeValueExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.attributes.deactivateAttributeValue({
   id: 'v1b2c3d4-0000-0000-0000-000000000001',
@@ -1289,10 +1364,16 @@ public class ListSubjectConditionSetsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.listSubjectConditionSets({});
 for (const scs of resp.subjectConditionSets) {
@@ -1380,10 +1461,16 @@ public class GetSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.getSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
@@ -1504,10 +1591,16 @@ public class UpdateSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
@@ -1606,10 +1699,16 @@ public class DeleteSubjectConditionSetExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.deleteSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
@@ -1689,10 +1788,16 @@ public class DeleteAllUnmappedSubjectConditionSetsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({});
 console.log(`Deleted ${resp.subjectConditionSets.length} unmapped subject condition sets.`);
@@ -1786,10 +1891,16 @@ public class GetSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.getSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
@@ -1891,10 +2002,16 @@ public class UpdateSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.updateSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
@@ -1978,10 +2095,16 @@ public class DeleteSubjectMappingExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
   id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
@@ -2082,10 +2205,16 @@ public class MatchSubjectMappingsExample {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
-// See /sdks/platform-client for full setup including DPoP key binding.
 
-const platform = new PlatformClient({ authProvider, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const resp = await platform.v1.subjectMapping.matchSubjectMappings({
   subjectProperties: [
@@ -2128,10 +2257,14 @@ if err != nil {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({
-  authProvider,
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
   platformUrl: 'http://localhost:8080',
 });
 
