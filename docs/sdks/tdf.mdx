@@ -30,11 +30,11 @@ This page covers the core TDF operations:
 
 ---
 
-## Quick Start
+## Setup
 
 <JsAuthNote />
 
-Initialize a client and run an end-to-end encrypt/decrypt in one block.
+Initialize an SDK client — all examples on this page require it. See [Authentication](/sdks/authentication) for full details including DPoP key binding. Here is an end-to-end encrypt/decrypt to get started:
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -215,53 +215,6 @@ async createTDF(options: CreateTDFOptions): Promise<DecoratedStream>
 </TabItem>
 </Tabs>
 
-**Returns**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-`(*TDFObject, error)` — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-`Manifest` — The manifest written to the TDF, containing key access and encryption metadata. Encrypted bytes are written to the output stream.
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-`Promise<DecoratedStream>` — A decorated stream of encrypted TDF bytes. Pipe or consume it like any `ReadableStream`.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-| Error | Cause |
-|-------|-------|
-| KAS unreachable | The KAS could not be contacted to wrap the encryption key. |
-| No KAS configured | No KAS was provided and autoconfigure is disabled or could not resolve one. |
-| Write failure | An I/O error occurred writing to `out`. |
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-| Exception | Cause |
-|-----------|-------|
-| `SDKException` | KAS unreachable, policy invalid, or the SDK could not resolve a KAS from the attribute service. |
-| `IOException` | I/O failure reading from the input stream or writing to the output stream. |
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-Rejects with `Error` if the KAS is unreachable, authentication fails, or the source data cannot be read.
-
-</TabItem>
-</Tabs>
-
 **Example**
 
 <Tabs>
@@ -320,6 +273,53 @@ const encrypted = await new Response(tdf).bytes();
 </Tabs>
 
 See [Encrypt Options](#encrypt-options) for the full list of configuration options.
+
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(*TDFObject, error)` — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`Manifest` — The manifest written to the TDF, containing key access and encryption metadata. Encrypted bytes are written to the output stream.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+`Promise<DecoratedStream>` — A decorated stream of encrypted TDF bytes. Pipe or consume it like any `ReadableStream`.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| KAS unreachable | The KAS could not be contacted to wrap the encryption key. |
+| No KAS configured | No KAS was provided and autoconfigure is disabled or could not resolve one. |
+| Write failure | An I/O error occurred writing to the output destination. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Exception | Cause |
+|-----------|-------|
+| `SDKException` | KAS unreachable, policy invalid, or the SDK could not resolve a KAS from the attribute service. |
+| `IOException` | I/O failure reading from the input stream or writing to the output stream. |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the KAS is unreachable, authentication fails, or the source data cannot be read.
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -385,52 +385,6 @@ open(options: ReadOptions): TDFReader
 </TabItem>
 </Tabs>
 
-**Returns**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-`(*Reader, error)` — A TDF reader object. See [TDF Reader](#tdf-reader) for available methods.
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-`TDF.Reader` — A reader object. See [TDF Reader](#tdf-reader) for available methods.
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-- `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
-- `open()` → [`TDFReader`](#tdf-reader) — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-| Error | Cause |
-|-------|-------|
-| Invalid TDF | The input is not a valid TDF. Use [`IsValidTdf`](#isvalidtdf) to pre-validate. |
-| KAS unreachable | The KAS referenced in the manifest cannot be contacted. |
-| Access denied | The caller's credentials do not satisfy the TDF policy. |
-| KAS not allowlisted | The TDF references a KAS endpoint not on the allowlist. |
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-Java throws `IOException` for all failure modes. Inspect `e.getMessage()` to distinguish between access denied, unreachable KAS, and malformed TDF — the message text reflects the underlying cause.
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is denied, or the endpoint is not allowlisted.
-
-</TabItem>
-</Tabs>
-
 **Example**
 
 <Tabs>
@@ -492,6 +446,52 @@ See [Decrypt Options](#decrypt-options) for the full list of configuration optio
 See [TDF Reader](#tdf-reader) for all methods on the reader object.
 See [PolicyObject](#policyobject) and [Manifest Object](#manifest-object) for the types returned by reader methods.
 
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(*Reader, error)` — A TDF reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`TDF.Reader` — A reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+- `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
+- `open()` → [`TDFReader`](#tdf-reader) — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| Invalid TDF | The input is not a valid TDF. Use [`IsValidTdf`](#isvalidtdf) to pre-validate. |
+| KAS unreachable | The KAS referenced in the manifest cannot be contacted. |
+| Access denied | The caller's credentials do not satisfy the TDF policy. |
+| KAS not allowlisted | The TDF references a KAS endpoint not on the allowlist. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Java throws `IOException` for all failure modes. Inspect `e.getMessage()` to distinguish between access denied, unreachable KAS, and malformed TDF — the message text reflects the underlying cause.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is denied, or the endpoint is not allowlisted.
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## IsValidTdf
@@ -524,25 +524,6 @@ static boolean SDK.isTDF(SeekableByteChannel channel)
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `reader` / `channel` | Required | The data to inspect. The stream position is reset after the check, so the same reader can be passed directly to `LoadTDF`. |
-
-**Returns**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-`(bool, error)` — `true` if the data is a valid TDF, `false` if it is not. A non-nil `error` indicates an I/O failure, not an invalid TDF.
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-`boolean` — `true` if the channel contains a valid TDF, `false` otherwise.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
 
 **Example**
 
@@ -597,6 +578,25 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 </TabItem>
 </Tabs>
 
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(bool, error)` — `true` if the data is a valid TDF, `false` if it is not. A non-nil `error` indicates an I/O failure, not an invalid TDF.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`boolean` — `true` if the channel contains a valid TDF, `false` otherwise.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
+
 ---
 
 ## BulkDecrypt
@@ -638,19 +638,6 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 | `WithBulkIgnoreAllowlist(true)` | Bypass KAS allowlist checks entirely. A warning is logged for each KAS URL contacted. Use only for testing or fully trusted environments. |
 | `WithTDFType(tdfType)` | Specify the TDF format explicitly. Currently only `sdk.Standard` (TDF3 / ZIP-based) is supported. If omitted, the SDK auto-detects the format from each reader. |
 | `WithTDF3DecryptOptions(opts...)` | Pass additional reader options (e.g., session key, assertion verification) through to each TDF3 decryptor. These are the same options accepted by `LoadTDF`. |
-
-**Returns**
-
-- `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
-- `PrepareBulkDecrypt` returns `(*BulkDecryptPrepared, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
-
-**Errors**
-
-`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
-
-- Each element corresponds to a TDF by position in the original `WithTDFs` call.
-- `nil` entries indicate success; non-nil entries describe why that TDF failed.
-- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 **Example**
 
@@ -707,6 +694,19 @@ if err != nil {
 }
 err = prepared.BulkDecrypt(ctx)
 ```
+
+**Returns**
+
+- `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
+- `PrepareBulkDecrypt` returns `(*BulkDecryptPrepared, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
+
+**Errors**
+
+`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
+
+- Each element corresponds to a TDF by position in the original `WithTDFs` call.
+- `nil` entries indicate success; non-nil entries describe why that TDF failed.
+- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 ---
 
@@ -1214,7 +1214,7 @@ client, err := sdk.New("http://localhost:8080",
 
 **Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
 
-Every assertion is bound to the TDF's data encryption key (DEK) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+Every assertion is bound to the TDF's [data encryption key (DEK)](/spec/protocol) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
 
 ### Assertion Types
 
