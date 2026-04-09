@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # Authentication
 
-The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-connect-works/)-compatible identity provider (IdP) to obtain access tokens for the platform. The platform itself is a **resource server**, not an identity provider — you bring your own IdP (Keycloak is the reference implementation).
+The SDKs authenticate with an [OIDC](https://openid.net/developers/how-connect-works/)-compatible identity provider (IdP) to obtain access tokens for the platform. The platform itself is a **resource server**, not an identity provider — you bring your own IdP (Keycloak is the reference implementation).
 
 :::tip Not sure which method to use?
 The JavaScript SDK is designed for **browser applications**. If your app already has an access token, use [Access Token](#access-token). If your OIDC flow provides a refresh token, use [Refresh Token](#refresh-token) for automatic renewal. For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
@@ -106,7 +106,7 @@ const client = new OpenTDF({
 
 ## Token Exchange
 
-Use **token exchange** ([RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693)) when you already have a token from another identity system and need to exchange it for one the OpenTDF platform accepts. Common in federated identity and SAML environments.
+Use **token exchange** ([RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693)) when you already have a token from another identity system and need to exchange it for one the platform accepts. Common in federated identity and SAML environments.
 
 <Tabs>
 <TabItem value="go" label="Go">
