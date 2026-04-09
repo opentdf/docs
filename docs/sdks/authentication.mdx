@@ -1,0 +1,441 @@
+---
+sidebar_position: 2
+title: Authentication
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Authentication
+
+The OpenTDF SDKs authenticate with an [OIDC](https://openid.net/developers/how-connect-works/)-compatible identity provider (IdP) to obtain access tokens for the platform. The platform itself is a **resource server**, not an identity provider — you bring your own IdP (Keycloak is the reference implementation).
+
+:::tip Not sure which method to use?
+The JavaScript SDK is designed for **browser applications**. If your app already has an access token, use [Access Token](#access-token). If your OIDC flow provides a refresh token, use [Refresh Token](#refresh-token) for automatic renewal. For backend scripts and testing, see [Client Credentials](#client-credentials). See the [Authentication Decision Guide](/guides/authentication-guide) for a full comparison.
+:::
+
+## Setup
+
+All examples on this page assume you have installed the SDK and imported the base packages:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Client Credentials
+
+The most common authentication method for **backend services, scripts, and CI/CD pipelines**. Uses an [OAuth2](https://oauth.net/2/) client ID and secret to obtain tokens directly from the IdP.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("my-client-id", "my-client-secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+The third parameter accepts optional scopes (`[]string`). Pass `nil` to use the IdP defaults.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("my-client-id", "my-client-secret")
+    .useInsecurePlaintextConnection(true) // dev only — remove in production
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
+
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'my-client-id',
+        clientSecret: 'my-client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+:::warning Server-side only — not for browsers
+`clientCredentialsTokenProvider` requires a client secret and is intended for server-side scripts, CLI tools, and CI/CD pipelines. **Never expose client secrets in browser code.** The JavaScript SDK is designed for browser applications — in production, use [`refreshTokenProvider()`](#refresh-token) with a token from your OIDC login flow instead.
+:::
+
+</TabItem>
+</Tabs>
+
+**Token lifecycle:** The built-in token providers automatically cache tokens and refresh them when they expire (with a 30-second buffer). You can also write your own `TokenProvider` — any `() => Promise<string>` function works.
+
+## Token Exchange
+
+Use **token exchange** ([RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693)) when you already have a token from another identity system and need to exchange it for one the OpenTDF platform accepts. Common in federated identity and SAML environments.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithTokenExchange("eyJhbGciOi...", []string{"target-audience"}),
+)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+- `subjectToken` — the existing JWT or SAML assertion to exchange
+- `audience` — the target audience(s) for the new token
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .tokenExchange("eyJhbGciOi...")
+    .useInsecurePlaintextConnection(true) // dev only
+    .build();
+```
+
+The Java SDK wraps the JWT as a `BearerAccessToken` and performs an RFC 8693 token exchange.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, externalJwtTokenProvider, OpenTDF } from '@opentdf/sdk';
+
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(externalJwtTokenProvider({
+        clientId: 'my-client-id',
+        externalJwt: 'eyJhbGciOi...',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Refresh Token
+
+Use a **refresh token** for browser-based applications and long-lived sessions where you need to maintain access without re-prompting the user.
+
+:::info JavaScript SDK only
+Refresh token authentication is currently available in the JavaScript SDK only. Go and Java SDKs handle token lifecycle differently — see [Client Credentials](#client-credentials) for backend use cases.
+:::
+
+```typescript
+import { authTokenInterceptor, refreshTokenProvider, OpenTDF } from '@opentdf/sdk';
+
+// Use a refresh token obtained from a prior OIDC login flow.
+// The provider automatically exchanges it for access tokens and handles rotation.
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(refreshTokenProvider({
+        clientId: 'my-app',
+        refreshToken: 'refresh-token-from-login-flow',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+## Access Token
+
+Use an **access token** when your application already has a valid token from its own authentication system — for example, from an OIDC library like `oidc-client-ts`, an auth context provider, or a cookie. This is common when the IdP doesn't issue refresh tokens or when your security policy restricts their use.
+
+:::info JavaScript SDK only
+Access token authentication is currently available in the JavaScript SDK only. Go and Java SDKs handle token lifecycle differently — see [Client Credentials](#client-credentials) for backend use cases, or [Custom Token Source](#custom-token-source) for advanced integrations.
+:::
+
+```typescript
+import { authTokenInterceptor, OpenTDF } from '@opentdf/sdk';
+
+// Pass any () => Promise<string> function that returns a valid access token.
+// Example: read from your OIDC library's user manager.
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(async () => {
+        const user = await userManager.getUser();
+        return user?.access_token ?? '';
+    })],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+:::warning You manage token lifecycle
+Unlike the built-in token providers (`clientCredentialsTokenProvider`, `refreshTokenProvider`), a custom function does not automatically cache or refresh tokens. If your tokens are short-lived, ensure your function returns a fresh token when called — `authTokenInterceptor` calls it on every request.
+:::
+
+## Certificate Exchange (mTLS)
+
+Use **certificate-based authentication** in environments that require [mutual TLS (mTLS)](https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/) with client certificates.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "crypto/tls"
+
+tlsConfig := &tls.Config{
+    Certificates: []tls.Certificate{clientCert},
+    RootCAs:      caCertPool,
+}
+
+client, err := sdk.New("https://platform.example.com",
+    sdk.WithTLSCredentials(tlsConfig, []string{"target-audience"}),
+)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+The Java SDK provides several ways to configure TLS:
+
+```java
+// From a directory of PEM/CRT files
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("https://platform.example.com")
+    .clientSecret("my-client-id", "my-client-secret")
+    .sslFactoryFromDirectory("/path/to/certs")
+    .build();
+
+// From a Java keystore
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("https://platform.example.com")
+    .clientSecret("my-client-id", "my-client-secret")
+    .sslFactoryFromKeyStore("/path/to/keystore.jks", "password")
+    .build();
+```
+
+:::note
+Java's TLS configuration is layered on top of another auth method (typically client credentials). The `sslFactory` methods configure the transport, not the OAuth flow.
+:::
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+In browsers, client certificates are managed by the operating system and browser — the user is prompted to select a certificate when the server requests one. No SDK configuration is needed.
+
+</TabItem>
+</Tabs>
+
+## Custom Token Source
+
+For advanced integrations where the built-in auth methods don't fit, you can **bring your own token provider**.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+**Option A: Standard OAuth2 token source**
+
+```go
+import "golang.org/x/oauth2"
+
+tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
+    AccessToken: "pre-obtained-token",
+})
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithOAuthAccessTokenSource(tokenSource),
+)
+```
+
+**Option B: Implement the `AccessTokenSource` interface**
+
+For full control, implement the `auth.AccessTokenSource` interface:
+
+```go
+type AccessTokenSource interface {
+    AccessToken(ctx context.Context, client *http.Client) (AccessToken, error)
+    MakeToken(func(jwk.Key) ([]byte, error)) ([]byte, error)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Use any Nimbus `AuthorizationGrant` directly:
+
+```java
+import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+
+AuthorizationGrant customGrant = /* your custom grant */;
+
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .useInsecurePlaintextConnection(true) // dev only
+    .authorizationGrant(customGrant)
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Write a custom interceptor for full control over request authentication. This is useful when your app already has its own auth system (e.g., an OIDC library like `oidc-client-ts`, Auth0, or a custom token store):
+
+```typescript
+import { type Interceptor } from '@connectrpc/connect';
+import { OpenTDF } from '@opentdf/sdk';
+
+// Replace this with however your app obtains tokens —
+// e.g., from an OIDC library, auth context, or token store.
+async function getMyToken(): Promise<string> {
+    // Example: read from your OIDC library's user manager
+    // const user = await userManager.getUser();
+    // return user?.access_token ?? '';
+    throw new Error('Implement getMyToken() for your auth system');
+}
+
+const myAuthInterceptor: Interceptor = (next) => async (req) => {
+    req.header.set('Authorization', `Bearer ${await getMyToken()}`);
+    return next(req);
+};
+
+const client = new OpenTDF({
+    interceptors: [myAuthInterceptor],
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+## DPoP (Sender-Constrained Tokens)
+
+[DPoP (Demonstration of Proof-of-Possession)](https://datatracker.ietf.org/doc/html/rfc9449) binds access tokens to a cryptographic key pair, preventing token theft and replay attacks. The SDKs handle DPoP automatically in most cases.
+
+| SDK | Default behavior | Customization |
+|-----|-----------------|---------------|
+| **Go** | DPoP key auto-generated | `sdk.WithSessionSignerRSA(key)` to provide your own RSA key |
+| **Java** | Always on (RSA, auto-generated) | `SDKBuilder.srtSigner(signer)` for custom signing |
+| **JavaScript** | Off by default with interceptors | Use `authTokenDPoPInterceptor()` to enable |
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+DPoP is enabled by default with an auto-generated key. To provide your own RSA key:
+
+```go
+import "crypto/rsa"
+
+// Provide your own RSA key for DPoP signing
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("my-client-id", "my-client-secret", nil),
+    sdk.WithSessionSignerRSA(myRSAPrivateKey), // *rsa.PrivateKey
+)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+DPoP is always on with an auto-generated RSA key. To provide a custom signer:
+
+```java
+SDK sdk = new SDKBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("my-client-id", "my-client-secret")
+    .srtSigner(customSigner) // custom DPoP signer
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+DPoP is off by default with interceptors. Use `authTokenDPoPInterceptor()` to enable it:
+
+```typescript
+import { authTokenDPoPInterceptor, OpenTDF } from '@opentdf/sdk';
+
+// Use any TokenProvider: refreshTokenProvider(), clientCredentialsTokenProvider(),
+// externalJwtTokenProvider(), or a custom () => Promise<string> function.
+const dpopInterceptor = authTokenDPoPInterceptor({
+    tokenProvider: getAccessToken, // your token provider here
+});
+
+const client = new OpenTDF({
+    interceptors: [dpopInterceptor],
+    dpopKeys: dpopInterceptor.dpopKeys,
+    platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+:::warning
+Only disable DPoP if your IdP does not support it. DPoP is recommended for production deployments as it provides protection against token exfiltration.
+:::
+
+## Legacy: AuthProvider
+
+:::info
+The `AuthProvider` interface is deprecated as of the interceptor-based auth introduced in `@opentdf/sdk`. Existing code using `AuthProvider` continues to work. For new code, use interceptors as shown above.
+:::
+
+The legacy `AuthProvider` pattern managed token lifecycle internally:
+
+<Tabs>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+
+const authProvider = await AuthProviders.clientSecretAuthProvider({
+    clientId: 'my-client-id',
+    clientSecret: 'my-client-secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    exchange: 'client',
+});
+
+const client = new OpenTDF({
+    authProvider,
+    platformUrl: 'http://localhost:8080',
+});
+await client.ready;
+```
+
+</TabItem>
+</Tabs>

@@ -2,53 +2,71 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="create-subject-mapping">
-<summary>Create Subject Mapping</summary>
+<summary>Create a Subject Mapping</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.SubjectMapping.CreateSubjectMapping(ctx, &subjectmapping.CreateSubjectMappingRequest{...})
+```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().subjectMappings().createSubjectMappingBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.subjectMapping.createSubjectMapping({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributeValueId` | `string` (UUID) | Yes | The attribute value this mapping grants access to. |
+| `actions` | [`[]Action`](/sdks/policy#action) | Yes | Permitted [actions](/sdks/policy#action) (e.g., `read`, `create`). |
+| `existingSubjectConditionSetId` | `string` (UUID) | Yes* | ID of an existing subject condition set. Required unless `newSubjectConditionSet` is provided. |
+| `newSubjectConditionSet` | `object` | Yes* | Create a new condition set inline. Required unless `existingSubjectConditionSetId` is provided. Contains a `subjectSets` array — see [Condition Structure](/sdks/policy#condition-structure). |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
 import (
-	"context"
-	"log"
-
 	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
 )
 
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create Subject Mapping
-	subjectMapping := &subjectmapping.CreateSubjectMappingRequest{
-		AttributeValueId: "224c9d29-2cd4-4a38-b6ad-5f025ca93a8c",
-		Actions: []*policy.Action{
-			{
-				Value: &policy.Action_Standard{
-					Standard: policy.Action_STANDARD_ACTION_DECRYPT,
-				},
+// Create Subject Mapping
+subjectMapping := &subjectmapping.CreateSubjectMappingRequest{
+	AttributeValueId: "224c9d29-2cd4-4a38-b6ad-5f025ca93a8c",
+	Actions: []*policy.Action{
+		{
+			Value: &policy.Action_Standard{
+				Standard: policy.Action_STANDARD_ACTION_DECRYPT,
 			},
 		},
-		ExistingSubjectConditionSetId: "890b26db-4ee4-447f-ae8a-2862d922eeef",
-	}
+	},
+	ExistingSubjectConditionSetId: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+}
 
-	_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(), subjectMapping)
-	if err != nil {
-		log.Fatal(err)
-	}
+_, err = client.SubjectMapping.CreateSubjectMapping(context.Background(), subjectMapping)
+if err != nil {
+	log.Fatal(err)
 }
 ```
 
@@ -60,16 +78,9 @@ import CreateSubjectMappingExample from '@site/code_samples/java/create-subject-
 <CreateSubjectMappingExample />
 
 </TabItem>
-<TabItem value="js" label="TypeScript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
 // Create Subject Mapping
 await platform.v1.subjectMapping.createSubjectMapping({
   attributeValueId: '224c9d29-2cd4-4a38-b6ad-5f025ca93a8c',
@@ -80,4 +91,9 @@ await platform.v1.subjectMapping.createSubjectMapping({
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Subject Mapping object](/sdks/policy#subject-mapping-object).
+
 </details>

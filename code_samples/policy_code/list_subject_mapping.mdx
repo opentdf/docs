@@ -3,44 +3,61 @@ import TabItem from '@theme/TabItem';
 
 <details id="list-subject-mappings">
 <summary>List Subject Mappings</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.SubjectMapping.ListSubjectMappings(ctx, &subjectmapping.ListSubjectMappingsRequest{...})
+```
 
-import (
-	"context"
-	"log"
+</TabItem>
+<TabItem value="java" label="Java">
 
-	"github.com/opentdf/platform/protocol/go/policy/subjectmapping"
-	"github.com/opentdf/platform/sdk"
-)
+```java
+sdk.getServices().subjectMappings().listSubjectMappingsBlocking(req, metadata).execute()
+```
 
-func main() {
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
-	platformEndpoint := "http://localhost:8080"
+```typescript
+await platform.v1.subjectMapping.listSubjectMappings({ ... })
+```
 
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
+</TabItem>
+</Tabs>
 
-	if err != nil {
-		log.Fatal(err)
-	}
+**Parameters**
 
-	// List Subject Mapping
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | No | Filter to mappings in this namespace. |
+| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN. Alternative to `namespaceId`. |
+| `pagination.limit` | `int` | No | Maximum results per page. |
+| `pagination.offset` | `int` | No | Number of results to skip. |
 
-	subjectmappings, err := client.SubjectMapping.ListSubjectMappings(context.Background(), &subjectmapping.ListSubjectMappingsRequest{})
-	if err != nil {
-		log.Fatal(err)
-	}
+Without a namespace filter, returns all subject mappings across all namespaces.
 
-	for _, sm := range subjectmappings.GetSubjectMappings() {
-		log.Printf("Subject Mapping: %s", sm.GetId())
-	}
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/subjectmapping"
+
+// List Subject Mapping
+
+subjectmappings, err := client.SubjectMapping.ListSubjectMappings(context.Background(), &subjectmapping.ListSubjectMappingsRequest{})
+if err != nil {
+	log.Fatal(err)
+}
+
+for _, sm := range subjectmappings.GetSubjectMappings() {
+	log.Printf("Subject Mapping: %s", sm.GetId())
 }
 
 ```
@@ -53,16 +70,9 @@ import ListSubjectMappingsExample from '@site/code_samples/java/list-subject-map
 <ListSubjectMappingsExample />
 
 </TabItem>
-<TabItem value="js" label="TypeScript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
 // List Subject Mappings
 const resp = await platform.v1.subjectMapping.listSubjectMappings({});
 for (const sm of resp.subjectMappings) {
@@ -72,4 +82,9 @@ for (const sm of resp.subjectMappings) {
 
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Subject Mapping objects](/sdks/policy#subject-mapping-object). Includes [pagination](/sdks/policy#pagination) metadata.
+
 </details>

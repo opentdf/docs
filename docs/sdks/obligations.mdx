@@ -1,0 +1,1138 @@
+---
+sidebar_position: 6
+title: Obligations
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Obligations
+
+An **obligation** is a PDP-to-PEP directive that accompanies an access decision: "permit, provided these controls are enforced." Obligations are scoped to a namespace and can carry multiple values and triggers. See [Obligations](/components/policy/obligations) for the policy concept.
+
+## Setup
+
+All examples on this page assume you have created a platform client. See [Authentication](/sdks/authentication) for full details including DPoP key binding.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("opentdf", "secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// All Go snippets below use `client` and `context.Background()`.
+// The Obligations service is accessed via client.Obligations.
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
+
+// All JavaScript snippets below use `platform`.
+// The Obligations service is accessed via platform.v1.obligation.
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Obligation Definitions
+
+<details id="list-obligations">
+<summary>List Obligations</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.ListObligations(ctx, &obligations.ListObligationsRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.listObligations({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | No | Filter to obligations in this namespace. |
+| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN. Alternative to `namespaceId`. |
+
+Without a filter, returns all obligations across all namespaces.
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.ListObligations(context.Background(),
+	&obligations.ListObligationsRequest{},
+)
+if err != nil {
+	log.Fatal(err)
+}
+for _, obl := range resp.GetObligations() {
+	log.Printf("Obligation: %s  FQN: %s\n", obl.GetName(), obl.GetFqn())
+}
+```
+
+To filter by namespace:
+
+```go
+resp, err := client.Obligations.ListObligations(context.Background(),
+    &obligations.ListObligationsRequest{
+        NamespaceFqn: "https://example.com",
+    },
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.listObligations({});
+
+for (const obl of resp.obligations) {
+  console.log(`Obligation: ${obl.name}  FQN: ${obl.fqn}`);
+}
+```
+
+To filter by namespace:
+
+```typescript
+const resp = await platform.v1.obligation.listObligations({
+  namespaceFqn: 'https://example.com',
+});
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A list of [Obligation objects](#obligation-object).
+
+</details>
+
+<details id="get-obligation">
+<summary>Get an Obligation</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.GetObligation(ctx, &obligations.GetObligationRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.getObligation({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The obligation UUID. |
+| `fqn` | `string` | The obligation FQN (e.g., `https://example.com/obl/drm`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.GetObligation(context.Background(),
+	&obligations.GetObligationRequest{
+		Fqn: "https://example.com/obl/drm",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Obligation ID: %s\n", resp.GetObligation().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligation({
+  fqn: 'https://example.com/obl/drm',
+});
+
+console.log(`Obligation ID: ${resp.obligation?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A single [Obligation object](#obligation-object).
+
+</details>
+
+<details id="get-obligations-by-fqns">
+<summary>Get Obligations by FQNs</summary>
+
+Batch-fetch multiple obligations by FQN in a single request.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.GetObligationsByFQNs(ctx, &obligations.GetObligationsByFQNsRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.getObligationsByFQNs({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fqns` | `[]string` | Yes | Obligation FQNs to look up. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.GetObligationsByFQNs(context.Background(),
+    &obligations.GetObligationsByFQNsRequest{
+        Fqns: []string{
+            "https://example.com/obl/drm",
+            "https://example.com/obl/audit",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for fqn, obl := range resp.GetFqnObligationMap() {
+    log.Printf("%s → %s\n", fqn, obl.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationsByFQNs({
+  fqns: [
+    'https://example.com/obl/drm',
+    'https://example.com/obl/audit',
+  ],
+});
+
+for (const [fqn, obl] of Object.entries(resp.fqnObligationMap)) {
+  console.log(`${fqn} → ${obl.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A map of FQN to [Obligation object](#obligation-object).
+
+</details>
+
+<details id="create-obligation">
+<summary>Create an Obligation</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.CreateObligation(ctx, &obligations.CreateObligationRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.createObligation({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceId` | `string` (UUID) | Yes* | The parent namespace. Required unless `namespaceFqn` is provided. |
+| `namespaceFqn` | `string` (URI) | Yes* | The parent namespace FQN. Alternative to `namespaceId`. |
+| `name` | `string` | Yes | Obligation name (e.g., `drm`, `audit`). |
+| `values` | `[]string` | No | Initial values to create with the obligation. Can also be added later via [Create Obligation Value](#create-obligation-value). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.CreateObligation(context.Background(),
+	&obligations.CreateObligationRequest{
+		NamespaceFqn: "https://example.com",
+		Name:         "drm",
+		Values:       []string{"watermarking", "no-download"},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Created obligation: %s  FQN: %s\n",
+	resp.GetObligation().GetId(), resp.GetObligation().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.createObligation({
+  namespaceFqn: 'https://example.com',
+  name: 'drm',
+  values: ['watermarking', 'no-download'],
+});
+
+console.log(`Created obligation: ${resp.obligation?.id}  FQN: ${resp.obligation?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The created [Obligation object](#obligation-object). The resulting FQN follows the convention `<namespace>/obl/<name>` (e.g., `https://example.com/obl/drm`).
+
+</details>
+
+<details id="update-obligation">
+<summary>Update an Obligation</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.UpdateObligation(ctx, &obligations.UpdateObligationRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.updateObligation({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The obligation ID to update. |
+| `name` | `string` | No | New name. Only set fields are updated. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.UpdateObligation(context.Background(),
+    &obligations.UpdateObligationRequest{
+        Id:   "3f4a7c12-...",
+        Name: "digital-rights",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Updated obligation FQN: %s\n", resp.GetObligation().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.updateObligation({
+  id: '3f4a7c12-...',
+  name: 'digital-rights',
+});
+
+console.log(`Updated obligation FQN: ${resp.obligation?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The updated [Obligation object](#obligation-object).
+
+</details>
+
+<details id="delete-obligation">
+<summary>Delete an Obligation</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.DeleteObligation(ctx, &obligations.DeleteObligationRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.deleteObligation({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The obligation UUID. |
+| `fqn` | `string` | The obligation FQN. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.DeleteObligation(context.Background(),
+    &obligations.DeleteObligationRequest{
+        Fqn: "https://example.com/obl/drm",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Deleted obligation: %s\n", resp.GetObligation().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.deleteObligation({
+  fqn: 'https://example.com/obl/drm',
+});
+
+console.log(`Deleted obligation: ${resp.obligation?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The deleted [Obligation object](#obligation-object).
+
+</details>
+
+### Obligation Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `name` | `string` | The obligation name (e.g., `drm`, `audit`). |
+| `fqn` | `string` | Fully qualified name, e.g., `https://example.com/obl/drm`. |
+| `values` | [`[]ObligationValue`](#obligation-value-object) | The values defined under this obligation. |
+| `namespace` | [`Namespace`](/sdks/policy#namespace-object) | The parent namespace. |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |
+
+---
+
+## Obligation Values
+
+Each obligation can carry one or more values. Value FQNs follow the convention `<namespace>/obl/<obligation_name>/value/<value>` (e.g., `https://example.com/obl/drm/value/watermarking`).
+
+<details id="get-obligation-value">
+<summary>Get an Obligation Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.GetObligationValue(ctx, &obligations.GetObligationValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.getObligationValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The value UUID. |
+| `fqn` | `string` | The value FQN (e.g., `https://example.com/obl/drm/value/watermarking`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.GetObligationValue(context.Background(),
+    &obligations.GetObligationValueRequest{
+        Fqn: "https://example.com/obl/drm/value/watermarking",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Value ID: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationValue({
+  fqn: 'https://example.com/obl/drm/value/watermarking',
+});
+
+console.log(`Value ID: ${resp.value?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A single [Obligation Value object](#obligation-value-object).
+
+</details>
+
+<details id="get-obligation-values-by-fqns">
+<summary>Get Obligation Values by FQNs</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.GetObligationValuesByFQNs(ctx, &obligations.GetObligationValuesByFQNsRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.getObligationValuesByFQNs({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fqns` | `[]string` | Yes | Obligation value FQNs to look up. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.GetObligationValuesByFQNs(context.Background(),
+    &obligations.GetObligationValuesByFQNsRequest{
+        Fqns: []string{
+            "https://example.com/obl/drm/value/watermarking",
+            "https://example.com/obl/drm/value/no-download",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for fqn, val := range resp.GetFqnValueMap() {
+    log.Printf("%s → %s\n", fqn, val.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.getObligationValuesByFQNs({
+  fqns: [
+    'https://example.com/obl/drm/value/watermarking',
+    'https://example.com/obl/drm/value/no-download',
+  ],
+});
+
+for (const [fqn, val] of Object.entries(resp.fqnValueMap)) {
+  console.log(`${fqn} → ${val.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A map of FQN to [Obligation Value object](#obligation-value-object).
+
+</details>
+
+<details id="create-obligation-value">
+<summary>Create an Obligation Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.CreateObligationValue(ctx, &obligations.CreateObligationValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.createObligationValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `obligationId` | `string` (UUID) | Yes* | The parent obligation. Required unless `obligationFqn` is provided. |
+| `obligationFqn` | `string` | Yes* | The parent obligation FQN. Alternative to `obligationId`. |
+| `value` | `string` | Yes | The value string (e.g., `watermarking`, `encrypt-at-rest`). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.CreateObligationValue(context.Background(),
+	&obligations.CreateObligationValueRequest{
+		ObligationFqn: "https://example.com/obl/drm",
+		Value:         "encrypt-at-rest",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Created value: %s  FQN: %s\n",
+	resp.GetValue().GetId(), resp.GetValue().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.createObligationValue({
+  obligationFqn: 'https://example.com/obl/drm',
+  value: 'encrypt-at-rest',
+});
+
+console.log(`Created value: ${resp.value?.id}  FQN: ${resp.value?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The created [Obligation Value object](#obligation-value-object).
+
+</details>
+
+<details id="update-obligation-value">
+<summary>Update an Obligation Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.UpdateObligationValue(ctx, &obligations.UpdateObligationValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.updateObligationValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The value ID to update. |
+| `value` | `string` | No | New value string. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.UpdateObligationValue(context.Background(),
+    &obligations.UpdateObligationValueRequest{
+        Id:    "9a1b2c3d-...",
+        Value: "encrypt-at-rest-v2",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Updated value FQN: %s\n", resp.GetValue().GetFqn())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.updateObligationValue({
+  id: '9a1b2c3d-...',
+  value: 'encrypt-at-rest-v2',
+});
+
+console.log(`Updated value FQN: ${resp.value?.fqn}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The updated [Obligation Value object](#obligation-value-object).
+
+</details>
+
+<details id="delete-obligation-value">
+<summary>Delete an Obligation Value</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.DeleteObligationValue(ctx, &obligations.DeleteObligationValueRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.deleteObligationValue({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide one of the following (exactly one is required):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | `string` (UUID) | The value UUID. |
+| `fqn` | `string` | The value FQN. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.DeleteObligationValue(context.Background(),
+    &obligations.DeleteObligationValueRequest{
+        Fqn: "https://example.com/obl/drm/value/watermarking",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Deleted value: %s\n", resp.GetValue().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.deleteObligationValue({
+  fqn: 'https://example.com/obl/drm/value/watermarking',
+});
+
+console.log(`Deleted value: ${resp.value?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The deleted [Obligation Value object](#obligation-value-object).
+
+</details>
+
+### Obligation Value Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `value` | `string` | The value string (e.g., `watermarking`, `no-download`). |
+| `fqn` | `string` | Fully qualified name, e.g., `https://example.com/obl/drm/value/watermarking`. |
+| `obligation` | [`Obligation`](#obligation-object) | The parent obligation. |
+| `triggers` | [`[]ObligationTrigger`](#obligation-trigger-object) | Triggers associated with this value. |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |
+
+---
+
+## Triggers
+
+A trigger links an obligation value to a specific [action](/sdks/policy#action) + [attribute value](/sdks/policy#attribute-value-object) combination. When that action is performed on data carrying that attribute value, the obligation fires.
+
+<details id="add-obligation-trigger">
+<summary>Add an Obligation Trigger</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.AddObligationTrigger(ctx, &obligations.AddObligationTriggerRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.addObligationTrigger({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `obligationValue` | `IdFqnIdentifier` | Yes | The obligation value to trigger. Provide `id` or `fqn`. |
+| `action` | `IdNameIdentifier` | Yes | The action that fires this trigger. Provide `id` or `name` (e.g., `read`). |
+| `attributeValue` | `IdFqnIdentifier` | Yes | The attribute value that must be present on the data. Provide `id` or `fqn`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy/obligations"
+)
+
+resp, err := client.Obligations.AddObligationTrigger(context.Background(),
+	&obligations.AddObligationTriggerRequest{
+		ObligationValue: &common.IdFqnIdentifier{
+			Fqn: "https://example.com/obl/drm/value/watermarking",
+		},
+		Action: &common.IdNameIdentifier{
+			Name: "read",
+		},
+		AttributeValue: &common.IdFqnIdentifier{
+			Fqn: "https://example.com/attr/classification/value/secret",
+		},
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Added trigger: %s\n", resp.GetTrigger().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.addObligationTrigger({
+  obligationValue: { fqn: 'https://example.com/obl/drm/value/watermarking' },
+  action: { name: 'read' },
+  attributeValue: { fqn: 'https://example.com/attr/classification/value/secret' },
+});
+
+console.log(`Added trigger: ${resp.trigger?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The created [Obligation Trigger object](#obligation-trigger-object).
+
+</details>
+
+<details id="list-obligation-triggers">
+<summary>List Obligation Triggers</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.ListObligationTriggers(ctx, &obligations.ListObligationTriggersRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.listObligationTriggers({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespaceFqn` | `string` (URI) | No | Filter to triggers in this namespace. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.ListObligationTriggers(context.Background(),
+    &obligations.ListObligationTriggersRequest{
+        NamespaceFqn: "https://example.com",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for _, trigger := range resp.GetTriggers() {
+    log.Printf("Trigger ID: %s\n", trigger.GetId())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.listObligationTriggers({
+  namespaceFqn: 'https://example.com',
+});
+
+for (const trigger of resp.triggers) {
+  console.log(`Trigger ID: ${trigger.id}`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A list of [Obligation Trigger objects](#obligation-trigger-object).
+
+</details>
+
+<details id="remove-obligation-trigger">
+<summary>Remove an Obligation Trigger</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.RemoveObligationTrigger(ctx, &obligations.RemoveObligationTriggerRequest{...})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.obligation.removeObligationTrigger({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The trigger ID to remove. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.RemoveObligationTrigger(context.Background(),
+    &obligations.RemoveObligationTriggerRequest{
+        Id: "7e8f9a0b-...",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Removed trigger: %s\n", resp.GetTrigger().GetId())
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.obligation.removeObligationTrigger({
+  id: '7e8f9a0b-...',
+});
+
+console.log(`Removed trigger: ${resp.trigger?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The removed [Obligation Trigger object](#obligation-trigger-object).
+
+</details>
+
+### Obligation Trigger Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
+| `obligationValue` | [`ObligationValue`](#obligation-value-object) | The obligation value this trigger fires for. |
+| `action` | [`Action`](/sdks/policy#action) | The action that activates this trigger (e.g., `read`). |
+| `attributeValue` | [`Value`](/sdks/policy#attribute-value-object) | The attribute value that must be present on the data. |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |

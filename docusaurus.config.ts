@@ -30,7 +30,7 @@ const config: Config = {
   favicon: "img/favicon.svg",
 
   // Set the production url of your site here
-  url: "https://docs.opentdf.io",
+  url: "https://opentdf.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
@@ -65,12 +65,6 @@ const config: Config = {
         gtag("set", "url_passthrough", true);
       `,
     }, 
-    {
-      tagName: "script",
-      attributes: {
-        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/5e8e2168-3b0b-4c78-8560-e7bea6d12cf4/osano.js",
-      },
-    },
     {
       tagName: "script",
       attributes: {},
@@ -239,7 +233,7 @@ const config: Config = {
               |
               <a href='https://www.virtru.com/cookie-policy' target='_blank' rel='noopener noreferrer'>Cookie Policy</a>
               &amp;
-              <button type="button" onclick="Osano.cm.showDrawer('osano-cm-dom-info-dialog-open')">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
+              <button type="button" onclick="window.openOsanoPreferences?.()">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
             </span>
           </div>
           <div class="footer__license-info">
@@ -446,6 +440,7 @@ ${updatedContent}`,
     require.resolve("docusaurus-lunr-search"),
   ],
   clientModules: [
+    require.resolve('./src/theme/OsanoLoader.js'),
     require.resolve('./src/theme/TabsHashSync.js'),
   ],
 };

@@ -3,43 +3,78 @@ import TabItem from '@theme/TabItem';
 
 <details id="list-namespaces">
 <summary>List Namespaces</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{...})
+```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().listNamespacesBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.listNamespaces({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `state` | `string` | No | Filter by state: `ACTIVE_STATE_ENUM_ACTIVE` (default), `ACTIVE_STATE_ENUM_INACTIVE`, or `ACTIVE_STATE_ENUM_ANY`. |
+| `pagination.limit` | `int` | No | Maximum results per page. Defaults to the platform-configured limit. |
+| `pagination.offset` | `int` | No | Number of results to skip. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
 import (
-	"context"
-	"log"
-
+	"github.com/opentdf/platform/protocol/go/common"
 	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
 )
 
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// List All Namespaces
-	namespaces, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, namespace := range namespaces.GetNamespaces() {
-		log.Printf("Namespace: %s\n", namespace.GetName())
-	}
+// List all active namespaces
+resp, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{})
+if err != nil {
+	log.Fatal(err)
 }
+for _, namespace := range resp.GetNamespaces() {
+	log.Printf("Namespace: %s\n", namespace.GetName())
+}
+```
+
+To list inactive namespaces or paginate:
+
+```go
+import (
+	"github.com/opentdf/platform/protocol/go/common"
+	"github.com/opentdf/platform/protocol/go/policy"
+	"github.com/opentdf/platform/protocol/go/policy/namespaces"
+)
+
+resp, err := client.Namespaces.ListNamespaces(context.Background(), &namespaces.ListNamespacesRequest{
+	State: common.ActiveStateEnum_ACTIVE_STATE_ENUM_INACTIVE,
+	Pagination: &policy.PageRequest{
+		Limit:  10,
+		Offset: 0,
+	},
+})
 ```
 
 </TabItem>
@@ -49,24 +84,43 @@ import ListNamespacesExample from '@site/code_samples/java/list-namespaces.mdx';
 
 <ListNamespacesExample />
 
+To list inactive namespaces:
+
+```java
+import io.opentdf.platform.common.Common.ActiveStateEnum;
+
+var req = ListNamespacesRequest.newBuilder()
+    .setState(ActiveStateEnum.ACTIVE_STATE_ENUM_INACTIVE)
+    .build();
+var resp = sdk.getServices().namespaces()
+    .listNamespacesBlocking(req, Collections.emptyMap()).execute();
+```
+
 </TabItem>
-<TabItem value="js" label="TypeScript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
-// List All Namespaces
+// List all active namespaces
 const resp = await platform.v1.namespace.listNamespaces({});
 for (const ns of resp.namespaces) {
   console.log('Namespace:', ns.name);
 }
 ```
 
+To list inactive namespaces or paginate:
+
+```typescript
+const resp = await platform.v1.namespace.listNamespaces({
+  state: 'ACTIVE_STATE_ENUM_INACTIVE',
+  pagination: { limit: 10, offset: 0 },
+});
+```
+
 </TabItem>
 </Tabs>
+
+**Returns**
+
+A list of [Namespace objects](#namespace-object). Includes [pagination](#pagination) metadata.
+
 </details>
