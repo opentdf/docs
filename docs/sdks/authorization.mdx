@@ -69,7 +69,8 @@ const platformClient = new PlatformClient({
 
 Every authorization call requires an `EntityIdentifier` — the entity (user, service, etc.) you're asking about. The entity can be identified by email, username, client ID, JWT token, claims, or registered resource FQN.
 
-**Go** — use the v2 helper functions:
+<Tabs>
+<TabItem value="go" label="Go">
 
 | Helper | Description |
 |--------|-------------|
@@ -88,7 +89,8 @@ req := &authorizationv2.GetDecisionRequest{
 }
 ```
 
-**Java** — use the `EntityIdentifiers` helper class:
+</TabItem>
+<TabItem value="java" label="Java">
 
 | Helper | Description |
 |--------|-------------|
@@ -124,7 +126,8 @@ EntityIdentifier.newBuilder()
 
 </details>
 
-**JavaScript** — use the named helper functions:
+</TabItem>
+<TabItem value="js" label="JavaScript">
 
 | Helper | Description |
 |--------|-------------|
@@ -168,6 +171,9 @@ const response = await platformClient.v2.authorization.getDecision({
 ```
 
 </details>
+
+</TabItem>
+</Tabs>
 
 **Supported entity types:**
 
