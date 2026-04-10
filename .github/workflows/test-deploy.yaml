@@ -26,3 +26,8 @@ jobs:
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-vendored-specs:
+    needs: test-deploy
+    if: failure()
+    uses: ./.github/workflows/update-vendored-specs.yaml
