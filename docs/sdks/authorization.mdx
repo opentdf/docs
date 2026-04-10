@@ -180,10 +180,15 @@ const response = await platformClient.v2.authorization.getDecision({
 | Type | Go | Java | JavaScript |
 |------|-----|------|------------|
 | Email | `ForEmail(email)` | `EntityIdentifiers.forEmail(email)` | `EntityIdentifiers.forEmail(email)` |
-| Client ID | `ForClientID(id)` | `forClientId(id)` | `EntityIdentifiers.forClientId(id)` |
-| Username | `ForUserName(name)` | `forUserName(name)` | `EntityIdentifiers.forUserName(name)` |
-| JWT Token | `ForToken(jwt)` | `forToken(jwt)` | `EntityIdentifiers.forToken(jwt)` |
+| Client ID | `ForClientID(id)` | `EntityIdentifiers.forClientId(id)` | `EntityIdentifiers.forClientId(id)` |
+| Username | `ForUserName(name)` | `EntityIdentifiers.forUserName(name)` | `EntityIdentifiers.forUserName(name)` |
+| JWT Token | `ForToken(jwt)` | `EntityIdentifiers.forToken(jwt)` | `EntityIdentifiers.forToken(jwt)` |
 | Request Token | `WithRequestToken()` | — | `EntityIdentifiers.withRequestToken()` |
+| Claims | — | manual proto construction | manual object construction |
+| Registered Resource | — | manual proto construction | manual object construction |
+
+- **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
+- **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
 
 ---
 
