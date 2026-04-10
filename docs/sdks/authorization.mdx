@@ -88,7 +88,26 @@ req := &authorizationv2.GetDecisionRequest{
 }
 ```
 
-**Java** — build the nested proto structure:
+**Java** — use the `EntityIdentifiers` helper class:
+
+| Helper | Description |
+|--------|-------------|
+| `EntityIdentifiers.forEmail(email)` | Identify by email address |
+| `EntityIdentifiers.forClientId(clientId)` | Identify by client ID (service account / NPE) |
+| `EntityIdentifiers.forUserName(username)` | Identify by username |
+| `EntityIdentifiers.forToken(jwt)` | Resolve entity from a JWT token |
+
+```java
+import io.opentdf.platform.sdk.EntityIdentifiers;
+
+GetDecisionRequest request = GetDecisionRequest.newBuilder()
+    .setEntityIdentifier(EntityIdentifiers.forEmail("alice@example.com"))
+    // ...
+    .build();
+```
+
+<details>
+<summary>Without helpers (manual proto construction)</summary>
 
 ```java
 EntityIdentifier.newBuilder()
@@ -103,7 +122,29 @@ EntityIdentifier.newBuilder()
     .build()
 ```
 
-**JavaScript** — use the `identifier` oneof:
+</details>
+
+**JavaScript** — use the named helper functions:
+
+| Helper | Description |
+|--------|-------------|
+| `forEmail(email)` | Identify by email address |
+| `forClientId(clientId)` | Identify by client ID (service account / NPE) |
+| `forUserName(username)` | Identify by username |
+| `forToken(jwt)` | Resolve entity from a JWT token |
+| `withRequestToken()` | Derive entity from the request's Authorization header |
+
+```typescript
+import { forEmail } from '@opentdf/sdk';
+
+const response = await platformClient.v2.authorization.getDecision({
+  entityIdentifier: forEmail('alice@example.com'),
+  // ...
+});
+```
+
+<details>
+<summary>Without helpers (manual object construction)</summary>
 
 ```typescript
 {
@@ -126,19 +167,17 @@ EntityIdentifier.newBuilder()
 }
 ```
 
+</details>
+
 **Supported entity types:**
 
-| Type | Go helper | Java setter | JS `case` |
-|------|-----------|-------------|-----------|
-| Email | `ForEmail(email)` | `.setEmailAddress(email)` | `'emailAddress'` |
-| Client ID | `ForClientID(id)` | `.setClientId(id)` | `'clientId'` |
-| Username | `ForUserName(name)` | `.setUserName(name)` | `'userName'` |
-| JWT Token | `ForToken(jwt)` | `.setToken(Token.newBuilder().setJwt(jwt))` | `'token'` |
-| Claims | — | `.setClaims(claims)` | `'claims'` |
-| Registered Resource | — | `.setRegisteredResourceValueFqn(fqn)` | `'registeredResourceValueFqn'` |
-
-- **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
-- **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
+| Type | Go | Java | JavaScript |
+|------|-----|------|------------|
+| Email | `ForEmail(email)` | `forEmail(email)` | `forEmail(email)` |
+| Client ID | `ForClientID(id)` | `forClientId(id)` | `forClientId(id)` |
+| Username | `ForUserName(name)` | `forUserName(name)` | `forUserName(name)` |
+| JWT Token | `ForToken(jwt)` | `forToken(jwt)` | `forToken(jwt)` |
+| Request Token | `WithRequestToken()` | — | `withRequestToken()` |
 
 ---
 
@@ -176,7 +215,7 @@ await platformClient.v2.authorization.getEntitlements({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. In Go, use helpers like `authorizationv2.ForEmail("user@example.com")`. |
+| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go), `EntityIdentifiers.forEmail(...)` (Java), or `forEmail(...)` (JS). |
 | `withComprehensiveHierarchy` | `bool` | No | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value. |
 
 **Example**
@@ -279,18 +318,10 @@ for _, dr := range decisionResponse.GetDecisionResponses() {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.EntityIdentifiers;
+
 GetEntitlementsRequest request = GetEntitlementsRequest.newBuilder()
-    .setEntityIdentifier(
-        EntityIdentifier.newBuilder()
-            .setEntityChain(
-                EntityChain.newBuilder()
-                    .addEntities(
-                        Entity.newBuilder()
-                            .setId("user-bob")
-                            .setEmailAddress("bob@OrgA.com")
-                    )
-            )
-    )
+    .setEntityIdentifier(EntityIdentifiers.forEmail("bob@OrgA.com"))
     .build();
 
 GetEntitlementsResponse resp = sdk.getServices()
@@ -308,23 +339,10 @@ for (EntityEntitlements entitlement : resp.getEntitlementsList()) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { forEmail } from '@opentdf/sdk';
+
 const response = await platformClient.v2.authorization.getEntitlements({
-  entityIdentifier: {
-    identifier: {
-      case: 'entityChain',
-      value: {
-        entities: [
-          {
-            ephemeralId: 'user-bob',
-            entityType: {
-              case: 'emailAddress',
-              value: 'bob@OrgA.com',
-            },
-          },
-        ],
-      },
-    },
-  },
+  entityIdentifier: forEmail('bob@OrgA.com'),
 });
 
 for (const entitlement of response.entitlements) {
@@ -335,20 +353,10 @@ for (const entitlement of response.entitlements) {
 To expand hierarchy rules:
 
 ```typescript
+import { forEmail } from '@opentdf/sdk';
+
 const response = await platformClient.v2.authorization.getEntitlements({
-  entityIdentifier: {
-    identifier: {
-      case: 'entityChain',
-      value: {
-        entities: [
-          {
-            ephemeralId: 'user-123',
-            entityType: { case: 'emailAddress', value: 'user@company.com' },
-          },
-        ],
-      },
-    },
-  },
+  entityIdentifier: forEmail('user@company.com'),
   withComprehensiveHierarchy: true,
 });
 
@@ -398,7 +406,7 @@ await platformClient.v2.authorization.getDecision({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. In Go, use helpers like `authorizationv2.ForEmail(...)` or `authorizationv2.ForToken(jwt)`. |
+| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go), `EntityIdentifiers.forEmail(...)` (Java), or `forEmail(...)` (JS). |
 | `action` | `Action` | Yes | The action being performed (e.g., `decrypt`, `read`). |
 | `resource` | `Resource` | Yes | The resource being accessed, identified by attribute value FQNs. |
 
@@ -534,18 +542,10 @@ for _, dr := range decisionResponse.GetDecisionResponses() {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.EntityIdentifiers;
+
 GetDecisionRequest request = GetDecisionRequest.newBuilder()
-    .setEntityIdentifier(
-        EntityIdentifier.newBuilder()
-            .setEntityChain(
-                EntityChain.newBuilder()
-                    .addEntities(
-                        Entity.newBuilder()
-                            .setId("user-123")
-                            .setEmailAddress("user@company.com")
-                    )
-            )
-    )
+    .setEntityIdentifier(EntityIdentifiers.forEmail("user@company.com"))
     .setAction(
         Action.newBuilder()
             .setName("decrypt")
@@ -580,22 +580,11 @@ if (decision.getDecision() == Decision.DECISION_PERMIT) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { forEmail } from '@opentdf/sdk';
 import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
 
 const response = await platformClient.v2.authorization.getDecision({
-  entityIdentifier: {
-    identifier: {
-      case: 'entityChain',
-      value: {
-        entities: [
-          {
-            ephemeralId: 'user-123',
-            entityType: { case: 'emailAddress', value: 'user@company.com' },
-          },
-        ],
-      },
-    },
-  },
+  entityIdentifier: forEmail('user@company.com'),
   action: { name: 'decrypt' },
   resource: {
     resource: {
@@ -778,20 +767,12 @@ for _, dr := range decisionResponse.GetDecisionResponses() {
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.EntityIdentifiers;
+
 GetDecisionBulkRequest request = GetDecisionBulkRequest.newBuilder()
     .addDecisionRequests(
         GetDecisionMultiResourceRequest.newBuilder()
-            .setEntityIdentifier(
-                EntityIdentifier.newBuilder()
-                    .setEntityChain(
-                        EntityChain.newBuilder()
-                            .addEntities(
-                                Entity.newBuilder()
-                                    .setId("user-123")
-                                    .setEmailAddress("user@company.com")
-                            )
-                    )
-            )
+            .setEntityIdentifier(EntityIdentifiers.forEmail("user@company.com"))
             .setAction(Action.newBuilder().setName("decrypt"))
             .addResources(
                 Resource.newBuilder()
@@ -841,22 +822,12 @@ import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { forEmail } from '@opentdf/sdk';
+
 const response = await platformClient.v2.authorization.getDecisionBulk({
   decisionRequests: [
     {
-      entityIdentifier: {
-        identifier: {
-          case: 'entityChain',
-          value: {
-            entities: [
-              {
-                ephemeralId: 'user-123',
-                entityType: { case: 'emailAddress', value: 'user@company.com' },
-              },
-            ],
-          },
-        },
-      },
+      entityIdentifier: forEmail('user@company.com'),
       action: { name: 'decrypt' },
       resources: [
         {
