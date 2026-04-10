@@ -582,13 +582,13 @@ Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { forEmail } from '@opentdf/sdk';
+import { EntityIdentifiers } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({ ...auth, platformUrl });
 
 const resp = await platform.v2.authorization.getEntitlements({
-  entityIdentifier: forEmail('alice@example.com'),
+  entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
 });
 
 if (resp.entitlements.length > 0) {
@@ -599,10 +599,10 @@ if (resp.entitlements.length > 0) {
 Other supported [entity identifier helpers](/sdks/authorization#entityidentifier):
 
 ```typescript
-import { forUserName, forClientId } from '@opentdf/sdk';
+import { EntityIdentifiers } from '@opentdf/sdk';
 
-forUserName('alice')       // By username
-forClientId('my-service')  // By client ID (NPE / service account)
+EntityIdentifiers.forUserName('alice')       // By username
+EntityIdentifiers.forClientId('my-service')  // By client ID (NPE / service account)
 ```
 
 </TabItem>
