@@ -26,12 +26,18 @@ e-->f(Attribute Value);
 
 A Subject Mapping consists of:
 
-1. A mapped [Attribute Value](./attributes#values)
-2. A mapped Subject Condition Set
-3. One or more policy [Actions](./actions)
+1. An optional [Namespace](./attributes#namespaces) (the same organizational container used by [attributes](./attributes) and [registered resources](./registered_resources))
+2. A mapped [Attribute Value](./attributes#values)
+3. A mapped Subject Condition Set
+4. One or more policy [Actions](./actions)
+
+:::warning Deprecation
+Non-namespaced Subject Mappings are deprecated. A future version will require all Subject Mappings to be associated with a namespace. See [Namespacing](#namespacing) below.
+:::
 
 ```mermaid
 graph LR;
+Namespace-.->|optional|B(Subject Mapping);
 A(Attribute Value)<--> B(Subject Mapping);
 B(Subject Mapping)<--> D(Action);
 B(Subject Mapping)<--> C(Subject Condition Set);
@@ -46,6 +52,8 @@ For more information, see the [Attribute Value](./attributes) and the [Actions](
 ## Subject Condition Set
 
 A Subject Condition Set is a logical structure to resolve a representation of the entity (an Access Token, EntityResolutionService response) to a boolean true or false. It contains multiple Subject Sets, each with Condition Groups, and each Condition Group contains Conditions. Each Subject Mapping links to one Attribute Value, but a Subject Condition Set can be reused across multiple Subject Mappings and Attribute Values.
+
+Subject Condition Sets can also optionally be associated with a namespace. See [Subject Condition Set Namespacing](#subject-condition-set-namespacing) below.
 
 ### Examples
 
@@ -104,3 +112,32 @@ subject_sets:
 
 In plain language: If an entity's access token from the IdP or Entity Resolution Service (ERS) includes a `title` field with a value `staff`, `senior`, `junior`, or `intern` AND a `department` field with value `engineering`, then the Subject Mapping will apply to them, granting entitlement for the contained Action `create` on the Attribute Value of `contributor`.
 
+## Namespacing
+
+Subject Mappings can optionally be associated with a namespace by providing a `namespace_id` or `namespace_fqn` when creating the mapping. Non-namespaced Subject Mappings are deprecated and a future version will require all Subject Mappings to have a namespace.
+
+### Namespace Deletion Cascade
+
+Deactivating a namespace (the default operation exposed via the SDK and CLI) soft-deletes the namespace but does not affect its child Subject Mappings or Subject Condition Sets. However, an unsafe hard-delete of a namespace cascades to permanently delete all Subject Mappings and Subject Condition Sets within that namespace.
+
+### `NamespacedPolicy` Enforcement
+
+The platform supports a `NamespacedPolicy` server configuration flag. When enabled, all new Subject Mappings are required to have a namespace. This flag will become the default in a future version.
+
+### Namespace Consistency
+
+When a Subject Mapping is namespaced, all of its related objects must be in the same namespace:
+
+- **Attribute Value**: The mapped attribute value's parent attribute definition must be in the same namespace as the Subject Mapping.
+- **Actions**: All actions on the Subject Mapping must be in the same namespace.
+- **Subject Condition Set**: The Subject Condition Set must be in the same namespace.
+
+When a Subject Mapping is not namespaced (legacy behavior):
+- Attribute values can be from any namespace.
+- Actions and the Subject Condition Set must also be unnamespaced.
+
+### Subject Condition Set Namespacing
+
+Subject Condition Sets can also optionally be associated with a namespace by providing a `namespace_id` or `namespace_fqn` when creating the condition set. When `NamespacedPolicy` is enabled, all new Subject Condition Sets are required to have a namespace.
+
+A Subject Condition Set's namespace must match the namespace of the Subject Mapping it is associated with.
