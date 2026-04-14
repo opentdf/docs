@@ -22,7 +22,7 @@ When `NamespacedPolicy` is enabled, standard actions are automatically seeded fo
 
 ## Custom Actions
 
-Custom Actions known to Policy are admin-defined and will be lower cased when stored. They may contain underscores (`_`) or hyphens (`-`) if preceded or followed by an alphanumeric character.
+Custom Actions known to Policy are admin-defined and will be lowercased when stored. They may contain underscores (`_`) or hyphens (`-`) if preceded or followed by an alphanumeric character.
 
 :::warning Deprecation
 Non-namespaced custom actions are deprecated. A future version will require all custom actions to be associated with a namespace.
@@ -61,4 +61,4 @@ When actions are referenced by other namespaced policy objects, they must be in 
 
 - **Subject Mappings**: When a subject mapping is namespaced, all of its actions must be in the same namespace.
 - **Obligation Triggers**: When `NamespacedPolicy` is enabled, an obligation trigger's action must be in the same namespace as the obligation definition.
-- **Registered Resource Action Attribute Values**: When a registered resource is namespaced, all actions in its action-attribute-value mappings must be in the same namespace as the registered resource.
+- **Registered Resource Action Attribute Values**: When a registered resource is namespaced, all actions in its Action Attribute Value mappings must be in the same namespace as the registered resource.

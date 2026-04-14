@@ -134,7 +134,7 @@ When a Subject Mapping is namespaced, all of its related objects must be in the 
 
 When a Subject Mapping is not namespaced (legacy behavior):
 - Attribute values can be from any namespace.
-- Actions and the Subject Condition Set must also be unnamespaced.
+- Actions and the Subject Condition Set must also be non-namespaced.
 
 ### Subject Condition Set Namespacing
 
