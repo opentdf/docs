@@ -68,6 +68,10 @@ When getting a Registered Resource by name without specifying a namespace, and b
 
 Deactivating a namespace (the default operation exposed via the SDK and CLI) soft-deletes the namespace but does not affect its child Registered Resources. However, an unsafe hard-delete of a namespace cascades to permanently delete all Registered Resources (and their values) within that namespace.
 
+### Action Attribute Value Namespace Consistency
+
+When a Registered Resource is namespaced, the actions and attribute values in its Action Attribute Value mappings must also be in the same namespace as the Registered Resource.
+
 ### `NamespacedPolicy` Enforcement
 
 The platform supports a `NamespacedPolicy` server configuration flag. When enabled, all new Registered Resources are required to have a namespace. This flag will become the default in a future version.
