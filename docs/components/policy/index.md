@@ -20,9 +20,9 @@ Components of Policy include:
   - Namespaces
   - Definitions
   - Values
-- Actions
-- Subject Mappings
-  - Subject Condition Sets
+- Actions (optionally scoped to Namespaces)
+- Subject Mappings (optionally scoped to Namespaces)
+  - Subject Condition Sets (optionally scoped to Namespaces)
 - Registered Resources (scoped to Namespaces)
 - Resource Mappings
 - Key Access Grants (KAS Grants)
