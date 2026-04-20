@@ -16,18 +16,11 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
-      - name: Set up git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Install dependencies
         run: npm ci
@@ -61,22 +54,54 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create or update branch
+      - name: Create signed commit and update branch
         if: steps.diff.outputs.changes == 'true'
         run: |
-          BRANCH=chore/update-vendored-specs
-          git fetch origin main "$BRANCH" || true
-          git checkout -B "$BRANCH" origin/main
-          npm run update-vendored-yaml
-          git add specs/
-          if git diff --cached --quiet; then
-            echo "Branch already has latest specs, nothing to commit."
-          else
-            git commit -m "chore(deps): update vendored OpenAPI specs"
-            git push -u origin "$BRANCH" --force-with-lease
-          fi
+          REPO="${GITHUB_REPOSITORY}"
+          BRANCH="chore/update-vendored-specs"
+          MESSAGE="chore(deps): update vendored OpenAPI specs"
+
+          # Resolve main HEAD and its tree
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq '.object.sha')
+          BASE_TREE=$(gh api "repos/$REPO/git/commits/$MAIN_SHA" --jq '.tree.sha')
+
+          # Create blobs for each changed spec file
+          TREE_ENTRIES='[]'
+          for file in $(git status --porcelain specs/ | sed 's/^...//'); do
+            echo "Creating blob for $file"
+            BLOB_SHA=$(
+              jq -n --arg c "$(base64 -w0 < "$file")" \
+                '{"content": $c, "encoding": "base64"}' |
+              gh api "repos/$REPO/git/blobs" --input - --jq '.sha'
+            )
+            TREE_ENTRIES=$(
+              echo "$TREE_ENTRIES" | jq \
+                --arg path "$file" --arg sha "$BLOB_SHA" \
+                '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": $sha}]'
+            )
+          done
+
+          # Create tree and signed commit via GitHub API
+          NEW_TREE=$(
+            jq -n --arg base "$BASE_TREE" --argjson tree "$TREE_ENTRIES" \
+              '{"base_tree": $base, "tree": $tree}' |
+            gh api "repos/$REPO/git/trees" --input - --jq '.sha'
+          )
+          COMMIT_SHA=$(
+            jq -n \
+              --arg msg "$MESSAGE" --arg tree "$NEW_TREE" --arg parent "$MAIN_SHA" \
+              '{"message": $msg, "tree": $tree, "parents": [$parent]}' |
+            gh api "repos/$REPO/git/commits" --input - --jq '.sha'
+          )
+          echo "Created signed commit $COMMIT_SHA"
+
+          # Update existing branch ref or create it
+          gh api "repos/$REPO/git/refs/heads/$BRANCH" \
+            -X PATCH -f sha="$COMMIT_SHA" -F force=true 2>/dev/null ||
+          gh api "repos/$REPO/git/refs" \
+            -f ref="refs/heads/$BRANCH" -f sha="$COMMIT_SHA"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create PR
         if: steps.diff.outputs.changes == 'true' && steps.existing-pr.outputs.pr_number == ''
