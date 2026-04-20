@@ -605,6 +605,10 @@ EntityIdentifiers.forUserName('alice')       // By username
 EntityIdentifiers.forClientId('my-service')  // By client ID (NPE / service account)
 ```
 
+:::note
+The JavaScript SDK does not currently provide a `forUuid` helper. To use UUID-based entity identifiers, construct the `EntityIdentifier` manually using the protobuf message types from `@opentdf/sdk/platform`.
+:::
+
 </TabItem>
 </Tabs>
 

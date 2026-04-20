@@ -226,7 +226,7 @@ await platformClient.v2.authorization.getEntitlements({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go), `EntityIdentifiers.forEmail(...)` (Java), or `EntityIdentifiers.forEmail(...)` (JS). |
+| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `withComprehensiveHierarchy` | `bool` | No | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value. |
 
 **Example**
@@ -417,7 +417,7 @@ await platformClient.v2.authorization.getDecision({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go), `EntityIdentifiers.forEmail(...)` (Java), or `EntityIdentifiers.forEmail(...)` (JS). |
+| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `action` | `Action` | Yes | The action being performed (e.g., `decrypt`, `read`). |
 | `resource` | `Resource` | Yes | The resource being accessed, identified by attribute value FQNs. |
 
