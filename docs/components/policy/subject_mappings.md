@@ -76,8 +76,11 @@ Each Condition Group uses a boolean operator to combine its Conditions.
 | **AND** | All conditions in the group must be true |
 | **OR** | At least one condition in the group must be true |
 
-:::info Multiple Subject Sets
-When a Subject Condition Set contains multiple Subject Sets, they are evaluated with **AND** logic — all Subject Sets must match for the condition set to resolve `true`.
+:::info Evaluation Logic
+Subject Condition Sets follow a hierarchical evaluation:
+1. **Subject Sets**: All Subject Sets within a Condition Set must match (**AND** logic).
+2. **Condition Groups**: All Condition Groups within a Subject Set must match (**AND** logic).
+3. **Conditions**: Conditions within a group are combined using the group's specified **Boolean Operator** (**AND** or **OR**).
 :::
 
 ### Examples
