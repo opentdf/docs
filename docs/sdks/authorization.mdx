@@ -317,8 +317,8 @@ req := &authorizationv2.GetDecisionRequest{
 
 | Helper | Description |
 |--------|-------------|
-| `Resources.forAttributeValues(fqns...)` | Resource from attribute value FQNs (e.g. those on a TDF) |
-| `Resources.forRegisteredResourceValueFqn(fqn)` | Resource from a registered resource value FQN in policy |
+| `Resources.forAttributeValues(String... fqns)` | Resource from attribute value FQNs (e.g. those on a TDF) |
+| `Resources.forRegisteredResourceValueFqn(String fqn)` | Resource from a registered resource value FQN in policy |
 
 ```java
 import io.opentdf.platform.sdk.Resources;
@@ -391,11 +391,11 @@ const response = await platformClient.v2.authorization.getDecision({
 
 | Variant | Go | Java | JavaScript |
 |---------|-----|------|------------|
-| Attribute values | `ForAttributeValues(fqns...)` | `Resources.forAttributeValues(fqns...)` | `Resources.forAttributeValues(...fqns)` |
-| Registered resource | `ForRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` |
+| Attribute values | `authorizationv2.ForAttributeValues(fqns...)` | `Resources.forAttributeValues(String... fqns)` | `Resources.forAttributeValues(...fqns)` |
+| Registered resource | `authorizationv2.ForRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` |
 
 :::note
-The helpers do not set `ephemeralId`. For [GetDecisionBulk](#getdecisionbulk) where you need to correlate requests with responses, set `ephemeralId` separately after construction or use manual construction.
+The helpers do not set `ephemeralId`. For [GetDecisionBulk](#getdecisionbulk) where you need to correlate requests with responses, set `ephemeralId` separately after construction (in Go, assign the field directly; in Java, use `.toBuilder().setEphemeralId(...).build()`) or use manual construction.
 :::
 
 ---
