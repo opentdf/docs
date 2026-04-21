@@ -33,9 +33,9 @@ curl https://<idp-endpoint>/
 
 **Error**: `unexpected end of JSON input` during OIDC discovery
 
-**Cause**: Some identity providers (e.g., [Authentik](https://goauthentik.io/)) include a trailing slash in their OIDC issuer URL (e.g., `https://idp.example/app/`). SDK versions before v0.16.0 concatenated this with `/.well-known/openid-configuration`, producing a double-slash URL that returned a redirect instead of JSON.
+**Cause**: Some identity providers (e.g., [Authentik](https://goauthentik.io/)) include a trailing slash in their OIDC issuer URL (e.g., `https://idp.example/app/`). The Go SDK before v0.16.0 concatenated this with `/.well-known/openid-configuration`, producing a double-slash URL that returned a redirect instead of JSON. The JavaScript SDK is unaffected (browser fetch follows redirects automatically).
 
-**Solution**: Upgrade to Go SDK **v0.16.0+**, which normalizes the issuer URL automatically using `url.JoinPath`. No code changes required.
+**Solution**: Upgrade to Go SDK **v0.16.0+**, which normalizes the issuer URL automatically. No code changes required.
 
 ## Token Expired
 
@@ -268,11 +268,11 @@ The Go SDK v0.16.0 changed how KAS (Key Access Server) errors are classified. If
 
 | Error source | SDK sentinel | `errors.Is(err, sdk.ErrTampered)`? |
 |---|---|---|
-| Policy binding mismatch | `ErrRewrapBadRequest` | Yes |
-| DEK decryption failure | `ErrRewrapBadRequest` | Yes |
-| Corrupted policy body | `ErrRewrapBadRequest` | Yes |
-| Misconfiguration (e.g., wrong key type) | `ErrKASRequestError` | No |
-| Access denied (403) | `ErrRewrapForbidden` | No |
+| Policy binding mismatch | `sdk.ErrRewrapBadRequest` | Yes |
+| DEK decryption failure | `sdk.ErrRewrapBadRequest` | Yes |
+| Corrupted policy body | `sdk.ErrRewrapBadRequest` | Yes |
+| Misconfiguration (e.g., wrong key type) | `sdk.ErrKASRequestError` | No |
+| Access denied (403) | `sdk.ErrRewrapForbidden` | No |
 
 **Migration**: If your code catches all KAS errors via `ErrTampered`, add a check for `ErrKASRequestError`:
 
