@@ -1004,13 +1004,6 @@ client.Obligations.GetObligationTrigger(ctx, &obligations.GetObligationTriggerRe
 *Available since [SDK v0.16.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.16.0)*
 
 </TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-await platform.v1.obligation.getObligationTrigger({ ... })
-```
-
-</TabItem>
 </Tabs>
 
 **Parameters**
@@ -1036,17 +1029,6 @@ if err != nil {
     log.Fatal(err)
 }
 log.Printf("Trigger ID: %s\n", resp.GetTrigger().GetId())
-```
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-```typescript
-const resp = await platform.v1.obligation.getObligationTrigger({
-  id: '7e8f9a0b-...',
-});
-
-console.log(`Trigger ID: ${resp.trigger?.id}`);
 ```
 
 </TabItem>
