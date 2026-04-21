@@ -6,6 +6,7 @@ title: Authorization
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import JsAuthNote from '../../code_samples/js_auth_note.mdx'
+import SdkVersion from '@site/src/components/SdkVersion';
 
 # Authorization
 
@@ -89,7 +90,7 @@ req := &authorizationv2.GetDecisionRequest{
 }
 ```
 
-*Available since [Go SDK v0.16.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.16.0)*
+<SdkVersion language="go" version="0.16.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -110,7 +111,7 @@ GetDecisionRequest request = GetDecisionRequest.newBuilder()
     .build();
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 <details>
 <summary>Without helpers (manual proto construction)</summary>
@@ -150,7 +151,7 @@ const response = await platformClient.v2.authorization.getDecision({
 });
 ```
 
-*Available since [JS SDK v0.14.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.14.0)*
+<SdkVersion language="js" version="0.14.0" source="opentdf" />
 
 <details>
 <summary>Without helpers (manual object construction)</summary>

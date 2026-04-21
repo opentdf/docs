@@ -6,6 +6,7 @@ title: Discovery
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import JsAuthNote from '../../code_samples/js_auth_note.mdx'
+import SdkVersion from '@site/src/components/SdkVersion';
 
 # Discovery
 
@@ -81,7 +82,7 @@ Returns all active attributes on the platform. Use this to see what's available 
 client.ListAttributes(ctx, ...namespaceFilter)
 ```
 
-*Available since [Go SDK v0.14.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.14.0)*
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -91,7 +92,7 @@ sdk.listAttributes()
 sdk.listAttributes(namespaceFilter)
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -100,7 +101,7 @@ sdk.listAttributes(namespaceFilter)
 await listAttributes(platformUrl, auth, namespaceFilter?)
 ```
 
-*Available since [JS SDK v0.10.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.10.0)*
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 </TabItem>
 </Tabs>
@@ -200,7 +201,7 @@ Reports whether an attribute definition exists on the platform. Returns `true`/`
 client.AttributeExists(ctx, attributeFqn)
 ```
 
-*Available since [Go SDK v0.14.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.14.0)*
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -209,7 +210,7 @@ client.AttributeExists(ctx, attributeFqn)
 sdk.attributeExists(attributeFqn)
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -218,7 +219,7 @@ sdk.attributeExists(attributeFqn)
 await attributeExists(platformUrl, auth, attributeFqn)
 ```
 
-*Available since [JS SDK v0.10.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.10.0)*
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 </TabItem>
 </Tabs>
@@ -288,7 +289,7 @@ Reports whether a specific attribute value FQN exists on the platform. Returns `
 client.AttributeValueExists(ctx, valueFqn)
 ```
 
-*Available since [Go SDK v0.14.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.14.0)*
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -297,7 +298,7 @@ client.AttributeValueExists(ctx, valueFqn)
 sdk.attributeValueExists(valueFqn)
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -306,7 +307,7 @@ sdk.attributeValueExists(valueFqn)
 await attributeValueExists(platformUrl, auth, valueFqn)
 ```
 
-*Available since [JS SDK v0.10.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.10.0)*
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 </TabItem>
 </Tabs>
@@ -376,7 +377,7 @@ Checks that a list of attribute value FQNs exist on the platform **before** call
 client.ValidateAttributes(ctx, fqns...)
 ```
 
-*Available since [Go SDK v0.14.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.14.0)*
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -385,7 +386,7 @@ client.ValidateAttributes(ctx, fqns...)
 sdk.validateAttributes(fqns)
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -394,7 +395,7 @@ sdk.validateAttributes(fqns)
 await validateAttributes(platformUrl, auth, fqns)
 ```
 
-*Available since [JS SDK v0.10.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.10.0)*
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 </TabItem>
 </Tabs>
@@ -503,7 +504,7 @@ Returns the attribute value FQNs assigned to a specific entity (person or non-pe
 client.GetEntityAttributes(ctx, entity)
 ```
 
-*Available since [Go SDK v0.14.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.14.0)*
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -512,7 +513,7 @@ client.GetEntityAttributes(ctx, entity)
 sdk.getEntityAttributes(entity)
 ```
 
-*Available since [Java SDK v0.13.0](https://github.com/opentdf/java-sdk/releases/tag/v0.13.0)*
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -521,7 +522,7 @@ sdk.getEntityAttributes(entity)
 await platform.v2.authorization.getEntitlements({ ... })
 ```
 
-*Available since [JS SDK v0.10.0](https://github.com/opentdf/web-sdk/releases/tag/sdk-v0.10.0)*
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 The JS SDK does not expose a standalone `getEntityAttributes` function. Use `getEntitlements` via `PlatformClient` in a Node.js server environment.
 
