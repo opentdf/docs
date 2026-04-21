@@ -29,6 +29,14 @@ Check that your identity provider is accessible:
 curl https://<idp-endpoint>/
 ```
 
+## OIDC Discovery Fails with Trailing-Slash Issuer
+
+**Error**: `unexpected end of JSON input` during OIDC discovery
+
+**Cause**: Some identity providers (e.g., [Authentik](https://goauthentik.io/)) include a trailing slash in their OIDC issuer URL (e.g., `https://idp.example/app/`). SDK versions before v0.16.0 concatenated this with `/.well-known/openid-configuration`, producing a double-slash URL that returned a redirect instead of JSON.
+
+**Solution**: Upgrade to Go SDK **v0.16.0+**, which normalizes the issuer URL automatically using `url.JoinPath`. No code changes required.
+
 ## Token Expired
 
 **Error**: `token expired`, `invalid token`, or `jwt expired`
@@ -244,6 +252,43 @@ otdfctl policy subject-mappings create \
 2. **Check SDK version compatibility** — the SDK used to decrypt must support the TDF format version used to encrypt (e.g., TDF3 vs nanoTDF)
 3. **Verify file integrity** — TDFs are tamper-evident; any modification after encryption will cause decryption to fail
 4. **Check file transfer** — binary TDF files can be corrupted by text-mode transfers; ensure files are transferred in binary mode
+
+## KAS Error Classification (Go SDK v0.16.0+)
+
+:::caution Breaking Change in v0.16.0
+The Go SDK v0.16.0 changed how KAS (Key Access Server) errors are classified. If your code checks `errors.Is(err, sdk.ErrTampered)`, read this section carefully.
+:::
+
+**Background**: When decrypting a TDF, the SDK contacts the KAS to unwrap keys. The KAS can return errors for two very different reasons:
+
+1. **Integrity failure (tamper)** — the TDF's policy binding or encrypted key has been modified
+2. **Misconfiguration** — the request was malformed, used an unsupported key type, or the client lacks permission
+
+**What changed**: Prior to v0.16.0, *all* KAS 400-level errors were classified as `ErrTampered`. This made `errors.Is(err, sdk.ErrTampered)` unreliable — it returned `true` even for configuration errors. Starting in v0.16.0, the SDK distinguishes between tamper and misconfiguration:
+
+| Error source | SDK sentinel | `errors.Is(err, sdk.ErrTampered)`? |
+|---|---|---|
+| Policy binding mismatch | `ErrRewrapBadRequest` | Yes |
+| DEK decryption failure | `ErrRewrapBadRequest` | Yes |
+| Corrupted policy body | `ErrRewrapBadRequest` | Yes |
+| Misconfiguration (e.g., wrong key type) | `ErrKASRequestError` | No |
+| Access denied (403) | `ErrRewrapForbidden` | No |
+
+**Migration**: If your code catches all KAS errors via `ErrTampered`, add a check for `ErrKASRequestError`:
+
+```go
+if errors.Is(err, sdk.ErrTampered) {
+    // Integrity failure — the TDF was modified after encryption
+} else if errors.Is(err, sdk.ErrKASRequestError) {
+    // Client or configuration error (400 or 403 from KAS)
+}
+```
+
+:::note
+`ErrRewrapForbidden` (403) now wraps `ErrKASRequestError`, so `errors.Is(err, sdk.ErrKASRequestError)` matches both misconfiguration 400s and forbidden 403s.
+:::
+
+See [opentdf/platform#3166](https://github.com/opentdf/platform/issues/3166) for full details.
 
 ## Entity Resolution Failed
 
