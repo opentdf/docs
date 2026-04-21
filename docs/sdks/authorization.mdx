@@ -65,7 +65,7 @@ SDK sdk = SDKBuilder.newBuilder()
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const platformClient = new PlatformClient({
+const platform = new PlatformClient({
   interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
     clientId: 'opentdf', clientSecret: 'secret',
     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
@@ -73,7 +73,7 @@ const platformClient = new PlatformClient({
   platformUrl: 'http://localhost:8080',
 });
 
-// All JavaScript snippets below use `platformClient`.
+// All JavaScript snippets below use `platform`.
 ```
 
 </TabItem>
@@ -160,7 +160,7 @@ EntityIdentifier.newBuilder()
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getDecision({
+const response = await platform.v2.authorization.getDecision({
   entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
   // ...
 });
@@ -238,7 +238,7 @@ sdk.getServices().authorization().getEntitlements(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getEntitlements({ ... })
+await platform.v2.authorization.getEntitlements({ ... })
 ```
 
 </TabItem>
@@ -374,7 +374,7 @@ for (EntityEntitlements entitlement : resp.getEntitlementsList()) {
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getEntitlements({
+const response = await platform.v2.authorization.getEntitlements({
   entityIdentifier: EntityIdentifiers.forEmail('bob@OrgA.com'),
 });
 
@@ -388,7 +388,7 @@ To expand hierarchy rules:
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getEntitlements({
+const response = await platform.v2.authorization.getEntitlements({
   entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
   withComprehensiveHierarchy: true,
 });
@@ -429,7 +429,7 @@ sdk.getServices().authorization().getDecision(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getDecision({ ... })
+await platform.v2.authorization.getDecision({ ... })
 ```
 
 </TabItem>
@@ -616,7 +616,7 @@ if (decision.getDecision() == Decision.DECISION_PERMIT) {
 import { EntityIdentifiers } from '@opentdf/sdk';
 import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
 
-const response = await platformClient.v2.authorization.getDecision({
+const response = await platform.v2.authorization.getDecision({
   entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
   action: { name: 'decrypt' },
   resource: {
@@ -676,7 +676,7 @@ sdk.getServices().authorization().getDecisionBulk(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getDecisionBulk({ ... })
+await platform.v2.authorization.getDecisionBulk({ ... })
 ```
 
 </TabItem>
@@ -857,7 +857,7 @@ import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getDecisionBulk({
+const response = await platform.v2.authorization.getDecisionBulk({
   decisionRequests: [
     {
       entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
