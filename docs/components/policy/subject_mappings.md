@@ -55,9 +55,37 @@ A Subject Condition Set is a logical structure to resolve a representation of th
 
 Subject Condition Sets can also optionally be associated with a namespace. See [Subject Condition Set Namespacing](#subject-condition-set-namespacing) below.
 
+### Operators
+
+#### Condition Operators
+
+Each Condition uses an operator to compare the entity's claim (extracted by the selector) against the list of expected values.
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| **IN** | Exact match: the entity's value must exactly match one of the listed values | `.role` IN `["admin", "editor"]` |
+| **NOT_IN** | Exclusion: the entity's value must **not** match any of the listed values | `.department` NOT_IN `["sales"]` |
+| **IN_CONTAINS** | Substring match: the entity's value must **contain** one of the listed substrings | `.email` IN_CONTAINS `["@example.com"]` |
+
+#### Boolean Operators
+
+Each Condition Group uses a boolean operator to combine its Conditions.
+
+| Operator | Description |
+|----------|-------------|
+| **AND** | All conditions in the group must be true |
+| **OR** | At least one condition in the group must be true |
+
+:::info Evaluation Logic
+Subject Condition Sets follow a hierarchical evaluation:
+1. **Subject Sets**: All Subject Sets within a Condition Set must match (**AND** logic).
+2. **Condition Groups**: All Condition Groups within a Subject Set must match (**AND** logic).
+3. **Conditions**: Conditions within a group are combined using the group's specified **Boolean Operator** (**AND** or **OR**).
+:::
+
 ### Examples
 
-#### Subject Mapping for Executives:
+#### Subject Mapping for Executives (IN):
 
 Consider a flow where users with the idP role `vice_president` should be allowed to `read` data tagged `https://example.org/attr/role_level/value/vice_president`. 
 
@@ -111,6 +139,50 @@ subject_sets:
 ```
 
 In plain language: If an entity's access token from the IdP or Entity Resolution Service (ERS) includes a `title` field with a value `staff`, `senior`, `junior`, or `intern` AND a `department` field with value `engineering`, then the Subject Mapping will apply to them, granting entitlement for the contained Action `create` on the Attribute Value of `contributor`.
+
+#### Subject Mapping for Non-Sales (NOT_IN):
+
+Consider a flow where all departments **except** sales should be able to `read` data tagged `https://example.org/attr/access_level/value/internal`.
+
+The Subject Mapping would contain:
+1. Action: `read`
+2. Attribute Value: `https://example.org/attr/access_level/value/internal`
+3. A Subject Condition Set with this matching logic:
+
+```yaml
+subject_sets:
+  - condition_groups:
+      - boolean_operator: OR
+        conditions:
+          - subject_external_selector_value: '.department'
+            operator: NOT_IN
+            subject_external_values:
+              - sales
+```
+
+If the entity representation contains `department: engineering` (or any value other than `sales`), the condition resolves `true` and the Subject Mapping applies. If `department: sales`, it resolves `false`.
+
+#### Subject Mapping for Email Domain (IN_CONTAINS):
+
+Consider a flow where any user with an `@acme.com` email address should be able to `read` data tagged `https://example.org/attr/org/value/acme`.
+
+The Subject Mapping would contain:
+1. Action: `read`
+2. Attribute Value: `https://example.org/attr/org/value/acme`
+3. A Subject Condition Set with this matching logic:
+
+```yaml
+subject_sets:
+  - condition_groups:
+      - boolean_operator: OR
+        conditions:
+          - subject_external_selector_value: '.email'
+            operator: IN_CONTAINS
+            subject_external_values:
+              - '@acme.com'
+```
+
+Unlike `IN` which requires an exact match, `IN_CONTAINS` performs a substring match. If the entity representation contains `email: alice@acme.com`, the substring `@acme.com` is found within the value, so the condition resolves `true`. This is useful when matching against patterns within claim values rather than exact values.
 
 ## Namespacing
 
