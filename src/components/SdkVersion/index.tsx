@@ -28,21 +28,24 @@ function releaseUrl(language: string, version: string, source: string): string {
   return '';
 }
 
+function VersionLink({ url, children }: { url: string; children: React.ReactNode }) {
+  if (url) {
+    return <a href={url} target="_blank" rel="noopener noreferrer">{children}</a>;
+  }
+  return <>{children}</>;
+}
+
 export default function SdkVersion({ language, version, source, status = 'added', removal }: SdkVersionProps) {
   const label = labels[language] ?? language;
   const url = releaseUrl(language, version, source);
-  const versionLink = <a href={url}>{label} v{version}</a>;
 
   if (status === 'deprecated') {
     const removalUrl = removal ? releaseUrl(language, removal, source) : '';
     return (
       <strong style={{ color: 'var(--ifm-color-warning-darkest)' }}>
-        Deprecated in {versionLink}
+        Deprecated in <VersionLink url={url}>{label} v{version}</VersionLink>
         {removal && (
-          <>, scheduled for removal in {removalUrl
-            ? <a href={removalUrl}>v{removal}</a>
-            : <>v{removal}</>
-          }</>
+          <>, scheduled for removal in <VersionLink url={removalUrl}>v{removal}</VersionLink></>
         )}
       </strong>
     );
@@ -50,7 +53,7 @@ export default function SdkVersion({ language, version, source, status = 'added'
 
   return (
     <em>
-      Available since {versionLink}
+      Available since <VersionLink url={url}>{label} v{version}</VersionLink>
     </em>
   );
 }
