@@ -22,20 +22,34 @@ All examples on this page assume you have created a platform client. See [Authen
 <TabItem value="go" label="Go">
 
 ```go
-client, err := sdk.New("http://localhost:8080",
-    sdk.WithClientCredentials("opentdf", "secret", nil),
-)
-if err != nil {
-    log.Fatal(err)
-}
+package main
 
-// All Go snippets below use `client` and `context.Background()`.
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// All Go snippets below use `client` and `context.Background()`.
+}
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.*;
+import java.util.Collections;
+
 SDK sdk = SDKBuilder.newBuilder()
     .platformEndpoint("http://localhost:8080")
     .clientSecret("opentdf", "secret")
@@ -43,6 +57,7 @@ SDK sdk = SDKBuilder.newBuilder()
     .build();
 
 // All Java snippets below use `sdk`.
+// Remember to call sdk.close() when done.
 ```
 
 </TabItem>
