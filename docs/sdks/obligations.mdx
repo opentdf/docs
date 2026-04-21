@@ -11,6 +11,8 @@ import SdkVersion from '@site/src/components/SdkVersion';
 
 An **obligation** is a PDP-to-PEP directive that accompanies an access decision: "permit, provided these controls are enforced." Obligations are scoped to a namespace and can carry multiple values and triggers. See [Obligations](/components/policy/obligations) for the policy concept.
 
+Obligations are managed through the [**policy** service](/sdks/policy) — the methods on this page use the same `client` (Go) or `platform` (JS) instance as [Policy](/sdks/policy).
+
 ## Setup
 
 All examples on this page assume you have created a platform client. See [Authentication](/sdks/authentication) for full details including DPoP key binding.
