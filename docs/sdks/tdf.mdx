@@ -280,7 +280,7 @@ See [Encrypt Options](#encrypt-options) for the full list of configuration optio
 <Tabs>
 <TabItem value="go" label="Go">
 
-`(*TDFObject, error)` — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
+[`(*TDFObject, error)`](#tdfobject) — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -1268,6 +1268,23 @@ See the [Encrypt Options](#encrypt-options) and [Decrypt Options](#decrypt-optio
 ## Type Reference
 
 The following types are returned by or passed to the methods above.
+
+### TDFObject
+
+**Go only.** Returned by [`CreateTDF`](#createtdf). Contains the manifest and size of the encrypted TDF.
+
+**Methods**
+
+| Method | Return type | Description |
+|--------|-------------|-------------|
+| `Manifest()` | [`Manifest`](#manifest-object) | The TDF manifest, including encryption info, key access objects, and assertions. |
+| `Size()` | `int64` | Total byte count of the encrypted TDF written to the output. |
+
+:::note
+Java's `CreateTDF` returns a [`Manifest`](#manifest-object) directly. JavaScript's returns a `DecoratedStream`.
+:::
+
+---
 
 ### KASInfo
 
