@@ -440,7 +440,7 @@ await platform.v2.authorization.getEntitlements({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `withComprehensiveHierarchy` | `bool` | No | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value. |
 
 **Example**
@@ -631,9 +631,9 @@ await platform.v2.authorization.getDecision({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `action` | `Action` | Yes | The action being performed (e.g., `decrypt`, `read`). |
-| `resource` | `Resource` | Yes | The resource being accessed. Use [helpers](#resource) like `ForAttributeValues(...)` (Go) or `Resources.forAttributeValues(...)` (Java/JS). |
+| `resource` | [`Resource`](#resource) | Yes | The resource being accessed. Use [helpers](#resource) like `ForAttributeValues(...)` (Go) or `Resources.forAttributeValues(...)` (Java/JS). |
 
 **Example**
 
@@ -863,9 +863,9 @@ Each `GetDecisionMultiResourceRequest` contains:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. |
 | `action` | `Action` | Yes | The action being performed. |
-| `resources` | `[]Resource` | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
+| `resources` | [`[]Resource`](#resource) | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
 
 **Example**
 
