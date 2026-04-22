@@ -98,6 +98,7 @@ SDK sdk = SDKBuilder.newBuilder()
     .platformEndpoint("https://platform.example.com")
     .clientSecret("client-id", "client-secret")
     .build();
+// Remember to call sdk.close() when done.
 
 // Encrypt
 var kasInfo = new Config.KASInfo();
