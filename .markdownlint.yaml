@@ -1,0 +1,30 @@
+MD024: # no-duplicate-heading
+  siblings_only: true
+MD033: # no-inline-html
+  allowed_elements:
+    - br
+    - summary
+    - details
+    - strong
+    - Tabs
+    - TabItem
+    # MDX components (imported JSX — markdownlint can't distinguish from HTML)
+    - AssertionExamples
+    - CodeBlock
+    - CreateAttribute
+    - CreateConditionSet
+    - CreateNamespace
+    - CreateSubjectMapping
+    - DecryptOptions
+    - EncryptOptions
+    - GetDecisionsExample
+    - JsAuthNote
+    - ListAttributes
+    - ListNamespaces
+    - ListSubjectMapping
+    - SdkVersion
+MD010: # no-hard-tabs
+  code_blocks: false # Go code uses tabs
+MD013: false # Line length
+MD041: false # First line heading — MDX files start with imports/frontmatter
+MD060: true # Table column style
