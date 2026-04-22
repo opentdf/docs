@@ -582,25 +582,13 @@ Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").
 <TabItem value="js" label="JavaScript">
 
 ```typescript
+import { EntityIdentifiers } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
 const platform = new PlatformClient({ ...auth, platformUrl });
 
 const resp = await platform.v2.authorization.getEntitlements({
-  entityIdentifier: {
-    identifier: {
-      case: 'entityChain',
-      value: {
-        ephemeralId: 'e1',
-        entities: [
-          {
-            ephemeralId: 'e1',
-            entityType: { case: 'emailAddress', value: 'alice@example.com' },
-          },
-        ],
-      },
-    },
-  },
+  entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
 });
 
 if (resp.entitlements.length > 0) {
@@ -608,15 +596,18 @@ if (resp.entitlements.length > 0) {
 }
 ```
 
-Other supported entity types (placed inside the `entities` array):
+Other supported [entity identifier helpers](/sdks/authorization#entityidentifier):
 
 ```typescript
-// By username
-{ ephemeralId: 'e1', entityType: { case: 'userName', value: 'alice' } }
+import { EntityIdentifiers } from '@opentdf/sdk';
 
-// By client ID (NPE / service account)
-{ ephemeralId: 'e1', entityType: { case: 'clientId', value: 'my-service' } }
+EntityIdentifiers.forUserName('alice')       // By username
+EntityIdentifiers.forClientId('my-service')  // By client ID (NPE / service account)
 ```
+
+:::note
+The JavaScript SDK does not currently provide a `forUuid` helper. To use UUID-based entity identifiers, construct the `EntityIdentifier` manually using the protobuf message types from `@opentdf/sdk/platform`.
+:::
 
 </TabItem>
 </Tabs>

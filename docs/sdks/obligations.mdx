@@ -989,6 +989,57 @@ The created [Obligation Trigger object](#obligation-trigger-object).
 
 </details>
 
+<details id="get-obligation-trigger">
+<summary>Get an Obligation Trigger</summary>
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+client.Obligations.GetObligationTrigger(ctx, &obligations.GetObligationTriggerRequest{...})
+```
+
+*Available since [SDK v0.16.0](https://github.com/opentdf/platform/releases/tag/sdk/v0.16.0)*
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` (UUID) | Yes | The trigger UUID. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/obligations"
+
+resp, err := client.Obligations.GetObligationTrigger(context.Background(),
+    &obligations.GetObligationTriggerRequest{
+        Id: "7e8f9a0b-...",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Trigger ID: %s\n", resp.GetTrigger().GetId())
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A single [Obligation Trigger object](#obligation-trigger-object).
+
+</details>
+
 <details id="list-obligation-triggers">
 <summary>List Obligation Triggers</summary>
 
