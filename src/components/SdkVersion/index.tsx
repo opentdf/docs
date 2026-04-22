@@ -43,17 +43,18 @@ export default function SdkVersion({ language, version, source, status = 'added'
     const removalUrl = removal ? releaseUrl(language, removal, source) : '';
     return (
       <strong style={{ color: 'var(--ifm-color-warning-darkest)' }}>
-        Deprecated in <VersionLink url={url}>{label} v{version}</VersionLink>
+        <VersionLink url={url}>{label} v{version}</VersionLink>
         {removal && (
-          <>, scheduled for removal in <VersionLink url={removalUrl}>v{removal}</VersionLink></>
+          <>–<VersionLink url={removalUrl}>v{removal}</VersionLink></>
         )}
+        {' (deprecated)'}
       </strong>
     );
   }
 
   return (
     <em>
-      Available since <VersionLink url={url}>{label} v{version}</VersionLink>
+      <VersionLink url={url}>{label} v{version}+</VersionLink>
     </em>
   );
 }
