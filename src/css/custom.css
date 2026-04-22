@@ -600,6 +600,27 @@ html[data-theme='dark'] div[class*="language-shell"] code::before {
 }
 
 /**************
+** TABLES — responsive with targeted wrapping
+***************/
+
+/* Make tables responsive with horizontal scroll */
+.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Allow word-wrapping in columns tagged as wide by remark-table-wide-cells */
+.markdown table td.wide-cell,
+.markdown table th.wide-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  min-width: 200px;
+}
+
+/**************
 ** OPENTDF LANDING — DARK DESIGN TOKENS
 ***************/
 :root {
