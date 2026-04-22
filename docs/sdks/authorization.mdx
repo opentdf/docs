@@ -6,6 +6,7 @@ title: Authorization
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import JsAuthNote from '../../code_samples/js_auth_note.mdx'
+import SdkVersion from '@site/src/components/SdkVersion';
 
 # Authorization
 
@@ -19,20 +20,35 @@ All examples on this page assume you have created a platform client. See [Authen
 <TabItem value="go" label="Go">
 
 ```go
-client, err := sdk.New("http://localhost:8080",
-    sdk.WithClientCredentials("opentdf", "secret", nil),
-)
-if err != nil {
-    log.Fatal(err)
-}
+package main
 
-// All Go snippets below use `client` and `context.Background()`.
+import (
+	"context"
+	"log"
+
+	"github.com/opentdf/platform/sdk"
+)
+
+func main() {
+	client, err := sdk.New("http://localhost:8080",
+		sdk.WithClientCredentials("opentdf", "secret", nil),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// All Go snippets below use `client` and `context.Background()`.
+	_, _ = client, context.Background()
+}
 ```
 
 </TabItem>
 <TabItem value="java" label="Java">
 
 ```java
+import io.opentdf.platform.sdk.*;
+import java.util.Collections;
+
 SDK sdk = SDKBuilder.newBuilder()
     .platformEndpoint("http://localhost:8080")
     .clientSecret("opentdf", "secret")
@@ -40,6 +56,7 @@ SDK sdk = SDKBuilder.newBuilder()
     .build();
 
 // All Java snippets below use `sdk`.
+// Remember to call sdk.close() when done.
 ```
 
 </TabItem>
@@ -49,7 +66,7 @@ SDK sdk = SDKBuilder.newBuilder()
 import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const platformClient = new PlatformClient({
+const platform = new PlatformClient({
   interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
     clientId: 'opentdf', clientSecret: 'secret',
     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
@@ -57,7 +74,7 @@ const platformClient = new PlatformClient({
   platformUrl: 'http://localhost:8080',
 });
 
-// All JavaScript snippets below use `platformClient`.
+// All JavaScript snippets below use `platform`.
 ```
 
 </TabItem>
@@ -71,6 +88,8 @@ Every authorization call requires an `EntityIdentifier` — the entity (user, se
 
 <Tabs>
 <TabItem value="go" label="Go">
+
+<SdkVersion language="go" version="0.16.0" source="opentdf" />
 
 | Helper | Description |
 |--------|-------------|
@@ -88,9 +107,40 @@ req := &authorizationv2.GetDecisionRequest{
     // ...
 }
 ```
+<details>
+<summary>Without helpers (manual proto construction)</summary>
+
+```go
+import (
+    "github.com/opentdf/platform/protocol/go/entity"
+    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+)
+
+req := &authorizationv2.GetDecisionRequest{
+    EntityIdentifier: &authorizationv2.EntityIdentifier{
+        Identifier: &authorizationv2.EntityIdentifier_EntityChain{
+            EntityChain: &entity.EntityChain{
+                Entities: []*entity.Entity{
+                    {
+                        EntityType: &entity.Entity_EmailAddress{EmailAddress: "alice@example.com"},
+                        // or &entity.Entity_ClientId{ClientId: "..."}
+                        // or &entity.Entity_UserName{UserName: "..."}
+                        Category: entity.Entity_CATEGORY_SUBJECT,
+                    },
+                },
+            },
+        },
+    },
+    // ...
+}
+```
+
+</details>
 
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 | Helper | Description |
 |--------|-------------|
@@ -107,7 +157,6 @@ GetDecisionRequest request = GetDecisionRequest.newBuilder()
     // ...
     .build();
 ```
-
 <details>
 <summary>Without helpers (manual proto construction)</summary>
 
@@ -129,6 +178,8 @@ EntityIdentifier.newBuilder()
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+<SdkVersion language="js" version="0.14.0" source="opentdf" />
+
 | Helper | Description |
 |--------|-------------|
 | `EntityIdentifiers.forEmail(email)` | Identify by email address |
@@ -140,12 +191,11 @@ EntityIdentifier.newBuilder()
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getDecision({
+const response = await platform.v2.authorization.getDecision({
   entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
   // ...
 });
 ```
-
 <details>
 <summary>Without helpers (manual object construction)</summary>
 
@@ -216,7 +266,7 @@ sdk.getServices().authorization().getEntitlements(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getEntitlements({ ... })
+await platform.v2.authorization.getEntitlements({ ... })
 ```
 
 </TabItem>
@@ -352,7 +402,7 @@ for (EntityEntitlements entitlement : resp.getEntitlementsList()) {
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getEntitlements({
+const response = await platform.v2.authorization.getEntitlements({
   entityIdentifier: EntityIdentifiers.forEmail('bob@OrgA.com'),
 });
 
@@ -366,7 +416,7 @@ To expand hierarchy rules:
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getEntitlements({
+const response = await platform.v2.authorization.getEntitlements({
   entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
   withComprehensiveHierarchy: true,
 });
@@ -407,7 +457,7 @@ sdk.getServices().authorization().getDecision(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getDecision({ ... })
+await platform.v2.authorization.getDecision({ ... })
 ```
 
 </TabItem>
@@ -594,7 +644,7 @@ if (decision.getDecision() == Decision.DECISION_PERMIT) {
 import { EntityIdentifiers } from '@opentdf/sdk';
 import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
 
-const response = await platformClient.v2.authorization.getDecision({
+const response = await platform.v2.authorization.getDecision({
   entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
   action: { name: 'decrypt' },
   resource: {
@@ -654,7 +704,7 @@ sdk.getServices().authorization().getDecisionBulk(req).get()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platformClient.v2.authorization.getDecisionBulk({ ... })
+await platform.v2.authorization.getDecisionBulk({ ... })
 ```
 
 </TabItem>
@@ -835,7 +885,7 @@ import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 ```typescript
 import { EntityIdentifiers } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getDecisionBulk({
+const response = await platform.v2.authorization.getDecisionBulk({
   decisionRequests: [
     {
       entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
