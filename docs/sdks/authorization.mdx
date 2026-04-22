@@ -89,6 +89,8 @@ Every authorization call requires an `EntityIdentifier` — the entity (user, se
 <Tabs>
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.16.0" source="opentdf" />
+
 | Helper | Description |
 |--------|-------------|
 | `authorizationv2.ForEmail(email)` | Identify by email address |
@@ -105,9 +107,6 @@ req := &authorizationv2.GetDecisionRequest{
     // ...
 }
 ```
-
-<SdkVersion language="go" version="0.16.0" source="opentdf" />
-
 <details>
 <summary>Without helpers (manual proto construction)</summary>
 
@@ -141,6 +140,8 @@ req := &authorizationv2.GetDecisionRequest{
 </TabItem>
 <TabItem value="java" label="Java">
 
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
+
 | Helper | Description |
 |--------|-------------|
 | `EntityIdentifiers.forEmail(email)` | Identify by email address |
@@ -156,9 +157,6 @@ GetDecisionRequest request = GetDecisionRequest.newBuilder()
     // ...
     .build();
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 <details>
 <summary>Without helpers (manual proto construction)</summary>
 
@@ -180,6 +178,8 @@ EntityIdentifier.newBuilder()
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+<SdkVersion language="js" version="0.14.0" source="opentdf" />
+
 | Helper | Description |
 |--------|-------------|
 | `EntityIdentifiers.forEmail(email)` | Identify by email address |
@@ -196,9 +196,6 @@ const response = await platform.v2.authorization.getDecision({
   // ...
 });
 ```
-
-<SdkVersion language="js" version="0.14.0" source="opentdf" />
-
 <details>
 <summary>Without helpers (manual object construction)</summary>
 

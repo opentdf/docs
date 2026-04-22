@@ -94,31 +94,28 @@ Returns all active attributes on the platform. Use this to see what's available 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
+
 ```go
 client.ListAttributes(ctx, ...namespaceFilter)
 ```
-
-<SdkVersion language="go" version="0.14.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 ```java
 sdk.listAttributes()
 sdk.listAttributes(namespaceFilter)
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
 await listAttributes(platformUrl, auth, namespaceFilter?)
 ```
-
-<SdkVersion language="js" version="0.10.0" source="opentdf" />
-
 </TabItem>
 </Tabs>
 
@@ -213,30 +210,27 @@ Reports whether an attribute definition exists on the platform. Returns `true`/`
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
+
 ```go
 client.AttributeExists(ctx, attributeFqn)
 ```
-
-<SdkVersion language="go" version="0.14.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 ```java
 sdk.attributeExists(attributeFqn)
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
 await attributeExists(platformUrl, auth, attributeFqn)
 ```
-
-<SdkVersion language="js" version="0.10.0" source="opentdf" />
-
 </TabItem>
 </Tabs>
 
@@ -301,30 +295,27 @@ Reports whether a specific attribute value FQN exists on the platform. Returns `
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
+
 ```go
 client.AttributeValueExists(ctx, valueFqn)
 ```
-
-<SdkVersion language="go" version="0.14.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 ```java
 sdk.attributeValueExists(valueFqn)
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
 await attributeValueExists(platformUrl, auth, valueFqn)
 ```
-
-<SdkVersion language="js" version="0.10.0" source="opentdf" />
-
 </TabItem>
 </Tabs>
 
@@ -389,30 +380,27 @@ Checks that a list of attribute value FQNs exist on the platform **before** call
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
+
 ```go
 client.ValidateAttributes(ctx, fqns...)
 ```
-
-<SdkVersion language="go" version="0.14.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 ```java
 sdk.validateAttributes(fqns)
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
 await validateAttributes(platformUrl, auth, fqns)
 ```
-
-<SdkVersion language="js" version="0.10.0" source="opentdf" />
-
 </TabItem>
 </Tabs>
 
@@ -516,30 +504,27 @@ Returns the attribute value FQNs assigned to a specific entity (person or non-pe
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="0.14.0" source="opentdf" />
+
 ```go
 client.GetEntityAttributes(ctx, entity)
 ```
-
-<SdkVersion language="go" version="0.14.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.13.0" source="opentdf" />
 
 ```java
 sdk.getEntityAttributes(entity)
 ```
-
-<SdkVersion language="java" version="0.13.0" source="opentdf" />
-
 </TabItem>
 <TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
 await platform.v2.authorization.getEntitlements({ ... })
 ```
-
-<SdkVersion language="js" version="0.10.0" source="opentdf" />
-
 The JS SDK does not expose a standalone `getEntityAttributes` function. Use `getEntitlements` via `PlatformClient` in a Node.js server environment.
 
 </TabItem>
