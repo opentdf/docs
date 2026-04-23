@@ -14,7 +14,7 @@ How to call the OpenTDF Authorization Service directly over HTTP — without an 
 
 The OpenTDF SDKs wrap these APIs for Go, Java, and browser-based JavaScript. If you're building a **server-side integration** in Node.js, Python, Ruby, or another language without an SDK, you can call the Authorization Service REST API directly. The platform's gRPC services are exposed over HTTP via [gRPC-Gateway](https://grpc-ecosystem.github.io/grpc-gateway/), so every endpoint accepts standard JSON `POST` requests.
 
-This guide covers the full integration pattern: authentication, health checks, authorization decisions, and production best practices. For detailed type definitions and SDK-based examples, see the [Authorization SDK reference](/sdks/authorization).
+This guide covers the full integration pattern: authentication, health checks, authorization decisions, and production best practices. For detailed type definitions and SDK-based examples, see the [Authorization SDK reference](/sdks/authorization). For request/response schemas, see the [Authorization OpenAPI reference](/OpenAPI-clients/authorization/v2).
 
 ## Architecture
 
@@ -143,12 +143,12 @@ Any other status or a connection failure means the platform is unavailable. See 
 
 All authorization endpoints accept `POST` requests with `Content-Type: application/json` and a `Bearer` token in the `Authorization` header.
 
-| Endpoint | API Version | Description |
-|----------|-------------|-------------|
-| `/authorization.v2.AuthorizationService/GetDecision` | v2 | Single entity + action + resource decision |
-| `/authorization.v2.AuthorizationService/GetDecisionBulk` | v2 | Batch decisions for multiple entities/resources |
-| `/authorization.v2.AuthorizationService/GetEntitlements` | v2 | List all attribute values an entity can access |
-| `/v1/authorization` | v1 (legacy) | Batch decisions (v1 format) |
+| Endpoint | API Version | Description | Schema |
+|----------|-------------|-------------|--------|
+| `/authorization.v2.AuthorizationService/GetDecision` | v2 | Single entity + action + resource decision | [OpenAPI](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-decision) |
+| `/authorization.v2.AuthorizationService/GetDecisionBulk` | v2 | Batch decisions for multiple entities/resources | [OpenAPI](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-decision-bulk) |
+| `/authorization.v2.AuthorizationService/GetEntitlements` | v2 | List all attribute values an entity can access | [OpenAPI](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-entitlements) |
+| `/v1/authorization` | v1 (legacy) | Batch decisions (v1 format) | [OpenAPI](/OpenAPI-clients/authorization/v1/authorization-authorization-service-get-decisions) |
 
 :::tip Use v2 endpoints for new integrations
 The v2 API has a cleaner request structure and supports per-resource decisions. The v1 API is still supported but considered legacy.
@@ -158,7 +158,7 @@ The v2 API has a cleaner request structure and supports per-resource decisions. 
 
 ## GetDecision {#get-decision}
 
-Check whether a specific entity can perform an action on a resource. This is the core enforcement point.
+Check whether a specific entity can perform an action on a resource. This is the core enforcement point. See the [OpenAPI schema](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-decision) for full request/response type definitions.
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetDecision`
 
@@ -303,7 +303,7 @@ If `requiredObligations` is non-empty on a permit response, your application mus
 
 ## GetDecisionBulk {#get-decision-bulk}
 
-Evaluate multiple entities and resources in a single call. Each request entry can include multiple resources, and the response provides per-resource decisions.
+Evaluate multiple entities and resources in a single call. Each request entry can include multiple resources, and the response provides per-resource decisions. See the [OpenAPI schema](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-decision-bulk) for full request/response type definitions.
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetDecisionBulk`
 
@@ -504,7 +504,7 @@ const results = await Promise.all(
 
 ## GetEntitlements {#get-entitlements}
 
-Returns all attribute values an entity is entitled to access, without checking against a specific resource. Use this for building UIs that show available data or pre-filtering content.
+Returns all attribute values an entity is entitled to access, without checking against a specific resource. Use this for building UIs that show available data or pre-filtering content. See the [OpenAPI schema](/OpenAPI-clients/authorization/v2/authorization-v-2-authorization-service-get-entitlements) for full request/response type definitions.
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetEntitlements`
 
