@@ -3,12 +3,10 @@ sidebar_position: 8
 title: Discovery
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import JsAuthNote from '../../code_samples/js_auth_note.mdx'
-import SdkVersion from '@site/src/components/SdkVersion';
-
-# Discovery
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import JsAuthNote from "../../code_samples/js_auth_note.mdx";
+import SdkVersion from "@site/src/components/SdkVersion";
 
 Before encrypting data with `CreateTDF`, it helps to verify that the attributes you intend to use actually exist on the platform. Without this step, encryption succeeds but decryption fails later with a cryptic "resource not found" error because the attribute was never created.
 
@@ -65,14 +63,25 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+  OpenTDF,
+} from "@opentdf/sdk";
 
-const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-}))] };
+const auth = {
+  interceptors: [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "opentdf",
+        clientSecret: "secret",
+        oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+      }),
+    ),
+  ],
+};
 
-const platformUrl = 'http://localhost:8080';
+const platformUrl = "http://localhost:8080";
 
 // All JavaScript snippets below use `auth` and `platformUrl`.
 // Standalone functions like listAttributes() take these as arguments.
@@ -89,7 +98,7 @@ const platformUrl = 'http://localhost:8080';
 
 Returns all active attributes on the platform. Use this to see what's available before choosing which attributes to apply to a TDF.
 
-**Signature**
+### Signature
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -99,6 +108,7 @@ Returns all active attributes on the platform. Use this to see what's available 
 ```go
 client.ListAttributes(ctx, ...namespaceFilter)
 ```
+
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -108,6 +118,7 @@ client.ListAttributes(ctx, ...namespaceFilter)
 sdk.listAttributes()
 sdk.listAttributes(namespaceFilter)
 ```
+
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
@@ -116,16 +127,17 @@ sdk.listAttributes(namespaceFilter)
 ```typescript
 await listAttributes(platformUrl, auth, namespaceFilter?)
 ```
+
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `namespaceFilter` | `string` | No | When provided, returns only attributes in this namespace (e.g., `"opentdf.io"`). |
+| Parameter         | Type     | Required | Description                                                                      |
+| ----------------- | -------- | -------- | -------------------------------------------------------------------------------- |
+| `namespaceFilter` | `string` | No       | When provided, returns only attributes in this namespace (e.g., `"opentdf.io"`). |
 
-**Example**
+### Example
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -174,28 +186,28 @@ List<Attribute> attrs = sdk.listAttributes("opentdf.io");
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { listAttributes } from '@opentdf/sdk';
+import { listAttributes } from "@opentdf/sdk";
 
 const attrs = await listAttributes(platformUrl, auth);
 
 for (const a of attrs) {
-    console.log(a.fqn, a.rule);
-    for (const v of a.values) {
-        console.log('  value:', v.value);
-    }
+  console.log(a.fqn, a.rule);
+  for (const v of a.values) {
+    console.log("  value:", v.value);
+  }
 }
 ```
 
 To filter by namespace:
 
 ```typescript
-const attrs = await listAttributes(platformUrl, auth, 'opentdf.io');
+const attrs = await listAttributes(platformUrl, auth, "opentdf.io");
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 A list of [Attribute](/sdks/policy#attribute-object) objects, each with nested [values](/sdks/policy#attribute-value-object). Paginates automatically — you always get the full list back without managing page tokens.
 
@@ -205,7 +217,7 @@ A list of [Attribute](/sdks/policy#attribute-object) objects, each with nested [
 
 Reports whether an attribute definition exists on the platform. Returns `true`/`false` — useful for a quick existence check before adding values or constructing an access policy.
 
-**Signature**
+### Signature
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -215,6 +227,7 @@ Reports whether an attribute definition exists on the platform. Returns `true`/`
 ```go
 client.AttributeExists(ctx, attributeFqn)
 ```
+
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -223,24 +236,26 @@ client.AttributeExists(ctx, attributeFqn)
 ```java
 sdk.attributeExists(attributeFqn)
 ```
+
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 <SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
-await attributeExists(platformUrl, auth, attributeFqn)
+await attributeExists(platformUrl, auth, attributeFqn);
 ```
+
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `attributeFqn` | `string` | Yes | An attribute-level FQN (no `/value/` segment): `https://<namespace>/attr/<attribute_name>` |
+| Parameter      | Type     | Required | Description                                                                                |
+| -------------- | -------- | -------- | ------------------------------------------------------------------------------------------ |
+| `attributeFqn` | `string` | Yes      | An attribute-level FQN (no `/value/` segment): `https://<namespace>/attr/<attribute_name>` |
 
-**Example**
+### Example
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -269,18 +284,22 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { attributeExists } from '@opentdf/sdk';
+import { attributeExists } from "@opentdf/sdk";
 
-const exists = await attributeExists(platformUrl, auth, 'https://opentdf.io/attr/department');
+const exists = await attributeExists(
+  platformUrl,
+  auth,
+  "https://opentdf.io/attr/department",
+);
 if (!exists) {
-    console.log('attribute does not exist — create it before use');
+  console.log("attribute does not exist — create it before use");
 }
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 `true` if the attribute exists, `false` otherwise.
 
@@ -290,7 +309,7 @@ if (!exists) {
 
 Reports whether a specific attribute value FQN exists on the platform. Returns `true`/`false` — useful for spot-checking one pre-registered value.
 
-**Signature**
+### Signature
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -300,6 +319,7 @@ Reports whether a specific attribute value FQN exists on the platform. Returns `
 ```go
 client.AttributeValueExists(ctx, valueFqn)
 ```
+
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -308,24 +328,26 @@ client.AttributeValueExists(ctx, valueFqn)
 ```java
 sdk.attributeValueExists(valueFqn)
 ```
+
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 <SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
-await attributeValueExists(platformUrl, auth, valueFqn)
+await attributeValueExists(platformUrl, auth, valueFqn);
 ```
+
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `valueFqn` | `string` | Yes | A full attribute value FQN: `https://<namespace>/attr/<attribute_name>/value/<value>` |
+| Parameter  | Type     | Required | Description                                                                           |
+| ---------- | -------- | -------- | ------------------------------------------------------------------------------------- |
+| `valueFqn` | `string` | Yes      | A full attribute value FQN: `https://<namespace>/attr/<attribute_name>/value/<value>` |
 
-**Example**
+### Example
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -354,18 +376,22 @@ if (!exists) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { attributeValueExists } from '@opentdf/sdk';
+import { attributeValueExists } from "@opentdf/sdk";
 
-const exists = await attributeValueExists(platformUrl, auth, 'https://opentdf.io/attr/department/value/finance');
+const exists = await attributeValueExists(
+  platformUrl,
+  auth,
+  "https://opentdf.io/attr/department/value/finance",
+);
 if (!exists) {
-    console.log('value does not exist on this attribute');
+  console.log("value does not exist on this attribute");
 }
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 `true` if the value exists, `false` otherwise.
 
@@ -375,7 +401,7 @@ if (!exists) {
 
 Checks that a list of attribute value FQNs exist on the platform **before** calling `CreateTDF`. This catches misspellings and missing attributes at the point of use rather than at decryption time.
 
-**Signature**
+### Signature
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -385,6 +411,7 @@ Checks that a list of attribute value FQNs exist on the platform **before** call
 ```go
 client.ValidateAttributes(ctx, fqns...)
 ```
+
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -393,24 +420,26 @@ client.ValidateAttributes(ctx, fqns...)
 ```java
 sdk.validateAttributes(fqns)
 ```
+
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
 <SdkVersion language="js" version="0.10.0" source="opentdf" />
 
 ```typescript
-await validateAttributes(platformUrl, auth, fqns)
+await validateAttributes(platformUrl, auth, fqns);
 ```
+
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fqns` | `list of strings` | Yes | Attribute value FQNs to validate (up to 250 per call). |
+| Parameter | Type              | Required | Description                                            |
+| --------- | ----------------- | -------- | ------------------------------------------------------ |
+| `fqns`    | `list of strings` | Yes      | Attribute value FQNs to validate (up to 250 per call). |
 
-**Example**
+### Example
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -461,20 +490,20 @@ sdk.createTDF(inputStream, outputStream, config);
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { validateAttributes, AttributeNotFoundError } from '@opentdf/sdk';
+import { validateAttributes, AttributeNotFoundError } from "@opentdf/sdk";
 
 const fqns = [
-    'https://opentdf.io/attr/department/value/marketing',
-    'https://opentdf.io/attr/clearance/value/executive',
+  "https://opentdf.io/attr/department/value/marketing",
+  "https://opentdf.io/attr/clearance/value/executive",
 ];
 
 try {
-    await validateAttributes(platformUrl, auth, fqns);
+  await validateAttributes(platformUrl, auth, fqns);
 } catch (e) {
-    if (e instanceof AttributeNotFoundError) {
-        console.error('attribute validation failed:', e.message);
-        // e.message names the specific FQNs that are missing
-    }
+  if (e instanceof AttributeNotFoundError) {
+    console.error("attribute validation failed:", e.message);
+    // e.message names the specific FQNs that are missing
+  }
 }
 
 // Safe to encrypt — all attributes confirmed present
@@ -483,7 +512,7 @@ try {
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 No return value on success. Throws/returns an error naming the specific FQNs that are missing.
 
@@ -499,7 +528,7 @@ Accepts up to 250 FQNs per call, matching the platform's limit. For larger sets,
 
 Returns the attribute value FQNs assigned to a specific entity (person or non-person). Use this to inspect what a user or service account has been granted — for example, to understand why someone can or cannot decrypt a TDF.
 
-**Signature**
+### Signature
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -509,6 +538,7 @@ Returns the attribute value FQNs assigned to a specific entity (person or non-pe
 ```go
 client.GetEntityAttributes(ctx, entity)
 ```
+
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -517,6 +547,7 @@ client.GetEntityAttributes(ctx, entity)
 ```java
 sdk.getEntityAttributes(entity)
 ```
+
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
@@ -525,22 +556,23 @@ sdk.getEntityAttributes(entity)
 ```typescript
 await platform.v2.authorization.getEntitlements({ ... })
 ```
+
 The JS SDK does not expose a standalone `getEntityAttributes` function. Use `getEntitlements` via `PlatformClient` in a Node.js server environment.
 
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
 **Go/Java:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `entity` | `Entity` | Yes | The entity to look up. Supports email, username, client ID, and UUID. |
+| Parameter | Type     | Required | Description                                                           |
+| --------- | -------- | -------- | --------------------------------------------------------------------- |
+| `entity`  | `Entity` | Yes      | The entity to look up. Supports email, username, client ID, and UUID. |
 
 **JavaScript** uses `getEntitlements` instead (see [EntityIdentifier](/sdks/authorization#entityidentifier) for the request shape).
 
-**Example**
+### Example
 
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
@@ -614,27 +646,30 @@ Entity.newBuilder().setId("e1").setUuid("550e8400-e29b-41d4-a716-446655440000").
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import { EntityIdentifiers } from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 
 const platform = new PlatformClient({ ...auth, platformUrl });
 
 const resp = await platform.v2.authorization.getEntitlements({
-  entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
+  entityIdentifier: EntityIdentifiers.forEmail("alice@example.com"),
 });
 
 if (resp.entitlements.length > 0) {
-  console.log("alice's entitlements:", resp.entitlements[0].actionsPerAttributeValueFqn);
+  console.log(
+    "alice's entitlements:",
+    resp.entitlements[0].actionsPerAttributeValueFqn,
+  );
 }
 ```
 
 Other supported [entity identifier helpers](/sdks/authorization#entityidentifier):
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers } from "@opentdf/sdk";
 
-EntityIdentifiers.forUserName('alice')       // By username
-EntityIdentifiers.forClientId('my-service')  // By client ID (NPE / service account)
+EntityIdentifiers.forUserName("alice"); // By username
+EntityIdentifiers.forClientId("my-service"); // By client ID (NPE / service account)
 ```
 
 :::note
@@ -644,7 +679,7 @@ The JavaScript SDK does not currently provide a `forUuid` helper. To use UUID-ba
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 **Go/Java:** A list of [attribute value](/sdks/policy#attribute-value-object) FQN strings that the entity is entitled to access. **JavaScript:** An [EntityEntitlements](/sdks/authorization#entityentitlements) response from `getEntitlements`, containing a map of FQNs to permitted actions.
 
@@ -733,39 +768,49 @@ System.out.println("data encrypted successfully");
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { listAttributes, attributeExists, validateAttributes, AttributeNotFoundError, OpenTDF } from '@opentdf/sdk';
+import {
+  listAttributes,
+  attributeExists,
+  validateAttributes,
+  AttributeNotFoundError,
+  OpenTDF,
+} from "@opentdf/sdk";
 
 // 1. See what's available on the platform
 const attrs = await listAttributes(platformUrl, auth);
 console.log(`platform has ${attrs.length} active attributes`);
 
 // 2. Check a specific attribute exists before using it
-const exists = await attributeExists(platformUrl, auth, 'https://opentdf.io/attr/department');
+const exists = await attributeExists(
+  platformUrl,
+  auth,
+  "https://opentdf.io/attr/department",
+);
 if (!exists) {
-    console.error('attribute missing — create it first');
-    process.exit(1);
+  console.error("attribute missing — create it first");
+  process.exit(1);
 }
 
 // 3. Validate the specific values before encrypting
-const required = ['https://opentdf.io/attr/department/value/marketing'];
+const required = ["https://opentdf.io/attr/department/value/marketing"];
 try {
-    await validateAttributes(platformUrl, auth, required);
+  await validateAttributes(platformUrl, auth, required);
 } catch (e) {
-    if (e instanceof AttributeNotFoundError) {
-        console.error('required attributes missing:', e.message);
-        process.exit(1);
-    }
-    throw e;
+  if (e instanceof AttributeNotFoundError) {
+    console.error("required attributes missing:", e.message);
+    process.exit(1);
+  }
+  throw e;
 }
 
 // 4. Encrypt with confidence
 const client = new OpenTDF({ ...auth, platformUrl });
 const ciphertext = await client.createTDF({
-    source: { type: 'stream', location: dataStream },
-    attributes: required,
-    defaultKASEndpoint: platformUrl,
+  source: { type: "stream", location: dataStream },
+  attributes: required,
+  defaultKASEndpoint: platformUrl,
 });
-console.log('data encrypted successfully');
+console.log("data encrypted successfully");
 ```
 
 </TabItem>
