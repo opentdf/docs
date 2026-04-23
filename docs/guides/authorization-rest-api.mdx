@@ -162,6 +162,9 @@ Check whether a specific entity can perform an action on a resource. This is the
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetDecision`
 
+<details>
+<summary>Example request</summary>
+
 <Tabs>
 <TabItem value="curl" label="curl">
 
@@ -272,6 +275,8 @@ permitted = result.get("decision", {}).get("decision") == "DECISION_PERMIT"
 </TabItem>
 </Tabs>
 
+</details>
+
 **Response:**
 
 ```json
@@ -301,6 +306,9 @@ If `requiredObligations` is non-empty on a permit response, your application mus
 Evaluate multiple entities and resources in a single call. Each request entry can include multiple resources, and the response provides per-resource decisions.
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetDecisionBulk`
+
+<details>
+<summary>Example request</summary>
 
 <Tabs>
 <TabItem value="curl" label="curl">
@@ -422,6 +430,8 @@ for (const resp of result.decisionResponses) {
 </TabItem>
 </Tabs>
 
+</details>
+
 **Response:**
 
 ```json
@@ -447,7 +457,6 @@ for (const resp of result.decisionResponses) {
 :::caution Response ordering is index-matched
 The `decisionResponses` array is **ordered to match the input `decisionRequests`** — the first response corresponds to the first request, and so on. The response does not include entity identifier information, so you must rely on this positional correspondence to associate decisions with entities. Use the `ephemeralResourceId` on each resource decision to match back to specific resources within a request.
 :::
-```
 
 ### Batching Strategy {#batching}
 
@@ -456,6 +465,9 @@ The platform enforces a **maximum of 200 decision requests per `GetDecisionBulk`
 - **Batch size:** Up to 200 decision requests per call (hard limit)
 - **Concurrency:** 2–4 parallel requests
 - **Why:** Keeps individual request latency manageable and avoids timeouts
+
+<details>
+<summary>Batching example (TypeScript)</summary>
 
 ```typescript
 import pLimit from 'p-limit';
@@ -486,6 +498,8 @@ const results = await Promise.all(
 );
 ```
 
+</details>
+
 ---
 
 ## GetEntitlements {#get-entitlements}
@@ -493,6 +507,9 @@ const results = await Promise.all(
 Returns all attribute values an entity is entitled to access, without checking against a specific resource. Use this for building UIs that show available data or pre-filtering content.
 
 **Endpoint:** `POST /authorization.v2.AuthorizationService/GetEntitlements`
+
+<details>
+<summary>Example request</summary>
 
 <Tabs>
 <TabItem value="curl" label="curl">
@@ -555,6 +572,8 @@ for (const entitlement of result.entitlements) {
 
 </TabItem>
 </Tabs>
+
+</details>
 
 **Response:**
 
