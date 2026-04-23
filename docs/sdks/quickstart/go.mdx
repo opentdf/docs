@@ -3,8 +3,6 @@ sidebar_position: 1
 title: Go
 ---
 
-# Go SDK Quickstart
-
 :::tip Back to SDK Quickstart
 This guide covers the **Go SDK** implementation. For other languages or general information, see the [SDK Quickstart](/sdks/quickstart) page.
 :::
@@ -18,6 +16,7 @@ This guide covers the **Go SDK** implementation. For other languages or general 
 Before you begin, **make sure your OpenTDF platform is running!**
 
 Verify it's running:
+
 ```bash
 curl -k https://platform.opentdf.local:8443/healthz
 ```
@@ -25,6 +24,7 @@ curl -k https://platform.opentdf.local:8443/healthz
 Should return: `{"status":"SERVING"}`
 
 If not running, start it:
+
 ```bash
 cd ~/.opentdf/platform && docker compose up -d
 ```
@@ -49,6 +49,7 @@ go get github.com/opentdf/platform/sdk@latest
 ```
 
 Expected output:
+
 > ```console
 > go: downloading github.com/opentdf/platform/sdk v0.x.x
 > go: added github.com/opentdf/platform/sdk v0.x.x
@@ -393,8 +394,6 @@ log.Printf("✅ Granted yourself access to department/marketing")
 ```
 
 Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
-
-
 
 ### Save TDF to a File
 

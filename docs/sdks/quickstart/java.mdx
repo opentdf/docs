@@ -3,8 +3,6 @@ sidebar_position: 2
 title: Java
 ---
 
-# Java SDK Quickstart
-
 :::tip Back to SDK Quickstart
 This guide covers the **Java SDK** implementation. For other languages or general information, see the [SDK Quickstart](/sdks/quickstart) page.
 :::
@@ -19,6 +17,7 @@ This guide covers the **Java SDK** implementation. For other languages or genera
 Before you begin, **make sure your OpenTDF platform is running!**
 
 Verify it's running:
+
 ```bash
 curl -k https://platform.opentdf.local:8443/healthz
 ```
@@ -26,6 +25,7 @@ curl -k https://platform.opentdf.local:8443/healthz
 Should return: `{"status":"SERVING"}`
 
 If not running, start it:
+
 ```bash
 cd ~/.opentdf/platform && docker compose up -d
 ```
@@ -272,7 +272,6 @@ If you want to follow along, you can add the code to your quickstart file as we 
 :::info More ABAC Examples
 For additional policy management examples including managing attributes, namespaces, subject mappings, and more, see the [Policy SDK Guide](/sdks/policy).
 :::
-
 
 ### Create a New Attribute Value
 
@@ -544,7 +543,6 @@ System.out.println("✅ Granted yourself access to department/marketing");
 ```
 
 Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
-
 
 ### Save TDF to a File
 

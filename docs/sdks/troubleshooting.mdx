@@ -3,11 +3,9 @@ sidebar_position: 9
 title: Troubleshooting
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import JsAuthNote from '../../code_samples/js_auth_note.mdx'
-
-# SDK Troubleshooting
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import JsAuthNote from "../../code_samples/js_auth_note.mdx";
 
 This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
 
@@ -20,11 +18,13 @@ This section covers issues when **using the SDKs in your applications**. For pla
 **Error**: `rpc error: code = Unauthenticated` or `401 Unauthorized`
 
 **Solution**: Verify your credentials are correct:
+
 ```bash
 otdfctl auth client-credentials <client-id> <client-secret>
 ```
 
 Check that your identity provider is accessible:
+
 ```bash
 curl https://<idp-endpoint>/
 ```
@@ -46,18 +46,31 @@ curl https://<idp-endpoint>/
 **Solution**:
 
 1. **Re-authenticate** (CLI):
+
    ```bash
    otdfctl auth client-credentials <client-id> <client-secret>
    ```
 
 2. **Use a built-in token provider**: The SDK's token providers handle caching and auto-refresh automatically:
-   ```js
-   import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-   const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-     clientId: 'opentdf', clientSecret: 'secret',
-     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-   }))] };
+   ```js
+   import {
+     authTokenInterceptor,
+     clientCredentialsTokenProvider,
+     OpenTDF,
+   } from "@opentdf/sdk";
+
+   const auth = {
+     interceptors: [
+       authTokenInterceptor(
+         clientCredentialsTokenProvider({
+           clientId: "opentdf",
+           clientSecret: "secret",
+           oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+         }),
+       ),
+     ],
+   };
    const client = new OpenTDF({ ...auth, platformUrl });
    ```
 
@@ -95,6 +108,7 @@ curl https://<idp-endpoint>/
 2. **Restart your browser and terminal** after trusting the certificate — applications must reload their certificate stores to pick up the change.
 
 3. **Skip certificate verification** (quick workaround for CLI only, not recommended for production):
+
    ```bash
    export OTDFCTL_TLS_NO_VERIFY=true
    ```
@@ -104,6 +118,7 @@ curl https://<idp-endpoint>/
 **Error**: `connection refused` or `platform unreachable`
 
 **Solution**: Verify your platform is running:
+
 ```bash
 curl https://<platform-endpoint>/healthz
 ```
@@ -120,12 +135,12 @@ On Linux, `"server misbehaving"` is a DNS resolution failure. It can be triggere
 
 **Common scenarios:**
 
-| Scenario | Symptom | Fix |
-|---|---|---|
-| Input file not readable by process | Encryption fails with a cryptic error | `chmod 644 <input-file>` or run as the correct user |
-| Output directory not writable | TDF write fails | `chmod 755 <output-dir>` or check directory ownership |
-| `/etc/resolv.conf` or `/etc/hosts` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf /etc/hosts` |
-| Docker volume ownership mismatch | Operations fail with cryptic errors | `sudo chown -R $USER:$USER ~/.opentdf/` |
+| Scenario                                        | Symptom                                 | Fix                                                   |
+| ----------------------------------------------- | --------------------------------------- | ----------------------------------------------------- |
+| Input file not readable by process              | Encryption fails with a cryptic error   | `chmod 644 <input-file>` or run as the correct user   |
+| Output directory not writable                   | TDF write fails                         | `chmod 755 <output-dir>` or check directory ownership |
+| `/etc/resolv.conf` or `/etc/hosts` not readable | `"server misbehaving"` on any gRPC call | `sudo chmod 644 /etc/resolv.conf /etc/hosts`          |
+| Docker volume ownership mismatch                | Operations fail with cryptic errors     | `sudo chown -R $USER:$USER ~/.opentdf/`               |
 
 **Diagnostic:**
 
@@ -149,17 +164,20 @@ For platform-level permission issues (Docker volumes, install directory), see [M
 ## Import Errors
 
 **Go**: `package github.com/opentdf/platform/sdk is not in GOROOT`
+
 ```bash
 go mod tidy
 go get github.com/opentdf/platform/sdk@latest
 ```
 
 **Java**: `package io.opentdf.platform.sdk does not exist`
+
 ```bash
 mvn clean install -U
 ```
 
 **JavaScript**: `Cannot find module '@opentdf/client'`
+
 ```bash
 npm install @opentdf/sdk
 ```
@@ -171,13 +189,14 @@ npm install @opentdf/sdk
 <Tabs groupId="sdk">
 <TabItem value="go" label="Go">
 
-```
+```text
 reader.WriteTo failed: splitKey.unable to reconstruct split key: map[{https://<kas-endpoint> }:tdf: rewrap request 403
 kao unwrap failed for split {https://<kas-endpoint> }: permission_denied: request error
 rpc error: code = PermissionDenied desc = forbidden]
 ```
 
 **What to Look For**: The meaningful information is buried in the error. Look for:
+
 - `PermissionDenied` or `forbidden`
 - `rewrap request 403`
 - `permission_denied: request error`
@@ -185,13 +204,14 @@ rpc error: code = PermissionDenied desc = forbidden]
 </TabItem>
 <TabItem value="java" label="Java">
 
-```
+```text
 io.opentdf.platform.sdk.SDK$SplitKeyException: splitKey.unable to reconstruct split key:
 {KeySplitStep{kas='https://<kas-endpoint>/kas', splitID=''}=io.opentdf.platform.sdk.SDKException: error unwrapping key}
 error unwrapping key
 ```
 
 **What to Look For**: The meaningful information is:
+
 - `splitKey.unable to reconstruct split key`
 - `error unwrapping key`
 - `SplitKeyException`
@@ -199,12 +219,13 @@ error unwrapping key
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-```
+```text
 Error: splitKey.unable to reconstruct split key
 error unwrapping key
 ```
 
 **What to Look For**: The meaningful information is:
+
 - `unable to reconstruct split key`
 - `error unwrapping key`
 
@@ -264,15 +285,15 @@ The Go SDK v0.16.0 changed how KAS (Key Access Server) errors are classified. If
 1. **Integrity failure (tamper)** — the TDF's policy binding or encrypted key has been modified
 2. **Misconfiguration** — the request was malformed, used an unsupported key type, or the client lacks permission
 
-**What changed**: Prior to v0.16.0, *all* KAS 400-level errors were classified as `ErrTampered`. This made `errors.Is(err, sdk.ErrTampered)` unreliable — it returned `true` even for configuration errors. Starting in v0.16.0, the SDK distinguishes between tamper and misconfiguration:
+**What changed**: Prior to v0.16.0, _all_ KAS 400-level errors were classified as `ErrTampered`. This made `errors.Is(err, sdk.ErrTampered)` unreliable — it returned `true` even for configuration errors. Starting in v0.16.0, the SDK distinguishes between tamper and misconfiguration:
 
-| Error source | SDK sentinel | `errors.Is(err, sdk.ErrTampered)`? |
-|---|---|---|
-| Policy binding mismatch | `sdk.ErrRewrapBadRequest` | Yes |
-| DEK decryption failure | `sdk.ErrRewrapBadRequest` | Yes |
-| Corrupted policy body | `sdk.ErrRewrapBadRequest` | Yes |
-| Misconfiguration (e.g., wrong key type) | `sdk.ErrKASRequestError` | No |
-| Access denied (403) | `sdk.ErrRewrapForbidden` | No |
+| Error source                            | SDK sentinel              | `errors.Is(err, sdk.ErrTampered)`? |
+| --------------------------------------- | ------------------------- | ---------------------------------- |
+| Policy binding mismatch                 | `sdk.ErrRewrapBadRequest` | Yes                                |
+| DEK decryption failure                  | `sdk.ErrRewrapBadRequest` | Yes                                |
+| Corrupted policy body                   | `sdk.ErrRewrapBadRequest` | Yes                                |
+| Misconfiguration (e.g., wrong key type) | `sdk.ErrKASRequestError`  | No                                 |
+| Access denied (403)                     | `sdk.ErrRewrapForbidden`  | No                                 |
 
 **Migration**: If your code catches all KAS errors via `ErrTampered`, add a check for `ErrKASRequestError`:
 
@@ -325,7 +346,8 @@ For more detail on configuring subject mappings, see [Policy Management](/sdks/p
 **Error**: `already_exists: resource unique field violation`
 
 **Example**:
-```
+
+```text
 2026/02/02 15:45:14 Failed to create namespace: already_exists: resource unique field violation
 exit status 1
 ```
