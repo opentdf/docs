@@ -3,11 +3,9 @@ sidebar_position: 6
 title: Obligations
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import SdkVersion from '@site/src/components/SdkVersion';
-
-# Obligations
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import SdkVersion from "@site/src/components/SdkVersion";
 
 An **obligation** is a PDP-to-PEP directive that accompanies an access decision: "permit, provided these controls are enforced." Obligations are scoped to a namespace and can carry multiple values and triggers. See [Obligations](/components/policy/obligations) for the policy concept.
 
@@ -43,15 +41,23 @@ if err != nil {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
+  interceptors: [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "opentdf",
+        clientSecret: "secret",
+        oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+      }),
+    ),
+  ],
+  platformUrl: "http://localhost:8080",
 });
 
 // All JavaScript snippets below use `platform`.
@@ -65,10 +71,9 @@ const platform = new PlatformClient({
 
 ## Obligation Definitions
 
-<details id="list-obligations">
-<summary>List Obligations</summary>
+### List Obligations
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -87,16 +92,16 @@ await platform.v1.obligation.listObligations({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `namespaceId` | `string` (UUID) | No | Filter to obligations in this namespace. |
-| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN. Alternative to `namespaceId`. |
+| Parameter      | Type            | Required | Description                                            |
+| -------------- | --------------- | -------- | ------------------------------------------------------ |
+| `namespaceId`  | `string` (UUID) | No       | Filter to obligations in this namespace.               |
+| `namespaceFqn` | `string` (URI)  | No       | Filter by namespace FQN. Alternative to `namespaceId`. |
 
 Without a filter, returns all obligations across all namespaces.
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -140,23 +145,20 @@ To filter by namespace:
 
 ```typescript
 const resp = await platform.v1.obligation.listObligations({
-  namespaceFqn: 'https://example.com',
+  namespaceFqn: "https://example.com",
 });
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of [Obligation objects](#obligation-object).
 
-</details>
+### Get an Obligation
 
-<details id="get-obligation">
-<summary>Get an Obligation</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -175,16 +177,16 @@ await platform.v1.obligation.getObligation({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The obligation UUID. |
-| `fqn` | `string` | The obligation FQN (e.g., `https://example.com/obl/drm`). |
+| Parameter | Type            | Description                                               |
+| --------- | --------------- | --------------------------------------------------------- |
+| `id`      | `string` (UUID) | The obligation UUID.                                      |
+| `fqn`     | `string`        | The obligation FQN (e.g., `https://example.com/obl/drm`). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -208,7 +210,7 @@ log.Printf("Obligation ID: %s\n", resp.GetObligation().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.getObligation({
-  fqn: 'https://example.com/obl/drm',
+  fqn: "https://example.com/obl/drm",
 });
 
 console.log(`Obligation ID: ${resp.obligation?.id}`);
@@ -217,18 +219,15 @@ console.log(`Obligation ID: ${resp.obligation?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Obligation object](#obligation-object).
 
-</details>
-
-<details id="get-obligations-by-fqns">
-<summary>Get Obligations by FQNs</summary>
+### Get Obligations by FQNs
 
 Batch-fetch multiple obligations by FQN in a single request.
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -247,13 +246,13 @@ await platform.v1.obligation.getObligationsByFQNs({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fqns` | `[]string` | Yes | Obligation FQNs to look up. |
+| Parameter | Type       | Required | Description                 |
+| --------- | ---------- | -------- | --------------------------- |
+| `fqns`    | `[]string` | Yes      | Obligation FQNs to look up. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -282,10 +281,7 @@ for fqn, obl := range resp.GetFqnObligationMap() {
 
 ```typescript
 const resp = await platform.v1.obligation.getObligationsByFQNs({
-  fqns: [
-    'https://example.com/obl/drm',
-    'https://example.com/obl/audit',
-  ],
+  fqns: ["https://example.com/obl/drm", "https://example.com/obl/audit"],
 });
 
 for (const [fqn, obl] of Object.entries(resp.fqnObligationMap)) {
@@ -296,16 +292,13 @@ for (const [fqn, obl] of Object.entries(resp.fqnObligationMap)) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A map of FQN to [Obligation object](#obligation-object).
 
-</details>
+### Create an Obligation
 
-<details id="create-obligation">
-<summary>Create an Obligation</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -324,16 +317,16 @@ await platform.v1.obligation.createObligation({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `namespaceId` | `string` (UUID) | Yes* | The parent namespace. Required unless `namespaceFqn` is provided. |
-| `namespaceFqn` | `string` (URI) | Yes* | The parent namespace FQN. Alternative to `namespaceId`. |
-| `name` | `string` | Yes | Obligation name (e.g., `drm`, `audit`). |
-| `values` | `[]string` | No | Initial values to create with the obligation. Can also be added later via [Create Obligation Value](#create-obligation-value). |
+| Parameter      | Type            | Required | Description                                                                                                                          |
+| -------------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `namespaceId`  | `string` (UUID) | Yes\*    | The parent namespace. Required unless `namespaceFqn` is provided.                                                                    |
+| `namespaceFqn` | `string` (URI)  | Yes\*    | The parent namespace FQN. Alternative to `namespaceId`.                                                                              |
+| `name`         | `string`        | Yes      | Obligation name (e.g., `drm`, `audit`).                                                                                              |
+| `values`       | `[]string`      | No       | Initial values to create with the obligation. Can also be added later via [Create an Obligation Value](#create-an-obligation-value). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -360,27 +353,26 @@ log.Printf("Created obligation: %s  FQN: %s\n",
 
 ```typescript
 const resp = await platform.v1.obligation.createObligation({
-  namespaceFqn: 'https://example.com',
-  name: 'drm',
-  values: ['watermarking', 'no-download'],
+  namespaceFqn: "https://example.com",
+  name: "drm",
+  values: ["watermarking", "no-download"],
 });
 
-console.log(`Created obligation: ${resp.obligation?.id}  FQN: ${resp.obligation?.fqn}`);
+console.log(
+  `Created obligation: ${resp.obligation?.id}  FQN: ${resp.obligation?.fqn}`,
+);
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The created [Obligation object](#obligation-object). The resulting FQN follows the convention `<namespace>/obl/<name>` (e.g., `https://example.com/obl/drm`).
 
-</details>
+### Update an Obligation
 
-<details id="update-obligation">
-<summary>Update an Obligation</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -399,14 +391,14 @@ await platform.v1.obligation.updateObligation({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The obligation ID to update. |
-| `name` | `string` | No | New name. Only set fields are updated. |
+| Parameter | Type            | Required | Description                            |
+| --------- | --------------- | -------- | -------------------------------------- |
+| `id`      | `string` (UUID) | Yes      | The obligation ID to update.           |
+| `name`    | `string`        | No       | New name. Only set fields are updated. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -431,8 +423,8 @@ log.Printf("Updated obligation FQN: %s\n", resp.GetObligation().GetFqn())
 
 ```typescript
 const resp = await platform.v1.obligation.updateObligation({
-  id: '3f4a7c12-...',
-  name: 'digital-rights',
+  id: "3f4a7c12-...",
+  name: "digital-rights",
 });
 
 console.log(`Updated obligation FQN: ${resp.obligation?.fqn}`);
@@ -441,16 +433,13 @@ console.log(`Updated obligation FQN: ${resp.obligation?.fqn}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Obligation object](#obligation-object).
 
-</details>
+### Delete an Obligation
 
-<details id="delete-obligation">
-<summary>Delete an Obligation</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -469,16 +458,16 @@ await platform.v1.obligation.deleteObligation({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The obligation UUID. |
-| `fqn` | `string` | The obligation FQN. |
+| Parameter | Type            | Description          |
+| --------- | --------------- | -------------------- |
+| `id`      | `string` (UUID) | The obligation UUID. |
+| `fqn`     | `string`        | The obligation FQN.  |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -502,7 +491,7 @@ log.Printf("Deleted obligation: %s\n", resp.GetObligation().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.deleteObligation({
-  fqn: 'https://example.com/obl/drm',
+  fqn: "https://example.com/obl/drm",
 });
 
 console.log(`Deleted obligation: ${resp.obligation?.id}`);
@@ -511,22 +500,20 @@ console.log(`Deleted obligation: ${resp.obligation?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The deleted [Obligation object](#obligation-object).
 
-</details>
-
 ### Obligation Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `name` | `string` | The obligation name (e.g., `drm`, `audit`). |
-| `fqn` | `string` | Fully qualified name, e.g., `https://example.com/obl/drm`. |
-| `values` | [`[]ObligationValue`](#obligation-value-object) | The values defined under this obligation. |
-| `namespace` | [`Namespace`](/sdks/policy#namespace-object) | The parent namespace. |
-| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |
+| Field       | Type                                            | Description                                                |
+| ----------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| `id`        | `string` (UUID)                                 | Unique identifier, generated by the platform.              |
+| `name`      | `string`                                        | The obligation name (e.g., `drm`, `audit`).                |
+| `fqn`       | `string`                                        | Fully qualified name, e.g., `https://example.com/obl/drm`. |
+| `values`    | [`[]ObligationValue`](#obligation-value-object) | The values defined under this obligation.                  |
+| `namespace` | [`Namespace`](/sdks/policy#namespace-object)    | The parent namespace.                                      |
+| `metadata`  | [`Metadata`](/sdks/policy#metadata)             | Optional [labels](/sdks/policy#metadata).                  |
 
 ---
 
@@ -534,10 +521,9 @@ The deleted [Obligation object](#obligation-object).
 
 Each obligation can carry one or more values. Value FQNs follow the convention `<namespace>/obl/<obligation_name>/value/<value>` (e.g., `https://example.com/obl/drm/value/watermarking`).
 
-<details id="get-obligation-value">
-<summary>Get an Obligation Value</summary>
+### Get an Obligation Value
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -556,16 +542,16 @@ await platform.v1.obligation.getObligationValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The value UUID. |
-| `fqn` | `string` | The value FQN (e.g., `https://example.com/obl/drm/value/watermarking`). |
+| Parameter | Type            | Description                                                             |
+| --------- | --------------- | ----------------------------------------------------------------------- |
+| `id`      | `string` (UUID) | The value UUID.                                                         |
+| `fqn`     | `string`        | The value FQN (e.g., `https://example.com/obl/drm/value/watermarking`). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -589,7 +575,7 @@ log.Printf("Value ID: %s\n", resp.GetValue().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.getObligationValue({
-  fqn: 'https://example.com/obl/drm/value/watermarking',
+  fqn: "https://example.com/obl/drm/value/watermarking",
 });
 
 console.log(`Value ID: ${resp.value?.id}`);
@@ -598,16 +584,13 @@ console.log(`Value ID: ${resp.value?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Obligation Value object](#obligation-value-object).
 
-</details>
+### Get Obligation Values by FQNs
 
-<details id="get-obligation-values-by-fqns">
-<summary>Get Obligation Values by FQNs</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -626,13 +609,13 @@ await platform.v1.obligation.getObligationValuesByFQNs({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fqns` | `[]string` | Yes | Obligation value FQNs to look up. |
+| Parameter | Type       | Required | Description                       |
+| --------- | ---------- | -------- | --------------------------------- |
+| `fqns`    | `[]string` | Yes      | Obligation value FQNs to look up. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -662,8 +645,8 @@ for fqn, val := range resp.GetFqnValueMap() {
 ```typescript
 const resp = await platform.v1.obligation.getObligationValuesByFQNs({
   fqns: [
-    'https://example.com/obl/drm/value/watermarking',
-    'https://example.com/obl/drm/value/no-download',
+    "https://example.com/obl/drm/value/watermarking",
+    "https://example.com/obl/drm/value/no-download",
   ],
 });
 
@@ -675,16 +658,13 @@ for (const [fqn, val] of Object.entries(resp.fqnValueMap)) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A map of FQN to [Obligation Value object](#obligation-value-object).
 
-</details>
+### Create an Obligation Value
 
-<details id="create-obligation-value">
-<summary>Create an Obligation Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -703,15 +683,15 @@ await platform.v1.obligation.createObligationValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `obligationId` | `string` (UUID) | Yes* | The parent obligation. Required unless `obligationFqn` is provided. |
-| `obligationFqn` | `string` | Yes* | The parent obligation FQN. Alternative to `obligationId`. |
-| `value` | `string` | Yes | The value string (e.g., `watermarking`, `encrypt-at-rest`). |
+| Parameter       | Type            | Required | Description                                                         |
+| --------------- | --------------- | -------- | ------------------------------------------------------------------- |
+| `obligationId`  | `string` (UUID) | Yes\*    | The parent obligation. Required unless `obligationFqn` is provided. |
+| `obligationFqn` | `string`        | Yes\*    | The parent obligation FQN. Alternative to `obligationId`.           |
+| `value`         | `string`        | Yes      | The value string (e.g., `watermarking`, `encrypt-at-rest`).         |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -737,8 +717,8 @@ log.Printf("Created value: %s  FQN: %s\n",
 
 ```typescript
 const resp = await platform.v1.obligation.createObligationValue({
-  obligationFqn: 'https://example.com/obl/drm',
-  value: 'encrypt-at-rest',
+  obligationFqn: "https://example.com/obl/drm",
+  value: "encrypt-at-rest",
 });
 
 console.log(`Created value: ${resp.value?.id}  FQN: ${resp.value?.fqn}`);
@@ -747,16 +727,13 @@ console.log(`Created value: ${resp.value?.id}  FQN: ${resp.value?.fqn}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The created [Obligation Value object](#obligation-value-object).
 
-</details>
+### Update an Obligation Value
 
-<details id="update-obligation-value">
-<summary>Update an Obligation Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -775,14 +752,14 @@ await platform.v1.obligation.updateObligationValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The value ID to update. |
-| `value` | `string` | No | New value string. |
+| Parameter | Type            | Required | Description             |
+| --------- | --------------- | -------- | ----------------------- |
+| `id`      | `string` (UUID) | Yes      | The value ID to update. |
+| `value`   | `string`        | No       | New value string.       |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -807,8 +784,8 @@ log.Printf("Updated value FQN: %s\n", resp.GetValue().GetFqn())
 
 ```typescript
 const resp = await platform.v1.obligation.updateObligationValue({
-  id: '9a1b2c3d-...',
-  value: 'encrypt-at-rest-v2',
+  id: "9a1b2c3d-...",
+  value: "encrypt-at-rest-v2",
 });
 
 console.log(`Updated value FQN: ${resp.value?.fqn}`);
@@ -817,16 +794,13 @@ console.log(`Updated value FQN: ${resp.value?.fqn}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Obligation Value object](#obligation-value-object).
 
-</details>
+### Delete an Obligation Value
 
-<details id="delete-obligation-value">
-<summary>Delete an Obligation Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -845,16 +819,16 @@ await platform.v1.obligation.deleteObligationValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The value UUID. |
-| `fqn` | `string` | The value FQN. |
+| Parameter | Type            | Description     |
+| --------- | --------------- | --------------- |
+| `id`      | `string` (UUID) | The value UUID. |
+| `fqn`     | `string`        | The value FQN.  |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -878,7 +852,7 @@ log.Printf("Deleted value: %s\n", resp.GetValue().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.deleteObligationValue({
-  fqn: 'https://example.com/obl/drm/value/watermarking',
+  fqn: "https://example.com/obl/drm/value/watermarking",
 });
 
 console.log(`Deleted value: ${resp.value?.id}`);
@@ -887,22 +861,20 @@ console.log(`Deleted value: ${resp.value?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The deleted [Obligation Value object](#obligation-value-object).
 
-</details>
-
 ### Obligation Value Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `value` | `string` | The value string (e.g., `watermarking`, `no-download`). |
-| `fqn` | `string` | Fully qualified name, e.g., `https://example.com/obl/drm/value/watermarking`. |
-| `obligation` | [`Obligation`](#obligation-object) | The parent obligation. |
-| `triggers` | [`[]ObligationTrigger`](#obligation-trigger-object) | Triggers associated with this value. |
-| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |
+| Field        | Type                                                | Description                                                                   |
+| ------------ | --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `id`         | `string` (UUID)                                     | Unique identifier, generated by the platform.                                 |
+| `value`      | `string`                                            | The value string (e.g., `watermarking`, `no-download`).                       |
+| `fqn`        | `string`                                            | Fully qualified name, e.g., `https://example.com/obl/drm/value/watermarking`. |
+| `obligation` | [`Obligation`](#obligation-object)                  | The parent obligation.                                                        |
+| `triggers`   | [`[]ObligationTrigger`](#obligation-trigger-object) | Triggers associated with this value.                                          |
+| `metadata`   | [`Metadata`](/sdks/policy#metadata)                 | Optional [labels](/sdks/policy#metadata).                                     |
 
 ---
 
@@ -910,10 +882,9 @@ The deleted [Obligation Value object](#obligation-value-object).
 
 A trigger links an obligation value to a specific [action](/sdks/policy#action) + [attribute value](/sdks/policy#attribute-value-object) combination. When that action is performed on data carrying that attribute value, the obligation fires.
 
-<details id="add-obligation-trigger">
-<summary>Add an Obligation Trigger</summary>
+### Add an Obligation Trigger
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -932,15 +903,15 @@ await platform.v1.obligation.addObligationTrigger({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `obligationValue` | `IdFqnIdentifier` | Yes | The obligation value to trigger. Provide `id` or `fqn`. |
-| `action` | `IdNameIdentifier` | Yes | The action that fires this trigger. Provide `id` or `name` (e.g., `read`). |
-| `attributeValue` | `IdFqnIdentifier` | Yes | The attribute value that must be present on the data. Provide `id` or `fqn`. |
+| Parameter         | Type               | Required | Description                                                                  |
+| ----------------- | ------------------ | -------- | ---------------------------------------------------------------------------- |
+| `obligationValue` | `IdFqnIdentifier`  | Yes      | The obligation value to trigger. Provide `id` or `fqn`.                      |
+| `action`          | `IdNameIdentifier` | Yes      | The action that fires this trigger. Provide `id` or `name` (e.g., `read`).   |
+| `attributeValue`  | `IdFqnIdentifier`  | Yes      | The attribute value that must be present on the data. Provide `id` or `fqn`. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -975,9 +946,11 @@ log.Printf("Added trigger: %s\n", resp.GetTrigger().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.addObligationTrigger({
-  obligationValue: { fqn: 'https://example.com/obl/drm/value/watermarking' },
-  action: { name: 'read' },
-  attributeValue: { fqn: 'https://example.com/attr/classification/value/secret' },
+  obligationValue: { fqn: "https://example.com/obl/drm/value/watermarking" },
+  action: { name: "read" },
+  attributeValue: {
+    fqn: "https://example.com/attr/classification/value/secret",
+  },
 });
 
 console.log(`Added trigger: ${resp.trigger?.id}`);
@@ -986,16 +959,13 @@ console.log(`Added trigger: ${resp.trigger?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The created [Obligation Trigger object](#obligation-trigger-object).
 
-</details>
+### Get an Obligation Trigger
 
-<details id="get-obligation-trigger">
-<summary>Get an Obligation Trigger</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1005,16 +975,17 @@ The created [Obligation Trigger object](#obligation-trigger-object).
 ```go
 client.Obligations.GetObligationTrigger(ctx, &obligations.GetObligationTriggerRequest{...})
 ```
+
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The trigger UUID. |
+| Parameter | Type            | Required | Description       |
+| --------- | --------------- | -------- | ----------------- |
+| `id`      | `string` (UUID) | Yes      | The trigger UUID. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1036,16 +1007,13 @@ log.Printf("Trigger ID: %s\n", resp.GetTrigger().GetId())
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Obligation Trigger object](#obligation-trigger-object).
 
-</details>
+### List Obligation Triggers
 
-<details id="list-obligation-triggers">
-<summary>List Obligation Triggers</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1064,13 +1032,13 @@ await platform.v1.obligation.listObligationTriggers({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `namespaceFqn` | `string` (URI) | No | Filter to triggers in this namespace. |
+| Parameter      | Type           | Required | Description                           |
+| -------------- | -------------- | -------- | ------------------------------------- |
+| `namespaceFqn` | `string` (URI) | No       | Filter to triggers in this namespace. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1096,7 +1064,7 @@ for _, trigger := range resp.GetTriggers() {
 
 ```typescript
 const resp = await platform.v1.obligation.listObligationTriggers({
-  namespaceFqn: 'https://example.com',
+  namespaceFqn: "https://example.com",
 });
 
 for (const trigger of resp.triggers) {
@@ -1107,16 +1075,13 @@ for (const trigger of resp.triggers) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of [Obligation Trigger objects](#obligation-trigger-object).
 
-</details>
+### Remove an Obligation Trigger
 
-<details id="remove-obligation-trigger">
-<summary>Remove an Obligation Trigger</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1135,13 +1100,13 @@ await platform.v1.obligation.removeObligationTrigger({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The trigger ID to remove. |
+| Parameter | Type            | Required | Description               |
+| --------- | --------------- | -------- | ------------------------- |
+| `id`      | `string` (UUID) | Yes      | The trigger ID to remove. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1165,7 +1130,7 @@ log.Printf("Removed trigger: %s\n", resp.GetTrigger().GetId())
 
 ```typescript
 const resp = await platform.v1.obligation.removeObligationTrigger({
-  id: '7e8f9a0b-...',
+  id: "7e8f9a0b-...",
 });
 
 console.log(`Removed trigger: ${resp.trigger?.id}`);
@@ -1174,18 +1139,16 @@ console.log(`Removed trigger: ${resp.trigger?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The removed [Obligation Trigger object](#obligation-trigger-object).
 
-</details>
-
 ### Obligation Trigger Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `obligationValue` | [`ObligationValue`](#obligation-value-object) | The obligation value this trigger fires for. |
-| `action` | [`Action`](/sdks/policy#action) | The action that activates this trigger (e.g., `read`). |
-| `attributeValue` | [`AttributeValue`](/sdks/policy#attribute-value-object) | The attribute value that must be present on the data. |
-| `metadata` | [`Metadata`](/sdks/policy#metadata) | Optional [labels](/sdks/policy#metadata). |
+| Field             | Type                                                    | Description                                            |
+| ----------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| `id`              | `string` (UUID)                                         | Unique identifier, generated by the platform.          |
+| `obligationValue` | [`ObligationValue`](#obligation-value-object)           | The obligation value this trigger fires for.           |
+| `action`          | [`Action`](/sdks/policy#action)                         | The action that activates this trigger (e.g., `read`). |
+| `attributeValue`  | [`AttributeValue`](/sdks/policy#attribute-value-object) | The attribute value that must be present on the data.  |
+| `metadata`        | [`Metadata`](/sdks/policy#metadata)                     | Optional [labels](/sdks/policy#metadata).              |
