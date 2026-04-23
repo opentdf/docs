@@ -111,6 +111,10 @@ def get_client_token(oidc_endpoint: str, client_id: str, client_secret: str):
 </TabItem>
 </Tabs>
 
+:::warning Audience configuration
+Your client credentials token must include an `audience` claim that matches your OpenTDF platform's URL. If the audience doesn't match, the platform will reject the token. Configure this in your IdP client settings — in Keycloak, set the client's audience mapper to include the platform URL.
+:::
+
 **Token caching:** The `expires_in` field tells you how long the token is valid (in seconds). Cache the token and refresh it before expiry — subtracting a 30-second buffer avoids race conditions on expiry boundaries.
 
 See the [Authentication Decision Guide](/guides/authentication-guide) for help choosing the right auth method for your environment.
@@ -144,7 +148,7 @@ All authorization endpoints accept `POST` requests with `Content-Type: applicati
 | `/authorization.v2.AuthorizationService/GetDecision` | v2 | Single entity + action + resource decision |
 | `/authorization.v2.AuthorizationService/GetDecisionBulk` | v2 | Batch decisions for multiple entities/resources |
 | `/authorization.v2.AuthorizationService/GetEntitlements` | v2 | List all attribute values an entity can access |
-| `/authorization.AuthorizationService/GetDecisions` | v1 (legacy) | Batch decisions (v1 format) |
+| `/v1/authorization` | v1 (legacy) | Batch decisions (v1 format) |
 
 :::tip Use v2 endpoints for new integrations
 The v2 API has a cleaner request structure and supports per-resource decisions. The v1 API is still supported but considered legacy.
@@ -280,7 +284,15 @@ permitted = result.get("decision", {}).get("decision") == "DECISION_PERMIT"
 }
 ```
 
-The `decision` field is either `DECISION_PERMIT` or `DECISION_DENY`. If `requiredObligations` is non-empty, your application must enforce those obligations (e.g., watermarking, audit logging). See [Obligations](/sdks/obligations) for details.
+The `decision` field will be one of:
+
+| Value | Meaning |
+|-------|---------|
+| `DECISION_PERMIT` | Access allowed |
+| `DECISION_DENY` | Access denied |
+| `DECISION_UNSPECIFIED` | The platform could not evaluate the request — treat as deny |
+
+If `requiredObligations` is non-empty on a permit response, your application must enforce those obligations (e.g., watermarking, audit logging). See [Obligations](/sdks/obligations) for details.
 
 ---
 
@@ -432,11 +444,16 @@ for (const resp of result.decisionResponses) {
 }
 ```
 
+:::caution Response ordering is index-matched
+The `decisionResponses` array is **ordered to match the input `decisionRequests`** — the first response corresponds to the first request, and so on. The response does not include entity identifier information, so you must rely on this positional correspondence to associate decisions with entities. Use the `ephemeralResourceId` on each resource decision to match back to specific resources within a request.
+:::
+```
+
 ### Batching Strategy {#batching}
 
-For large-scale evaluations (e.g., re-evaluating room membership for all users), send requests in batches rather than one massive payload:
+The platform enforces a **maximum of 200 decision requests per `GetDecisionBulk` call** (each with up to 1,000 resources). For large-scale evaluations (e.g., re-evaluating room membership for all users), split requests into batches:
 
-- **Batch size:** 100–200 decision requests per call
+- **Batch size:** Up to 200 decision requests per call (hard limit)
 - **Concurrency:** 2–4 parallel requests
 - **Why:** Keeps individual request latency manageable and avoids timeouts
 
@@ -607,16 +624,17 @@ buildAttributeFqns('example.com', [
 
 ## Building Entity Identifiers {#entity-identifiers}
 
-Every authorization call requires an entity identifier — the user or service you're asking about. The platform supports several identifier types:
+Every authorization call requires an entity identifier — the user or service you're asking about. The `entityIdentifier` field accepts one of the following (mutually exclusive):
 
-| Type | JSON field | Use case |
-|------|-----------|----------|
-| Email | `emailAddress` | Most common for human users |
-| Client ID | `clientId` | Service accounts / non-person entities |
-| Username | `userName` | When username is the primary identifier |
-| JWT Token | `token` | Let the platform resolve the entity from a JWT |
+### Option 1: Entity Chain
 
-**Entity chain structure:**
+Use `entityChain` when you know the entity's email, client ID, or username. Each entity in the chain has an `ephemeralId` (a correlation ID you assign) and one identifier field:
+
+| Field | Use case |
+|-------|----------|
+| `emailAddress` | Most common for human users |
+| `clientId` | Service accounts / non-person entities |
+| `userName` | When username is the primary identifier |
 
 ```json
 {
@@ -633,7 +651,7 @@ Every authorization call requires an entity identifier — the user or service y
 }
 ```
 
-To use a different identifier type, replace `emailAddress` with the appropriate field:
+To use a different identifier type, swap the identifier field:
 
 ```json
 { "ephemeralId": "svc-1", "clientId": "my-service-account" }
@@ -641,6 +659,21 @@ To use a different identifier type, replace `emailAddress` with the appropriate 
 
 ```json
 { "ephemeralId": "user-1", "userName": "alice" }
+```
+
+### Option 2: JWT Token
+
+Use `token` to let the platform resolve the entity from a JWT. This is a **top-level alternative** to `entityChain` — it replaces the entire `entityChain` block:
+
+```json
+{
+  "entityIdentifier": {
+    "token": {
+      "ephemeralId": "token-correlation-id",
+      "jwt": "eyJhbGciOiJSUzI1NiIs..."
+    }
+  }
+}
 ```
 
 The `ephemeralId` is a correlation ID you assign — it appears in the response so you can match results to requests.
