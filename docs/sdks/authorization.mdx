@@ -3,14 +3,12 @@ sidebar_position: 7
 title: Authorization
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import JsAuthNote from '../../code_samples/js_auth_note.mdx'
-import SdkVersion from '@site/src/components/SdkVersion';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import JsAuthNote from "../../code_samples/js_auth_note.mdx";
+import SdkVersion from "@site/src/components/SdkVersion";
 
-# Authorization
-
-The authorization system answers two questions: *"What can this entity access?"* ([GetEntitlements](#getentitlements)) and *"Can this entity access this specific resource?"* ([GetDecision](#getdecision)). For batch checks, use [GetDecisionBulk](#getdecisionbulk).
+The authorization system answers two questions: _"What can this entity access?"_ ([GetEntitlements](#getentitlements)) and _"Can this entity access this specific resource?"_ ([GetDecision](#getdecision)). For batch checks, use [GetDecisionBulk](#getdecisionbulk).
 
 ## Setup
 
@@ -63,15 +61,23 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
+  interceptors: [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "opentdf",
+        clientSecret: "secret",
+        oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+      }),
+    ),
+  ],
+  platformUrl: "http://localhost:8080",
 });
 
 // All JavaScript snippets below use `platform`.
@@ -91,13 +97,13 @@ Every authorization call requires an `EntityIdentifier` — the entity (user, se
 
 <SdkVersion language="go" version="0.16.0" source="opentdf" />
 
-| Helper | Description |
-|--------|-------------|
-| `authorizationv2.ForEmail(email)` | Identify by email address |
-| `authorizationv2.ForClientID(clientID)` | Identify by client ID (service account / NPE) |
-| `authorizationv2.ForUserName(username)` | Identify by username |
-| `authorizationv2.ForToken(jwt)` | Resolve entity from a JWT token |
-| `authorizationv2.WithRequestToken()` | Derive entity from the request's Authorization header |
+| Helper                                  | Description                                           |
+| --------------------------------------- | ----------------------------------------------------- |
+| `authorizationv2.ForEmail(email)`       | Identify by email address                             |
+| `authorizationv2.ForClientID(clientID)` | Identify by client ID (service account / NPE)         |
+| `authorizationv2.ForUserName(username)` | Identify by username                                  |
+| `authorizationv2.ForToken(jwt)`         | Resolve entity from a JWT token                       |
+| `authorizationv2.WithRequestToken()`    | Derive entity from the request's Authorization header |
 
 ```go
 import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
@@ -107,6 +113,7 @@ req := &authorizationv2.GetDecisionRequest{
     // ...
 }
 ```
+
 <details>
 <summary>Without helpers (manual proto construction)</summary>
 
@@ -142,12 +149,12 @@ req := &authorizationv2.GetDecisionRequest{
 
 <SdkVersion language="java" version="0.13.0" source="opentdf" />
 
-| Helper | Description |
-|--------|-------------|
-| `EntityIdentifiers.forEmail(email)` | Identify by email address |
+| Helper                                    | Description                                   |
+| ----------------------------------------- | --------------------------------------------- |
+| `EntityIdentifiers.forEmail(email)`       | Identify by email address                     |
 | `EntityIdentifiers.forClientId(clientId)` | Identify by client ID (service account / NPE) |
-| `EntityIdentifiers.forUserName(username)` | Identify by username |
-| `EntityIdentifiers.forToken(jwt)` | Resolve entity from a JWT token |
+| `EntityIdentifiers.forUserName(username)` | Identify by username                          |
+| `EntityIdentifiers.forToken(jwt)`         | Resolve entity from a JWT token               |
 
 ```java
 import io.opentdf.platform.sdk.EntityIdentifiers;
@@ -157,6 +164,7 @@ GetDecisionRequest request = GetDecisionRequest.newBuilder()
     // ...
     .build();
 ```
+
 <details>
 <summary>Without helpers (manual proto construction)</summary>
 
@@ -180,22 +188,23 @@ EntityIdentifier.newBuilder()
 
 <SdkVersion language="js" version="0.14.0" source="opentdf" />
 
-| Helper | Description |
-|--------|-------------|
-| `EntityIdentifiers.forEmail(email)` | Identify by email address |
-| `EntityIdentifiers.forClientId(clientId)` | Identify by client ID (service account / NPE) |
-| `EntityIdentifiers.forUserName(username)` | Identify by username |
-| `EntityIdentifiers.forToken(jwt)` | Resolve entity from a JWT token |
-| `EntityIdentifiers.withRequestToken()` | Derive entity from the request's Authorization header |
+| Helper                                    | Description                                           |
+| ----------------------------------------- | ----------------------------------------------------- |
+| `EntityIdentifiers.forEmail(email)`       | Identify by email address                             |
+| `EntityIdentifiers.forClientId(clientId)` | Identify by client ID (service account / NPE)         |
+| `EntityIdentifiers.forUserName(username)` | Identify by username                                  |
+| `EntityIdentifiers.forToken(jwt)`         | Resolve entity from a JWT token                       |
+| `EntityIdentifiers.withRequestToken()`    | Derive entity from the request's Authorization header |
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers } from "@opentdf/sdk";
 
 const response = await platform.v2.authorization.getDecision({
-  entityIdentifier: EntityIdentifiers.forEmail('alice@example.com'),
+  entityIdentifier: EntityIdentifiers.forEmail("alice@example.com"),
   // ...
 });
 ```
+
 <details>
 <summary>Without helpers (manual object construction)</summary>
 
@@ -227,15 +236,15 @@ const response = await platform.v2.authorization.getDecision({
 
 **Supported entity types:**
 
-| Type | Go | Java | JavaScript |
-|------|-----|------|------------|
-| Email | `ForEmail(email)` | `EntityIdentifiers.forEmail(email)` | `EntityIdentifiers.forEmail(email)` |
-| Client ID | `ForClientID(id)` | `EntityIdentifiers.forClientId(id)` | `EntityIdentifiers.forClientId(id)` |
-| Username | `ForUserName(name)` | `EntityIdentifiers.forUserName(name)` | `EntityIdentifiers.forUserName(name)` |
-| JWT Token | `ForToken(jwt)` | `EntityIdentifiers.forToken(jwt)` | `EntityIdentifiers.forToken(jwt)` |
-| Request Token | `WithRequestToken()` | — | `EntityIdentifiers.withRequestToken()` |
-| Claims | — | manual proto construction | manual object construction |
-| Registered Resource | — | manual proto construction | manual object construction |
+| Type                | Go                   | Java                                  | JavaScript                             |
+| ------------------- | -------------------- | ------------------------------------- | -------------------------------------- |
+| Email               | `ForEmail(email)`    | `EntityIdentifiers.forEmail(email)`   | `EntityIdentifiers.forEmail(email)`    |
+| Client ID           | `ForClientID(id)`    | `EntityIdentifiers.forClientId(id)`   | `EntityIdentifiers.forClientId(id)`    |
+| Username            | `ForUserName(name)`  | `EntityIdentifiers.forUserName(name)` | `EntityIdentifiers.forUserName(name)`  |
+| JWT Token           | `ForToken(jwt)`      | `EntityIdentifiers.forToken(jwt)`     | `EntityIdentifiers.forToken(jwt)`      |
+| Request Token       | `WithRequestToken()` | —                                     | `EntityIdentifiers.withRequestToken()` |
+| Claims              | —                    | manual proto construction             | manual object construction             |
+| Registered Resource | —                    | manual proto construction             | manual object construction             |
 
 - **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
 - **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
@@ -246,7 +255,7 @@ const response = await platform.v2.authorization.getDecision({
 
 Returns all attribute values an entity is entitled to access. Use this for building UIs that show available data, pre-filtering content, or understanding an entity's overall access scope.
 
-**Signature**
+### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -272,14 +281,14 @@ await platform.v2.authorization.getEntitlements({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
-| `withComprehensiveHierarchy` | `bool` | No | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value. |
+| Parameter                    | Type               | Required | Description                                                                                                                     |
+| ---------------------------- | ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `entityIdentifier`           | `EntityIdentifier` | Yes      | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `withComprehensiveHierarchy` | `bool`             | No       | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value.           |
 
-**Example**
+### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -400,34 +409,34 @@ for (EntityEntitlements entitlement : resp.getEntitlementsList()) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers } from "@opentdf/sdk";
 
 const response = await platform.v2.authorization.getEntitlements({
-  entityIdentifier: EntityIdentifiers.forEmail('bob@OrgA.com'),
+  entityIdentifier: EntityIdentifiers.forEmail("bob@OrgA.com"),
 });
 
 for (const entitlement of response.entitlements) {
-  console.log('Entitled to:', entitlement.actionsPerAttributeValueFqn);
+  console.log("Entitled to:", entitlement.actionsPerAttributeValueFqn);
 }
 ```
 
 To expand hierarchy rules:
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers } from "@opentdf/sdk";
 
 const response = await platform.v2.authorization.getEntitlements({
-  entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
+  entityIdentifier: EntityIdentifiers.forEmail("user@company.com"),
   withComprehensiveHierarchy: true,
 });
 
-console.log('Scoped entitlements:', response.entitlements);
+console.log("Scoped entitlements:", response.entitlements);
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 A list of [EntityEntitlements](#entityentitlements) objects, each containing a map of attribute value FQNs to the actions the entity can perform on them.
 
@@ -437,7 +446,7 @@ A list of [EntityEntitlements](#entityentitlements) objects, each containing a m
 
 Returns a permit/deny decision for a specific entity + action + resource combination. This is the enforcement point in your application.
 
-**Signature**
+### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -463,15 +472,15 @@ await platform.v2.authorization.getDecision({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
-| `action` | `Action` | Yes | The action being performed (e.g., `decrypt`, `read`). |
-| `resource` | `Resource` | Yes | The resource being accessed, identified by attribute value FQNs. |
+| Parameter          | Type               | Required | Description                                                                                                                              |
+| ------------------ | ------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `entityIdentifier` | `EntityIdentifier` | Yes      | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `action`           | `Action`           | Yes      | The action being performed (e.g., `decrypt`, `read`).                                                                                    |
+| `resource`         | `Resource`         | Yes      | The resource being accessed, identified by attribute value FQNs.                                                                         |
 
-**Example**
+### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -641,19 +650,19 @@ if (decision.getDecision() == Decision.DECISION_PERMIT) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
-import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
+import { EntityIdentifiers } from "@opentdf/sdk";
+import { Decision } from "@opentdf/sdk/platform/authorization/v2/authorization_pb.js";
 
 const response = await platform.v2.authorization.getDecision({
-  entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
-  action: { name: 'decrypt' },
+  entityIdentifier: EntityIdentifiers.forEmail("user@company.com"),
+  action: { name: "decrypt" },
   resource: {
     resource: {
-      case: 'attributeValues',
+      case: "attributeValues",
       value: {
         fqns: [
-          'https://company.com/attr/clearance/value/confidential',
-          'https://company.com/attr/department/value/finance',
+          "https://company.com/attr/clearance/value/confidential",
+          "https://company.com/attr/department/value/finance",
         ],
       },
     },
@@ -662,19 +671,19 @@ const response = await platform.v2.authorization.getDecision({
 
 const decision = response.decision;
 if (decision?.decision === Decision.PERMIT) {
-  console.log('Access granted');
+  console.log("Access granted");
   if (decision.requiredObligations.length > 0) {
-    console.log('Required obligations:', decision.requiredObligations);
+    console.log("Required obligations:", decision.requiredObligations);
   }
 } else {
-  console.log('Access denied');
+  console.log("Access denied");
 }
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/components/policy/obligations) the consuming application must enforce.
 
@@ -684,7 +693,7 @@ A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/den
 
 Evaluates multiple entity + action + resource combinations in a single call. Each request can include multiple resources, and the response indicates whether all resources were permitted plus per-resource decisions.
 
-**Signature**
+### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -710,21 +719,21 @@ await platform.v2.authorization.getDecisionBulk({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `decisionRequests` | `[]GetDecisionMultiResourceRequest` | Yes | Each entry contains an entity, action, and one or more resources to evaluate. |
+| Parameter          | Type                                | Required | Description                                                                   |
+| ------------------ | ----------------------------------- | -------- | ----------------------------------------------------------------------------- |
+| `decisionRequests` | `[]GetDecisionMultiResourceRequest` | Yes      | Each entry contains an entity, action, and one or more resources to evaluate. |
 
 Each `GetDecisionMultiResourceRequest` contains:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. |
-| `action` | `Action` | Yes | The action being performed. |
-| `resources` | `[]Resource` | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
+| Field              | Type               | Required | Description                                                        |
+| ------------------ | ------------------ | -------- | ------------------------------------------------------------------ |
+| `entityIdentifier` | `EntityIdentifier` | Yes      | The entity requesting access.                                      |
+| `action`           | `Action`           | Yes      | The action being performed.                                        |
+| `resources`        | `[]Resource`       | Yes      | Resources to evaluate, each with an `ephemeralId` for correlation. |
 
-**Example**
+### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -873,7 +882,7 @@ for (GetDecisionMultiResourceResponse response : resp.getDecisionResponsesList()
 <details>
 <summary>V1 API (Legacy)</summary>
 
-import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
+import GetDecisionsExample from "@site/code_samples/java/get-decisions.mdx";
 
 <GetDecisionsExample />
 
@@ -883,26 +892,28 @@ import GetDecisionsExample from '@site/code_samples/java/get-decisions.mdx';
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers } from "@opentdf/sdk";
 
 const response = await platform.v2.authorization.getDecisionBulk({
   decisionRequests: [
     {
-      entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
-      action: { name: 'decrypt' },
+      entityIdentifier: EntityIdentifiers.forEmail("user@company.com"),
+      action: { name: "decrypt" },
       resources: [
         {
-          ephemeralId: 'resource-1',
+          ephemeralId: "resource-1",
           resource: {
-            case: 'attributeValues',
-            value: { fqns: ['https://company.com/attr/class/value/public'] },
+            case: "attributeValues",
+            value: { fqns: ["https://company.com/attr/class/value/public"] },
           },
         },
         {
-          ephemeralId: 'resource-2',
+          ephemeralId: "resource-2",
           resource: {
-            case: 'attributeValues',
-            value: { fqns: ['https://company.com/attr/class/value/confidential'] },
+            case: "attributeValues",
+            value: {
+              fqns: ["https://company.com/attr/class/value/confidential"],
+            },
           },
         },
       ],
@@ -912,11 +923,11 @@ const response = await platform.v2.authorization.getDecisionBulk({
 
 for (const resp of response.decisionResponses) {
   if (resp.allPermitted !== undefined) {
-    console.log('All resources permitted:', resp.allPermitted.value);
+    console.log("All resources permitted:", resp.allPermitted.value);
   }
   for (const resourceDecision of resp.resourceDecisions) {
     console.log(
-      `Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`
+      `Resource ${resourceDecision.ephemeralResourceId}: ${resourceDecision.decision}`,
     );
   }
 }
@@ -925,7 +936,7 @@ for (const resp of response.decisionResponses) {
 </TabItem>
 </Tabs>
 
-**Returns**
+### Returns
 
 A list of [GetDecisionMultiResourceResponse](#getdecisionmultiresourceresponse) objects, each containing an `allPermitted` flag and per-resource [ResourceDecision](#resourcedecision) entries.
 
@@ -937,29 +948,29 @@ A list of [GetDecisionMultiResourceResponse](#getdecisionmultiresourceresponse) 
 
 The authorization result.
 
-| Value | Description |
-|-------|-------------|
+| Value             | Description                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------- |
 | `DECISION_PERMIT` | Access is granted. Check `requiredObligations` for any controls the PEP must enforce. |
-| `DECISION_DENY` | Access is denied. |
+| `DECISION_DENY`   | Access is denied.                                                                     |
 
 ### ResourceDecision
 
 The result for a single resource in a decision response.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `ephemeralResourceId` | `string` | Correlates with the `ephemeralId` set on the request's [Resource](#resource). |
-| `decision` | [`Decision`](#decision) | Permit or deny. |
-| `requiredObligations` | `[]string` | Obligation value FQNs the PEP must fulfill (e.g., `https://example.com/obl/drm/value/watermarking`). Empty if none required. |
+| Field                 | Type                    | Description                                                                                                                  |
+| --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ephemeralResourceId` | `string`                | Correlates with the `ephemeralId` set on the request's [Resource](#resource).                                                |
+| `decision`            | [`Decision`](#decision) | Permit or deny.                                                                                                              |
+| `requiredObligations` | `[]string`              | Obligation value FQNs the PEP must fulfill (e.g., `https://example.com/obl/drm/value/watermarking`). Empty if none required. |
 
 ### Resource
 
 Identifies the data being accessed. A resource can be specified in two ways:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `ephemeralId` | `string` | An ID you assign for correlating with the response. Used in bulk requests. |
-| `attributeValues.fqns` | `[]string` | Attribute value FQNs on the resource (1–20). Use this for TDF payloads or any resource identified by attribute values. |
+| Field                        | Type           | Description                                                                                                                             |
+| ---------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `ephemeralId`                | `string`       | An ID you assign for correlating with the response. Used in bulk requests.                                                              |
+| `attributeValues.fqns`       | `[]string`     | Attribute value FQNs on the resource (1–20). Use this for TDF payloads or any resource identified by attribute values.                  |
 | `registeredResourceValueFqn` | `string` (URI) | A [registered resource](/components/policy/registered_resources) value FQN stored in platform policy. Alternative to `attributeValues`. |
 
 ```go
@@ -989,9 +1000,9 @@ Identifies the data being accessed. A resource can be specified in two ways:
 
 Returned by [GetEntitlements](#getentitlements). One per entity, mapping attribute value FQNs to the actions that entity can perform.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `ephemeralId` | `string` | Correlates with the entity in the request. |
+| Field                         | Type                       | Description                                                                                                                                     |
+| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ephemeralId`                 | `string`                   | Correlates with the entity in the request.                                                                                                      |
 | `actionsPerAttributeValueFqn` | `map<string, ActionsList>` | Keys are attribute value FQNs. Values are lists of [actions](/sdks/policy#action) the entity can perform on data carrying that attribute value. |
 
 ```go
@@ -1014,10 +1025,10 @@ for (const e of resp.entitlements) {
 
 Returned by [GetDecisionBulk](#getdecisionbulk). One per entity+action combination in the request.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `allPermitted` | `bool` | Convenience flag — `true` if every resource in this group was permitted. |
-| `resourceDecisions` | [`[]ResourceDecision`](#resourcedecision) | Per-resource results with individual decisions and obligations. |
+| Field               | Type                                      | Description                                                              |
+| ------------------- | ----------------------------------------- | ------------------------------------------------------------------------ |
+| `allPermitted`      | `bool`                                    | Convenience flag — `true` if every resource in this group was permitted. |
+| `resourceDecisions` | [`[]ResourceDecision`](#resourcedecision) | Per-resource results with individual decisions and obligations.          |
 
 ---
 

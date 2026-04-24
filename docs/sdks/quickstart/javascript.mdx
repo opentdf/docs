@@ -3,8 +3,6 @@ sidebar_position: 3
 title: JavaScript/TypeScript
 ---
 
-# JavaScript/TypeScript SDK Quickstart
-
 :::tip Back to SDK Quickstart
 This guide covers the **JavaScript/TypeScript SDK** implementation. For other languages or general information, see the [SDK Quickstart](/sdks/quickstart) page.
 :::
@@ -18,6 +16,7 @@ This guide covers the **JavaScript/TypeScript SDK** implementation. For other la
 Before you begin, **make sure your OpenTDF platform is running!**
 
 Verify it's running:
+
 ```bash
 curl -k https://platform.opentdf.local:8443/healthz
 ```
@@ -25,6 +24,7 @@ curl -k https://platform.opentdf.local:8443/healthz
 Should return: `{"status":"SERVING"}`
 
 If not running, start it:
+
 ```bash
 cd ~/.opentdf/platform && docker compose up -d
 ```
@@ -59,6 +59,7 @@ npm install @opentdf/sdk
 ```
 
 Expected output:
+
 > ```console
 > added XX packages in Xs
 > ```
@@ -74,56 +75,64 @@ This quickstart uses `clientCredentialsTokenProvider` with the pre-configured Ke
 Create a file named `index.mjs`:
 
 ```javascript title="index.mjs"
-import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+  OpenTDF,
+} from "@opentdf/sdk";
 
 async function main() {
-  console.log('🚀 Starting OpenTDF SDK Quickstart...');
+  console.log("🚀 Starting OpenTDF SDK Quickstart...");
 
-  const platformUrl = 'https://platform.opentdf.local:8443';
-  const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
+  const platformUrl = "https://platform.opentdf.local:8443";
+  const oidcOrigin = "https://keycloak.opentdf.local:9443/auth/realms/opentdf";
   console.log(`📡 Connecting to platform: ${platformUrl}`);
 
   // For this quickstart we use client credentials (server-side only).
   // In a browser app, use refreshTokenProvider() with your OIDC login flow instead.
   const tokenProvider = clientCredentialsTokenProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
+    clientId: "opentdf",
+    clientSecret: "secret",
     oidcOrigin,
   });
 
   // Create a new OpenTDF client
-  console.log('🔐 Initializing client with auth interceptor...');
-  const client = new OpenTDF({ interceptors: [authTokenInterceptor(tokenProvider)], platformUrl });
-  console.log('✅ SDK client initialized successfully');
+  console.log("🔐 Initializing client with auth interceptor...");
+  const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(tokenProvider)],
+    platformUrl,
+  });
+  console.log("✅ SDK client initialized successfully");
 
   // Encrypt data
-  console.log('\n📝 Encrypting sensitive data...');
-  const sensitiveData = 'Hello from the OpenTDF JS SDK! This data is encrypted.';
+  console.log("\n📝 Encrypting sensitive data...");
+  const sensitiveData =
+    "Hello from the OpenTDF JS SDK! This data is encrypted.";
   const encoder = new TextEncoder();
 
-  console.log('🔒 Creating TDF...');
+  console.log("🔒 Creating TDF...");
   const tdfStream = await client.createTDF({
-    source: { type: 'buffer', location: encoder.encode(sensitiveData) },
+    source: { type: "buffer", location: encoder.encode(sensitiveData) },
     // defaultKASEndpoint specifies the Key Access Service (KAS) endpoint
     // KAS manages encryption keys and enforces access policies
     defaultKASEndpoint: `${platformUrl}/kas`,
   });
 
   const encrypted = new Uint8Array(await new Response(tdfStream).arrayBuffer());
-  console.log('✅ Data successfully encrypted');
+  console.log("✅ Data successfully encrypted");
   console.log(`📊 Encrypted TDF size: ${encrypted.length} bytes`);
 
   // Decrypt data
-  console.log('\n🔓 Decrypting TDF...');
+  console.log("\n🔓 Decrypting TDF...");
   const decryptedStream = await client.read({
-    source: { type: 'buffer', location: encrypted },
+    source: { type: "buffer", location: encrypted },
   });
 
   const decryptedText = await new Response(decryptedStream).text();
-  console.log('✅ Data successfully decrypted');
+  console.log("✅ Data successfully decrypted");
   console.log(`📤 Decrypted content:\n\n${decryptedText}\n`);
 
-  console.log('\n🎉 Quickstart complete!');
+  console.log("\n🎉 Quickstart complete!");
 }
 
 main().catch(console.error);
@@ -190,19 +199,29 @@ For additional policy management examples including managing attributes, namespa
 Let's work with the "department" attribute and add a "marketing" value. If you completed the [Quickstart setup guide](/quickstart), the attribute may already exist with finance and engineering values. If not, we'll create it:
 
 ```javascript
-import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists, attributeValueExists, OpenTDF } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
-import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+  attributeExists,
+  attributeValueExists,
+  OpenTDF,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
+import { AttributeRuleTypeEnum } from "@opentdf/sdk/platform/policy/objects_pb.js";
 
-const platformUrl = 'https://platform.opentdf.local:8443';
-const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
+const platformUrl = "https://platform.opentdf.local:8443";
+const oidcOrigin = "https://keycloak.opentdf.local:9443/auth/realms/opentdf";
 
 // Client credentials for this quickstart only — use refreshTokenProvider() in browser apps
-const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
-  clientId: 'opentdf',
-  clientSecret: 'secret',
-  oidcOrigin,
-}))];
+const interceptors = [
+  authTokenInterceptor(
+    clientCredentialsTokenProvider({
+      clientId: "opentdf",
+      clientSecret: "secret",
+      oidcOrigin,
+    }),
+  ),
+];
 const auth = { interceptors };
 const client = new OpenTDF({ ...auth, platformUrl });
 const platform = new PlatformClient({ ...auth, platformUrl });
@@ -211,15 +230,15 @@ const platform = new PlatformClient({ ...auth, platformUrl });
 let namespaceId;
 try {
   const nsResp = await platform.v1.namespace.createNamespace({
-    name: 'opentdf.io',
+    name: "opentdf.io",
   });
   namespaceId = nsResp.namespace?.id;
   console.log(`✅ Created namespace: ${namespaceId}`);
 } catch (err) {
-  if (err.message?.includes('already_exists')) {
+  if (err.message?.includes("already_exists")) {
     // Namespace exists — fetch it directly by FQN
     const getNsResp = await platform.v1.namespace.getNamespace({
-      identifier: { case: 'fqn', value: 'https://opentdf.io' },
+      identifier: { case: "fqn", value: "https://opentdf.io" },
     });
     namespaceId = getNsResp.namespace?.id;
     console.log(`✅ Using existing namespace: ${namespaceId}`);
@@ -229,32 +248,32 @@ try {
 }
 
 // Create the department attribute if it doesn't exist
-const deptFqn = 'https://opentdf.io/attr/department';
+const deptFqn = "https://opentdf.io/attr/department";
 if (!(await attributeExists(platformUrl, auth, deptFqn))) {
   await platform.v1.attributes.createAttribute({
     namespaceId,
-    name: 'department',
+    name: "department",
     rule: AttributeRuleTypeEnum.ANY_OF,
-    values: ['marketing'],
+    values: ["marketing"],
   });
-  console.log('✅ Created department attribute with marketing value');
+  console.log("✅ Created department attribute with marketing value");
 } else {
-  console.log('✅ Using existing department attribute');
+  console.log("✅ Using existing department attribute");
 }
 
 // Ensure the marketing value exists on the attribute
 const marketingFqn = `${deptFqn}/value/marketing`;
 const listResp = await platform.v1.attributes.listAttributes({});
 const attribute = listResp.attributes.find(
-  (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
+  (attr) => attr.name === "department" && attr.namespace?.id === namespaceId,
 );
 
 if (!(await attributeValueExists(platformUrl, auth, marketingFqn))) {
   await platform.v1.attributes.createAttributeValue({
     attributeId: attribute?.id,
-    value: 'marketing',
+    value: "marketing",
   });
-  console.log('✅ Added marketing value to department attribute');
+  console.log("✅ Added marketing value to department attribute");
 }
 
 console.log(`Full attribute FQN: ${marketingFqn}`);
@@ -270,11 +289,11 @@ Now that you've created the attribute, update your `createTDF` call to include t
 
 ```javascript
 const tdfStream = await client.createTDF({
-  source: { type: 'buffer', location: encoder.encode(sensitiveData) },
+  source: { type: "buffer", location: encoder.encode(sensitiveData) },
   // defaultKASEndpoint specifies the Key Access Service (KAS) endpoint
   // KAS manages encryption keys and enforces access policies
   defaultKASEndpoint: `${platformUrl}/kas`,
-  attributes: ['https://opentdf.io/attr/department/value/marketing'],
+  attributes: ["https://opentdf.io/attr/department/value/marketing"],
 });
 ```
 
@@ -296,42 +315,46 @@ Learn more about actions in the [Actions documentation](/components/policy/actio
 import {
   ConditionBooleanTypeEnum,
   SubjectMappingOperatorEnum,
-} from '@opentdf/sdk/platform/policy/objects_pb.js';
+} from "@opentdf/sdk/platform/policy/objects_pb.js";
 
 // Get the attribute value ID for "marketing"
-const marketingValue = attribute?.values?.find((v) => v.value === 'marketing');
+const marketingValue = attribute?.values?.find((v) => v.value === "marketing");
 const attributeValueId = marketingValue?.id;
 
 // Subject condition sets use a nested structure: sets → groups → conditions.
 // This one matches any entity whose .clientId claim includes 'opentdf'.
 const scsResp = await platform.v1.subjectMapping.createSubjectConditionSet({
   subjectConditionSet: {
-    subjectSets: [{
-      conditionGroups: [{
-        booleanOperator: ConditionBooleanTypeEnum.AND,
-        conditions: [{
-          subjectExternalSelectorValue: '.clientId',
-          operator: SubjectMappingOperatorEnum.IN,
-          subjectExternalValues: ['opentdf'],
-        }],
-      }],
-    }],
+    subjectSets: [
+      {
+        conditionGroups: [
+          {
+            booleanOperator: ConditionBooleanTypeEnum.AND,
+            conditions: [
+              {
+                subjectExternalSelectorValue: ".clientId",
+                operator: SubjectMappingOperatorEnum.IN,
+                subjectExternalValues: ["opentdf"],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
 });
 
 // Create the subject mapping to grant yourself the entitlement
 await platform.v1.subjectMapping.createSubjectMapping({
   attributeValueId,
-  actions: [{ name: 'read' }],
+  actions: [{ name: "read" }],
   existingSubjectConditionSetId: scsResp.subjectConditionSet?.id,
 });
 
-console.log('✅ Granted yourself access to department/marketing');
+console.log("✅ Granted yourself access to department/marketing");
 ```
 
 Now you can decrypt the TDF you encrypted with the `marketing` attribute. 🎉
-
-
 
 ### Save TDF to a File
 
@@ -342,15 +365,15 @@ In production applications, you'll often need to persist encrypted TDFs to disk 
 - **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
 
 ```javascript
-import fs from 'node:fs';
+import fs from "node:fs";
 
 // After encryption
-fs.writeFileSync('encrypted.tdf', encrypted);
+fs.writeFileSync("encrypted.tdf", encrypted);
 
 // Later, load from file
-const tdfData = fs.readFileSync('encrypted.tdf');
+const tdfData = fs.readFileSync("encrypted.tdf");
 const decryptedStream = await client.read({
-  source: { type: 'buffer', location: new Uint8Array(tdfData) },
+  source: { type: "buffer", location: new Uint8Array(tdfData) },
 });
 ```
 
@@ -359,19 +382,19 @@ const decryptedStream = await client.read({
 For large files, use streams instead of loading the entire file into memory:
 
 ```javascript
-import fs from 'node:fs';
+import fs from "node:fs";
 
 // Encrypt a large file using a stream source
-const inputStream = fs.createReadStream('large-file.pdf');
+const inputStream = fs.createReadStream("large-file.pdf");
 const tdfStream = await client.createTDF({
-  source: { type: 'stream', location: inputStream },
+  source: { type: "stream", location: inputStream },
   // defaultKASEndpoint specifies the Key Access Service (KAS) endpoint
   // KAS manages encryption keys and enforces access policies
   defaultKASEndpoint: `${platformUrl}/kas`,
 });
 
 // Pipe encrypted output to a file
-const outputStream = fs.createWriteStream('large-file.pdf.tdf');
+const outputStream = fs.createWriteStream("large-file.pdf.tdf");
 for await (const chunk of tdfStream) {
   outputStream.write(chunk);
 }
@@ -386,25 +409,35 @@ For reference, here's a complete example showing all the pieces together:
 <summary>Create Attribute, Encrypt, Grant Access, Decrypt, Save File</summary>
 
 ```javascript title="index.mjs"
-import fs from 'node:fs';
-import { authTokenInterceptor, clientCredentialsTokenProvider, attributeExists, attributeValueExists, OpenTDF } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import fs from "node:fs";
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+  attributeExists,
+  attributeValueExists,
+  OpenTDF,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 import {
   AttributeRuleTypeEnum,
   ConditionBooleanTypeEnum,
   SubjectMappingOperatorEnum,
-} from '@opentdf/sdk/platform/policy/objects_pb.js';
+} from "@opentdf/sdk/platform/policy/objects_pb.js";
 
 async function main() {
-  const platformUrl = 'https://platform.opentdf.local:8443';
-  const oidcOrigin = 'https://keycloak.opentdf.local:9443/auth/realms/opentdf';
+  const platformUrl = "https://platform.opentdf.local:8443";
+  const oidcOrigin = "https://keycloak.opentdf.local:9443/auth/realms/opentdf";
 
   // Client credentials for this quickstart only — use refreshTokenProvider() in browser apps
-  const interceptors = [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf',
-    clientSecret: 'secret',
-    oidcOrigin,
-  }))];
+  const interceptors = [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "opentdf",
+        clientSecret: "secret",
+        oidcOrigin,
+      }),
+    ),
+  ];
   const auth = { interceptors };
   const client = new OpenTDF({ ...auth, platformUrl });
   const platform = new PlatformClient({ ...auth, platformUrl });
@@ -413,14 +446,14 @@ async function main() {
   let namespaceId;
   try {
     const nsResp = await platform.v1.namespace.createNamespace({
-      name: 'opentdf.io',
+      name: "opentdf.io",
     });
     namespaceId = nsResp.namespace?.id;
     console.log(`✅ Created namespace: ${namespaceId}`);
   } catch (err) {
-    if (err.message?.includes('already_exists')) {
+    if (err.message?.includes("already_exists")) {
       const getNsResp = await platform.v1.namespace.getNamespace({
-        identifier: { case: 'fqn', value: 'https://opentdf.io' },
+        identifier: { case: "fqn", value: "https://opentdf.io" },
       });
       namespaceId = getNsResp.namespace?.id;
       console.log(`✅ Using existing namespace: ${namespaceId}`);
@@ -430,17 +463,17 @@ async function main() {
   }
 
   // 2. Create the department attribute if it doesn't exist
-  const deptFqn = 'https://opentdf.io/attr/department';
+  const deptFqn = "https://opentdf.io/attr/department";
   if (!(await attributeExists(platformUrl, auth, deptFqn))) {
     await platform.v1.attributes.createAttribute({
       namespaceId,
-      name: 'department',
+      name: "department",
       rule: AttributeRuleTypeEnum.ANY_OF,
-      values: ['marketing'],
+      values: ["marketing"],
     });
-    console.log('✅ Created department attribute with marketing value');
+    console.log("✅ Created department attribute with marketing value");
   } else {
-    console.log('✅ Using existing department attribute');
+    console.log("✅ Using existing department attribute");
   }
 
   // Ensure the marketing value exists on the attribute
@@ -448,88 +481,95 @@ async function main() {
   if (!(await attributeValueExists(platformUrl, auth, marketingFqn))) {
     const listResp = await platform.v1.attributes.listAttributes({});
     const attribute = listResp.attributes.find(
-      (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
+      (attr) =>
+        attr.name === "department" && attr.namespace?.id === namespaceId,
     );
     await platform.v1.attributes.createAttributeValue({
       attributeId: attribute?.id,
-      value: 'marketing',
+      value: "marketing",
     });
-    console.log('✅ Added marketing value to department attribute');
+    console.log("✅ Added marketing value to department attribute");
   }
 
   // 3. Encrypt data with the marketing attribute
-  const plaintext = 'Sensitive marketing campaign data';
+  const plaintext = "Sensitive marketing campaign data";
   const encoder = new TextEncoder();
 
   // defaultKASEndpoint specifies the Key Access Service (KAS) endpoint
   // KAS manages encryption keys and enforces access policies
   const tdfStream = await client.createTDF({
-    source: { type: 'buffer', location: encoder.encode(plaintext) },
+    source: { type: "buffer", location: encoder.encode(plaintext) },
     defaultKASEndpoint: `${platformUrl}/kas`,
-    attributes: ['https://opentdf.io/attr/department/value/marketing'],
+    attributes: ["https://opentdf.io/attr/department/value/marketing"],
   });
 
   const encrypted = new Uint8Array(await new Response(tdfStream).arrayBuffer());
-  console.log('✅ Data encrypted with marketing attribute');
+  console.log("✅ Data encrypted with marketing attribute");
 
   // 4. Save TDF to file
-  fs.writeFileSync('encrypted.tdf', encrypted);
-  console.log('✅ TDF saved to encrypted.tdf');
+  fs.writeFileSync("encrypted.tdf", encrypted);
+  console.log("✅ TDF saved to encrypted.tdf");
 
   // 5. Grant yourself access to the marketing attribute
   // Fetch the attribute to get the marketing value ID for the subject mapping
   const attrList = await platform.v1.attributes.listAttributes({});
   const deptAttr = attrList.attributes.find(
-    (attr) => attr.name === 'department' && attr.namespace?.id === namespaceId
+    (attr) => attr.name === "department" && attr.namespace?.id === namespaceId,
   );
-  const marketingValue = deptAttr?.values?.find((v) => v.value === 'marketing');
+  const marketingValue = deptAttr?.values?.find((v) => v.value === "marketing");
   if (!marketingValue?.id) {
-    throw new Error('Marketing value not found in department attribute');
+    throw new Error("Marketing value not found in department attribute");
   }
 
   // Subject condition sets use a nested structure: sets → groups → conditions.
   // This one matches any entity whose .clientId claim includes 'opentdf'.
   const scsResp = await platform.v1.subjectMapping.createSubjectConditionSet({
     subjectConditionSet: {
-      subjectSets: [{
-        conditionGroups: [{
-          booleanOperator: ConditionBooleanTypeEnum.AND,
-          conditions: [{
-            subjectExternalSelectorValue: '.clientId',
-            operator: SubjectMappingOperatorEnum.IN,
-            subjectExternalValues: ['opentdf'],
-          }],
-        }],
-      }],
+      subjectSets: [
+        {
+          conditionGroups: [
+            {
+              booleanOperator: ConditionBooleanTypeEnum.AND,
+              conditions: [
+                {
+                  subjectExternalSelectorValue: ".clientId",
+                  operator: SubjectMappingOperatorEnum.IN,
+                  subjectExternalValues: ["opentdf"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     },
   });
 
   try {
     await platform.v1.subjectMapping.createSubjectMapping({
       attributeValueId: marketingValue.id,
-      actions: [{ name: 'read' }],
+      actions: [{ name: "read" }],
       existingSubjectConditionSetId: scsResp.subjectConditionSet?.id,
     });
-    console.log('✅ Granted yourself access to department/marketing');
+    console.log("✅ Granted yourself access to department/marketing");
   } catch (err) {
-    if (err.message?.includes('already_exists')) {
-      console.log('✅ Subject mapping already exists for department/marketing');
+    if (err.message?.includes("already_exists")) {
+      console.log("✅ Subject mapping already exists for department/marketing");
     } else {
       throw err;
     }
   }
 
   // 6. Load TDF from file
-  const tdfData = fs.readFileSync('encrypted.tdf');
-  console.log('✅ TDF loaded from encrypted.tdf');
+  const tdfData = fs.readFileSync("encrypted.tdf");
+  console.log("✅ TDF loaded from encrypted.tdf");
 
   // 7. Decrypt the data
   const decryptedStream = await client.read({
-    source: { type: 'buffer', location: new Uint8Array(tdfData) },
+    source: { type: "buffer", location: new Uint8Array(tdfData) },
   });
 
   const decryptedText = await new Response(decryptedStream).text();
-  console.log('✅ Data successfully decrypted');
+  console.log("✅ Data successfully decrypted");
   console.log(`📤 Decrypted content: ${decryptedText}`);
 }
 

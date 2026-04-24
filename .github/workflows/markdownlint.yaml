@@ -1,0 +1,30 @@
+name: Markdownlint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**/*.md"
+      - "**/*.mdx"
+      - ".markdownlint.yaml"
+
+jobs:
+  markdownlint:
+    name: Markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get changed markdown files
+        id: changed
+        run: |
+          files=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep -E '\.(md|mdx)$' || true)
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        if: steps.changed.outputs.files != ''
+        with:
+          globs: ${{ steps.changed.outputs.files }}

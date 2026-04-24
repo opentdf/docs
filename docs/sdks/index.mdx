@@ -3,16 +3,14 @@ title: SDK
 sidebar_label: SDK
 ---
 
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import CodeBlock from '@theme/CodeBlock'
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import CodeBlock from "@theme/CodeBlock";
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 :::tip Get Started with the SDK Quickstart
 Ready to start building? Check out our **[SDK Quickstart Guide](/sdks/quickstart)** for step-by-step examples of encrypting and decrypting data with OpenTDF!
 :::
-
-# SDK
 
 The OpenTDF platform provides Software Development Kits in the Go, Java, and JavaScript languages. The SDKs include guides and working examples for managing policy, creating Trusted Data Format (TDF) protected objects, and making authorization decisions within an application.
 
@@ -37,10 +35,12 @@ go get github.com/opentdf/platform/sdk@latest
 <TabItem value="java" label="Java">
 
 <CodeBlock language="xml">
-{`<dependency>
+  {`<dependency>
   <groupId>io.opentdf.platform</groupId>
   <artifactId>sdk-pom</artifactId>
-  <version>`}{useDocusaurusContext().siteConfig.customFields.javaSdkVersion}{`</version>
+  <version>`}
+  {useDocusaurusContext().siteConfig.customFields.javaSdkVersion}
+  {`</version>
 </dependency>`}
 </CodeBlock>
 

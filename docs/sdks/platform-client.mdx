@@ -3,21 +3,19 @@ sidebar_position: 1
 title: Overview
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import JsAuthNote from '../../code_samples/js_auth_note.mdx'
-
-# Overview
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import JsAuthNote from "../../code_samples/js_auth_note.mdx";
 
 Some SDK functionality — including policy management and authorization decisions — is provided through a **platform service client** rather than through the core SDK. This page explains the difference and when you'll use each.
 
 ## Core SDK vs. Platform Service Client
 
-| | Core SDK | Platform Service Client |
-|---|---|---|
-| **What it does** | Wraps and unwraps TDF-protected data | Manages platform resources (policy, keys, authorization) |
-| **Calls platform** | Some operations (e.g. key unwrap, service discovery) | Always — all methods are remote gRPC calls |
-| **Examples** | `CreateTdf`, `LoadTdf` | `GetNamespace`, `GetDecision`, `ListKeyAccessServers` |
+|                    | Core SDK                                             | Platform Service Client                                  |
+| ------------------ | ---------------------------------------------------- | -------------------------------------------------------- |
+| **What it does**   | Wraps and unwraps TDF-protected data                 | Manages platform resources (policy, keys, authorization) |
+| **Calls platform** | Some operations (e.g. key unwrap, service discovery) | Always — all methods are remote gRPC calls               |
+| **Examples**       | `CreateTdf`, `LoadTdf`                               | `GetNamespace`, `GetDecision`, `ListKeyAccessServers`    |
 
 This is the same pattern used by cloud provider SDKs — you instantiate a typed client once (analogous to `new S3Client()` in AWS), then call methods on it to manage remote resources.
 
@@ -72,19 +70,30 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+  OpenTDF,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 
 const auth = {
-    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-        clientId: 'client-id',
-        clientSecret: 'client-secret',
-        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-    }))],
+  interceptors: [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "client-id",
+        clientSecret: "client-secret",
+        oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+      }),
+    ),
+  ],
 };
 
-const client = new OpenTDF({ ...auth, platformUrl: 'http://localhost:8080' });
-const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:8080' });
+const client = new OpenTDF({ ...auth, platformUrl: "http://localhost:8080" });
+const platform = new PlatformClient({
+  ...auth,
+  platformUrl: "http://localhost:8080",
+});
 ```
 
 </TabItem>
@@ -123,10 +132,10 @@ v.getId();      // "a1b2c3d4-..."
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const resp = await platform.v1.attributes.getAttributeValue({ fqn: '...' });
-resp.value?.value;   // "confidential"
-resp.value?.fqn;     // "https://example.com/attr/classification/value/confidential"
-resp.value?.id;      // "a1b2c3d4-..."
+const resp = await platform.v1.attributes.getAttributeValue({ fqn: "..." });
+resp.value?.value; // "confidential"
+resp.value?.fqn; // "https://example.com/attr/classification/value/confidential"
+resp.value?.id; // "a1b2c3d4-..."
 ```
 
 </TabItem>
@@ -161,10 +170,12 @@ for (var v : resp.getValuesList()) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-const resp = await platform.v1.attributes.listAttributeValues({ attributeId: '...' });
+const resp = await platform.v1.attributes.listAttributeValues({
+  attributeId: "...",
+});
 for (const v of resp.values) {
-  v.value;   // "confidential"
-  v.fqn;     // "https://example.com/attr/classification/value/confidential"
+  v.value; // "confidential"
+  v.fqn; // "https://example.com/attr/classification/value/confidential"
 }
 ```
 
@@ -241,4 +252,3 @@ for (const e of resp.entitlements) {
 </Tabs>
 
 This pattern applies to all platform objects. Each SDK page includes type reference tables listing the available fields.
-

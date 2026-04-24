@@ -3,18 +3,16 @@ sidebar_position: 5
 title: Policy
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import CreateNamespace from '../../code_samples/policy_code/create_namespace.mdx'
-import ListNamespaces from '../../code_samples/policy_code/list_namespaces.mdx'
-import CreateAttribute from '../../code_samples/policy_code/create_attribute.mdx'
-import ListAttributes from '../../code_samples/policy_code/list_attributes.mdx'
-import CreateConditionSet from '../../code_samples/policy_code/create_subject_condition_set.mdx'
-import CreateSubjectMapping from '../../code_samples/policy_code/create_subject_mapping.mdx'
-import ListSubjectMapping from '../../code_samples/policy_code/list_subject_mapping.mdx'
-import JsAuthNote from '../../code_samples/js_auth_note.mdx'
-
-# Managing Policy
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import CreateNamespace from "../../code_samples/policy_code/create_namespace.mdx";
+import ListNamespaces from "../../code_samples/policy_code/list_namespaces.mdx";
+import CreateAttribute from "../../code_samples/policy_code/create_attribute.mdx";
+import ListAttributes from "../../code_samples/policy_code/list_attributes.mdx";
+import CreateConditionSet from "../../code_samples/policy_code/create_subject_condition_set.mdx";
+import CreateSubjectMapping from "../../code_samples/policy_code/create_subject_mapping.mdx";
+import ListSubjectMapping from "../../code_samples/policy_code/list_subject_mapping.mdx";
+import JsAuthNote from "../../code_samples/js_auth_note.mdx";
 
 Policy is the set of rules that govern who can access data and under what conditions. It is made up of [**namespaces**](#namespaces), [**attributes**](#attributes), [**subject mappings**](#subject-mappings), [**subject condition sets**](#subject-condition-sets), and [**obligations**](/sdks/obligations). See [Policy](/components/policy) for the concept overview. The SDK provides CRUD access to these policy rules through remote gRPC calls powered by the [platform service client](/sdks/platform-client).
 
@@ -68,15 +66,23 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
-import { PlatformClient } from '@opentdf/sdk/platform';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
+import { PlatformClient } from "@opentdf/sdk/platform";
 
 const platform = new PlatformClient({
-  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
-    clientId: 'opentdf', clientSecret: 'secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-  }))],
-  platformUrl: 'http://localhost:8080',
+  interceptors: [
+    authTokenInterceptor(
+      clientCredentialsTokenProvider({
+        clientId: "opentdf",
+        clientSecret: "secret",
+        oidcOrigin: "http://localhost:8080/auth/realms/opentdf",
+      }),
+    ),
+  ],
+  platformUrl: "http://localhost:8080",
 });
 
 // All JavaScript snippets below use `platform`.
@@ -100,17 +106,17 @@ All policy objects support optional metadata. When creating or updating a resour
 }
 ```
 
-`labels` is the only supported field. Other fields are silently ignored. When updating, use `metadataUpdateBehavior` to control whether labels are replaced or merged (see [Update a Namespace](#update-namespace) for an example).
+`labels` is the only supported field. Other fields are silently ignored. When updating, use `metadataUpdateBehavior` to control whether labels are replaced or merged (see [Update a Namespace](#update-a-namespace) for an example).
 
 ### Pagination
 
 All `List` operations return a `pagination` object alongside the results:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `currentOffset` | `int` | The offset that was requested. |
-| `nextOffset` | `int` | The offset to use for the next page. Empty when no more results remain. |
-| `total` | `int` | Total count of results across all pages. |
+| Field           | Type  | Description                                                             |
+| --------------- | ----- | ----------------------------------------------------------------------- |
+| `currentOffset` | `int` | The offset that was requested.                                          |
+| `nextOffset`    | `int` | The offset to use for the next page. Empty when no more results remain. |
+| `total`         | `int` | Total count of results across all pages.                                |
 
 Example response shape (Go):
 
@@ -137,10 +143,9 @@ Namespaces are deactivated, not permanently deleted. There is no hard-delete ope
 
 <ListNamespaces />
 
-<details id="get-namespace">
-<summary>Get a Namespace</summary>
+### Get a Namespace
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -166,16 +171,16 @@ await platform.v1.namespace.getNamespace({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The namespace UUID. |
-| `fqn` | `string` (URI) | The namespace FQN (e.g., `https://example.com`). |
+| Parameter | Type            | Description                                      |
+| --------- | --------------- | ------------------------------------------------ |
+| `id`      | `string` (UUID) | The namespace UUID.                              |
+| `fqn`     | `string` (URI)  | The namespace FQN (e.g., `https://example.com`). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -237,27 +242,26 @@ System.out.println("Namespace by FQN: " + respByFqn.getNamespace().getName());
 
 ```typescript
 // Look up by UUID
-let resp = await platform.v1.namespace.getNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
+let resp = await platform.v1.namespace.getNamespace({
+  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+});
 console.log(`Namespace: ${resp.namespace?.name} (ID: ${resp.namespace?.id})`);
 
 // Alternatively, look up by FQN
-resp = await platform.v1.namespace.getNamespace({ fqn: 'https://example.com' });
+resp = await platform.v1.namespace.getNamespace({ fqn: "https://example.com" });
 console.log(`Namespace by FQN: ${resp.namespace?.name}`);
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Namespace object](#namespace-object). Namespace names are unique — an FQN always resolves to exactly one namespace or an error.
 
-</details>
+### Update a Namespace
 
-<details id="update-namespace">
-<summary>Update a Namespace</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -283,15 +287,15 @@ await platform.v1.namespace.updateNamespace({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The namespace ID to update. |
-| `metadata` | [`Metadata`](#metadata) | No | Labels to attach, e.g., `{"labels": {"owner": "platform-team"}}`. |
-| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` overwrites all existing labels. `METADATA_UPDATE_ENUM_EXTEND` merges new labels into existing ones. If omitted, defaults to `EXTEND`. |
+| Parameter                | Type                    | Required | Description                                                                                                                                                          |
+| ------------------------ | ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | `string` (UUID)         | Yes      | The namespace ID to update.                                                                                                                                          |
+| `metadata`               | [`Metadata`](#metadata) | No       | Labels to attach, e.g., `{"labels": {"owner": "platform-team"}}`.                                                                                                    |
+| `metadataUpdateBehavior` | `string`                | No       | `METADATA_UPDATE_ENUM_REPLACE` overwrites all existing labels. `METADATA_UPDATE_ENUM_EXTEND` merges new labels into existing ones. If omitted, defaults to `EXTEND`. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -348,9 +352,9 @@ System.out.println("Updated namespace ID: " + resp.getNamespace().getId());
 
 ```typescript
 const resp = await platform.v1.namespace.updateNamespace({
-  id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-  metadata: { labels: { owner: 'platform-team', env: 'production' } },
-  metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_REPLACE',
+  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  metadata: { labels: { owner: "platform-team", env: "production" } },
+  metadataUpdateBehavior: "METADATA_UPDATE_ENUM_REPLACE",
 });
 console.log(`Updated namespace ID: ${resp.namespace?.id}`);
 ```
@@ -358,16 +362,13 @@ console.log(`Updated namespace ID: ${resp.namespace?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Namespace object](#namespace-object).
 
-</details>
+### Deactivate a Namespace
 
-<details id="deactivate-namespace">
-<summary>Deactivate a Namespace</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -393,13 +394,13 @@ await platform.v1.namespace.deactivateNamespace({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The namespace ID to deactivate. |
+| Parameter | Type            | Required | Description                     |
+| --------- | --------------- | -------- | ------------------------------- |
+| `id`      | `string` (UUID) | Yes      | The namespace ID to deactivate. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -436,30 +437,30 @@ System.out.println("Namespace deactivated.");
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platform.v1.namespace.deactivateNamespace({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
-console.log('Namespace deactivated.');
+await platform.v1.namespace.deactivateNamespace({
+  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+});
+console.log("Namespace deactivated.");
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 Empty response. The namespace is soft-deleted and will no longer appear in `ListNamespaces` unless you filter by `INACTIVE` or `ANY` state.
 
-</details>
-
 ### Namespace Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `name` | `string` | The hostname used to scope attributes (e.g., `opentdf.io`). |
-| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io`. |
-| `active` | `bool` | `true` until explicitly deactivated. |
-| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
-| `createdAt` | `timestamp` | When the namespace was created. |
-| `updatedAt` | `timestamp` | When the namespace was last modified. |
+| Field       | Type                    | Description                                                 |
+| ----------- | ----------------------- | ----------------------------------------------------------- |
+| `id`        | `string` (UUID)         | Unique identifier, generated by the platform.               |
+| `name`      | `string`                | The hostname used to scope attributes (e.g., `opentdf.io`). |
+| `fqn`       | `string`                | Fully qualified name, e.g., `https://opentdf.io`.           |
+| `active`    | `bool`                  | `true` until explicitly deactivated.                        |
+| `metadata`  | [`Metadata`](#metadata) | Optional [labels](#metadata).                               |
+| `createdAt` | `timestamp`             | When the namespace was created.                             |
+| `updatedAt` | `timestamp`             | When the namespace was last modified.                       |
 
 ---
 
@@ -475,10 +476,9 @@ Attributes and attribute values are deactivated, not permanently deleted.
 
 <ListAttributes />
 
-<details id="get-attribute">
-<summary>Get an Attribute</summary>
+### Get an Attribute
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -504,16 +504,16 @@ await platform.v1.attributes.getAttribute({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The attribute UUID. |
-| `fqn` | `string` | The attribute FQN (e.g., `https://example.com/attr/classification`). |
+| Parameter | Type            | Description                                                          |
+| --------- | --------------- | -------------------------------------------------------------------- |
+| `id`      | `string` (UUID) | The attribute UUID.                                                  |
+| `fqn`     | `string`        | The attribute FQN (e.g., `https://example.com/attr/classification`). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -562,9 +562,11 @@ for (var value : attr.getValuesList()) {
 
 ```typescript
 const resp = await platform.v1.attributes.getAttribute({
-  fqn: 'https://example.com/attr/classification',
+  fqn: "https://example.com/attr/classification",
 });
-console.log(`Attribute: ${resp.attribute?.name}, Rule: ${resp.attribute?.rule}`);
+console.log(
+  `Attribute: ${resp.attribute?.name}, Rule: ${resp.attribute?.rule}`,
+);
 for (const v of resp.attribute?.values ?? []) {
   console.log(`  Value: ${v.value} (ID: ${v.id})`);
 }
@@ -573,16 +575,13 @@ for (const v of resp.attribute?.values ?? []) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Attribute object](#attribute-object) with nested values.
 
-</details>
+### Update an Attribute
 
-<details id="update-attribute">
-<summary>Update an Attribute</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -608,15 +607,15 @@ await platform.v1.attributes.updateAttribute({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The attribute ID to update. |
-| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
-| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+| Parameter                | Type                    | Required | Description                                                                |
+| ------------------------ | ----------------------- | -------- | -------------------------------------------------------------------------- |
+| `id`                     | `string` (UUID)         | Yes      | The attribute ID to update.                                                |
+| `metadata`               | [`Metadata`](#metadata) | No       | Optional [labels](#metadata).                                              |
+| `metadataUpdateBehavior` | `string`                | No       | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -668,9 +667,9 @@ System.out.println("Updated attribute ID: " + resp.getAttribute().getId());
 
 ```typescript
 const resp = await platform.v1.attributes.updateAttribute({
-  id: 'a1b2c3d4-0000-0000-0000-000000000001',
-  metadata: { labels: { reviewed: 'true' } },
-  metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_EXTEND',
+  id: "a1b2c3d4-0000-0000-0000-000000000001",
+  metadata: { labels: { reviewed: "true" } },
+  metadataUpdateBehavior: "METADATA_UPDATE_ENUM_EXTEND",
 });
 console.log(`Updated attribute ID: ${resp.attribute?.id}`);
 ```
@@ -678,16 +677,13 @@ console.log(`Updated attribute ID: ${resp.attribute?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Attribute object](#attribute-object).
 
-</details>
+### Deactivate an Attribute
 
-<details id="deactivate-attribute">
-<summary>Deactivate an Attribute</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -713,13 +709,13 @@ await platform.v1.attributes.deactivateAttribute({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The attribute ID to deactivate. |
+| Parameter | Type            | Required | Description                     |
+| --------- | --------------- | -------- | ------------------------------- |
+| `id`      | `string` (UUID) | Yes      | The attribute ID to deactivate. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -758,7 +754,7 @@ System.out.println("Deactivated attribute: " + resp.getAttribute().getId());
 
 ```typescript
 const resp = await platform.v1.attributes.deactivateAttribute({
-  id: 'a1b2c3d4-0000-0000-0000-000000000001',
+  id: "a1b2c3d4-0000-0000-0000-000000000001",
 });
 console.log(`Deactivated attribute: ${resp.attribute?.id}`);
 ```
@@ -766,20 +762,17 @@ console.log(`Deactivated attribute: ${resp.attribute?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 Empty response. The attribute is soft-deleted and will no longer appear in `ListAttributes` unless you filter by `INACTIVE` or `ANY` state.
-
-</details>
 
 ### Attribute Values
 
 Attribute values are the individual members of an attribute (e.g., `secret`, `top-secret` under `classification`). They can be managed independently after the parent attribute is created.
 
-<details id="create-attribute-value">
-<summary>Create an Attribute Value</summary>
+### Create an Attribute Value
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -805,15 +798,15 @@ await platform.v1.attributes.createAttributeValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
-| `value` | `string` | Yes | The value string (e.g., `top-secret`). |
-| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
+| Parameter     | Type                    | Required | Description                            |
+| ------------- | ----------------------- | -------- | -------------------------------------- |
+| `attributeId` | `string` (UUID)         | Yes      | The parent attribute ID.               |
+| `value`       | `string`                | Yes      | The value string (e.g., `top-secret`). |
+| `metadata`    | [`Metadata`](#metadata) | No       | Optional [labels](#metadata).          |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -854,8 +847,8 @@ System.out.println("Created value: " + resp.getValue().getValue() + " (ID: " + r
 
 ```typescript
 const resp = await platform.v1.attributes.createAttributeValue({
-  attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
-  value: 'top-secret',
+  attributeId: "a1b2c3d4-0000-0000-0000-000000000001",
+  value: "top-secret",
 });
 console.log(`Created value: ${resp.value?.value} (ID: ${resp.value?.id})`);
 ```
@@ -863,16 +856,13 @@ console.log(`Created value: ${resp.value?.value} (ID: ${resp.value?.id})`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The created [Attribute Value object](#attribute-value-object).
 
-</details>
+### List Attribute Values
 
-<details id="list-attribute-values">
-<summary>List Attribute Values</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -898,14 +888,14 @@ await platform.v1.attributes.listAttributeValues({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `attributeId` | `string` (UUID) | Yes | The parent attribute ID. |
-| `state` | `string` | No | Filter by state: `ACTIVE_STATE_ENUM_ACTIVE` (default), `ACTIVE_STATE_ENUM_INACTIVE`, or `ACTIVE_STATE_ENUM_ANY`. |
+| Parameter     | Type            | Required | Description                                                                                                      |
+| ------------- | --------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `attributeId` | `string` (UUID) | Yes      | The parent attribute ID.                                                                                         |
+| `state`       | `string`        | No       | Filter by state: `ACTIVE_STATE_ENUM_ACTIVE` (default), `ACTIVE_STATE_ENUM_INACTIVE`, or `ACTIVE_STATE_ENUM_ANY`. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -948,7 +938,7 @@ for (var value : resp.getValuesList()) {
 
 ```typescript
 const resp = await platform.v1.attributes.listAttributeValues({
-  attributeId: 'a1b2c3d4-0000-0000-0000-000000000001',
+  attributeId: "a1b2c3d4-0000-0000-0000-000000000001",
 });
 for (const v of resp.values) {
   console.log(`Value: ${v.value} (ID: ${v.id})`);
@@ -958,16 +948,13 @@ for (const v of resp.values) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of [Attribute Value objects](#attribute-value-object).
 
-</details>
+### Get an Attribute Value
 
-<details id="get-attribute-value">
-<summary>Get an Attribute Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -993,16 +980,16 @@ await platform.v1.attributes.getAttributeValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 Provide one of the following (exactly one is required):
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `id` | `string` (UUID) | The value UUID. |
-| `fqn` | `string` | The value FQN (e.g., `https://example.com/attr/classification/value/secret`). |
+| Parameter | Type            | Description                                                                   |
+| --------- | --------------- | ----------------------------------------------------------------------------- |
+| `id`      | `string` (UUID) | The value UUID.                                                               |
+| `fqn`     | `string`        | The value FQN (e.g., `https://example.com/attr/classification/value/secret`). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1043,7 +1030,7 @@ System.out.println("Value: " + resp.getValue().getValue() + " (FQN: " + resp.get
 
 ```typescript
 const resp = await platform.v1.attributes.getAttributeValue({
-  fqn: 'https://example.com/attr/classification/value/secret',
+  fqn: "https://example.com/attr/classification/value/secret",
 });
 console.log(`Value: ${resp.value?.value} (FQN: ${resp.value?.fqn})`);
 ```
@@ -1051,18 +1038,15 @@ console.log(`Value: ${resp.value?.value} (FQN: ${resp.value?.fqn})`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Attribute Value object](#attribute-value-object).
 
-</details>
-
-<details id="get-attribute-values-by-fqns">
-<summary>Get Attribute Values by FQNs</summary>
+### Get Attribute Values by FQNs
 
 Batch-fetch multiple attribute values by their FQNs in a single request. Returns a map keyed by FQN, each entry containing both the parent attribute definition and the specific value.
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1088,13 +1072,13 @@ await platform.v1.attributes.getAttributeValuesByFqns({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fqns` | `[]string` | Yes | Attribute value FQNs to look up. |
+| Parameter | Type       | Required | Description                      |
+| --------- | ---------- | -------- | -------------------------------- |
+| `fqns`    | `[]string` | Yes      | Attribute value FQNs to look up. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1147,28 +1131,27 @@ resp.getFqnAttributeValuesMap().forEach((fqn, entry) ->
 ```typescript
 const resp = await platform.v1.attributes.getAttributeValuesByFqns({
   fqns: [
-    'https://example.com/attr/classification/value/secret',
-    'https://example.com/attr/department/value/engineering',
+    "https://example.com/attr/classification/value/secret",
+    "https://example.com/attr/department/value/engineering",
   ],
 });
 for (const [fqn, entry] of Object.entries(resp.fqnAttributeValues)) {
-  console.log(`FQN: ${fqn} -> Attribute: ${entry.attribute?.name}, Value: ${entry.value?.value}`);
+  console.log(
+    `FQN: ${fqn} -> Attribute: ${entry.attribute?.name}, Value: ${entry.value?.value}`,
+  );
 }
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A map of FQN to `{attribute, value}` pairs. Each entry contains the parent [Attribute object](#attribute-object) and the specific [Attribute Value object](#attribute-value-object).
 
-</details>
+### Update an Attribute Value
 
-<details id="update-attribute-value">
-<summary>Update an Attribute Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1194,15 +1177,15 @@ await platform.v1.attributes.updateAttributeValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The value ID to update. |
-| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
-| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+| Parameter                | Type                    | Required | Description                                                                |
+| ------------------------ | ----------------------- | -------- | -------------------------------------------------------------------------- |
+| `id`                     | `string` (UUID)         | Yes      | The value ID to update.                                                    |
+| `metadata`               | [`Metadata`](#metadata) | No       | Optional [labels](#metadata).                                              |
+| `metadataUpdateBehavior` | `string`                | No       | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1254,9 +1237,9 @@ System.out.println("Updated value ID: " + resp.getValue().getId());
 
 ```typescript
 const resp = await platform.v1.attributes.updateAttributeValue({
-  id: 'v1b2c3d4-0000-0000-0000-000000000001',
-  metadata: { labels: { deprecated: 'false' } },
-  metadataUpdateBehavior: 'METADATA_UPDATE_ENUM_EXTEND',
+  id: "v1b2c3d4-0000-0000-0000-000000000001",
+  metadata: { labels: { deprecated: "false" } },
+  metadataUpdateBehavior: "METADATA_UPDATE_ENUM_EXTEND",
 });
 console.log(`Updated value ID: ${resp.value?.id}`);
 ```
@@ -1264,16 +1247,13 @@ console.log(`Updated value ID: ${resp.value?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Attribute Value object](#attribute-value-object).
 
-</details>
+### Deactivate an Attribute Value
 
-<details id="deactivate-attribute-value">
-<summary>Deactivate an Attribute Value</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1299,13 +1279,13 @@ await platform.v1.attributes.deactivateAttributeValue({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The value ID to deactivate. |
+| Parameter | Type            | Required | Description                 |
+| --------- | --------------- | -------- | --------------------------- |
+| `id`      | `string` (UUID) | Yes      | The value ID to deactivate. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1344,7 +1324,7 @@ System.out.println("Deactivated value: " + resp.getValue().getId());
 
 ```typescript
 const resp = await platform.v1.attributes.deactivateAttributeValue({
-  id: 'v1b2c3d4-0000-0000-0000-000000000001',
+  id: "v1b2c3d4-0000-0000-0000-000000000001",
 });
 console.log(`Deactivated value: ${resp.value?.id}`);
 ```
@@ -1352,39 +1332,37 @@ console.log(`Deactivated value: ${resp.value?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 Empty response. The value is soft-deleted and will no longer appear in listings unless you filter by `INACTIVE` or `ANY` state.
 
-</details>
-
 ### Attribute Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `name` | `string` | The attribute name (e.g., `department`, `clearance`). |
-| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io/attr/department`. |
-| `rule` | `string` | Access rule: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF`, or `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY`. |
-| `values` | `[]Value` | The [attribute values](#attribute-value-object) defined under this attribute. |
-| `namespace` | `Namespace` | The parent [Namespace](#namespace-object). |
-| `active` | `bool` | `true` until explicitly deactivated. |
-| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
-| `createdAt` | `timestamp` | When the attribute was created. |
-| `updatedAt` | `timestamp` | When the attribute was last modified. |
+| Field       | Type                    | Description                                                                                                                 |
+| ----------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string` (UUID)         | Unique identifier, generated by the platform.                                                                               |
+| `name`      | `string`                | The attribute name (e.g., `department`, `clearance`).                                                                       |
+| `fqn`       | `string`                | Fully qualified name, e.g., `https://opentdf.io/attr/department`.                                                           |
+| `rule`      | `string`                | Access rule: `ATTRIBUTE_RULE_TYPE_ENUM_ALL_OF`, `ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF`, or `ATTRIBUTE_RULE_TYPE_ENUM_HIERARCHY`. |
+| `values`    | `[]Value`               | The [attribute values](#attribute-value-object) defined under this attribute.                                               |
+| `namespace` | `Namespace`             | The parent [Namespace](#namespace-object).                                                                                  |
+| `active`    | `bool`                  | `true` until explicitly deactivated.                                                                                        |
+| `metadata`  | [`Metadata`](#metadata) | Optional [labels](#metadata).                                                                                               |
+| `createdAt` | `timestamp`             | When the attribute was created.                                                                                             |
+| `updatedAt` | `timestamp`             | When the attribute was last modified.                                                                                       |
 
 ### Attribute Value Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `value` | `string` | The value string (e.g., `finance`, `confidential`). |
-| `fqn` | `string` | Fully qualified name, e.g., `https://opentdf.io/attr/department/value/finance`. |
-| `attribute` | `Attribute` | The parent [Attribute](#attribute-object). |
-| `active` | `bool` | `true` until explicitly deactivated. |
-| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
-| `createdAt` | `timestamp` | When the value was created. |
-| `updatedAt` | `timestamp` | When the value was last modified. |
+| Field       | Type                    | Description                                                                     |
+| ----------- | ----------------------- | ------------------------------------------------------------------------------- |
+| `id`        | `string` (UUID)         | Unique identifier, generated by the platform.                                   |
+| `value`     | `string`                | The value string (e.g., `finance`, `confidential`).                             |
+| `fqn`       | `string`                | Fully qualified name, e.g., `https://opentdf.io/attr/department/value/finance`. |
+| `attribute` | `Attribute`             | The parent [Attribute](#attribute-object).                                      |
+| `active`    | `bool`                  | `true` until explicitly deactivated.                                            |
+| `metadata`  | [`Metadata`](#metadata) | Optional [labels](#metadata).                                                   |
+| `createdAt` | `timestamp`             | When the value was created.                                                     |
+| `updatedAt` | `timestamp`             | When the value was last modified.                                               |
 
 ---
 
@@ -1398,10 +1376,9 @@ Subject condition sets are permanently deleted (not deactivated).
 
 <CreateConditionSet />
 
-<details id="list-subject-condition-sets">
-<summary>List Subject Condition Sets</summary>
+### List Subject Condition Sets
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1427,18 +1404,18 @@ await platform.v1.subjectMapping.listSubjectConditionSets({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `namespaceId` | `string` (UUID) | No | Filter to condition sets in this namespace. |
-| `namespaceFqn` | `string` (URI) | No | Filter by namespace FQN (e.g., `https://example.com`). Alternative to `namespaceId`. |
-| `pagination.limit` | `int` | No | Maximum results per page. |
-| `pagination.offset` | `int` | No | Number of results to skip. |
+| Parameter           | Type            | Required | Description                                                                          |
+| ------------------- | --------------- | -------- | ------------------------------------------------------------------------------------ |
+| `namespaceId`       | `string` (UUID) | No       | Filter to condition sets in this namespace.                                          |
+| `namespaceFqn`      | `string` (URI)  | No       | Filter by namespace FQN (e.g., `https://example.com`). Alternative to `namespaceId`. |
+| `pagination.limit`  | `int`           | No       | Maximum results per page.                                                            |
+| `pagination.offset` | `int`           | No       | Number of results to skip.                                                           |
 
 Without a namespace filter, returns all subject condition sets across all namespaces.
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1484,16 +1461,13 @@ for (const scs of resp.subjectConditionSets) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of [Subject Condition Set objects](#subject-condition-set-object). Includes [pagination](#pagination) metadata.
 
-</details>
+### Get a Subject Condition Set
 
-<details id="get-subject-condition-set">
-<summary>Get a Subject Condition Set</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1519,13 +1493,13 @@ await platform.v1.subjectMapping.getSubjectConditionSet({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject condition set ID. |
+| Parameter | Type            | Required | Description                   |
+| --------- | --------------- | -------- | ----------------------------- |
+| `id`      | `string` (UUID) | Yes      | The subject condition set ID. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1567,25 +1541,24 @@ System.out.println("Associated mappings: " + resp.getAssociatedSubjectMappingsLi
 
 ```typescript
 const resp = await platform.v1.subjectMapping.getSubjectConditionSet({
-  id: 'a0b1c2d3-0000-0000-0000-000000000099',
+  id: "a0b1c2d3-0000-0000-0000-000000000099",
 });
 console.log(`SCS ID: ${resp.subjectConditionSet?.id}`);
-console.log(`Associated subject mappings: ${resp.associatedSubjectMappings.length}`);
+console.log(
+  `Associated subject mappings: ${resp.associatedSubjectMappings.length}`,
+);
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The [Subject Condition Set object](#subject-condition-set-object), plus `associatedSubjectMappings` — all subject mappings currently referencing this condition set.
 
-</details>
+### Update a Subject Condition Set
 
-<details id="update-subject-condition-set">
-<summary>Update a Subject Condition Set</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1611,16 +1584,16 @@ await platform.v1.subjectMapping.updateSubjectConditionSet({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject condition set ID to update. |
-| `subjectSets` | `[]SubjectSet` | No | Replaces the entire condition tree. Omit to update metadata only. |
-| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
-| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+| Parameter                | Type                    | Required | Description                                                                |
+| ------------------------ | ----------------------- | -------- | -------------------------------------------------------------------------- |
+| `id`                     | `string` (UUID)         | Yes      | The subject condition set ID to update.                                    |
+| `subjectSets`            | `[]SubjectSet`          | No       | Replaces the entire condition tree. Omit to update metadata only.          |
+| `metadata`               | [`Metadata`](#metadata) | No       | Optional [labels](#metadata).                                              |
+| `metadataUpdateBehavior` | `string`                | No       | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1698,20 +1671,23 @@ System.out.println("Updated SCS ID: " + resp.getSubjectConditionSet().getId());
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
 
 const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
-  id: 'a0b1c2d3-0000-0000-0000-000000000099',
+  id: "a0b1c2d3-0000-0000-0000-000000000099",
   subjectSets: [
     {
       conditionGroups: [
         {
-          booleanOperator: 'CONDITION_BOOLEAN_TYPE_ENUM_AND',
+          booleanOperator: "CONDITION_BOOLEAN_TYPE_ENUM_AND",
           conditions: [
             {
-              subjectExternalSelectorValue: '.clientId',
-              operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
-              subjectExternalValues: ['my-service', 'my-other-service'],
+              subjectExternalSelectorValue: ".clientId",
+              operator: "SUBJECT_MAPPING_OPERATOR_ENUM_IN",
+              subjectExternalValues: ["my-service", "my-other-service"],
             },
           ],
         },
@@ -1720,22 +1696,18 @@ const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
   ],
 });
 console.log(`Updated SCS ID: ${resp.subjectConditionSet?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Subject Condition Set object](#subject-condition-set-object).
 
-</details>
+### Delete a Subject Condition Set
 
-<details id="delete-subject-condition-set">
-<summary>Delete a Subject Condition Set</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1761,13 +1733,13 @@ await platform.v1.subjectMapping.deleteSubjectConditionSet({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject condition set ID to delete. |
+| Parameter | Type            | Required | Description                             |
+| --------- | --------------- | -------- | --------------------------------------- |
+| `id`      | `string` (UUID) | Yes      | The subject condition set ID to delete. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1806,30 +1778,29 @@ System.out.println("Deleted SCS ID: " + resp.getSubjectConditionSet().getId());
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
 
 const resp = await platform.v1.subjectMapping.deleteSubjectConditionSet({
-  id: 'a0b1c2d3-0000-0000-0000-000000000099',
+  id: "a0b1c2d3-0000-0000-0000-000000000099",
 });
 console.log(`Deleted SCS ID: ${resp.subjectConditionSet?.id}`);
-
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The deleted [Subject Condition Set object](#subject-condition-set-object). This is a hard delete — the object is permanently removed.
 
-</details>
-
-<details id="delete-all-unmapped-subject-condition-sets">
-<summary>Delete All Unmapped Subject Condition Sets</summary>
+### Delete All Unmapped Subject Condition Sets
 
 Permanently deletes all subject condition sets that are not referenced by any subject mapping. Use this as a maintenance operation to clean up orphaned condition sets.
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1849,17 +1820,17 @@ sdk.getServices().subjectMappings().deleteAllUnmappedSubjectConditionSetsBlockin
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({})
+await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({});
 ```
 
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
 None.
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -1893,38 +1864,41 @@ System.out.println("Deleted " + resp.getSubjectConditionSetsList().size() + " un
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import {
+  authTokenInterceptor,
+  clientCredentialsTokenProvider,
+} from "@opentdf/sdk";
 
-const resp = await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({});
-console.log(`Deleted ${resp.subjectConditionSets.length} unmapped subject condition sets.`);
-
+const resp =
+  await platform.v1.subjectMapping.deleteAllUnmappedSubjectConditionSets({});
+console.log(
+  `Deleted ${resp.subjectConditionSets.length} unmapped subject condition sets.`,
+);
 ```
 
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of all deleted [Subject Condition Set objects](#subject-condition-set-object).
 
-</details>
-
 ### Subject Condition Set Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `subjectSets` | `[]SubjectSet` | One or more [subject sets](#subjectset), evaluated with **AND** logic — all must match. |
-| `namespace` | `Namespace` | The parent [Namespace](#namespace-object), if assigned. |
-| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
-| `createdAt` | `timestamp` | When the condition set was created. |
-| `updatedAt` | `timestamp` | When the condition set was last modified. |
+| Field         | Type                    | Description                                                                             |
+| ------------- | ----------------------- | --------------------------------------------------------------------------------------- |
+| `id`          | `string` (UUID)         | Unique identifier, generated by the platform.                                           |
+| `subjectSets` | `[]SubjectSet`          | One or more [subject sets](#subjectset), evaluated with **AND** logic — all must match. |
+| `namespace`   | `Namespace`             | The parent [Namespace](#namespace-object), if assigned.                                 |
+| `metadata`    | [`Metadata`](#metadata) | Optional [labels](#metadata).                                                           |
+| `createdAt`   | `timestamp`             | When the condition set was created.                                                     |
+| `updatedAt`   | `timestamp`             | When the condition set was last modified.                                               |
 
 ### Condition Structure
 
 A Subject Condition Set contains a tree of nested objects that define which entities match. Here's how they fit together:
 
-```
+```text
 SubjectConditionSet
 └── subjectSets[]              ← AND across sets
     └── conditionGroups[]      ← AND across groups
@@ -1939,33 +1913,33 @@ SubjectConditionSet
 
 ### SubjectSet
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field             | Type               | Description                                                                         |
+| ----------------- | ------------------ | ----------------------------------------------------------------------------------- |
 | `conditionGroups` | `[]ConditionGroup` | One or more [condition groups](#conditiongroup). All groups must match (AND logic). |
 
 ### ConditionGroup
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `booleanOperator` | `string` | How to combine conditions: `CONDITION_BOOLEAN_TYPE_ENUM_AND` or `CONDITION_BOOLEAN_TYPE_ENUM_OR`. |
-| `conditions` | `[]Condition` | One or more [conditions](#condition) to evaluate. |
+| Field             | Type          | Description                                                                                       |
+| ----------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `booleanOperator` | `string`      | How to combine conditions: `CONDITION_BOOLEAN_TYPE_ENUM_AND` or `CONDITION_BOOLEAN_TYPE_ENUM_OR`. |
+| `conditions`      | `[]Condition` | One or more [conditions](#condition) to evaluate.                                                 |
 
 ### Condition
 
 A single claim match against an entity's token.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `subjectExternalSelectorValue` | `string` | A selector path into the entity's flattened token claims (e.g., `.clientId`, `.realm_access.roles`). |
-| `operator` | `string` | Comparison operator (see below). |
-| `subjectExternalValues` | `[]string` | The values to compare against. |
+| Field                          | Type       | Description                                                                                          |
+| ------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------- |
+| `subjectExternalSelectorValue` | `string`   | A selector path into the entity's flattened token claims (e.g., `.clientId`, `.realm_access.roles`). |
+| `operator`                     | `string`   | Comparison operator (see below).                                                                     |
+| `subjectExternalValues`        | `[]string` | The values to compare against.                                                                       |
 
 **Operators:**
 
-| Operator | Description |
-|----------|-------------|
-| `SUBJECT_MAPPING_OPERATOR_ENUM_IN` | The claim value must exactly match one of the `subjectExternalValues`. |
-| `SUBJECT_MAPPING_OPERATOR_ENUM_NOT_IN` | The claim value must not match any of the `subjectExternalValues`. |
+| Operator                                    | Description                                                                        |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `SUBJECT_MAPPING_OPERATOR_ENUM_IN`          | The claim value must exactly match one of the `subjectExternalValues`.             |
+| `SUBJECT_MAPPING_OPERATOR_ENUM_NOT_IN`      | The claim value must not match any of the `subjectExternalValues`.                 |
 | `SUBJECT_MAPPING_OPERATOR_ENUM_IN_CONTAINS` | The claim value must contain (substring match) one of the `subjectExternalValues`. |
 
 **Example:** "Match entities whose `.clientId` is `my-service` AND whose `.realm_access.roles` contains `developer`":
@@ -2000,16 +1974,16 @@ A single claim match against an entity's token.
 
 Used in [MatchSubjectMappings](#match-subject-mappings) to test which subject mappings match a given set of entity claims.
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field                   | Type     | Description                                                                                |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------ |
 | `externalSelectorValue` | `string` | A selector path into the entity's token claims (e.g., `.clientId`, `.realm_access.roles`). |
-| `externalValue` | `string` | The claim value to test against (e.g., `my-service`, `developer`). |
+| `externalValue`         | `string` | The claim value to test against (e.g., `my-service`, `developer`).                         |
 
 ---
 
 ## Subject Mappings
 
-A **subject mapping** links a subject condition set to a specific attribute value and a set of permitted actions (e.g., `DECRYPT`). It answers the question: *"which entities are allowed to do what with data carrying this attribute value?"*
+A **subject mapping** links a subject condition set to a specific attribute value and a set of permitted actions (e.g., `DECRYPT`). It answers the question: _"which entities are allowed to do what with data carrying this attribute value?"_
 
 :::note Hard-delete
 Subject mappings are permanently deleted (not deactivated). There is no restore operation.
@@ -2019,10 +1993,9 @@ Subject mappings are permanently deleted (not deactivated). There is no restore 
 
 <ListSubjectMapping />
 
-<details id="get-subject-mapping">
-<summary>Get a Subject Mapping</summary>
+### Get a Subject Mapping
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2048,13 +2021,13 @@ await platform.v1.subjectMapping.getSubjectMapping({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject mapping ID. |
+| Parameter | Type            | Required | Description             |
+| --------- | --------------- | -------- | ----------------------- |
+| `id`      | `string` (UUID) | Yes      | The subject mapping ID. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2095,7 +2068,7 @@ System.out.println("Subject Mapping ID: " + resp.getSubjectMapping().getId());
 
 ```typescript
 const resp = await platform.v1.subjectMapping.getSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+  id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
 });
 console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
 ```
@@ -2103,16 +2076,13 @@ console.log(`Subject Mapping ID: ${resp.subjectMapping?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A single [Subject Mapping object](#subject-mapping-object).
 
-</details>
+### Update a Subject Mapping
 
-<details id="update-subject-mapping">
-<summary>Update a Subject Mapping</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2138,17 +2108,17 @@ await platform.v1.subjectMapping.updateSubjectMapping({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject mapping ID to update. |
-| `actions` | [`[]Action`](#action) | No | Replaces the entire actions list. Omit to leave unchanged. |
-| `subjectConditionSetId` | `string` (UUID) | No | Swap the linked condition set. |
-| `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
-| `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
+| Parameter                | Type                    | Required | Description                                                                |
+| ------------------------ | ----------------------- | -------- | -------------------------------------------------------------------------- |
+| `id`                     | `string` (UUID)         | Yes      | The subject mapping ID to update.                                          |
+| `actions`                | [`[]Action`](#action)   | No       | Replaces the entire actions list. Omit to leave unchanged.                 |
+| `subjectConditionSetId`  | `string` (UUID)         | No       | Swap the linked condition set.                                             |
+| `metadata`               | [`Metadata`](#metadata) | No       | Optional [labels](#metadata).                                              |
+| `metadataUpdateBehavior` | `string`                | No       | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2203,8 +2173,8 @@ System.out.println("Updated subject mapping ID: " + resp.getSubjectMapping().get
 
 ```typescript
 const resp = await platform.v1.subjectMapping.updateSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
-  actions: [{ standard: 'STANDARD_ACTION_DECRYPT' }],
+  id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
+  actions: [{ standard: "STANDARD_ACTION_DECRYPT" }],
 });
 console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
 ```
@@ -2212,16 +2182,13 @@ console.log(`Updated subject mapping ID: ${resp.subjectMapping?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The updated [Subject Mapping object](#subject-mapping-object).
 
-</details>
+### Delete a Subject Mapping
 
-<details id="delete-subject-mapping">
-<summary>Delete a Subject Mapping</summary>
-
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2247,13 +2214,13 @@ await platform.v1.subjectMapping.deleteSubjectMapping({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` (UUID) | Yes | The subject mapping ID to delete. |
+| Parameter | Type            | Required | Description                       |
+| --------- | --------------- | -------- | --------------------------------- |
+| `id`      | `string` (UUID) | Yes      | The subject mapping ID to delete. |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2292,7 +2259,7 @@ System.out.println("Deleted subject mapping ID: " + resp.getSubjectMapping().get
 
 ```typescript
 const resp = await platform.v1.subjectMapping.deleteSubjectMapping({
-  id: '890b26db-4ee4-447f-ae8a-2862d922eeef',
+  id: "890b26db-4ee4-447f-ae8a-2862d922eeef",
 });
 console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
 ```
@@ -2300,18 +2267,15 @@ console.log(`Deleted subject mapping ID: ${resp.subjectMapping?.id}`);
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 The deleted [Subject Mapping object](#subject-mapping-object). This is a hard delete — the object is permanently removed.
 
-</details>
-
-<details id="match-subject-mappings">
-<summary>Match Subject Mappings</summary>
+### Match Subject Mappings
 
 Given a list of subject properties (key-value pairs from an entity's token claims), returns all subject mappings whose condition sets match. Use this to determine which access grants apply to a given entity.
 
-**Signature**
+#### Signature
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2337,13 +2301,13 @@ await platform.v1.subjectMapping.matchSubjectMappings({ ... })
 </TabItem>
 </Tabs>
 
-**Parameters**
+#### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `subjectProperties` | `[]SubjectProperty` | Yes | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
+| Parameter           | Type                | Required | Description                                                                                                                                          |
+| ------------------- | ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `subjectProperties` | `[]SubjectProperty` | Yes      | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
 
-**Example**
+#### Example
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -2401,8 +2365,11 @@ for (var sm : resp.getSubjectMappingsList()) {
 ```typescript
 const resp = await platform.v1.subjectMapping.matchSubjectMappings({
   subjectProperties: [
-    { externalSelectorValue: '.clientId', externalValue: 'my-service' },
-    { externalSelectorValue: '.realm_access.roles', externalValue: 'developer' },
+    { externalSelectorValue: ".clientId", externalValue: "my-service" },
+    {
+      externalSelectorValue: ".realm_access.roles",
+      externalValue: "developer",
+    },
   ],
 });
 for (const sm of resp.subjectMappings) {
@@ -2413,22 +2380,20 @@ for (const sm of resp.subjectMappings) {
 </TabItem>
 </Tabs>
 
-**Returns**
+#### Returns
 
 A list of [Subject Mapping objects](#subject-mapping-object) whose condition sets matched the provided subject properties.
-
-</details>
 
 ### Action
 
 An action represents what an entity is permitted to do with data. The platform ships with four **standard actions** that cannot be deleted:
 
-| Standard Action | Description |
-|-----------------|-------------|
-| `read` | Read/decrypt data. Used in all TDF decrypt flows. |
-| `create` | Create new data. |
-| `update` | Update existing data. |
-| `delete` | Delete data. |
+| Standard Action | Description                                       |
+| --------------- | ------------------------------------------------- |
+| `read`          | Read/decrypt data. Used in all TDF decrypt flows. |
+| `create`        | Create new data.                                  |
+| `update`        | Update existing data.                             |
+| `delete`        | Delete data.                                      |
 
 You can also define **custom actions** (e.g., `download`, `queue-to-print`, `send_email`). Custom actions are globally unique, not namespaced, and are lowercased when stored. See [Actions](/components/policy/actions) for more.
 
@@ -2446,18 +2411,20 @@ Action.newBuilder().setName("read").build();
 
 ```typescript
 // JavaScript
-{ name: 'read' }
+{
+  name: "read";
+}
 ```
 
 ### Subject Mapping Object
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` (UUID) | Unique identifier, generated by the platform. |
-| `attributeValue` | `Value` | The [Attribute Value](#attribute-value-object) this mapping grants access to. |
-| `subjectConditionSet` | `SubjectConditionSet` | The [Subject Condition Set](#subject-condition-set-object) that determines which entities match. |
-| `actions` | [`[]Action`](#action) | Permitted [actions](#action) (e.g., `read`, `create`). |
-| `namespace` | `Namespace` | The parent [Namespace](#namespace-object), if assigned. |
-| `metadata` | [`Metadata`](#metadata) | Optional [labels](#metadata). |
-| `createdAt` | `timestamp` | When the mapping was created. |
-| `updatedAt` | `timestamp` | When the mapping was last modified. |
+| Field                 | Type                    | Description                                                                                      |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `id`                  | `string` (UUID)         | Unique identifier, generated by the platform.                                                    |
+| `attributeValue`      | `Value`                 | The [Attribute Value](#attribute-value-object) this mapping grants access to.                    |
+| `subjectConditionSet` | `SubjectConditionSet`   | The [Subject Condition Set](#subject-condition-set-object) that determines which entities match. |
+| `actions`             | [`[]Action`](#action)   | Permitted [actions](#action) (e.g., `read`, `create`).                                           |
+| `namespace`           | `Namespace`             | The parent [Namespace](#namespace-object), if assigned.                                          |
+| `metadata`            | [`Metadata`](#metadata) | Optional [labels](#metadata).                                                                    |
+| `createdAt`           | `timestamp`             | When the mapping was created.                                                                    |
+| `updatedAt`           | `timestamp`             | When the mapping was last modified.                                                              |
