@@ -1,12 +1,13 @@
 ---
-sidebar_position: 3
-title: "SDK Architecture: Core vs. Service Client"
+sidebar_position: 1
+title: Overview
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
-# SDK Architecture: Core vs. Service Client
+# Overview
 
 Some SDK functionality — including policy management and authorization decisions — is provided through a **platform service client** rather than through the core SDK. This page explains the difference and when you'll use each.
 
@@ -24,6 +25,8 @@ This is the same pattern used by cloud provider SDKs — you instantiate a typed
 
 ## Initializing the SDK client
 
+<JsAuthNote />
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -32,7 +35,7 @@ import (
     "github.com/opentdf/platform/sdk"
     // Plus the service-specific package for each call, e.g.:
     "github.com/opentdf/platform/protocol/go/policy/namespaces"
-    "github.com/opentdf/platform/protocol/go/authorization"
+    authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
 )
 
 client, err := sdk.New("http://localhost:8080",
@@ -42,6 +45,13 @@ if err != nil {
     log.Fatal(err)
 }
 defer client.Close()
+
+// Platform services are accessed directly on the client, e.g.:
+resp, err := client.Namespaces.ListNamespaces(ctx, &namespaces.ListNamespacesRequest{})
+
+decision, err := client.AuthorizationV2.GetDecision(ctx, &authorization.GetDecisionRequest{
+    // ...
+})
 ```
 
 </TabItem>
@@ -62,25 +72,173 @@ SDK sdk = SDKBuilder.newBuilder()
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { AuthProviders, OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 import { PlatformClient } from '@opentdf/sdk/platform';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
-});
+const auth = {
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+    }))],
+};
 
-// OpenTDF eagerly binds DPoP keys to the auth provider.
-// Await ready before creating PlatformClient.
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
-await client.ready;
-
-const platform = new PlatformClient({
-    authProvider,
-    platformUrl: 'http://localhost:8080',
-});
+const client = new OpenTDF({ ...auth, platformUrl: 'http://localhost:8080' });
+const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:8080' });
 ```
 
 </TabItem>
 </Tabs>
+
+## Response Objects
+
+All platform API calls return protobuf response objects. The way you access fields differs by language: **Go** uses generated getter methods prefixed with `Get`, **Java** uses standard getters, and **JavaScript** uses direct property access with optional chaining.
+
+**GetAttributeValue** — accessing a policy attribute value:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Attributes.GetAttributeValue(ctx, req)
+v := resp.GetValue()
+v.GetValue()    // "confidential"
+v.GetFqn()      // "https://example.com/attr/classification/value/confidential"
+v.GetId()       // "a1b2c3d4-..."
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var resp = sdk.getServices().attributes()
+    .getAttributeValueBlocking(req, Collections.emptyMap()).execute();
+var v = resp.getValue();
+v.getValue();   // "confidential"
+v.getFqn();     // "https://example.com/attr/classification/value/confidential"
+v.getId();      // "a1b2c3d4-..."
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.attributes.getAttributeValue({ fqn: '...' });
+resp.value?.value;   // "confidential"
+resp.value?.fqn;     // "https://example.com/attr/classification/value/confidential"
+resp.value?.id;      // "a1b2c3d4-..."
+```
+
+</TabItem>
+</Tabs>
+
+**ListAttributeValues** — iterating over a list response:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.Attributes.ListAttributeValues(ctx, req)
+for _, v := range resp.GetValues() {
+    v.GetValue()    // "confidential"
+    v.GetFqn()      // "https://example.com/attr/classification/value/confidential"
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var resp = sdk.getServices().attributes()
+    .listAttributeValuesBlocking(req, Collections.emptyMap()).execute();
+for (var v : resp.getValuesList()) {
+    v.getValue();   // "confidential"
+    v.getFqn();     // "https://example.com/attr/classification/value/confidential"
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.attributes.listAttributeValues({ attributeId: '...' });
+for (const v of resp.values) {
+  v.value;   // "confidential"
+  v.fqn;     // "https://example.com/attr/classification/value/confidential"
+}
+```
+
+</TabItem>
+</Tabs>
+
+**GetDecision** — accessing an authorization decision:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.AuthorizationV2.GetDecision(ctx, req)
+d := resp.GetDecision()
+d.GetDecision()              // DECISION_PERMIT or DECISION_DENY
+d.GetRequiredObligations()   // []string of obligation value FQNs
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var resp = sdk.getServices().authorization().getDecision(req).get();
+var d = resp.getDecision();
+d.getDecision();                // DECISION_PERMIT or DECISION_DENY
+d.getRequiredObligationsList(); // List<String> of obligation value FQNs
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v2.authorization.getDecision({ ... });
+resp.decision?.decision;              // Decision.PERMIT or Decision.DENY
+resp.decision?.requiredObligations;   // string[] of obligation value FQNs
+```
+
+</TabItem>
+</Tabs>
+
+**GetEntitlements** — accessing entity entitlements:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+resp, err := client.AuthorizationV2.GetEntitlements(ctx, req)
+for _, e := range resp.GetEntitlements() {
+    e.GetActionsPerAttributeValueFqn()  // map of FQN → permitted actions
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var resp = sdk.getServices().authorization().getEntitlements(req).get();
+for (var e : resp.getEntitlementsList()) {
+    e.getActionsPerAttributeValueFqnMap();  // Map<String, Actions>
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v2.authorization.getEntitlements({ ... });
+for (const e of resp.entitlements) {
+  e.actionsPerAttributeValueFqn;  // Record<string, Actions>
+}
+```
+
+</TabItem>
+</Tabs>
+
+This pattern applies to all platform objects. Each SDK page includes type reference tables listing the available fields.
+

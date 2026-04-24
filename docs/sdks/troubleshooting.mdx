@@ -1,17 +1,18 @@
 ---
-sidebar_position: 10
+sidebar_position: 9
 title: Troubleshooting
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # SDK Troubleshooting
 
 This guide covers common issues when working with the OpenTDF SDKs and how to resolve them.
 
 :::note Troubleshooting Scope
-This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://docs.opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
+This section covers issues when **using the SDKs in your applications**. For platform installation and setup issues, see [docs.opentdf.io — Managing the Platform](https://opentdf.io/getting-started/managing-platform#troubleshooting) or your platform's deployment documentation.
 :::
 
 ## Authentication Failed
@@ -28,6 +29,14 @@ Check that your identity provider is accessible:
 curl https://<idp-endpoint>/
 ```
 
+## OIDC Discovery Fails with Trailing-Slash Issuer
+
+**Error**: `unexpected end of JSON input` during OIDC discovery
+
+**Cause**: Some identity providers (e.g., [Authentik](https://goauthentik.io/)) include a trailing slash in their OIDC issuer URL (e.g., `https://idp.example/app/`). The Go SDK before v0.16.0 concatenated this with `/.well-known/openid-configuration`, producing a double-slash URL that returned a redirect instead of JSON. The JavaScript SDK is unaffected (browser fetch follows redirects automatically).
+
+**Solution**: Upgrade to Go SDK **v0.16.0+**, which normalizes the issuer URL automatically. No code changes required.
+
 ## Token Expired
 
 **Error**: `token expired`, `invalid token`, or `jwt expired`
@@ -41,17 +50,18 @@ curl https://<idp-endpoint>/
    otdfctl auth client-credentials <client-id> <client-secret>
    ```
 
-2. **Implement token refresh in your application**: The JavaScript SDK's `refreshAuthProvider` handles automatic token renewal:
+2. **Use a built-in token provider**: The SDK's token providers handle caching and auto-refresh automatically:
    ```js
-   import { AuthProviders } from '@opentdf/sdk';
+   import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-   const authProvider = AuthProviders.refreshAuthProvider({
-     clientId: 'your-client-id',
-     exchange: 'client',
-     clientSecret: 'your-client-secret',
-     oidcOrigin: 'https://<idp-endpoint>', // Keycloak: append /realms/<realm>; adjust path for your IdP
-   });
+   const auth = { interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+     clientId: 'opentdf', clientSecret: 'secret',
+     oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+   }))] };
+   const client = new OpenTDF({ ...auth, platformUrl });
    ```
+
+   <JsAuthNote />
 
 3. **Re-instantiate the SDK**: For Go and Java, create a new SDK instance with fresh credentials when a token error occurs.
 
@@ -243,6 +253,43 @@ otdfctl policy subject-mappings create \
 3. **Verify file integrity** — TDFs are tamper-evident; any modification after encryption will cause decryption to fail
 4. **Check file transfer** — binary TDF files can be corrupted by text-mode transfers; ensure files are transferred in binary mode
 
+## KAS Error Classification (Go SDK v0.16.0+)
+
+:::caution Breaking Change in v0.16.0
+The Go SDK v0.16.0 changed how KAS (Key Access Server) errors are classified. If your code checks `errors.Is(err, sdk.ErrTampered)`, read this section carefully.
+:::
+
+**Background**: When decrypting a TDF, the SDK contacts the KAS to unwrap keys. The KAS can return errors for two very different reasons:
+
+1. **Integrity failure (tamper)** — the TDF's policy binding or encrypted key has been modified
+2. **Misconfiguration** — the request was malformed, used an unsupported key type, or the client lacks permission
+
+**What changed**: Prior to v0.16.0, *all* KAS 400-level errors were classified as `ErrTampered`. This made `errors.Is(err, sdk.ErrTampered)` unreliable — it returned `true` even for configuration errors. Starting in v0.16.0, the SDK distinguishes between tamper and misconfiguration:
+
+| Error source | SDK sentinel | `errors.Is(err, sdk.ErrTampered)`? |
+|---|---|---|
+| Policy binding mismatch | `sdk.ErrRewrapBadRequest` | Yes |
+| DEK decryption failure | `sdk.ErrRewrapBadRequest` | Yes |
+| Corrupted policy body | `sdk.ErrRewrapBadRequest` | Yes |
+| Misconfiguration (e.g., wrong key type) | `sdk.ErrKASRequestError` | No |
+| Access denied (403) | `sdk.ErrRewrapForbidden` | No |
+
+**Migration**: If your code catches all KAS errors via `ErrTampered`, add a check for `ErrKASRequestError`:
+
+```go
+if errors.Is(err, sdk.ErrTampered) {
+    // Integrity failure — the TDF was modified after encryption
+} else if errors.Is(err, sdk.ErrKASRequestError) {
+    // Client or configuration error (400 or 403 from KAS)
+}
+```
+
+:::note
+`ErrRewrapForbidden` (403) now wraps `ErrKASRequestError`, so `errors.Is(err, sdk.ErrKASRequestError)` matches both misconfiguration 400s and forbidden 403s.
+:::
+
+See [opentdf/platform#3166](https://github.com/opentdf/platform/issues/3166) for full details.
+
 ## Entity Resolution Failed
 
 **Error**: `entity resolution failed` or `failed to resolve entity`
@@ -320,7 +367,7 @@ exit status 1
 
 - **Go**: `client.ValidateAttributes(ctx, fqns)`
 - **Java**: `sdk.validateAttributes(fqns)`
-- **JavaScript**: `await validateAttributes(platformUrl, authProvider, fqns)`
+- **JavaScript**: `await validateAttributes(platformUrl, auth, fqns)`
 
 **Solution**: Create the resource first using otdfctl or the SDK policy functions. For attributes, see the [SDK Create Attribute function](/sdks/policy#create-attribute).
 
@@ -358,7 +405,12 @@ If you can't resolve an issue using this guide, here are the next steps:
 
 2. **Search existing GitHub Discussions** — many common questions are already answered in the [opentdf/platform discussions](https://github.com/opentdf/platform/discussions).
 
-3. **Open a GitHub issue** with:
+3. **Open a GitHub issue** on the relevant repo:
+   - [opentdf/platform](https://github.com/opentdf/platform/issues) — Go SDK and platform
+   - [opentdf/java-sdk](https://github.com/opentdf/java-sdk/issues) — Java SDK
+   - [opentdf/web-sdk](https://github.com/opentdf/web-sdk/issues) — JavaScript/TypeScript SDK
+
+   Include:
    - SDK language and version
    - Full error message (including stack trace if available)
    - Minimal code that reproduces the issue

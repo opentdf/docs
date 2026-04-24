@@ -1,0 +1,115 @@
+name: Update vendored OpenAPI specs
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: update-vendored-specs
+  cancel-in-progress: true
+
+jobs:
+  update-specs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update vendored specs
+        run: npm run update-vendored-yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if [ -z "$(git status --porcelain specs/)" ]; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+            echo "No spec changes detected."
+          else
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changed files:"
+            git status --porcelain specs/
+          fi
+
+      - name: Check for existing PR
+        if: steps.diff.outputs.changes == 'true'
+        id: existing-pr
+        run: |
+          PR_NUMBER=$(gh pr list --head chore/update-vendored-specs --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "Found existing PR #$PR_NUMBER"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create signed commit and update branch
+        if: steps.diff.outputs.changes == 'true'
+        run: |
+          REPO="${GITHUB_REPOSITORY}"
+          BRANCH="chore/update-vendored-specs"
+          MESSAGE="chore(deps): update vendored OpenAPI specs"
+
+          # Resolve main HEAD and its tree
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq '.object.sha')
+          BASE_TREE=$(gh api "repos/$REPO/git/commits/$MAIN_SHA" --jq '.tree.sha')
+
+          # Create blobs for each changed spec file
+          TREE_ENTRIES='[]'
+          for file in $(git status --porcelain specs/ | sed 's/^...//'); do
+            echo "Creating blob for $file"
+            BLOB_SHA=$(
+              jq -n --arg c "$(base64 -w0 < "$file")" \
+                '{"content": $c, "encoding": "base64"}' |
+              gh api "repos/$REPO/git/blobs" --input - --jq '.sha'
+            )
+            TREE_ENTRIES=$(
+              echo "$TREE_ENTRIES" | jq \
+                --arg path "$file" --arg sha "$BLOB_SHA" \
+                '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": $sha}]'
+            )
+          done
+
+          # Create tree and signed commit via GitHub API
+          NEW_TREE=$(
+            jq -n --arg base "$BASE_TREE" --argjson tree "$TREE_ENTRIES" \
+              '{"base_tree": $base, "tree": $tree}' |
+            gh api "repos/$REPO/git/trees" --input - --jq '.sha'
+          )
+          COMMIT_SHA=$(
+            jq -n \
+              --arg msg "$MESSAGE" --arg tree "$NEW_TREE" --arg parent "$MAIN_SHA" \
+              '{"message": $msg, "tree": $tree, "parents": [$parent]}' |
+            gh api "repos/$REPO/git/commits" --input - --jq '.sha'
+          )
+          echo "Created signed commit $COMMIT_SHA"
+
+          # Update existing branch ref or create it
+          gh api "repos/$REPO/git/refs/heads/$BRANCH" \
+            -X PATCH -f sha="$COMMIT_SHA" -F force=true 2>/dev/null ||
+          gh api "repos/$REPO/git/refs" \
+            -f ref="refs/heads/$BRANCH" -f sha="$COMMIT_SHA"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR
+        if: steps.diff.outputs.changes == 'true' && steps.existing-pr.outputs.pr_number == ''
+        run: |
+          gh pr create \
+            --title "chore(deps): update vendored OpenAPI specs" \
+            --body "Automated update of vendored OpenAPI specs in \`specs/\` to match upstream \`opentdf/platform\`." \
+            --head chore/update-vendored-specs \
+            --base main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,245 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+### System Metadata
+
+The SDKs can automatically attach a **system metadata assertion** containing information about the environment that created the TDF — spec version, creation timestamp, SDK version, OS, and architecture. This is useful for audit trails and debugging without requiring application-level code.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/sdk"
+
+manifest, err := client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(sdk.KASInfo{URL: kasURL}),
+    sdk.WithSystemMetadataAssertion(),
+)
+```
+
+To inspect or customize the config before passing it to `WithAssertions`:
+
+```go
+cfg, err := sdk.GetSystemMetadataAssertionConfig()
+// cfg.Statement.Value contains JSON like:
+// {"tdf_spec_version":"4.3.0","creation_date":"2026-03-31T12:00:00Z",
+//  "operating_system":"linux","sdk_version":"Go-0.3.4",
+//  "go_version":"go1.23.0","architecture":"amd64"}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.Config;
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withSystemMetadataAssertion()
+);
+sdk.createTDF(inputStream, outputStream, config);
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const encryptParams = new EncryptParamsBuilder()
+  .withSystemMetadataAssertion(true)
+  .build();
+```
+
+</TabItem>
+</Tabs>
+
+The system metadata assertion uses ID `"system-metadata"`, schema `"system-metadata-v1"`, type `BaseAssertion`, scope `PayloadScope`, and state `Unencrypted`.
+
+### End-to-End Example
+
+Create a signed assertion at encrypt time, then verify it at decrypt time.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "bytes"
+    "crypto/rand"
+    "crypto/rsa"
+    "io"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+// Generate an RSA key pair for assertion signing.
+rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+if err != nil {
+    log.Fatal(err)
+}
+
+// --- Encrypt with a signed assertion ---
+
+assertionCfg := sdk.AssertionConfig{
+    ID:             "handling-1",
+    Type:           sdk.HandlingAssertion,
+    Scope:          sdk.TrustedDataObjScope,
+    AppliesToState: sdk.Unencrypted,
+    Statement: sdk.Statement{
+        Format: "application/json",
+        Schema: "retention-policy-v1",
+        Value:  `{"retain_until":"2027-01-01","classification":"internal"}`,
+    },
+    SigningKey: sdk.AssertionKey{
+        Alg: sdk.AssertionKeyAlgRS256,
+        Key: rsaKey,
+    },
+}
+
+var buf bytes.Buffer
+_, err = client.CreateTDF(&buf, plaintext,
+    sdk.WithKasInformation(sdk.KASInfo{URL: kasURL}),
+    sdk.WithAssertions(assertionCfg),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// --- Decrypt and verify the assertion ---
+
+verificationKeys := sdk.AssertionVerificationKeys{
+    Keys: map[string]sdk.AssertionKey{
+        "handling-1": {
+            Alg: sdk.AssertionKeyAlgRS256,
+            Key: &rsaKey.PublicKey,
+        },
+    },
+}
+
+tdfReader, err := client.LoadTDF(
+    bytes.NewReader(buf.Bytes()),
+    sdk.WithAssertionVerificationKeys(verificationKeys),
+)
+if err != nil {
+    log.Fatal(err) // Verification failure surfaces here.
+}
+
+decrypted, err := io.ReadAll(tdfReader)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Access assertions from the manifest.
+for _, a := range tdfReader.Manifest().Assertions {
+    log.Printf("Assertion %s [%s]: %s", a.ID, a.Type, a.Statement.Value)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.AssertionConfig;
+import io.opentdf.platform.sdk.Config;
+import io.opentdf.platform.sdk.TDF;
+import java.security.KeyPairGenerator;
+import java.util.Map;
+
+// Generate an RSA key pair for assertion signing.
+var keyGen = KeyPairGenerator.getInstance("RSA");
+keyGen.initialize(2048);
+var keyPair = keyGen.generateKeyPair();
+
+// --- Encrypt with a signed assertion ---
+
+var statement = new AssertionConfig.Statement();
+statement.format = "application/json";
+statement.schema = "retention-policy-v1";
+statement.value  = "{\"retain_until\":\"2027-01-01\",\"classification\":\"internal\"}";
+
+var assertionCfg = new AssertionConfig();
+assertionCfg.id             = "handling-1";
+assertionCfg.type           = AssertionConfig.Type.HandlingAssertion;
+assertionCfg.scope          = AssertionConfig.Scope.TrustedDataObj;
+assertionCfg.appliesToState = AssertionConfig.AppliesToState.Unencrypted;
+assertionCfg.statement      = statement;
+assertionCfg.signingKey     = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    keyPair.getPrivate()
+);
+
+Config.TDFConfig config = Config.newTDFConfig(
+    Config.withKasInformation(kasInfo),
+    Config.withAssertionConfig(assertionCfg)
+);
+sdk.createTDF(inputStream, outputStream, config);
+
+// --- Decrypt and verify the assertion ---
+
+var verifyKey = new AssertionConfig.AssertionKey(
+    AssertionConfig.AssertionKeyAlg.RS256,
+    keyPair.getPublic()
+);
+
+var verificationKeys = new Config.AssertionVerificationKeys();
+verificationKeys.keys = Map.of("handling-1", verifyKey);
+
+Config.TDFReaderConfig readerConfig = Config.newTDFReaderConfig(
+    Config.withAssertionVerificationKeys(verificationKeys)
+);
+TDF.Reader reader = sdk.loadTDF(fileChannel, readerConfig);
+// Verification failure throws during loadTDF.
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Generate an RSA key pair for assertion signing.
+const keyPair = await crypto.subtle.generateKey(
+  { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+  true,
+  ['sign', 'verify'],
+);
+
+// --- Encrypt with a signed assertion ---
+
+const tdf = await client.createTDF({
+  source: { type: 'buffer', location: plaintext },
+  defaultKASEndpoint: kasURL,
+  assertionConfigs: [
+    {
+      id:             'handling-1',
+      type:           'HandlingAssertion',
+      scope:          'TrustedDataObj',
+      appliesToState: 'Unencrypted',
+      statement: {
+        format: 'application/json',
+        schema: 'retention-policy-v1',
+        value:  '{"retain_until":"2027-01-01","classification":"internal"}',
+      },
+    },
+  ],
+  signers: {
+    'handling-1': keyPair.privateKey,
+  },
+});
+
+// --- Decrypt and verify the assertion ---
+
+const result = await client.read({
+  source: { type: 'buffer', location: tdf },
+  assertionVerificationKeys: {
+    keys: {
+      'handling-1': {
+        alg: 'RS256',
+        key: keyPair.publicKey,
+      },
+    },
+  },
+});
+// Verification failure throws during read.
+```
+
+</TabItem>
+</Tabs>

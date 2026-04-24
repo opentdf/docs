@@ -1,0 +1,5 @@
+:::info JavaScript examples use client credentials for simplicity
+The JavaScript SDK is designed for **browser applications**. The examples on this page use `clientCredentialsTokenProvider` because it's self-contained and easy to follow, but it requires a client secret and **must not be used in browser code**.
+
+In production browser apps, complete an OIDC login flow to obtain a refresh token, then use [`refreshTokenProvider()`](/sdks/authentication#refresh-token). See the [Authentication Decision Guide](/guides/authentication-guide) for help choosing the right method.
+:::

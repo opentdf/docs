@@ -1,0 +1,155 @@
+name: Surge Preview
+
+on:
+  workflow_run:
+    workflows: ["Surge Preview Build"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number (used for deploy domain: opentdf-docs-pr-{number}.surge.sh)'
+        required: true
+      teardown:
+        description: 'Tear down the preview instead of deploying'
+        type: boolean
+        default: false
+
+jobs:
+  # Triggered automatically after the build workflow completes (success or failure).
+  # Runs in a trusted context so it has access to secrets and a write token,
+  # even when the build was triggered by a fork PR.
+  deploy:
+    if: >
+      github.event_name == 'workflow_run' && (
+        github.event.workflow_run.conclusion == 'success' ||
+        github.event.workflow_run.conclusion == 'failure'
+      )
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download preview artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: surge-preview
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Read metadata
+        id: meta
+        run: |
+          echo "pr_number=$(jq -r '.pr_number' pr-metadata.json)" >> $GITHUB_OUTPUT
+          echo "action=$(jq -r '.action' pr-metadata.json)" >> $GITHUB_OUTPUT
+          echo "build_success=$(jq -r '.build_success' pr-metadata.json)" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Surge
+        if: steps.meta.outputs.action != 'closed' && steps.meta.outputs.build_success == 'true'
+        run: npx surge build/ https://opentdf-docs-pr-${{ steps.meta.outputs.pr_number }}.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+
+      - name: Teardown Surge preview
+        if: steps.meta.outputs.action == 'closed'
+        run: npx surge teardown opentdf-docs-pr-${{ steps.meta.outputs.pr_number }}.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+
+      - name: Comment with preview URL
+        if: >
+          steps.meta.outputs.build_success == 'true' && (
+            steps.meta.outputs.action == 'opened' ||
+            steps.meta.outputs.action == 'reopened'
+          )
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ steps.meta.outputs.pr_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📄 Preview deployed to https://opentdf-docs-pr-${{ steps.meta.outputs.pr_number }}.surge.sh'
+            })
+
+      - name: Comment build failure
+        if: steps.meta.outputs.build_success == 'false' && steps.meta.outputs.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ steps.meta.outputs.pr_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ Surge preview build failed — no preview was deployed. [Check the workflow logs](${{ github.event.workflow_run.html_url }}) for details.\n\nOnce the build passes, the preview will be at: https://opentdf-docs-pr-${{ steps.meta.outputs.pr_number }}.surge.sh\n\n**Common cause:** If the build failed on vendored YAML validation, run the following locally and commit the result:\n\`\`\`\nnpm run update-vendored-yaml\ngit add specs/\ngit commit -m "chore(deps): update vendored OpenAPI specs"\n\`\`\``
+            })
+
+  # Manual dispatch: builds and deploys in a fully trusted context.
+  # Use this to trigger a preview for PRs outside the auto-trigger path filters.
+  deploy-manual:
+    if: github.event_name == 'workflow_dispatch' && inputs.teardown == false
+    name: Build and Deploy Preview (Manual)
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update vendored OpenAPI specs
+        run: npm run update-vendored-yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build website
+        run: npm run gen-api-docs-all && npx docusaurus build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add SPA fallback for Surge
+        run: cp build/index.html build/200.html
+
+      - name: Deploy to Surge
+        run: npx surge build/ https://opentdf-docs-pr-${{ inputs.pr_number }}.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+
+      - name: Comment with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ inputs.pr_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📄 Preview deployed to https://opentdf-docs-pr-${{ inputs.pr_number }}.surge.sh'
+            })
+
+  teardown-manual:
+    if: github.event_name == 'workflow_dispatch' && inputs.teardown == true
+    name: Teardown Preview (Manual)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Teardown Surge preview
+        run: npx surge teardown opentdf-docs-pr-${{ inputs.pr_number }}.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}

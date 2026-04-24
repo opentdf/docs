@@ -1,11 +1,14 @@
 ---
 sidebar_position: 4
+title: TDF
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
+import AssertionExamples from '../../code_samples/tdf/assertion_examples.mdx'
+import JsAuthNote from '../../code_samples/js_auth_note.mdx'
 
 # TDF
 
@@ -20,14 +23,18 @@ This page covers the core TDF operations:
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
 - **[Encrypt Options](#encrypt-options)** — full option reference for `CreateTDF`
 - **[Decrypt Options](#decrypt-options)** — full option reference for `LoadTDF`
-- **[Type Reference](#type-reference)** — `KASInfo`, `PolicyObject`, `Manifest`
+- **[Assertions](#assertions)** — signed metadata: types, scopes, signing, and verification
+- **[Session Encryption](#session-encryption)** — provide your own RSA key for KAS response encryption
+- **[Type Reference](#type-reference)** — `TDFObject`, `KASInfo`, `PolicyObject`, `Manifest`, `AssertionConfig`
 - **[Experimental: Streaming Writer](#experimental-streaming-writer)** — segment-based API for large files and out-of-order assembly
 
 ---
 
-## Quick Start
+## Setup
 
-Initialize a client and run an end-to-end encrypt/decrypt in one block.
+<JsAuthNote />
+
+Initialize an SDK client — all examples on this page require it. See [Authentication](/sdks/authentication) for full details including DPoP key binding. Here is an end-to-end encrypt/decrypt to get started:
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -91,6 +98,7 @@ SDK sdk = SDKBuilder.newBuilder()
     .platformEndpoint("https://platform.example.com")
     .clientSecret("client-id", "client-secret")
     .build();
+// Remember to call sdk.close() when done.
 
 // Encrypt
 var kasInfo = new Config.KASInfo();
@@ -116,15 +124,16 @@ try (FileChannel ch = FileChannel.open(tmp, StandardOpenOption.READ)) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { OpenTDF, AuthProviders } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-const authProvider = await AuthProviders.clientSecretAuthProvider({
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+const client = new OpenTDF({
+    interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        oidcOrigin: 'https://platform.example.com/auth/realms/opentdf',
+    }))],
+    platformUrl: 'https://platform.example.com',
 });
-
-const client = new OpenTDF({ authProvider, platformUrl: 'https://platform.example.com' });
 
 // Encrypt
 const enc = new TextEncoder();
@@ -179,55 +188,30 @@ async createTDF(options: CreateTDFOptions): Promise<DecoratedStream>
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Output destination | Required | Where the encrypted TDF bytes are written. |
-| Plaintext source | Required | The data to encrypt. See the signature tab for your language for the expected type. |
-| Configuration | Required* | Encryption options. A KAS endpoint must be specified unless autoconfigure is enabled. See [Encrypt Options](#encrypt-options). |
-
-**Returns**
-
 <Tabs>
 <TabItem value="go" label="Go">
 
-`(*TDFObject, error)` — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `writer` | `io.Writer` | Where the encrypted TDF bytes are written. |
+| `reader` | `io.ReadSeeker` | The plaintext data to encrypt. |
+| `opts` | `...TDFOption` | Encryption options. At minimum, a KAS endpoint must be specified (e.g., `sdk.WithKasInformation()`). See [Encrypt Options](#encrypt-options). |
 
 </TabItem>
 <TabItem value="java" label="Java">
 
-`Manifest` — The manifest written to the TDF, containing key access and encryption metadata. Encrypted bytes are written to the output stream.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `plaintext` | `InputStream` | The plaintext data to encrypt. |
+| `out` | `OutputStream` | Where the encrypted TDF bytes are written. |
+| `config` | `Config.TDFConfig` | Encryption options. At minimum, a KAS endpoint must be specified. See [Encrypt Options](#encrypt-options). |
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-`Promise<DecoratedStream>` — A decorated stream of encrypted TDF bytes. Pipe or consume it like any `ReadableStream`.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-| Error | Cause |
-|-------|-------|
-| KAS unreachable | The KAS could not be contacted to wrap the encryption key. |
-| No KAS configured | No KAS was provided and autoconfigure is disabled or could not resolve one. |
-| Write failure | An I/O error occurred writing to `out`. |
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-| Exception | Cause |
-|-----------|-------|
-| `SDKException` | KAS unreachable, policy invalid, or the SDK could not resolve a KAS from the attribute service. |
-| `IOException` | I/O failure reading from the input stream or writing to the output stream. |
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-Rejects with `Error` if the KAS is unreachable, authentication fails, or the source data cannot be read.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `CreateTDFOptions` | A single options object containing the source, KAS endpoint, attributes, and other settings. See [Encrypt Options](#encrypt-options). |
 
 </TabItem>
 </Tabs>
@@ -291,6 +275,53 @@ const encrypted = await new Response(tdf).bytes();
 
 See [Encrypt Options](#encrypt-options) for the full list of configuration options.
 
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+[`(*TDFObject, error)`](#tdfobject) — On success, a `TDFObject` with a `.Manifest()` method returning the [Manifest](#manifest-object) and a `.Size()` method returning the encrypted byte count. Returns a non-nil `error` on failure.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`Manifest` — The manifest written to the TDF, containing key access and encryption metadata. Encrypted bytes are written to the output stream.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+`Promise<DecoratedStream>` — A decorated stream of encrypted TDF bytes. Pipe or consume it like any `ReadableStream`.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| KAS unreachable | The KAS could not be contacted to wrap the encryption key. |
+| No KAS configured | No KAS was provided and autoconfigure is disabled or could not resolve one. |
+| Write failure | An I/O error occurred writing to the output destination. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+| Exception | Cause |
+|-----------|-------|
+| `SDKException` | KAS unreachable, policy invalid, or the SDK could not resolve a KAS from the attribute service. |
+| `IOException` | I/O failure reading from the input stream or writing to the output stream. |
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the KAS is unreachable, authentication fails, or the source data cannot be read.
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## LoadTDF
@@ -329,53 +360,28 @@ open(options: ReadOptions): TDFReader
 
 **Parameters**
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| Encrypted TDF source | Required | The TDF to open. See the signature tab for your language for the expected type. For JavaScript, `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). |
-| Configuration | Optional | Decryption options. Defaults allow any KAS endpoint. See [Decrypt Options](#decrypt-options). |
-
-**Returns**
-
 <Tabs>
 <TabItem value="go" label="Go">
 
-`(*Reader, error)` — A TDF reader object. See [TDF Reader](#tdf-reader) for available methods.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `reader` | `io.ReadSeeker` | The encrypted TDF to open. |
+| `opts` | `...TDFReaderOption` | Optional decryption settings. See [Decrypt Options](#decrypt-options). |
 
 </TabItem>
 <TabItem value="java" label="Java">
 
-`TDF.Reader` — A reader object. See [TDF Reader](#tdf-reader) for available methods.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `channel` | `SeekableByteChannel` | The encrypted TDF to open. |
+| `config` | `Config.TDFReaderConfig` | Decryption settings. Use `Config.newTDFReaderConfig()` for defaults. See [Decrypt Options](#decrypt-options). |
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
-- `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
-- `open()` → [`TDFReader`](#tdf-reader) — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-| Error | Cause |
-|-------|-------|
-| Invalid TDF | The input is not a valid TDF. Use [`IsValidTdf`](#isvalidtdf) to pre-validate. |
-| KAS unreachable | The KAS referenced in the manifest cannot be contacted. |
-| Access denied | The caller's credentials do not satisfy the TDF policy. |
-| KAS not allowlisted | The TDF references a KAS endpoint not on the allowlist. |
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-Java throws `IOException` for all failure modes. Inspect `e.getMessage()` to distinguish between access denied, unreachable KAS, and malformed TDF — the message text reflects the underlying cause.
-
-</TabItem>
-<TabItem value="js" label="JavaScript">
-
-Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is denied, or the endpoint is not allowlisted.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `options` | `ReadOptions` | A single options object. `source` accepts a `buffer` (`Uint8Array`) or `stream` (`ReadableStream`). See [Decrypt Options](#decrypt-options). |
 
 </TabItem>
 </Tabs>
@@ -441,6 +447,52 @@ See [Decrypt Options](#decrypt-options) for the full list of configuration optio
 See [TDF Reader](#tdf-reader) for all methods on the reader object.
 See [PolicyObject](#policyobject) and [Manifest Object](#manifest-object) for the types returned by reader methods.
 
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(*Reader, error)` — A TDF reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`TDF.Reader` — A reader object. See [TDF Reader](#tdf-reader) for available methods.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+- `read()` → `Promise<DecoratedStream>` — A stream of plaintext bytes with `.metadata` attached.
+- `open()` → [`TDFReader`](#tdf-reader) — A lazy reader with `.decrypt()`, `.manifest()`, and `.attributes()` methods.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+| Error | Cause |
+|-------|-------|
+| Invalid TDF | The input is not a valid TDF. Use [`IsValidTdf`](#isvalidtdf) to pre-validate. |
+| KAS unreachable | The KAS referenced in the manifest cannot be contacted. |
+| Access denied | The caller's credentials do not satisfy the TDF policy. |
+| KAS not allowlisted | The TDF references a KAS endpoint not on the allowlist. |
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+Java throws `IOException` for all failure modes. Inspect `e.getMessage()` to distinguish between access denied, unreachable KAS, and malformed TDF — the message text reflects the underlying cause.
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is denied, or the endpoint is not allowlisted.
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## IsValidTdf
@@ -473,25 +525,6 @@ static boolean SDK.isTDF(SeekableByteChannel channel)
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `reader` / `channel` | Required | The data to inspect. The stream position is reset after the check, so the same reader can be passed directly to `LoadTDF`. |
-
-**Returns**
-
-<Tabs>
-<TabItem value="go" label="Go">
-
-`(bool, error)` — `true` if the data is a valid TDF, `false` if it is not. A non-nil `error` indicates an I/O failure, not an invalid TDF.
-
-</TabItem>
-<TabItem value="java" label="Java">
-
-`boolean` — `true` if the channel contains a valid TDF, `false` otherwise.
-
-</TabItem>
-</Tabs>
-
-**Errors**
-
-A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
 
 **Example**
 
@@ -546,11 +579,34 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 </TabItem>
 </Tabs>
 
+**Returns**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+`(bool, error)` — `true` if the data is a valid TDF, `false` if it is not. A non-nil `error` indicates an I/O failure, not an invalid TDF.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+`boolean` — `true` if the channel contains a valid TDF, `false` otherwise.
+
+</TabItem>
+</Tabs>
+
+**Errors**
+
+A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
+
 ---
 
 ## BulkDecrypt
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
+
+:::tip Why use BulkDecrypt?
+Calling `LoadTDF` in a loop issues a separate KAS rewrap request per TDF. `BulkDecrypt` batches all rewrap requests by KAS endpoint so that *N* TDFs targeting the same KAS require only one round-trip instead of *N*. Use it whenever you need to decrypt more than a handful of TDFs.
+:::
 
 **Signature**
 
@@ -574,16 +630,15 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
 | `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
-Use `sdk.WithBulkKasAllowlist([]string{...})` to restrict which KAS endpoints may be contacted.
+**Options**
 
-**Returns**
-
-- `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
-- `PrepareBulkDecrypt` returns `(*BulkDecryptPrepared, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
-
-**Errors**
-
-Individual TDF failures are collected into a single bulk error. Use `sdk.FromBulkErrors(err)` to extract a `[]error` slice, indexed by TDF position.
+| Option | Description |
+|--------|-------------|
+| `WithTDFs(tdfs...)` | **(Required)** The TDFs to decrypt. |
+| `WithBulkKasAllowlist([]string{...})` | Restrict which KAS endpoints may be contacted. Only listed URLs are allowed; requests to unlisted KAS endpoints fail with an error per TDF. If omitted and a KAS registry is configured, the SDK uses the registry as the allowlist. |
+| `WithBulkIgnoreAllowlist(true)` | Bypass KAS allowlist checks entirely. A warning is logged for each KAS URL contacted. Use only for testing or fully trusted environments. |
+| `WithTDFType(tdfType)` | Specify the TDF format explicitly. Currently only `sdk.Standard` (TDF3 / ZIP-based) is supported. If omitted, the SDK auto-detects the format from each reader. |
+| `WithTDF3DecryptOptions(opts...)` | Pass additional reader options (e.g., session key, assertion verification) through to each TDF3 decryptor. These are the same options accepted by `LoadTDF`. |
 
 **Example**
 
@@ -618,7 +673,11 @@ if err != nil {
 }
 ```
 
-To inspect the prepared request before executing:
+**PrepareBulkDecrypt** splits the operation into two phases — rewrap (network) and decrypt (CPU) — so you can act between them:
+
+- **Inspect obligations** — after `PrepareBulkDecrypt`, each `BulkTDF` has its `TriggeredObligations` populated. Check these before decrypting payloads (see [Obligations in bulk decrypt](#obligations-in-bulk-decrypt)).
+- **Conditional decryption** — skip TDFs that don't meet your criteria without wasting CPU on decryption.
+- **Monitoring** — separate the network-bound rewrap phase from the CPU-bound decryption phase for progress reporting or latency attribution.
 
 ```go
 import (
@@ -636,6 +695,19 @@ if err != nil {
 }
 err = prepared.BulkDecrypt(ctx)
 ```
+
+**Returns**
+
+- `BulkDecrypt` returns `error`. If individual TDFs fail, extract per-TDF errors using `sdk.FromBulkErrors(err)`.
+- `PrepareBulkDecrypt` returns `(*BulkDecryptPrepared, error)`. Call `prepared.BulkDecrypt(ctx)` to execute after inspecting the prepared request.
+
+**Errors**
+
+`BulkDecrypt` does **not** fail fast — it attempts every TDF and collects individual failures into a single `BulkErrors` value. Use `sdk.FromBulkErrors(err)` to extract the underlying `[]error` slice:
+
+- Each element corresponds to a TDF by position in the original `WithTDFs` call.
+- `nil` entries indicate success; non-nil entries describe why that TDF failed.
+- Individual errors are also written to the `Error` field on each `*BulkTDF` struct, so you can inspect failures directly on the input slice after the call returns.
 
 ---
 
@@ -940,9 +1012,15 @@ for _, fqn := range obligations.FQNs {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { OpenTDF } from '@opentdf/sdk';
+import { authTokenInterceptor, clientCredentialsTokenProvider, OpenTDF } from '@opentdf/sdk';
 
-const client = new OpenTDF({ authProvider, platformUrl: 'http://localhost:8080' });
+const client = new OpenTDF({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
 
 const reader = client.open({ source: ciphertextSource });
 const obligations = await reader.obligations();
@@ -1107,9 +1185,106 @@ if err := prepared.BulkDecrypt(ctx); err != nil {
 
 ---
 
+## Session Encryption
+
+The **session encryption key** is used to encrypt responses from the Key Access Server (KAS) back to your client during the rewrap flow. This is an advanced option for scenarios where you need to control the encryption key lifecycle — for example, reusing the same key across multiple TDF operations in a session.
+
+If not provided, the SDK generates a session key automatically.
+
+```go
+import (
+    "crypto/rand"
+    "crypto/rsa"
+)
+
+// Generate or load your own RSA key pair
+privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+if err != nil {
+    log.Fatal(err)
+}
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("id", "secret", nil),
+    sdk.WithSessionEncryptionRSA(privateKey),
+)
+```
+
+---
+
+## Assertions
+
+**Assertions** are signed statements attached to a TDF that carry structured metadata alongside the encrypted payload. Use them to embed handling instructions, audit labels, retention policies, or any application-specific metadata that should travel with the data and be cryptographically verifiable on decrypt.
+
+Every assertion is bound to the TDF's [data encryption key (DEK)](/spec/protocol) by default, preventing it from being removed or copied to a different TDF. You can optionally sign assertions with your own RSA key for independent verification.
+
+### Assertion Types
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `HandlingAssertion` | `"handling"` | Data handling and processing instructions — e.g., retention policies, access restrictions, DLP rules. |
+| `BaseAssertion` | `"other"` | General-purpose metadata — e.g., audit labels, content identifiers, provenance records. |
+
+### Scopes
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `TrustedDataObjScope` | `"tdo"` | Assertion applies to the entire TDF object. |
+| `PayloadScope` | `"payload"` | Assertion applies only to the encrypted payload. |
+
+### AppliesToState
+
+| Constant | Value | When to process |
+|----------|-------|-----------------|
+| `Encrypted` | `"encrypted"` | Process **before** decryption — useful for access-control checks, audit logging, or routing decisions that don't require seeing the plaintext. |
+| `Unencrypted` | `"unencrypted"` | Process **after** decryption — useful for content filtering, retention enforcement, or any logic that inspects the plaintext. |
+
+### Statement
+
+Each assertion carries a `Statement` with three fields:
+
+| Field | Description |
+|-------|-------------|
+| `Format` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | The assertion payload as a string — typically a JSON object. |
+
+### Signing and Verification
+
+By default, every assertion is bound to the TDF using the DEK with HMAC-SHA256 (`HS256`). This binding ensures the assertion cannot be tampered with or detached, but verification requires the DEK — which means only entities that can decrypt the TDF can verify the binding.
+
+To enable **independent verification** (where a verifier doesn't need the DEK), sign the assertion with an RSA private key (`RS256`) at encrypt time and provide the corresponding public key at decrypt time.
+
+| Algorithm | Constant | Key type | Use case |
+|-----------|----------|----------|----------|
+| HMAC-SHA256 | `AssertionKeyAlgHS256` | Symmetric (byte slice / DEK) | Default binding — tamper detection for anyone who can decrypt. |
+| RSA-SHA256 | `AssertionKeyAlgRS256` | RSA key pair or `crypto.Signer` | Independent verification — any holder of the public key can verify. |
+
+<AssertionExamples />
+
+See the [Encrypt Options](#encrypt-options) and [Decrypt Options](#decrypt-options) sections for the full option reference, including per-option details for `WithAssertions` and `WithAssertionVerificationKeys`.
+
+---
+
 ## Type Reference
 
 The following types are returned by or passed to the methods above.
+
+### TDFObject
+
+**Go only.** Returned by [`CreateTDF`](#createtdf). Contains the manifest and size of the encrypted TDF.
+
+**Methods**
+
+| Method | Return type | Description |
+|--------|-------------|-------------|
+| `Manifest()` | [`Manifest`](#manifest-object) | The TDF manifest, including encryption info, key access objects, and assertions. |
+| `Size()` | `int64` | Total byte count of the encrypted TDF written to the output. |
+
+:::note
+Java's `CreateTDF` returns a [`Manifest`](#manifest-object) directly. JavaScript's returns a `DecoratedStream`.
+:::
+
+---
 
 ### KASInfo
 
@@ -1299,6 +1474,76 @@ for _, a := range manifest.Assertions {
     fmt.Printf("Assertion %s [%s]: %s\n", a.ID, a.Type, a.Statement.Value)
 }
 ```
+
+---
+
+### AssertionConfig
+
+`AssertionConfig` is the input type passed to `WithAssertions` when creating a TDF. It defines the assertion content, classification, and optional signing key.
+
+**Fields**
+
+| Field | Go | Java | Required | Description |
+|-------|-----|------|----------|-------------|
+| ID | `ID string` | `String id` | Yes | Unique identifier for the assertion. Used to look up verification keys on decrypt. |
+| Type | `Type AssertionType` | `Type type` | Yes | `HandlingAssertion` (`"handling"`) or `BaseAssertion` (`"other"`). |
+| Scope | `Scope Scope` | `Scope scope` | Yes | `TrustedDataObjScope` (`"tdo"`) or `PayloadScope` (`"payload"`). |
+| AppliesToState | `AppliesToState AppliesToState` | `AppliesToState appliesToState` | Yes | `Encrypted` or `Unencrypted`. |
+| Statement | `Statement Statement` | `Statement statement` | No | The assertion content. See [Statement (type)](#statement-type). |
+| SigningKey | `SigningKey AssertionKey` | `AssertionKey signingKey` | No | Custom signing key. If empty, the assertion is bound with the DEK using HS256. See [AssertionKey](#assertionkey). |
+
+---
+
+### Assertion
+
+`Assertion` is the signed form stored in the TDF [manifest](#manifest-object). Accessible via `tdfReader.Manifest().Assertions` after decryption.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ID` | `string` | Assertion identifier (matches the `AssertionConfig.ID` used at encrypt time). |
+| `Type` | `AssertionType` | `"handling"` or `"other"`. |
+| `Scope` | `Scope` | `"tdo"` or `"payload"`. |
+| `AppliesToState` | `AppliesToState` | `"encrypted"` or `"unencrypted"`. |
+| `Statement` | `Statement` | The assertion content. |
+| `Binding` | `Binding` | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+
+---
+
+### Statement (type)
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Format` | `string` | Payload encoding format (e.g., `"application/json"`, `"text/plain"`). |
+| `Schema` | `string` | Schema identifier for the value (e.g., `"retention-policy-v1"`). |
+| `Value` | `string` | The assertion payload — typically a JSON object serialized as a string. |
+
+---
+
+### AssertionKey
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Alg` | `AssertionKeyAlg` | `AssertionKeyAlgRS256` (`"RS256"`) for RSA-SHA256, or `AssertionKeyAlgHS256` (`"HS256"`) for HMAC-SHA256. |
+| `Key` | `interface{}` / `Object` | For RS256: an RSA private key (encrypt) or public key (verify). For HS256: a byte slice / shared secret. Supports `crypto.Signer` for hardware-backed keys. |
+
+---
+
+### AssertionVerificationKeys
+
+Passed to `WithAssertionVerificationKeys` when loading a TDF. Maps assertion IDs to the public keys used to verify their signatures.
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `DefaultKey` | `AssertionKey` | Fallback key used when no ID-specific key is found. |
+| `Keys` | `map[string]AssertionKey` | Map of assertion ID to verification key. |
 
 ---
 

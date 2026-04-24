@@ -13,6 +13,10 @@ An obligation consists of:
 
 Platform Policy Obligations can contain multiple Namespaces, each with multiple Definitions, and each Definition can have multiple Values. Each Value can have multiple Triggers. Each trigger can have an Action, Attribute Value, and PEP identifier (optional). Not specifying a PEP results in a global obligation that applies across *all* PEPs.
 
+:::tip Namespace Consistency
+When `NamespacedPolicy` is enabled, obligation trigger actions must be in the same namespace as the obligation definition.
+:::
+
 ```mermaid
 graph LR;
 %% Every definition is namespaced.

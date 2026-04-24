@@ -1,15 +1,6 @@
-name: Surge Preview
+name: Surge Preview Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number (used for deploy domain: opentdf-docs-pr-{number}.surge.sh)'
-        required: true
-      teardown:
-        description: 'Tear down the preview instead of deploying'
-        type: boolean
-        default: false
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
@@ -18,17 +9,14 @@ on:
       - 'src/**'
       - 'static/**'
       - 'blog/**'
-      - 'specs/**'
       - 'docusaurus.config.ts'
       - 'sidebars.js'
 
 jobs:
-  deploy-preview:
-    if: github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.teardown == false)
-    name: Deploy Preview
+  build:
+    if: github.event.action != 'closed'
+    name: Build
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,40 +29,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build website
-        run: npm run build
+      - name: Update vendored OpenAPI specs
+        run: npm run update-vendored-yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy to Surge
-        run: npx surge build/ https://opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh
+      - name: Build website
+        id: build
+        run: npm run gen-api-docs-all && npx docusaurus build
         env:
-          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
-          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Comment with preview URL
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
-        uses: actions/github-script@v7
+      - name: Add SPA fallback for Surge
+        if: steps.build.outcome == 'success'
+        run: cp build/index.html build/200.html
+
+      - name: Write PR metadata
+        if: always()
+        run: |
+          printf '{"pr_number":%s,"action":"%s","build_success":%s}' \
+            "${{ github.event.number }}" \
+            "${{ github.event.action }}" \
+            "${{ steps.build.outcome == 'success' && 'true' || 'false' }}" \
+            > pr-metadata.json
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '📄 Preview deployed to https://opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh'
-            })
+          name: surge-preview
+          # build/ only exists on success; if-no-files-found: warn lets the
+          # artifact upload succeed with just pr-metadata.json on failure.
+          path: |
+            build/
+            pr-metadata.json
+          if-no-files-found: warn
+          retention-days: 1
 
-  teardown-preview:
-    if: github.event.action == 'closed' || (github.event_name == 'workflow_dispatch' && inputs.teardown == true)
-    name: Teardown Preview
+  record-close:
+    if: github.event.action == 'closed'
+    name: Record close
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Write teardown metadata
+        run: |
+          printf '{"pr_number":%s,"action":"closed","build_success":true}' \
+            "${{ github.event.number }}" > pr-metadata.json
 
-      - name: Teardown Surge preview
-        run: npx surge teardown opentdf-docs-pr-${{ inputs.pr_number || github.event.number }}.surge.sh
-        env:
-          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
-          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: surge-preview
+          path: pr-metadata.json
+          retention-days: 1

@@ -30,7 +30,7 @@ const config: Config = {
   favicon: "img/favicon.svg",
 
   // Set the production url of your site here
-  url: "https://docs.opentdf.io",
+  url: "https://opentdf.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
@@ -47,24 +47,24 @@ const config: Config = {
   headTags: [
     {
       tagName: "script",
-      attributes: {
-        src: "https://cmp.osano.com/AzZnZZU1pGA9X28W3/e8936898-a719-43df-b0be-8b3543478151/osano.js",
-      },
-    },
-    {
-      tagName: "script",
       attributes: {},
       innerHTML: `
         window.dataLayer = window.dataLayer || [];
-        window.gtag = function(){window.dataLayer.push(arguments);}
-        window.gtag('consent', 'default', {
-          ad_storage: 'denied',
-          ad_personalization: 'denied',
-          ad_user_data: 'denied',
-          analytics_storage: 'denied'
+        function gtag(){dataLayer.push(arguments);}
+        gtag('consent', 'default', {
+          'ad_storage':              'denied',
+          'analytics_storage':       'denied',
+          'ad_user_data':            'denied',
+          'ad_personalization':      'denied',
+          'personalization_storage': 'denied',
+          'functionality_storage':   'granted',
+          'security_storage':        'granted',
+          'wait_for_update':         500
         });
+        gtag("set", "ads_data_redaction", true);
+        gtag("set", "url_passthrough", true);
       `,
-    },
+    }, 
     {
       tagName: "script",
       attributes: {},
@@ -224,8 +224,17 @@ const config: Config = {
         },
       ],
       copyright: `
-          <div>
+          <div class='legal-container'> 
             <span>Copyright © ${new Date().getFullYear()} OpenTDF</span>
+            <span>
+              <a href='https://www.virtru.com/terms-of-service/' target='_blank' rel='noopener noreferrer'>Terms</a> 
+              &amp; 
+              <a href='https://www.virtru.com/privacy-policy/' target='_blank' rel='noopener noreferrer'>Privacy</a>
+              |
+              <a href='https://www.virtru.com/cookie-policy' target='_blank' rel='noopener noreferrer'>Cookie Policy</a>
+              &amp;
+              <button type="button" onclick="window.openOsanoPreferences?.()">Preferences <img src="https://oag.ca.gov/sites/all/files/agweb/images/privacy/privacyoptions.svg" alt=""></button>
+            </span>
           </div>
           <div class="footer__license-info">
             Documentation licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> •
@@ -431,6 +440,7 @@ ${updatedContent}`,
     require.resolve("docusaurus-lunr-search"),
   ],
   clientModules: [
+    require.resolve('./src/theme/OsanoLoader.js'),
     require.resolve('./src/theme/TabsHashSync.js'),
   ],
 };

@@ -2,45 +2,79 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <details id="creating-a-namespace">
-<summary>Creating a Namespace</summary>
+<summary>Create a Namespace</summary>
+
+**Signature**
+
 <Tabs>
 <TabItem value="go" label="Go">
 
 ```go
-package main
+client.Namespaces.CreateNamespace(ctx, &namespaces.CreateNamespaceRequest{...})
+```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+sdk.getServices().namespaces().createNamespaceBlocking(req, metadata).execute()
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+await platform.v1.namespace.createNamespace({ ... })
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `string` | Yes | A valid hostname (e.g., `opentdf.io`, `example.com`). |
+| `metadata` | [`Metadata`](/sdks/policy#metadata) | No | Optional [labels](/sdks/policy#metadata), e.g., `{"labels": {"owner": "platform-team"}}`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/namespaces"
+
+resp, err := client.Namespaces.CreateNamespace(context.Background(),
+	&namespaces.CreateNamespaceRequest{
+		Name: "opentdf.io",
+	},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Printf("Created namespace: %s\n", resp.GetNamespace().GetId())
+```
+
+With metadata:
+
+```go
 import (
-	"context"
-	"log"
-
+	"github.com/opentdf/platform/protocol/go/common"
 	"github.com/opentdf/platform/protocol/go/policy/namespaces"
-	"github.com/opentdf/platform/sdk"
 )
 
-func main() {
-
-	platformEndpoint := "http://localhost:8080"
-
-	// Create a new client
-	client, err := sdk.New(
-		platformEndpoint,
-		sdk.WithClientCredentials("opentdf", "secret", nil),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create Namespace
-	namespace := &namespaces.CreateNamespaceRequest{
+resp, err := client.Namespaces.CreateNamespace(context.Background(),
+	&namespaces.CreateNamespaceRequest{
 		Name: "opentdf.io",
-	}
-
-	_, err = client.Namespaces.CreateNamespace(context.Background(), namespace)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+		Metadata: &common.MetadataMutable{
+			Labels: map[string]string{
+				"owner": "platform-team",
+				"env":   "production",
+			},
+		},
+	},
+)
 ```
 
 </TabItem>
@@ -50,24 +84,51 @@ import CreateNamespaceExample from '@site/code_samples/java/create-namespace.mdx
 
 <CreateNamespaceExample />
 
+With metadata:
+
+```java
+import io.opentdf.platform.policy.namespaces.CreateNamespaceRequest;
+import io.opentdf.platform.common.Common.MetadataMutable;
+
+var req = CreateNamespaceRequest.newBuilder()
+    .setName("opentdf.io")
+    .setMetadata(MetadataMutable.newBuilder()
+        .putLabels("owner", "platform-team")
+        .putLabels("env", "production")
+    )
+    .build();
+
+var resp = sdk.getServices().namespaces()
+    .createNamespaceBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Created namespace: " + resp.getNamespace().getId());
+```
+
 </TabItem>
-<TabItem value="js" label="TypeScript">
+<TabItem value="js" label="JavaScript">
 
 ```typescript
-import { PlatformClient } from '@opentdf/sdk/platform';
-
-const platform = new PlatformClient({
-  authProvider,
-  platformUrl: 'http://localhost:8080',
-});
-
-// Create Namespace
 const resp = await platform.v1.namespace.createNamespace({
   name: 'opentdf.io',
 });
 console.log('Created namespace:', resp.namespace?.id);
 ```
 
+With metadata:
+
+```typescript
+const resp = await platform.v1.namespace.createNamespace({
+  name: 'opentdf.io',
+  metadata: {
+    labels: { owner: 'platform-team', env: 'production' },
+  },
+});
+```
+
 </TabItem>
 </Tabs>
+
+**Returns**
+
+The created [Namespace object](#namespace-object).
+
 </details>
