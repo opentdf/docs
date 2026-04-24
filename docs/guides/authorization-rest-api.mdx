@@ -460,14 +460,36 @@ The `decisionResponses` array is **ordered to match the input `decisionRequests`
 
 ### Batching Strategy {#batching}
 
-The platform enforces a **maximum of 200 decision requests per `GetDecisionBulk` call** (each with up to 1,000 resources). For large-scale evaluations (e.g., re-evaluating room membership for all users), split requests into batches:
+The platform enforces a **maximum of 200 decision requests per [`GetDecisionBulk`](#get-decision-bulk) call** (each with up to 1,000 resources). For large-scale evaluations (e.g., re-evaluating room membership for all users), split requests into batches:
 
 - **Batch size:** Up to 200 decision requests per call (hard limit)
 - **Concurrency:** 2–4 parallel requests
 - **Why:** Keeps individual request latency manageable and avoids timeouts
 
 <details>
-<summary>Batching example (TypeScript)</summary>
+<summary>Batching examples</summary>
+
+<Tabs>
+<TabItem value="curl" label="curl">
+
+```bash
+# Split a large request list into batches of 200 and send sequentially
+BATCH_SIZE=200
+TOTAL=${#ALL_REQUESTS[@]}
+
+for (( i=0; i<TOTAL; i+=BATCH_SIZE )); do
+  # Build the batch JSON (assumes jq is available)
+  BATCH=$(printf '%s\n' "${ALL_REQUESTS[@]:i:BATCH_SIZE}" | jq -s '{decisionRequests: .}')
+
+  curl -X POST "${PLATFORM_URL}/authorization.v2.AuthorizationService/GetDecisionBulk" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -d "${BATCH}"
+done
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript (fetch)">
 
 ```typescript
 import pLimit from 'p-limit';
@@ -497,6 +519,9 @@ const results = await Promise.all(
   ),
 );
 ```
+
+</TabItem>
+</Tabs>
 
 </details>
 
@@ -599,7 +624,7 @@ for (const entitlement of result.entitlements) {
 
 ## Building Attribute FQNs {#attribute-fqns}
 
-Attribute value FQNs (Fully Qualified Names) identify specific attribute values in the platform. They follow this pattern:
+Attribute value FQNs (Fully Qualified Names) identify specific attribute values in the platform. For naming rules (allowed characters, casing), see [Creating attributes](/components/cli/policy/attributes/create). FQNs follow this pattern:
 
 ```
 https://{namespace}/attr/{attribute-key}/value/{value}
@@ -787,11 +812,11 @@ When `requiredObligations` is non-empty in a permit response, your application i
 
 - [ ] **TLS everywhere** — all connections to the platform and IdP use HTTPS
 - [ ] **Secrets in a vault** — client ID and secret stored securely, not in code
-- [ ] **Token caching** — tokens are cached and refreshed before expiry
-- [ ] **Fail closed** — access is denied when the platform is unreachable
-- [ ] **Request timeouts** — all HTTP calls have explicit timeouts
-- [ ] **Health monitoring** — periodic `/healthz` checks with alerting
-- [ ] **Batch where possible** — use `GetDecisionBulk` for multi-user/resource checks
-- [ ] **Obligation enforcement** — `requiredObligations` are checked and fulfilled
+- [ ] **[Token caching](#token-caching)** — tokens are cached and refreshed before expiry
+- [ ] **[Fail closed](#fail-closed)** — access is denied when the platform is unreachable
+- [ ] **[Request timeouts](#timeouts)** — all HTTP calls have explicit timeouts
+- [ ] **[Health monitoring](#health-check)** — periodic `/healthz` checks with alerting
+- [ ] **[Batch where possible](#prefer-bulk)** — use `GetDecisionBulk` for multi-user/resource checks
+- [ ] **[Obligation enforcement](/components/policy/obligations)** — `requiredObligations` are checked and fulfilled
 - [ ] **Logging** — authorization decisions are logged for audit
 - [ ] **Secret rotation** — client secrets are rotated on a regular schedule
