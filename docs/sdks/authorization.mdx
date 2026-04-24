@@ -137,36 +137,6 @@ req := &authorizationv2.GetDecisionRequest{
 
 </details>
 
-<details>
-<summary>Without helpers (manual proto construction)</summary>
-
-```go
-import (
-    "github.com/opentdf/platform/protocol/go/entity"
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-)
-
-req := &authorizationv2.GetDecisionRequest{
-    EntityIdentifier: &authorizationv2.EntityIdentifier{
-        Identifier: &authorizationv2.EntityIdentifier_EntityChain{
-            EntityChain: &entity.EntityChain{
-                Entities: []*entity.Entity{
-                    {
-                        EntityType: &entity.Entity_EmailAddress{EmailAddress: "alice@example.com"},
-                        // or &entity.Entity_ClientId{ClientId: "..."}
-                        // or &entity.Entity_UserName{UserName: "..."}
-                        Category: entity.Entity_CATEGORY_SUBJECT,
-                    },
-                },
-            },
-        },
-    },
-    // ...
-}
-```
-
-</details>
-
 </TabItem>
 <TabItem value="java" label="Java">
 
@@ -362,7 +332,7 @@ Resource.newBuilder()
 ```typescript
 import { Resources } from '@opentdf/sdk';
 
-const response = await platformClient.v2.authorization.getDecision({
+const response = await platform.v2.authorization.getDecision({
   resource: Resources.forAttributeValues(
     'https://example.com/attr/classification/value/confidential',
     'https://example.com/attr/department/value/finance',
