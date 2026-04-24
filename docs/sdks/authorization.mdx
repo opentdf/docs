@@ -37,8 +37,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// All Go snippets below use `client` and `context.Background()`.
-	_, _ = client, context.Background()
+	// All Go snippets below use `client` and `ctx`.
+	ctx := context.Background()
 }
 ```
 
@@ -240,6 +240,140 @@ const response = await platform.v2.authorization.getDecision({
 - **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
 - **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
 
+### Resource
+
+A `Resource` identifies the data being accessed in [GetDecision](#getdecision) and [GetDecisionBulk](#getdecisionbulk) calls. It can be specified as a set of attribute value FQNs (most common — e.g. the attributes on a TDF) or as a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+<SdkVersion language="go" version="0.17.0" source="opentdf" />
+
+| Helper | Description |
+|--------|-------------|
+| `authorizationv2.ForAttributeValues(fqns...)` | Resource from attribute value FQNs (e.g. those on a TDF) |
+| `authorizationv2.ForRegisteredResourceValueFqn(fqn)` | Resource from a registered resource value FQN in policy |
+
+```go
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+req := &authorizationv2.GetDecisionRequest{
+    Resource: authorizationv2.ForAttributeValues(
+        "https://example.com/attr/classification/value/confidential",
+        "https://example.com/attr/department/value/finance",
+    ),
+    // ...
+}
+```
+
+<details>
+<summary>Without helpers (manual proto construction)</summary>
+
+```go
+&authorizationv2.Resource{
+    Resource: &authorizationv2.Resource_AttributeValues_{
+        AttributeValues: &authorizationv2.Resource_AttributeValues{
+            Fqns: []string{
+                "https://example.com/attr/classification/value/confidential",
+                "https://example.com/attr/department/value/finance",
+            },
+        },
+    },
+}
+```
+
+</details>
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+<SdkVersion language="java" version="0.14.0" source="opentdf" />
+
+| Helper | Description |
+|--------|-------------|
+| `Resources.forAttributeValues(String... fqns)` | Resource from attribute value FQNs (e.g. those on a TDF) |
+| `Resources.forRegisteredResourceValueFqn(String fqn)` | Resource from a registered resource value FQN in policy |
+
+```java
+import io.opentdf.platform.sdk.Resources;
+
+GetDecisionRequest request = GetDecisionRequest.newBuilder()
+    .setResource(Resources.forAttributeValues(
+        "https://example.com/attr/classification/value/confidential",
+        "https://example.com/attr/department/value/finance"))
+    // ...
+    .build();
+```
+
+<details>
+<summary>Without helpers (manual proto construction)</summary>
+
+```java
+Resource.newBuilder()
+    .setAttributeValues(
+        Resource.AttributeValues.newBuilder()
+            .addFqns("https://example.com/attr/classification/value/confidential")
+            .addFqns("https://example.com/attr/department/value/finance"))
+    .build()
+```
+
+</details>
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+<SdkVersion language="js" version="0.15.0" source="opentdf" />
+
+| Helper | Description |
+|--------|-------------|
+| `Resources.forAttributeValues(...fqns)` | Resource from attribute value FQNs (e.g. those on a TDF) |
+| `Resources.forRegisteredResourceValueFqn(fqn)` | Resource from a registered resource value FQN in policy |
+
+```typescript
+import { Resources } from '@opentdf/sdk';
+
+const response = await platform.v2.authorization.getDecision({
+  resource: Resources.forAttributeValues(
+    'https://example.com/attr/classification/value/confidential',
+    'https://example.com/attr/department/value/finance',
+  ),
+  // ...
+});
+```
+
+<details>
+<summary>Without helpers (manual object construction)</summary>
+
+```typescript
+{
+  resource: {
+    case: 'attributeValues',
+    value: {
+      fqns: [
+        'https://example.com/attr/classification/value/confidential',
+        'https://example.com/attr/department/value/finance',
+      ],
+    },
+  },
+}
+```
+
+</details>
+
+</TabItem>
+</Tabs>
+
+**Resource variants:**
+
+| Variant | Go | Java | JavaScript |
+|---------|-----|------|------------|
+| Attribute values | `authorizationv2.ForAttributeValues(fqns...)` | `Resources.forAttributeValues(String... fqns)` | `Resources.forAttributeValues(...fqns)` |
+| Registered resource | `authorizationv2.ForRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` | `Resources.forRegisteredResourceValueFqn(fqn)` |
+
+:::note
+The helpers do not set `ephemeralId`. For [GetDecisionBulk](#getdecisionbulk) where you need to correlate requests with responses, set `ephemeralId` separately after construction (in Go, assign the field directly; in Java, use `.toBuilder().setEphemeralId(...).build()`) or use manual construction.
+:::
+
 ---
 
 ## GetEntitlements
@@ -276,7 +410,7 @@ await platform.v2.authorization.getEntitlements({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity to query. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `withComprehensiveHierarchy` | `bool` | No | When true, returns all entitled values for attributes with hierarchy rules, propagating down from the entitled value. |
 
 **Example**
@@ -467,9 +601,9 @@ await platform.v2.authorization.getDecision({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
 | `action` | `Action` | Yes | The action being performed (e.g., `decrypt`, `read`). |
-| `resource` | `Resource` | Yes | The resource being accessed, identified by attribute value FQNs. |
+| `resource` | [`Resource`](#resource) | Yes | The resource being accessed. Use [helpers](#resource) like `ForAttributeValues(...)` (Go) or `Resources.forAttributeValues(...)` (Java/JS). |
 
 **Example**
 
@@ -487,16 +621,10 @@ decisionReq := &authorizationv2.GetDecisionRequest{
     Action: &policy.Action{
         Name: "decrypt",
     },
-    Resource: &authorizationv2.Resource{
-        Resource: &authorizationv2.Resource_AttributeValues_{
-            AttributeValues: &authorizationv2.Resource_AttributeValues{
-                Fqns: []string{
-                    "https://company.com/attr/clearance/value/confidential",
-                    "https://company.com/attr/department/value/finance",
-                },
-            },
-        },
-    },
+    Resource: authorizationv2.ForAttributeValues(
+        "https://company.com/attr/clearance/value/confidential",
+        "https://company.com/attr/department/value/finance",
+    ),
 }
 
 decision, err := client.AuthorizationV2.GetDecision(
@@ -529,13 +657,9 @@ import (
 decisionReq := &authorizationv2.GetDecisionRequest{
     EntityIdentifier: authorizationv2.ForToken(jwtToken),
     Action: &policy.Action{Name: "decrypt"},
-    Resource: &authorizationv2.Resource{
-        Resource: &authorizationv2.Resource_AttributeValues_{
-            AttributeValues: &authorizationv2.Resource_AttributeValues{
-                Fqns: []string{"https://company.com/attr/clearance/value/public"},
-            },
-        },
-    },
+    Resource: authorizationv2.ForAttributeValues(
+        "https://company.com/attr/clearance/value/public",
+    ),
 }
 
 decision, err := client.AuthorizationV2.GetDecision(
@@ -604,6 +728,7 @@ for _, dr := range decisionResponse.GetDecisionResponses() {
 
 ```java
 import io.opentdf.platform.sdk.EntityIdentifiers;
+import io.opentdf.platform.sdk.Resources;
 
 GetDecisionRequest request = GetDecisionRequest.newBuilder()
     .setEntityIdentifier(EntityIdentifiers.forEmail("user@company.com"))
@@ -611,14 +736,9 @@ GetDecisionRequest request = GetDecisionRequest.newBuilder()
         Action.newBuilder()
             .setName("decrypt")
     )
-    .setResource(
-        Resource.newBuilder()
-            .setAttributeValues(
-                Resource.AttributeValues.newBuilder()
-                    .addFqns("https://company.com/attr/clearance/value/confidential")
-                    .addFqns("https://company.com/attr/department/value/finance")
-            )
-    )
+    .setResource(Resources.forAttributeValues(
+        "https://company.com/attr/clearance/value/confidential",
+        "https://company.com/attr/department/value/finance"))
     .build();
 
 GetDecisionResponse resp = sdk.getServices()
@@ -641,23 +761,16 @@ if (decision.getDecision() == Decision.DECISION_PERMIT) {
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { EntityIdentifiers } from '@opentdf/sdk';
+import { EntityIdentifiers, Resources } from '@opentdf/sdk';
 import { Decision } from '@opentdf/sdk/platform/authorization/v2/authorization_pb.js';
 
 const response = await platform.v2.authorization.getDecision({
   entityIdentifier: EntityIdentifiers.forEmail('user@company.com'),
   action: { name: 'decrypt' },
-  resource: {
-    resource: {
-      case: 'attributeValues',
-      value: {
-        fqns: [
-          'https://company.com/attr/clearance/value/confidential',
-          'https://company.com/attr/department/value/finance',
-        ],
-      },
-    },
-  },
+  resource: Resources.forAttributeValues(
+    'https://company.com/attr/clearance/value/confidential',
+    'https://company.com/attr/department/value/finance',
+  ),
 });
 
 const decision = response.decision;
@@ -720,9 +833,9 @@ Each `GetDecisionMultiResourceRequest` contains:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `entityIdentifier` | `EntityIdentifier` | Yes | The entity requesting access. |
+| `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. |
 | `action` | `Action` | Yes | The action being performed. |
-| `resources` | `[]Resource` | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
+| `resources` | [`[]Resource`](#resource) | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
 
 **Example**
 
@@ -962,28 +1075,37 @@ Identifies the data being accessed. A resource can be specified in two ways:
 | `attributeValues.fqns` | `[]string` | Attribute value FQNs on the resource (1–20). Use this for TDF payloads or any resource identified by attribute values. |
 | `registeredResourceValueFqn` | `string` (URI) | A [registered resource](/components/policy/registered_resources) value FQN stored in platform policy. Alternative to `attributeValues`. |
 
+Use the [Resource helpers](#resource) for concise construction:
+
+<Tabs>
+<TabItem value="go" label="Go">
+
 ```go
-// Go
-&authorizationv2.Resource{
-    EphemeralId: "resource-1",
-    Resource: &authorizationv2.Resource_AttributeValues_{
-        AttributeValues: &authorizationv2.Resource_AttributeValues{
-            Fqns: []string{"https://example.com/attr/classification/value/secret"},
-        },
-    },
-}
+// With helpers
+authorizationv2.ForAttributeValues("https://example.com/attr/classification/value/secret")
+authorizationv2.ForRegisteredResourceValueFqn("https://example.com/registered/value/my-resource")
 ```
 
-```typescript
-// JavaScript
-{
-  ephemeralId: 'resource-1',
-  resource: {
-    case: 'attributeValues',
-    value: { fqns: ['https://example.com/attr/classification/value/secret'] },
-  },
-}
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+// With helpers
+Resources.forAttributeValues("https://example.com/attr/classification/value/secret")
+Resources.forRegisteredResourceValueFqn("https://example.com/registered/value/my-resource")
 ```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// With helpers
+Resources.forAttributeValues('https://example.com/attr/classification/value/secret')
+Resources.forRegisteredResourceValueFqn('https://example.com/registered/value/my-resource')
+```
+
+</TabItem>
+</Tabs>
 
 ### EntityEntitlements
 

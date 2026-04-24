@@ -34,19 +34,16 @@ func main() {
 
 	// Get Decision using v2 API
 	// Convenience constructors live in the authorization/v2 package:
-	// ForClientID, ForEmail, ForUserName, ForToken, WithRequestToken
+	// Entity: ForClientID, ForEmail, ForUserName, ForToken, WithRequestToken
+	// Resource: ForAttributeValues, ForRegisteredResourceValueFqn
 	decisionReq := &authorization.GetDecisionRequest{
 		EntityIdentifier: authorization.ForClientID("opentdf"),
 		Action: &policy.Action{
 			Name: "decrypt",
 		},
-		Resource: &authorization.Resource{
-			Resource: &authorization.Resource_AttributeValues_{
-				AttributeValues: &authorization.Resource_AttributeValues{
-					Fqns: []string{"https://opentdf.io/attr/role/value/developer"},
-				},
-			},
-		},
+		Resource: authorization.ForAttributeValues(
+			"https://opentdf.io/attr/role/value/developer",
+		),
 	}
 
 	decision, err := client.AuthorizationV2.GetDecision(context.Background(), decisionReq)
@@ -141,7 +138,6 @@ import io.opentdf.platform.sdk.*;
 import java.util.concurrent.ExecutionException;
 
 import io.opentdf.platform.authorization.*;
-import io.opentdf.platform.entity.*;
 import io.opentdf.platform.policy.*;
 
 public class GetDecision {
@@ -158,28 +154,13 @@ public class GetDecision {
     
         // Get Decision using v2 API
         GetDecisionRequest request = GetDecisionRequest.newBuilder()
-            .setEntityIdentifier(
-                EntityIdentifier.newBuilder()
-                    .setEntityChain(
-                        EntityChain.newBuilder()
-                            .addEntities(
-                                Entity.newBuilder()
-                                    .setId("entity-1")
-                                    .setClientId("opentdf")
-                            )
-                    )
-            )
+            .setEntityIdentifier(EntityIdentifiers.forClientId("opentdf"))
             .setAction(
                 Action.newBuilder()
                     .setName("decrypt")
             )
-            .setResource(
-                Resource.newBuilder()
-                    .setAttributeValues(
-                        Resource.AttributeValues.newBuilder()
-                            .addFqns("https://opentdf.io/attr/role/value/developer")
-                    )
-            )
+            .setResource(Resources.forAttributeValues(
+                "https://opentdf.io/attr/role/value/developer"))
             .build();
 
         GetDecisionResponse resp = sdk.getServices().authorization().getDecision(request).get();
@@ -202,6 +183,7 @@ public class GetDecision {
 import {
   Decision,
 } from "@opentdf/sdk/platform/authorization/v2/authorization_pb.js";
+import { EntityIdentifiers, Resources } from "@opentdf/sdk";
 import { platformConnect, PlatformClient } from "@opentdf/sdk/platform";
 
 async function main() {
@@ -223,33 +205,11 @@ async function main() {
   // Get Decision using v2 API
   try {
     const response = await platformClient.v2.authorization.getDecision({
-      entityIdentifier: {
-        identifier: {
-          case: "entityChain",
-          value: {
-            entities: [
-              {
-                ephemeralId: "entity-1",
-                entityType: {
-                  case: "clientId",
-                  value: "opentdf",
-                },
-              },
-            ],
-          },
-        },
-      },
-      action: {
-        name: "decrypt",
-      },
-      resource: {
-        resource: {
-          case: "attributeValues",
-          value: {
-            fqns: ["https://opentdf.io/attr/role/value/developer"],
-          },
-        },
-      },
+      entityIdentifier: EntityIdentifiers.forClientId("opentdf"),
+      action: { name: "decrypt" },
+      resource: Resources.forAttributeValues(
+        "https://opentdf.io/attr/role/value/developer",
+      ),
     });
 
     const decision = response.decision;

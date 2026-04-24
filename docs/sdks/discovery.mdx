@@ -39,8 +39,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// All Go snippets below use `client` and `context.Background()`.
-	_, _ = client, context.Background()
+	// All Go snippets below use `client` and `ctx`.
+	ctx := context.Background()
 }
 ```
 
