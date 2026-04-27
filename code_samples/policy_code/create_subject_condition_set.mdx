@@ -56,11 +56,11 @@ conditionset := &subjectmapping.CreateSubjectConditionSetRequest{
 			{
 				ConditionGroups: []*policy.ConditionGroup{
 					{
-						BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+						BooleanOperator: policy.BooleanAnd,
 						Conditions: []*policy.Condition{
 							{
 								SubjectExternalSelectorValue: ".clientId",
-								Operator:                     policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+								Operator:                     policy.OperatorIn,
 								SubjectExternalValues:        []string{"opentdf"},
 							},
 						},
