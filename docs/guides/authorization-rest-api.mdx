@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 How to call the OpenTDF Authorization Service directly over HTTP — without an SDK — for server-side policy decisions in any language.
 :::
 
-The OpenTDF SDKs wrap these APIs for Go, Java, and browser-based JavaScript. If you're building a **server-side integration** in Node.js, Python, Ruby, or another language without an SDK, you can call the Authorization Service REST API directly. The platform's gRPC services are exposed over HTTP via [gRPC-Gateway](https://grpc-ecosystem.github.io/grpc-gateway/), so every endpoint accepts standard JSON `POST` requests.
+The OpenTDF SDKs wrap these APIs for Go, Java, and browser-based JavaScript. If you're building a **server-side integration** in Node.js, Python, Ruby, or another language without an SDK, you can call the Authorization Service directly over HTTP. The platform uses [ConnectRPC](https://connectrpc.com/), which natively supports HTTP/1.1 and HTTP/2, so every endpoint accepts standard JSON `POST` requests without requiring a separate gateway.
 
 This guide covers the full integration pattern: authentication, health checks, authorization decisions, and production best practices. For detailed type definitions and SDK-based examples, see the [Authorization SDK reference](/sdks/authorization). For request/response schemas, see the [Authorization OpenAPI reference](/OpenAPI-clients/authorization/v2).
 
@@ -151,8 +151,80 @@ All authorization endpoints accept `POST` requests with `Content-Type: applicati
 | `/v1/authorization` | v1 (legacy) | Batch decisions (v1 format) | [OpenAPI](/OpenAPI-clients/authorization/v1/authorization-authorization-service-get-decisions) |
 
 :::tip Use v2 endpoints for new integrations
-The v2 API has a cleaner request structure and supports per-resource decisions. The v1 API is still supported but considered legacy.
+The v2 API has a cleaner request structure and supports per-resource decisions. Use `GetDecision` for single checks and `GetDecisionBulk` for batch — both are v2, so you don't need to mix API versions. The v1 API is still supported but considered legacy, and its request shape differs significantly from v2.
 :::
+
+<details>
+<summary>Migrating from v1 to v2</summary>
+
+The v1 and v2 APIs have different request structures. Here's a side-by-side comparison:
+
+**v1 `GetDecisions`** — entities and resources are separate top-level arrays, cross-joined by the platform:
+
+```json
+{
+  "decisionRequests": [{
+    "actions": [{ "standard": "STANDARD_ACTION_DECRYPT" }],
+    "entityChains": [
+      {
+        "id": "ec1",
+        "entities": [{ "emailAddress": "alice@example.com" }]
+      }
+    ],
+    "resourceAttributes": [
+      {
+        "resourceAttributesId": "resource-1",
+        "attributeValueFqns": [
+          "https://example.com/attr/clearance/value/confidential"
+        ]
+      }
+    ]
+  }]
+}
+```
+
+**v2 `GetDecision`** — one entity, one action, one resource per request:
+
+```json
+{
+  "entityIdentifier": {
+    "entityChain": {
+      "entities": [
+        { "ephemeralId": "ec1", "emailAddress": "alice@example.com" }
+      ]
+    }
+  },
+  "action": { "name": "decrypt" },
+  "resource": {
+    "ephemeralId": "resource-1",
+    "attributeValues": {
+      "fqns": [
+        "https://example.com/attr/clearance/value/confidential"
+      ]
+    }
+  }
+}
+```
+
+**Key differences:**
+
+| | v1 | v2 |
+|---|---|---|
+| **Actions** | `actions: [{ standard: "STANDARD_ACTION_DECRYPT" }]` (enum) | `action: { name: "decrypt" }` (string) |
+| **Entities** | `entityChains` (top-level array, cross-joined with resources) | `entityIdentifier.entityChain` (scoped to one request) |
+| **Resources** | `resourceAttributes[].attributeValueFqns` | `resource.attributeValues.fqns` |
+| **Correlation** | `entityChainId` + `resourceAttributesId` in response | `ephemeralResourceId` in response |
+| **Bulk** | Multiple entities/resources in one `DecisionRequest` (cross-product) | Use `GetDecisionBulk` with explicit per-entity requests |
+
+**Migration steps:**
+
+1. Replace `STANDARD_ACTION_*` enums with action name strings (e.g., `"decrypt"`, `"transmit"`)
+2. Move entity identification into `entityIdentifier.entityChain` and add `ephemeralId` to each entity
+3. Move resource FQNs from `resourceAttributes[].attributeValueFqns` to `resource.attributeValues.fqns`
+4. For multi-entity or multi-resource checks, switch from a single v1 `GetDecisions` call to v2 `GetDecisionBulk`
+5. Update response handling: v2 uses `decision.decision` and `decision.ephemeralResourceId` instead of `entityChainId`/`resourceAttributesId`
+
+</details>
 
 ---
 
@@ -721,6 +793,10 @@ Use `token` to let the platform resolve the entity from a JWT. This is a **top-l
 ```
 
 The `ephemeralId` is a correlation ID you assign — it appears in the response so you can match results to requests.
+
+:::warning Validate JWTs at your enforcement layer
+If your application acts as a Policy Enforcement Point (PEP) and receives JWT tokens from clients to pass to the platform via the `token` identifier, **validate the token yourself first**. Check the signature, expiry, issuer, and audience claims before forwarding it to the authorization service. Don't rely solely on the platform to reject invalid tokens — enforcing validation at your PEP layer follows the principle of least privilege and prevents forwarding tampered or expired tokens.
+:::
 
 For full details on all entity identifier options, see [EntityIdentifier](/sdks/authorization#entityidentifier) in the SDK reference.
 
