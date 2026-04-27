@@ -249,7 +249,7 @@ if getAttrResp == nil {
 		&attributes.CreateAttributeRequest{
 			NamespaceId: nsResp.GetNamespace().GetId(),
 			Name:        "department",
-			Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+			Rule:        policy.RuleAnyOf,
 		})
 	if err != nil {
 		log.Fatalf("Failed to create attribute: %v", err)
@@ -360,11 +360,11 @@ scsResp, err := client.SubjectMapping.CreateSubjectConditionSet(context.Backgrou
 				{
 					ConditionGroups: []*policy.ConditionGroup{
 						{
-							BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+							BooleanOperator: policy.BooleanAnd,
 							Conditions: []*policy.Condition{
 								{
 									SubjectExternalSelectorValue: ".clientId",
-									Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+									Operator: policy.OperatorIn,
 									SubjectExternalValues:        []string{"opentdf"},
 								},
 							},
@@ -514,7 +514,7 @@ func main() {
 		&attributes.CreateAttributeRequest{
 			NamespaceId: nsResp.GetNamespace().GetId(),
 			Name:        "department",
-			Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+			Rule:        policy.RuleAnyOf,
 			Values:      []string{"marketing"},
 		})
 	if err != nil {
@@ -583,11 +583,11 @@ func main() {
 					{
 						ConditionGroups: []*policy.ConditionGroup{
 							{
-								BooleanOperator: policy.ConditionBooleanTypeEnum_CONDITION_BOOLEAN_TYPE_ENUM_AND,
+								BooleanOperator: policy.BooleanAnd,
 								Conditions: []*policy.Condition{
 									{
 										SubjectExternalSelectorValue: ".clientId",
-										Operator: policy.SubjectMappingOperatorEnum_SUBJECT_MAPPING_OPERATOR_ENUM_IN,
+										Operator: policy.OperatorIn,
 										SubjectExternalValues:        []string{"opentdf"},
 									},
 								},

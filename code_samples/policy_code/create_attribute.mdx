@@ -55,7 +55,7 @@ resp, err := client.Attributes.CreateAttribute(context.Background(),
 	&attributes.CreateAttributeRequest{
 		NamespaceId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
 		Name:        "classification",
-		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+		Rule:        policy.RuleAnyOf,
 		Values:      []string{"public", "confidential", "secret"},
 	},
 )
