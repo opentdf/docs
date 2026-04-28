@@ -1666,16 +1666,17 @@ log.Printf("Updated SCS ID: %s\n", resp.GetSubjectConditionSet().GetId())
 ```java
 import io.opentdf.platform.policy.*;
 import io.opentdf.platform.policy.subjectmapping.UpdateSubjectConditionSetRequest;
+import static io.opentdf.platform.sdk.PolicyEnums.*;
 
 var condition = Condition.newBuilder()
     .setSubjectExternalSelectorValue(".clientId")
-    .setOperator(SubjectMappingOperatorEnum.SUBJECT_MAPPING_OPERATOR_ENUM_IN)
+    .setOperator(OPERATOR_IN)
     .addSubjectExternalValues("my-service")
     .addSubjectExternalValues("my-other-service")
     .build();
 
 var conditionGroup = ConditionGroup.newBuilder()
-    .setBooleanOperator(ConditionBooleanTypeEnum.CONDITION_BOOLEAN_TYPE_ENUM_AND)
+    .setBooleanOperator(BOOLEAN_AND)
     .addConditions(condition)
     .build();
 
@@ -1698,7 +1699,10 @@ System.out.println("Updated SCS ID: " + resp.getSubjectConditionSet().getId());
 <TabItem value="js" label="JavaScript">
 
 ```typescript
-import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import {
+  ConditionBooleanTypeEnum,
+  SubjectMappingOperatorEnum,
+} from '@opentdf/sdk';
 
 const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
   id: 'a0b1c2d3-0000-0000-0000-000000000099',
@@ -1706,11 +1710,11 @@ const resp = await platform.v1.subjectMapping.updateSubjectConditionSet({
     {
       conditionGroups: [
         {
-          booleanOperator: 'CONDITION_BOOLEAN_TYPE_ENUM_AND',
+          booleanOperator: ConditionBooleanTypeEnum.AND,
           conditions: [
             {
               subjectExternalSelectorValue: '.clientId',
-              operator: 'SUBJECT_MAPPING_OPERATOR_ENUM_IN',
+              operator: SubjectMappingOperatorEnum.IN,
               subjectExternalValues: ['my-service', 'my-other-service'],
             },
           ],

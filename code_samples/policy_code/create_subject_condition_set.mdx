@@ -1,5 +1,6 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import SdkVersion from '@site/src/components/SdkVersion';
 
 <details id="create-subject-condition-set">
 <summary>Create a Subject Condition Set</summary>
@@ -42,6 +43,8 @@ await platform.v1.subjectMapping.createSubjectConditionSet({ ... })
 <Tabs>
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="NEXT" source="opentdf" />
+
 ```go
 import (
 	"github.com/opentdf/platform/protocol/go/policy"
@@ -83,6 +86,8 @@ log.Printf("Created Subject Condition Set with ID: %s\n", resp.GetSubjectConditi
 </TabItem>
 <TabItem value="java" label="Java">
 
+<SdkVersion language="java" version="NEXT" source="opentdf" />
+
 import CreateSubjectConditionSetExample from '@site/code_samples/java/create-subject-condition-set.mdx';
 
 <CreateSubjectConditionSetExample />
@@ -90,12 +95,14 @@ import CreateSubjectConditionSetExample from '@site/code_samples/java/create-sub
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+<SdkVersion language="js" version="NEXT" source="opentdf" />
+
 ```typescript
 import { create } from '@bufbuild/protobuf';
 import {
   ConditionBooleanTypeEnum,
   SubjectMappingOperatorEnum,
-} from '@opentdf/sdk/platform/policy/objects_pb.js';
+} from '@opentdf/sdk';
 import {
   CreateSubjectConditionSetRequestSchema,
 } from '@opentdf/sdk/platform/policy/subjectmapping/subject_mapping_pb.js';
