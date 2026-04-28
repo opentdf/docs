@@ -1,5 +1,6 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import SdkVersion from '@site/src/components/SdkVersion';
 
 <details id="create-attribute">
 <summary>Create an Attribute</summary>
@@ -45,6 +46,8 @@ await platform.v1.attributes.createAttribute({ ... })
 <Tabs>
 <TabItem value="go" label="Go">
 
+<SdkVersion language="go" version="NEXT" source="opentdf" />
+
 ```go
 import (
 	"github.com/opentdf/platform/protocol/go/policy"
@@ -55,7 +58,7 @@ resp, err := client.Attributes.CreateAttribute(context.Background(),
 	&attributes.CreateAttributeRequest{
 		NamespaceId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
 		Name:        "classification",
-		Rule:        policy.AttributeRuleTypeEnum_ATTRIBUTE_RULE_TYPE_ENUM_ANY_OF,
+		Rule:        policy.RuleAnyOf,
 		Values:      []string{"public", "confidential", "secret"},
 	},
 )
@@ -69,6 +72,8 @@ log.Printf("Created attribute: %s (ID: %s)\n",
 </TabItem>
 <TabItem value="java" label="Java">
 
+<SdkVersion language="java" version="NEXT" source="opentdf" />
+
 import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx';
 
 <CreateAttributeExample />
@@ -76,8 +81,10 @@ import CreateAttributeExample from '@site/code_samples/java/create-attribute.mdx
 </TabItem>
 <TabItem value="js" label="JavaScript">
 
+<SdkVersion language="js" version="NEXT" source="opentdf" />
+
 ```typescript
-import { AttributeRuleTypeEnum } from '@opentdf/sdk/platform/policy/objects_pb.js';
+import { AttributeRuleTypeEnum } from '@opentdf/sdk';
 
 const resp = await platform.v1.attributes.createAttribute({
   namespaceId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
