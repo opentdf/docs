@@ -789,7 +789,7 @@ if (decision?.decision === Decision.PERMIT) {
 
 **Returns**
 
-A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/components/policy/obligations) the consuming application must enforce.
+A [ResourceDecision](#resourcedecision) with a [Decision](#decision) (permit/deny) and any required [obligations](/sdks/obligations) the consuming application must enforce.
 
 ---
 
@@ -1116,7 +1116,7 @@ Returned by [GetEntitlements](#getentitlements). One per entity, mapping attribu
 | Field | Type | Description |
 |-------|------|-------------|
 | `ephemeralId` | `string` | Correlates with the entity in the request. |
-| `actionsPerAttributeValueFqn` | `map<string, ActionsList>` | Keys are attribute value FQNs. Values are lists of [actions](/sdks/policy#action) the entity can perform on data carrying that attribute value. |
+| `actionsPerAttributeValueFqn` | [`map<string, ActionsList>`](#actionslist) | Keys are attribute value FQNs. Values are lists of [actions](/sdks/policy#action) the entity can perform on data carrying that attribute value. |
 
 ```go
 for _, e := range resp.GetEntitlements() {
@@ -1133,6 +1133,16 @@ for (const e of resp.entitlements) {
   }
 }
 ```
+
+### ActionsList
+
+A thin wrapper around a list of [`Action`](/sdks/policy#action) used as the value type in `EntityEntitlements.actionsPerAttributeValueFqn`. The wrapper exists because protobuf maps cannot have repeated value types directly.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `actions` | [`[]Action`](/sdks/policy#action) | The actions the entity can perform on data carrying the keyed attribute value. |
+
+In Go, reach the underlying slice with `actionsList.GetActions()`. In Java, `actionsList.getActionsList()`. In JavaScript, the value is surfaced directly as an `Actions` object whose `.actions` field is the array.
 
 ### GetDecisionMultiResourceResponse
 
