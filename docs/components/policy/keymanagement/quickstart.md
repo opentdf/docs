@@ -36,7 +36,7 @@ be helpful for migrations.
 ## Creating a key
 
 :::note
-You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/otdfctl)
+You can also perform all key commands with the [OpenTDF CLI](https://github.com/opentdf/platform/tree/main/otdfctl)
 :::
 
 1. You should already have created and registered a **Key Access Server** with the platform via the [Create Key Access Server Endpoint](https://github.com/opentdf/platform/blob/6203fbaebcdd57b5b3437679465149f8ff395484/service/policy/kasregistry/key_access_server_registry.proto#L59).

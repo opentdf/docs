@@ -129,9 +129,9 @@ install_otdfctl() {
     echo -e "${BLUE}→${NC} Installing otdfctl CLI..."
 
     # Get the latest release version
-    RELEASE_URL="https://api.github.com/repos/opentdf/otdfctl/releases/latest"
+    RELEASE_URL="https://api.github.com/repos/opentdf/platform/releases"
     if [[ "$OPENTDF_VERSION" == "latest" ]]; then
-        VERSION=$(curl -s "$RELEASE_URL" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        VERSION=$(curl -s "$RELEASE_URL" | grep '"tag_name": "otdfctl/' | head -1 | sed -E 's/.*"otdfctl\/([^"]+)".*/\1/')
         if [ -z "$VERSION" ]; then
             echo -e "${RED}✗ Could not determine latest otdfctl version${NC}"
             exit 1
@@ -168,7 +168,7 @@ install_otdfctl() {
     # Remove 'v' prefix if present
     VERSION_NUM="${VERSION#v}"
     ARCHIVE_NAME="otdfctl-${VERSION_NUM}-${PLATFORM}.${EXTENSION}"
-    DOWNLOAD_URL="https://github.com/opentdf/otdfctl/releases/download/${VERSION}/${ARCHIVE_NAME}"
+    DOWNLOAD_URL="https://github.com/opentdf/platform/releases/download/otdfctl/${VERSION}/${ARCHIVE_NAME}"
 
     # Download and extract
     local TEMP_DIR

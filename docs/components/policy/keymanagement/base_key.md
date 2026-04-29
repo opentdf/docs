@@ -15,7 +15,7 @@ You must have admin permission to use any key operations.
 
 When using the [kas-registry proto](https://github.com/opentdf/platform/blob/5221cf41079fc43a3966e17c6f3e0d3cf8a16730/service/policy/kasregistry/key_access_server_registry.proto#L692-L696) and an active connection to the platform you can use the above base key rpcs to set and retrieve the base key.
 
-[otdfctl base key](https://github.com/opentdf/otdfctl/tree/main/docs/man/policy/kas-registry/key/base) provides documentation on how to set / get base keys with the OpenTDF CLI.
+[otdfctl base key](https://github.com/opentdf/platform/tree/main/otdfctl/docs/man/policy/kas-registry/key/base) provides documentation on how to set / get base keys with the OpenTDF CLI.
 
 ## Effects of using base key
 

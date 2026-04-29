@@ -19,7 +19,7 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-const otdfctl = listRemote.createRepo("opentdf", "otdfctl", "main");
+const otdfctl = listRemote.createRepo("opentdf", "platform", "main");
 
 const javaSdkVersion = "0.11.1";
 const gtmId = "GTM-MKRLN6NL"; 
@@ -202,7 +202,7 @@ const config: Config = {
             { label: "Quickstart", to: "/quickstart" },
             { label: "SDKs", to: "/sdks" },
             { label: "Platform", href: "https://github.com/opentdf/platform" },
-            { label: "CLI Reference", href: "https://github.com/opentdf/otdfctl" },
+            { label: "CLI Reference", href: "https://github.com/opentdf/platform/tree/main/otdfctl" },
           ],
         },
         {
@@ -306,7 +306,7 @@ const config: Config = {
         id: "otdfctl",
         outDir: "docs/components/cli",
         sourceBaseUrl: listRemote.buildRepoRawBaseUrl(otdfctl),
-        documents: listRemote.listDocuments(otdfctl, ["docs/man/**/*.md"], []),
+        documents: listRemote.listDocuments(otdfctl, ["otdfctl/docs/man/**/*.md"], []),
         modifyContent: (filename, content) => {
           const baseCommand = "otdfctl";
           let commandTitle, command, subcommand;
@@ -314,7 +314,7 @@ const config: Config = {
           let nextFilename = filename
             .replace(/\.md$/, ".mdx")
             .replace(/\/_index.mdx$/, "/index.mdx")
-            .replace(/^docs\/man\//, "");
+            .replace(/^otdfctl\/docs\/man\//, "");
 
           if (nextFilename === "index.mdx") {
             nextFilename = "index.mdx";
