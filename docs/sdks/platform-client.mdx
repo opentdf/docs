@@ -100,8 +100,9 @@ const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:80
 ```go
 healthy, err := client.IsHealthy(ctx)
 if err != nil {
-    // transport failure or context cancellation
-    log.Printf("platform unreachable: %v", err)
+    // err is sdk.ErrHealthCheckUnsupported (IPC mode), or wraps
+    // sdk.ErrPlatformUnreachable on transport failure or ctx cancellation
+    log.Printf("health check failed: %v", err)
     return
 }
 if !healthy {
