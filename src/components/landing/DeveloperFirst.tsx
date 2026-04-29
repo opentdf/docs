@@ -33,7 +33,7 @@ const sdks = [
     name: "CLI",
     lang: "otdfctl",
     install: null,
-    releaseUrl: "https://github.com/opentdf/otdfctl/releases/latest",
+    releaseUrl: "https://github.com/opentdf/platform/releases?q=otdfctl",
     colorClass: "sdk-cli",
     icon: ">_",
     href: "https://opentdf.io/components/cli",

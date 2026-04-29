@@ -134,7 +134,7 @@ The documentation site pulls content from multiple upstream repositories using D
 
 - `PLATFORM_BRANCH` - Controls which branch to fetch from `opentdf/platform` (default: `main`)
 - `SPEC_BRANCH` - Controls which branch to fetch from `opentdf/spec` (default: `main`)
-- `OTDFCTL_BRANCH` - Controls which branch to fetch from `opentdf/otdfctl` (default: `main`)
+- `OTDFCTL_BRANCH` - Controls which branch to fetch from `opentdf/platform` for CLI docs (default: `main`)
 
 **Examples:**
 
