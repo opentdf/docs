@@ -19,7 +19,7 @@ preprocessOpenApiSpecs().catch(error => {
     process.exit(1);
 });
 
-const otdfctl = listRemote.createRepo("opentdf", "platform", "main");
+const otdfctl = listRemote.createRepo("opentdf", "platform", process.env.OTDFCTL_BRANCH || "main");
 
 const javaSdkVersion = "0.11.1";
 const gtmId = "GTM-MKRLN6NL"; 
