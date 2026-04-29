@@ -6,6 +6,7 @@ title: Overview
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import JsAuthNote from '../../code_samples/js_auth_note.mdx'
+import SdkVersion from '@site/src/components/SdkVersion';
 
 # Overview
 
@@ -89,6 +90,36 @@ const platform = new PlatformClient({ ...auth, platformUrl: 'http://localhost:80
 
 </TabItem>
 </Tabs>
+
+## Health checks
+
+`IsHealthy` reports whether the platform is reachable and serving requests. Use it in readiness probes, smoke tests, or to gate startup logic on platform availability.
+
+<SdkVersion language="go" version="0.18.0" source="opentdf" />
+
+```go
+healthy, err := client.IsHealthy(ctx)
+if err != nil {
+    // transport failure or context cancellation
+    log.Printf("platform unreachable: %v", err)
+    return
+}
+if !healthy {
+    // reachable, but reports NOT_SERVING or UNKNOWN
+    log.Println("platform is not ready")
+}
+```
+
+The check honors the supplied `context.Context` for deadlines and cancellation, and propagates OTEL tracing when `otelconnect.NewInterceptor` is registered via `WithExtraClientOptions`.
+
+### Return values
+
+| Result | Meaning |
+|---|---|
+| `(true, nil)` | Platform reports `SERVING`. |
+| `(false, nil)` | Platform is reachable but reports `NOT_SERVING` or `UNKNOWN`. |
+| `(false, err)` | Transport failure or context cancellation. The error wraps `sdk.ErrPlatformUnreachable`. |
+| `(false, sdk.ErrHealthCheckUnsupported)` | The SDK is configured in IPC mode, which does not support health checks. |
 
 ## Response Objects
 
