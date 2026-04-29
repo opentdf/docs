@@ -1616,7 +1616,7 @@ await platform.v1.subjectMapping.updateSubjectConditionSet({ ... })
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `id` | `string` (UUID) | Yes | The subject condition set ID to update. |
-| `subjectSets` | `[]SubjectSet` | No | Replaces the entire condition tree. Omit to update metadata only. |
+| `subjectSets` | [`[]SubjectSet`](#subjectset) | No | Replaces the entire condition tree. Omit to update metadata only. |
 | `metadata` | [`Metadata`](#metadata) | No | Optional [labels](#metadata). |
 | `metadataUpdateBehavior` | `string` | No | `METADATA_UPDATE_ENUM_REPLACE` or `METADATA_UPDATE_ENUM_EXTEND` (default). |
 
@@ -2345,7 +2345,7 @@ await platform.v1.subjectMapping.matchSubjectMappings({ ... })
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `subjectProperties` | `[]SubjectProperty` | Yes | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
+| `subjectProperties` | [`[]SubjectProperty`](#subjectproperty) | Yes | Key-value pairs from an entity's claims. Each has `externalSelectorValue` (the claim path, e.g., `.clientId`) and `externalValue` (the claim value). |
 
 **Example**
 

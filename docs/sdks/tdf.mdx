@@ -628,7 +628,7 @@ func (s SDK) PrepareBulkDecrypt(ctx context.Context, opts ...BulkDecryptOption) 
 |-------|------|-------------|
 | `Reader` | `io.ReadSeeker` | Source of the encrypted TDF. |
 | `Writer` | `io.Writer` | Destination for the decrypted plaintext. |
-| `TriggeredObligations` | `RequiredObligations` | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
+| `TriggeredObligations` | [`RequiredObligations`](#requiredobligations) | Populated after rewrap with obligation FQNs required by this TDF. See [Obligations in bulk decrypt](#obligations-in-bulk-decrypt). |
 
 **Options**
 
@@ -1423,19 +1423,19 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | Field | Type | Description |
 |-------|------|-------------|
 | `TDFVersion` | `string` | TDF spec version (e.g. `"4.3.0"`). Serialized as `schemaVersion` in the manifest JSON. |
-| `EncryptionInformation` | `EncryptionInformation` | Encryption method, key access objects, and integrity information. |
-| `Payload` | `Payload` | Metadata about the encrypted payload. |
-| `Assertions` | `[]Assertion` | Cryptographically bound or signed statements attached to the TDF. Empty if none were added at encrypt time. |
+| `EncryptionInformation` | [`EncryptionInformation`](#encryptioninformation) | Encryption method, key access objects, and integrity information. |
+| `Payload` | [`Payload`](#manifest-payload) | Metadata about the encrypted payload. |
+| `Assertions` | [`[]Assertion`](#assertion) | Cryptographically bound or signed statements attached to the TDF. Empty if none were added at encrypt time. |
 
-**EncryptionInformation Fields**
+#### EncryptionInformation
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `KeyAccessObjs` | `[]KeyAccess` | One entry per KAS holding a key grant. Split TDFs have multiple entries. |
+| `KeyAccessObjs` | [`[]KeyAccess`](#keyaccess) | One entry per KAS holding a key grant. Split TDFs have multiple entries. |
 | `Method.Algorithm` | `string` | Encryption algorithm (e.g. `"AES-256-GCM"`). |
 | `Policy` | `string` | Base64-encoded policy object. Use [`tdfReader.Policy()`](#policy) to decode. |
 
-**KeyAccess Fields**
+#### KeyAccess
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -1444,7 +1444,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | `SplitID` | `string` | Key split identifier. Entries sharing the same ID share a key segment; different IDs represent independent splits. |
 | `KID` | `string` | Key identifier on the KAS, if set. |
 
-**Payload Fields**
+#### Payload (manifest field) {#manifest-payload}
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -1503,11 +1503,24 @@ for _, a := range manifest.Assertions {
 | Field | Type | Description |
 |-------|------|-------------|
 | `ID` | `string` | Assertion identifier (matches the `AssertionConfig.ID` used at encrypt time). |
-| `Type` | `AssertionType` | `"handling"` or `"other"`. |
-| `Scope` | `Scope` | `"tdo"` or `"payload"`. |
-| `AppliesToState` | `AppliesToState` | `"encrypted"` or `"unencrypted"`. |
-| `Statement` | `Statement` | The assertion content. |
-| `Binding` | `Binding` | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+| `Type` | [`AssertionType`](#assertion-types) | `"handling"` or `"other"`. |
+| `Scope` | [`Scope`](#scopes) | `"tdo"` or `"payload"`. |
+| `AppliesToState` | [`AppliesToState`](#appliestostate) | `"encrypted"` or `"unencrypted"`. |
+| `Statement` | [`Statement`](#statement-type) | The assertion content. |
+| `Binding` | [`Binding`](#binding) | Cryptographic binding — `Method` (`"jws"`) and `Signature` (JWS token). |
+
+---
+
+### Binding
+
+The cryptographic binding attached to a signed [`Assertion`](#assertion).
+
+**Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Method` | `string` | Binding method. Currently `"jws"`. |
+| `Signature` | `string` | The JWS token that binds the assertion to the TDF. |
 
 ---
 
@@ -1542,8 +1555,22 @@ Passed to `WithAssertionVerificationKeys` when loading a TDF. Maps assertion IDs
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `DefaultKey` | `AssertionKey` | Fallback key used when no ID-specific key is found. |
+| `DefaultKey` | [`AssertionKey`](#assertionkey) | Fallback key used when no ID-specific key is found. |
 | `Keys` | `map[string]AssertionKey` | Map of assertion ID to verification key. |
+
+---
+
+### RequiredObligations
+
+Returned by [`Reader.Obligations()`](#obligations) and populated on each `BulkTDF.TriggeredObligations` field after [`PrepareBulkDecrypt`](#bulkdecrypt). Wraps the obligation FQNs the platform requires the consuming application to enforce before granting access to the TDF's payload.
+
+Supported in the Go and JavaScript SDKs.
+
+**Fields**
+
+| Field | Go | JavaScript | Description |
+|-------|-----|------------|-------------|
+| FQNs / fqns | `FQNs []string` | `fqns: string[]` | Obligation value FQNs required for this TDF. Empty when no obligations are triggered. |
 
 ---
 
