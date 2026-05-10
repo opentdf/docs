@@ -448,11 +448,9 @@ components:
         - SORT_DIRECTION_DESC
       description: |-
         Sorting direction shared across list APIs.
-         Notes:
-         - When a sort field is provided, UNSPECIFIED is treated as ASC.
-         - When the 'sort' field is omitted or the chosen sort 'field' is UNSPECIFIED,
-           the endpoint's request message defines the default ordering; see the
-           specific List* request docs.
+         When the 'sort' field is omitted or the chosen sort 'field' is UNSPECIFIED,
+         the endpoint's request message defines the default ordering; see the
+         specific List* request docs.
     policy.SourceType:
       type: string
       title: SourceType
@@ -952,6 +950,10 @@ components:
           items:
             $ref: '#/components/schemas/policy.RequestContext'
           title: context
+        namespace:
+          title: namespace
+          description: The source namespace for this trigger, derived from the attribute value and action.
+          $ref: '#/components/schemas/policy.Namespace'
         metadata:
           title: metadata
           $ref: '#/components/schemas/common.Metadata'
@@ -1101,6 +1103,9 @@ components:
           items:
             $ref: '#/components/schemas/policy.RegisteredResourceValue.ActionAttributeValue'
           title: action_attribute_values
+        fqn:
+          type: string
+          title: fqn
         metadata:
           title: metadata
           description: Common metadata
@@ -1179,6 +1184,10 @@ components:
           description: |-
             the common name for the group of resource mappings, which must be unique
              per namespace
+        fqn:
+          type: string
+          title: fqn
+          description: the fully qualified name of the resource mapping group
         metadata:
           title: metadata
           description: Common metadata
@@ -1705,8 +1714,10 @@ components:
           maxItems: 1
           description: |-
             Optional - CONSTRAINT: max 1 item
-             Default ordering when omitted or when the first entry's field is UNSPECIFIED:
-             created_at DESC.
+             Sort defaults:
+               - direction UNSPECIFIED defaults to DESC for the specified field
+               - field UNSPECIFIED defaults to created_at with the specified direction
+               - both UNSPECIFIED or sort omitted defaults to created_at DESC
       title: ListRegisteredResourcesRequest
       additionalProperties: false
     policy.registeredresources.ListRegisteredResourcesResponse:
