@@ -710,7 +710,7 @@ otdfctl policy subject-condition-sets list
 --action 891cfe85-b381-4f85-9699-5f7dbfe2a9ab
 ```
 
-See the [actions reference](https://github.com/opentdf/otdfctl/blob/main/docs/man/policy/actions/_index.md) for more details.
+See the [actions reference](https://github.com/opentdf/platform/blob/main/otdfctl/docs/man/policy/actions/_index.md) for more details.
 
 ### Error: Token Claim Not Appearing in Entitlements
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'opentdf/otdfctl to update from'
+        description: 'opentdf/platform otdfctl tag to update from'
         required: true
         default: 'main'
   repository_dispatch:
@@ -25,7 +25,7 @@ jobs:
           BUMP_MSG="Updated to"
           COMMIT_HASH=""
           BRANCH="otdfctl-update-$TAG"
-          PR_EXISTS=(gh pr list --state open --base main --head $BRANCH | grep -c $BRANCH)
+          PR_EXISTS=$(gh pr list --state open --base main --head $BRANCH | grep -c $BRANCH)
           # Check if PR exists for branch
           if [ $PR_EXISTS -eq 1 ]; then
             git checkout $BRANCH
@@ -35,16 +35,16 @@ jobs:
           # Remove the current docs/otdfctl directory
           rm -rf docs/otdfctl
           # Add docs from remote
-          git remote add otdfctl https://github.com/opentdf/otdfctl.git
-          git fetch otdfctl
-          git read-tree --prefix "docs/otdfctl" -u "otdfctl/$TAG:docs/man"
-          COMMIT_HASH=(git ls-remote --heads otdfctl "refs/heads/$TAG" |awk '{ print $1}')
+          git remote add platform https://github.com/opentdf/platform.git
+          git fetch platform
+          git read-tree --prefix "docs/otdfctl" -u "platform/$TAG:otdfctl/docs/man"
+          COMMIT_HASH=$(git ls-remote --heads platform "refs/heads/$TAG" | awk '{ print $1}')
           # Rename _index.md to index.md
           find docs/otdfctl -name "_index.md" -exec bash -c 'mv "$1" "${1/_index.md/index.md}"' _ {} \;
           # Add a generated file
           echo "This directory is generated any manual changes will be lost.\n
             date: $(date)
-            source: https://github.com/opentdf/otdfctl/tree/$TAG
+            source: https://github.com/opentdf/platform/tree/$TAG/otdfctl
             event: ${{github.event}}
             actor: ${{github.triggering_actor}}\n" > docs/otdfctl/GENERATED.txt
           # Commit changes
