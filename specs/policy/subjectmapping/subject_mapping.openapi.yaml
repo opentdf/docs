@@ -484,11 +484,9 @@ components:
         - SORT_DIRECTION_DESC
       description: |-
         Sorting direction shared across list APIs.
-         Notes:
-         - When a sort field is provided, UNSPECIFIED is treated as ASC.
-         - When the 'sort' field is omitted or the chosen sort 'field' is UNSPECIFIED,
-           the endpoint's request message defines the default ordering; see the
-           specific List* request docs.
+         When the 'sort' field is omitted or the chosen sort 'field' is UNSPECIFIED,
+         the endpoint's request message defines the default ordering; see the
+         specific List* request docs.
     policy.SourceType:
       type: string
       title: SourceType
@@ -994,6 +992,10 @@ components:
           items:
             $ref: '#/components/schemas/policy.RequestContext'
           title: context
+        namespace:
+          title: namespace
+          description: The source namespace for this trigger, derived from the attribute value and action.
+          $ref: '#/components/schemas/policy.Namespace'
         metadata:
           title: metadata
           $ref: '#/components/schemas/common.Metadata'
@@ -1157,6 +1159,10 @@ components:
           description: |-
             the common name for the group of resource mappings, which must be unique
              per namespace
+        fqn:
+          type: string
+          title: fqn
+          description: the fully qualified name of the resource mapping group
         metadata:
           title: metadata
           description: Common metadata
@@ -1285,7 +1291,6 @@ components:
         authoritative source such as an IDP (Identity Provider) or User Store.
         Examples include such ADFS/LDAP, OKTA, etc. For now, a valid property must
         contain both a selector expression & a resulting value.
-
         The external_selector_value is a specifier to select a value from a flattened
         external representation of an Entity (such as from idP/LDAP), and the
         external_value is the value selected by the external_selector_value on that
@@ -1568,8 +1573,10 @@ components:
           maxItems: 1
           description: |-
             Optional - CONSTRAINT: max 1 item
-             Default ordering when omitted or when the first entry's field is UNSPECIFIED:
-             created_at DESC, then id ASC (tie-breaker).
+             Sort defaults:
+               - direction UNSPECIFIED defaults to DESC for the specified field
+               - field UNSPECIFIED defaults to created_at with the specified direction
+               - both UNSPECIFIED or sort omitted defaults to created_at DESC
       title: ListSubjectConditionSetsRequest
       additionalProperties: false
     policy.subjectmapping.ListSubjectConditionSetsResponse:
@@ -1607,7 +1614,12 @@ components:
             $ref: '#/components/schemas/policy.subjectmapping.SubjectMappingsSort'
           title: sort
           maxItems: 1
-          description: 'Optional - CONSTRAINT: max 1 item'
+          description: |-
+            Optional - CONSTRAINT: max 1 item
+             Sort defaults:
+               - direction UNSPECIFIED defaults to DESC for the specified field
+               - field UNSPECIFIED defaults to created_at with the specified direction
+               - both UNSPECIFIED or sort omitted defaults to created_at DESC
       title: ListSubjectMappingsRequest
       additionalProperties: false
     policy.subjectmapping.ListSubjectMappingsResponse:
