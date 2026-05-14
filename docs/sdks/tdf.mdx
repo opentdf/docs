@@ -600,6 +600,55 @@ A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading th
 
 ---
 
+## WithPolicyFrom
+
+Returns a `TDFOption` that binds the source TDF's policy — its attribute value FQNs — to the new TDF being created. Use this in re-wrap pipelines to preserve the source policy without having to know about the manifest's base64 + JSON encoding.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+<SdkVersion language="go" version="0.21.0" source="opentdf" />
+
+```go
+func WithPolicyFrom(r *Reader) TDFOption
+```
+
+This is a package-level function in the `sdk` package, not a method on the client.
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `r` | Required | An initialized `*sdk.Reader`, typically returned by [`LoadTDF`](#loadtdf). Must have `Init(ctx)` called before being passed here — `Reader.DataAttributes` requires the policy field to be parsed. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+if ok, _ := sdk.IsValidTdf(file); !ok {
+    // pass through unchanged
+}
+reader, _ := s.LoadTDF(file)
+_ = reader.Init(ctx)
+_, _ = s.CreateTDF(out, transformed, sdk.WithPolicyFrom(reader))
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A `TDFOption` that, when applied to a `TDFConfig` via [`CreateTDF`](#createtdf), binds all attribute value FQNs from the source TDF's policy to the new TDF. Returns an error during config application if the source `Reader` is nil or its `DataAttributes` cannot be read.
+
+---
+
 ## BulkDecrypt
 
 Decrypts multiple TDFs in a single operation, batching KAS key rewrap requests to reduce round-trip overhead.
