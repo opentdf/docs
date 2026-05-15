@@ -197,3 +197,4 @@ This project's documentation license has changed from:
 All content committed after February 13, 2026 is licensed under CC BY 4.0. Content created before this date was released under CC BY-SA 4.0.
 
 See the [LICENSE](LICENSE) file for the full legal text.
+
