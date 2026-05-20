@@ -146,6 +146,7 @@ Endpoints:
 3. `GetDecisionBulk`: more performant batch processing of multiple `GetDecisionMultiResource` requests — **limit: 1–200 requests per batch**
   - useful for multiple entities
   - useful for multiple actions
+  - each inner request carries its own `fulfillable_obligation_fqns` (0–50)
 
 ### Request Validation Limits
 
