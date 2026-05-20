@@ -158,7 +158,7 @@ The v2 Authorization API enforces request validation limits via [protovalidate](
 | `GetDecisionBulkRequest.decision_requests` | 1 | 200 | `GetDecisionBulk` |
 
 :::note
-The effective `attribute_values` limit may be fewer than 20 in practice. Policy Enforcement Point (PEP) components (e.g., the tagging service, default attributes) may automatically add attribute value FQNs to a resource before sending the authorization request. Plan for headroom when assigning user-defined attributes.
+The effective `attribute_values` limit may be fewer than 20 in practice. Policy Enforcement Point (PEP) components (e.g., Virtru's tagging service, default attributes) may automatically add attribute value FQNs to a resource before sending the authorization request. Plan for headroom when assigning user-defined attributes.
 :::
 
 See the [v2 authorization proto](https://github.com/opentdf/platform/blob/main/service/authorization/v2/authorization.proto) for the full validation definitions.
