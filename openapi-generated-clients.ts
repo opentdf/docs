@@ -25,11 +25,11 @@ const languageTabs = [
     //   highlight: "javascript",
     //   language: "javascript",
     //   logoClass: "javascript",
-    // },       
+    // },
     {
-        highlight: "bash",
-        language: "curl",
-        logoClass: "curl",
+        highlight: "c",
+        language: "c",
+        logoClass: "c",
     },
     {
         highlight: "csharp",
@@ -37,19 +37,9 @@ const languageTabs = [
         logoClass: "csharp",
     },
     {
-        highlight: "ruby",
-        language: "ruby",
-        logoClass: "ruby",
-    },
-    {
-        highlight: "php",
-        language: "php",
-        logoClass: "php",
-    },
-    {
-        highlight: "powershell",
-        language: "powershell",
-        logoClass: "powershell",
+        highlight: "bash",
+        language: "curl",
+        logoClass: "curl",
     },
     {
         highlight: "dart",
@@ -57,9 +47,9 @@ const languageTabs = [
         logoClass: "dart",
     },
     {
-        highlight: "c",
-        language: "c",
-        logoClass: "c",
+        highlight: "kotlin",
+        language: "kotlin",
+        logoClass: "kotlin",
     },
     {
         highlight: "objective-c",
@@ -72,19 +62,29 @@ const languageTabs = [
         logoClass: "ocaml",
     },
     {
+        highlight: "php",
+        language: "php",
+        logoClass: "php",
+    },
+    {
+        highlight: "powershell",
+        language: "powershell",
+        logoClass: "powershell",
+    },
+    {
+        highlight: "python",
+        language: "python",
+        logoClass: "python",
+    },
+    {
         highlight: "r",
         language: "r",
         logoClass: "r",
     },
     {
-        highlight: "swift",
-        language: "swift",
-        logoClass: "swift",
-    },
-    {
-        highlight: "kotlin",
-        language: "kotlin",
-        logoClass: "kotlin",
+        highlight: "ruby",
+        language: "ruby",
+        logoClass: "ruby",
     },
     {
         highlight: "rust",
@@ -92,9 +92,9 @@ const languageTabs = [
         logoClass: "rust",
     },
     {
-        highlight: "python",
-        language: "python",
-        logoClass: "python",
+        highlight: "swift",
+        language: "swift",
+        logoClass: "swift",
     },
 ];
 
