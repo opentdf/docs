@@ -624,7 +624,7 @@ This is a package-level function in the `sdk` package, not a method on the clien
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `r` | Required | An initialized `*sdk.Reader`, typically returned by [`LoadTDF`](#loadtdf). Must have `Init(ctx)` called before being passed here — `Reader.DataAttributes` requires the policy field to be parsed. |
+| `r` | Required | A `*sdk.Reader` returned by [`LoadTDF`](#loadtdf). `Reader.Init` is not required — [`DataAttributes`](#dataattributes) reads the policy from the manifest, which `LoadTDF` has already populated. |
 
 **Example**
 
@@ -633,11 +633,13 @@ This is a package-level function in the `sdk` package, not a method on the clien
 
 ```go
 if ok, _ := sdk.IsValidTdf(file); !ok {
-    // pass through unchanged
+    return // pass through unchanged
 }
-reader, _ := s.LoadTDF(file)
-_ = reader.Init(ctx)
-_, _ = s.CreateTDF(out, transformed, sdk.WithPolicyFrom(reader))
+reader, err := client.LoadTDF(file)
+if err != nil {
+    return err
+}
+_, err = client.CreateTDF(out, transformed, sdk.WithPolicyFrom(reader))
 ```
 
 </TabItem>
