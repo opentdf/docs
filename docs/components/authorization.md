@@ -32,14 +32,14 @@ Version 2 of Authorization Service introduced the following changes:
 #### Entity Identifier
 
 The entity identifier is a request proto object allowing multiple structures representing an entity to stand in as the entity in an Auth Service request:
-- an Entity Chain (the response from an `entityresolutionservice.v2.CreateEntityChainsFromTokens` call)
+- an Entity Chain (the response from an `entityresolutionservice.v2.CreateEntityChainsFromTokens` call) — **limit: 1–10 entities per chain**
 - a Token (access token JWT)
 - the FQN of a Registered Resource Value (e.g. `https://example.com/reg_res/network/value/private`, or `https://reg_res/network/value/private` _DEPRECATED_)
 
 #### Resource
 
 The resource is a request proto object allowing multiple structures representing a resource to stand in as the resource in an Auth Service Decision request:
-- a list of Attribute Values FQNs
+- a list of Attribute Values FQNs — **limit: 1–20 FQNs per resource**
 - the FQN of a Registered Resource Value (e.g. `https://example.com/reg_res/s3_bucket/value/bucket1`, or `https://reg_res/s3_bucket/value/bucket1` _DEPRECATED_)
 
 ### GetEntitlements
@@ -137,13 +137,34 @@ Endpoints:
   - one Entity Identifier
   - one Action (`name` is required)
   - one Resource
+  - optional `fulfillable_obligation_fqns` (0–50)
 2. `GetDecisionMultiResource`: can this entity take this action on these resources?
   - one Entity Identifier
   - one Action (`name` is required)
-  - multiple Resources
-3. `GetDecisionBulk`: more performant batch processing of multiple `GetDecisionMultiResource` requests
+  - multiple Resources — **limit: 1–1,000 per request**
+  - optional `fulfillable_obligation_fqns` (0–50)
+3. `GetDecisionBulk`: more performant batch processing of multiple `GetDecisionMultiResource` requests — **limit: 1–200 requests per batch**
   - useful for multiple entities
   - useful for multiple actions
+  - each inner request carries its own `fulfillable_obligation_fqns` (0–50)
+
+### Request Validation Limits
+
+The v2 Authorization API enforces request validation limits via [protovalidate](https://github.com/bufbuild/protovalidate) constraints. Requests exceeding these limits are rejected before processing.
+
+| Field | Min | Max | Endpoints |
+|---|---|---|---|
+| `EntityIdentifier.entity_chain.entities` | 1 | 10 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk`, `GetEntitlements` |
+| `Resource.attribute_values.fqns` | 1 | 20 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk` |
+| `fulfillable_obligation_fqns` | 0 | 50 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk` |
+| `GetDecisionMultiResourceRequest.resources` | 1 | 1,000 | `GetDecisionMultiResource`, `GetDecisionBulk` |
+| `GetDecisionBulkRequest.decision_requests` | 1 | 200 | `GetDecisionBulk` |
+
+:::note
+The effective `attribute_values` limit may be fewer than 20 in practice. Policy Enforcement Point (PEP) components (e.g., Virtru's tagging service, default attributes) may automatically add attribute value FQNs to a resource before sending the authorization request. Plan for headroom when assigning user-defined attributes.
+:::
+
+See the [v2 authorization proto](https://github.com/opentdf/platform/blob/main/service/authorization/v2/authorization.proto) for the full validation definitions.
 
 ## v1 (soon to be deprecated)
 
