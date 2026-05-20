@@ -153,12 +153,12 @@ The v2 Authorization API enforces request validation limits via [protovalidate](
 |---|---|---|---|
 | `EntityIdentifier.entity_chain.entities` | 1 | 10 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk`, `GetEntitlements` |
 | `Resource.attribute_values.fqns` | 1 | 20 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk` |
-| `fulfillable_obligation_fqns` | 0 | 50 | `GetDecision`, `GetDecisionMultiResource` |
+| `fulfillable_obligation_fqns` | 0 | 50 | `GetDecision`, `GetDecisionMultiResource`, `GetDecisionBulk` |
 | `GetDecisionMultiResourceRequest.resources` | 1 | 1,000 | `GetDecisionMultiResource`, `GetDecisionBulk` |
 | `GetDecisionBulkRequest.decision_requests` | 1 | 200 | `GetDecisionBulk` |
 
 :::note
-The effective `attribute_values` limit may be fewer than 20 in practice. PEP components (e.g., the tagging service, default attributes) may automatically add attribute value FQNs to a resource before sending the authorization request. Plan for headroom when assigning user-defined attributes.
+The effective `attribute_values` limit may be fewer than 20 in practice. Policy Enforcement Point (PEP) components (e.g., the tagging service, default attributes) may automatically add attribute value FQNs to a resource before sending the authorization request. Plan for headroom when assigning user-defined attributes.
 :::
 
 See the [v2 authorization proto](https://github.com/opentdf/platform/blob/main/service/authorization/v2/authorization.proto) for the full validation definitions.
