@@ -9,6 +9,7 @@ import EncryptOptions from '../../code_samples/tdf/encrypt_options.mdx'
 import DecryptOptions from '../../code_samples/tdf/decrypt_options.mdx'
 import AssertionExamples from '../../code_samples/tdf/assertion_examples.mdx'
 import JsAuthNote from '../../code_samples/js_auth_note.mdx'
+import SdkVersion from '@site/src/components/SdkVersion'
 
 # TDF
 
@@ -597,6 +598,57 @@ try (var channel = FileChannel.open(tdfPath, StandardOpenOption.READ)) {
 **Errors**
 
 A non-nil error (Go) or `IOException` (Java) indicates an I/O failure reading the stream — not that the TDF is invalid. An invalid TDF returns `false` with no error.
+
+---
+
+## WithPolicyFrom
+
+Returns a `TDFOption` that binds the source TDF's policy — its attribute value FQNs — to the new TDF being created. Use this in re-wrap pipelines to preserve the source policy without having to know about the manifest's base64 + JSON encoding.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+<SdkVersion language="go" version="0.21.0" source="opentdf" />
+
+```go
+func WithPolicyFrom(r *Reader) TDFOption
+```
+
+This is a package-level function in the `sdk` package, not a method on the client.
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `r` | Required | A `*sdk.Reader` returned by [`LoadTDF`](#loadtdf). `Reader.Init` is not required — [`DataAttributes`](#dataattributes) reads the policy from the manifest, which `LoadTDF` has already populated. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+if ok, _ := sdk.IsValidTdf(file); !ok {
+    return // pass through unchanged
+}
+reader, err := client.LoadTDF(file)
+if err != nil {
+    return err
+}
+_, err = client.CreateTDF(out, transformed, sdk.WithPolicyFrom(reader))
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A `TDFOption` that, when applied to a `TDFConfig` via [`CreateTDF`](#createtdf), binds all attribute value FQNs from the source TDF's policy to the new TDF. Returns an error during config application if the source `Reader` is nil or its `DataAttributes` cannot be read.
 
 ---
 
