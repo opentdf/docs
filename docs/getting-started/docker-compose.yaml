@@ -187,7 +187,7 @@ services:
 
   # Provision Keycloak with initial configuration
   platform-provision-keycloak:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["provision", "keycloak", "-e", "https://keycloak.opentdf.local:9443/auth", "-f", "/configs/keycloak_data.yaml"]
     depends_on:
       keycloak:
@@ -227,7 +227,7 @@ services:
 
   # Add sample attributes and metadata  
   platform-provision-fixtures:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["provision", "fixtures", "--config-file", "/configs/opentdf.yaml"]
     working_dir: /configs
     depends_on:
@@ -274,7 +274,7 @@ services:
 
   # Main OpenTDF Platform server
   platform:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["start", "--config-file", "/configs/opentdf.yaml"]
     depends_on:
       platform-provision-fixtures:
@@ -336,7 +336,7 @@ services:
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/service/v0.15.0/opentdf-example.yaml']
+    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/a29f1087/opentdf-example.yaml']
     restart: "no"
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
