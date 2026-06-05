@@ -336,7 +336,7 @@ services:
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-example.yaml']
+    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-dev.yaml']
     restart: "no"
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
