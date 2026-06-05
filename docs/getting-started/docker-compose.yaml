@@ -187,7 +187,7 @@ services:
 
   # Provision Keycloak with initial configuration
   platform-provision-keycloak:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["provision", "keycloak", "-e", "https://keycloak.opentdf.local:9443/auth", "-f", "/configs/keycloak_data.yaml"]
     depends_on:
       keycloak:
@@ -199,8 +199,6 @@ services:
       download-keycloak-data:
         condition: service_completed_successfully
       generate-keys:
-        condition: service_completed_successfully
-      generate-pqc-keys:
         condition: service_completed_successfully
     volumes:
       - configs:/configs:ro
@@ -229,7 +227,7 @@ services:
 
   # Add sample attributes and metadata  
   platform-provision-fixtures:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["provision", "fixtures", "--config-file", "/configs/opentdf.yaml"]
     working_dir: /configs
     depends_on:
@@ -240,8 +238,6 @@ services:
       prepare-fixtures:
         condition: service_completed_successfully
       generate-keys:
-        condition: service_completed_successfully
-      generate-pqc-keys:
         condition: service_completed_successfully
     volumes:
       - configs:/configs:ro
@@ -278,7 +274,7 @@ services:
 
   # Main OpenTDF Platform server
   platform:
-    image: registry.opentdf.io/platform:nightly
+    image: registry.opentdf.io/platform:nightly-a29f108
     command: ["start", "--config-file", "/configs/opentdf.yaml"]
     depends_on:
       platform-provision-fixtures:
@@ -288,8 +284,6 @@ services:
       opentdfdb:
         condition: service_healthy
       generate-keys:
-        condition: service_completed_successfully
-      generate-pqc-keys:
         condition: service_completed_successfully
       prepare-ca-certs:
         condition: service_completed_successfully
@@ -326,8 +320,6 @@ services:
     depends_on:
       generate-keys:
         condition: service_completed_successfully
-      generate-pqc-keys:
-        condition: service_completed_successfully
     command:
       - sh
       - -c
@@ -344,7 +336,7 @@ services:
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-example.yaml']
+    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/a29f1087/opentdf-example.yaml']
     restart: "no"
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
@@ -526,39 +518,6 @@ services:
         echo "Keys generated successfully"
     environment:
       JAVA_OPTS_APPEND: "${JAVA_OPTS_APPEND:-}"
-    restart: "no"
-
-  # Generate hybrid post-quantum KAS keys (X-Wing, P256+ML-KEM-768, P384+ML-KEM-1024).
-  # Uses a Go image to build and run the keygen from the platform source.
-  generate-pqc-keys:
-    image: golang:1.24-alpine
-    volumes:
-      - keys:/keys
-    depends_on:
-      generate-keys:
-        condition: service_completed_successfully
-    entrypoint: /bin/sh
-    command:
-      - -c
-      - |
-        apk add --no-cache git
-        WORKDIR=$(mktemp -d)
-        cd "$$WORKDIR"
-        git init
-        git remote add origin https://github.com/opentdf/platform.git
-        git config core.sparseCheckout true
-        echo "go.work" >> .git/info/sparse-checkout
-        echo "lib/" >> .git/info/sparse-checkout
-        echo "service/cmd/keygen/" >> .git/info/sparse-checkout
-        echo "service/go.mod" >> .git/info/sparse-checkout
-        echo "service/go.sum" >> .git/info/sparse-checkout
-        echo "protocol/" >> .git/info/sparse-checkout
-        echo "sdk/" >> .git/info/sparse-checkout
-        git pull --depth 1 origin main
-        cd service
-        go run ./cmd/keygen -output /keys
-        echo "PQC keys generated successfully"
-        rm -rf "$$WORKDIR"
     restart: "no"
 
 volumes:
