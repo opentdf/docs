@@ -212,6 +212,16 @@ let openApiSpecsArray: ApiSpecDefinition[] = [
         },
     },
     {
+        id: "Policy Dynamic Value Mapping",
+        specPath: path.join(specsDir, 'policy/dynamicvaluemapping/dynamic_value_mapping.openapi.yaml'),
+        outputDir: `${OUTPUT_PREFIX}/policy/dynamicvaluemapping`,
+        url: 'https://raw.githubusercontent.com/opentdf/platform/refs/heads/main/docs/openapi/policy/dynamicvaluemapping/dynamic_value_mapping.openapi.yaml',
+        sidebarOptions: {
+            categoryLinkSource: "info",
+            groupPathsBy: "tagGroup",
+        },
+    },
+    {
         id: "Policy Registered Resources",
         specPath: path.join(specsDir, 'policy/registeredresources/registered_resources.openapi.yaml'),
         outputDir: `${OUTPUT_PREFIX}/policy/registeredresources`,
