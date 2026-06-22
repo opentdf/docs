@@ -18,7 +18,7 @@ Bob is a system administrator in the US Department of Defense (DoD). Bob defines
 
 ## Resource Mapping Groups
 
-Resource Mapping Groups organize multiple Resource Mappings into logical collections under a [Namespace](./attributes#namespaces). Groups allow you to manage sets of related mappings together, which is useful when resources share common access controls or need to be managed as a unit.
+Resource Mapping Groups organize multiple Resource Mappings into logical collections under a [Namespace](./attributes.md#namespaces). Groups allow you to manage sets of related mappings together, which is useful when resources share common access controls or need to be managed as a unit.
 
 A Resource Mapping Group contains:
 
@@ -30,13 +30,13 @@ A Resource Mapping Group contains:
 
 Each Resource Mapping Group has a unique FQN following this pattern:
 
-```
+```text
 https://<namespace>/resm/<group-name>
 ```
 
 For example, a group named `ntk` under the namespace `example.org` would have the FQN:
 
-```
+```text
 https://example.org/resm/ntk
 ```
 
