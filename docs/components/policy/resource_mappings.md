@@ -12,9 +12,9 @@ The primary consumer of a Resource Mapping is a Policy Decision Point (PDP), whi
 
 ## Examples
 
-Alice is a system administrator. She defines an Attribute definition called color with values like red, green, blue, purple, etc. For the Attribute Value `https://demo.com/attr/color/value/purple`, she would define a Resource Mapping for processing data that may involve terms like `indigo`, `lilac`, `plum`, or `lavender`.
+Alex is a system administrator. They define an Attribute definition called color with values like red, green, blue, purple, etc. For the Attribute Value `https://demo.com/attr/color/value/purple`, they would define a Resource Mapping for processing data that may involve terms like `indigo`, `lilac`, `plum`, or `lavender`.
 
-Bob is a system administrator in the US Department of Defense (DoD). Bob defines a hierarchical attribute called classification with values of `topsecret`, `secret`, `confidential`, and `unclassified`. He needs to create a resource mapping that defines a normalization of the various short forms and acronyms that map to each of these classification levels. For the `topsecret` attribute value, he might include terms like `ts`, `top secret`, and `top-secret`. Whereas for unclassified he might include `u`, `uc`, or other variations.
+Beth is a system administrator in the US Department of Defense (DoD). Beth defines a hierarchical attribute called classification with values of `topsecret`, `secret`, `confidential`, and `unclassified`. She needs to create a resource mapping that defines a normalization of the various short forms and acronyms that map to each of these classification levels. For the `topsecret` attribute value, she might include terms like `ts`, `top secret`, and `top-secret`. Whereas for unclassified she might include `u`, `uc`, or other variations.
 
 ## Resource Mapping Groups
 
@@ -48,10 +48,10 @@ The `otdfctl` CLI does not currently display the FQN when listing or getting Res
 
 ### Creating a Group and Assigning Mappings
 
-Groups are created under a namespace, and individual Resource Mappings can be assigned to a group at creation or update time. Building on Bob's classification example from above:
+Groups are created under a namespace, and individual Resource Mappings can be assigned to a group at creation or update time. Building on Beth's classification example from above:
 
 ```bash
-# Create a resource mapping group for classification terms under Bob's namespace
+# Create a resource mapping group for classification terms under Beth's namespace
 otdfctl policy resource-mapping-groups create \
   --namespace-id <bobs-namespace-id> \
   --name classification
