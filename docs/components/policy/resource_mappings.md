@@ -48,20 +48,22 @@ The `otdfctl` CLI does not currently display the FQN when listing or getting Res
 
 ### Creating a Group and Assigning Mappings
 
-Groups are created under a namespace, and individual Resource Mappings can be assigned to a group at creation or update time:
+Groups are created under a namespace, and individual Resource Mappings can be assigned to a group at creation or update time. Building on Bob's classification example from above:
 
 ```bash
-# Create a resource mapping group
+# Create a resource mapping group for classification terms under Bob's namespace
 otdfctl policy resource-mapping-groups create \
-  --namespace-id <namespace-id> \
-  --name my-group
+  --namespace-id <bobs-namespace-id> \
+  --name classification
 
-# Create a resource mapping assigned to the group
+# Create a resource mapping for "topsecret" terms, assigned to the group
 otdfctl policy resource-mappings create \
-  --attribute-value-id <value-id> \
-  --terms "term1,term2,term3" \
-  --group-id <group-id>
+  --attribute-value-id <topsecret-value-id> \
+  --terms "ts,top secret,top-secret" \
+  --group-id <classification-group-id>
 ```
+
+This group's FQN would be `https://<bobs-namespace>/resm/classification`, and it can be referenced by that FQN to resolve all classification term mappings from the database.
 
 ### Using Groups as Synonym Dictionaries
 
