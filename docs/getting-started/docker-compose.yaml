@@ -344,7 +344,7 @@ services:
     depends_on:
       init-volumes:
         condition: service_completed_successfully
-    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/service/v0.16.0/opentdf-example.yaml']
+    command: ['wget', '-O', '/configs/opentdf.yaml', 'https://raw.githubusercontent.com/opentdf/platform/main/opentdf-example.yaml']
     restart: "no"
 
   # Patch platform configuration to use keycloak.opentdf.local:9443
@@ -554,7 +554,7 @@ services:
         echo "service/go.sum" >> .git/info/sparse-checkout
         echo "protocol/" >> .git/info/sparse-checkout
         echo "sdk/" >> .git/info/sparse-checkout
-        git pull --depth 1 -q origin service/v0.16.0
+        git pull --depth 1 -q origin main
         cd service
         GOWORK=off go run ./cmd/keygen -output /keys
         echo "PQC keys generated successfully"
