@@ -112,7 +112,7 @@ def get_client_token(oidc_endpoint: str, client_id: str, client_secret: str):
 </Tabs>
 
 :::warning Audience configuration
-Your client credentials token must include an `audience` claim that matches your platform's URL. If the audience doesn't match, the platform will reject the token. Configure this in your IdP client settings — in Keycloak, set the client's audience mapper to include the platform URL.
+Your client credentials token must include an `aud` claim that matches your platform's URL. If the audience doesn't match, the platform will reject the token. Configure this in your IdP client settings — in Keycloak, set the client's audience mapper to include the platform URL.
 :::
 
 **Token caching:** The `expires_in` field tells you how long the token is valid (in seconds). Cache the token and refresh it before expiry — subtracting a 30-second buffer avoids race conditions on expiry boundaries.

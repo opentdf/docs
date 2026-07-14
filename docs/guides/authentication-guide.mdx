@@ -154,7 +154,7 @@ The platform does not prescribe a specific deployment strategy. This checklist c
 - [ ] **Enable DPoP** — Sender-constrained tokens protect against token theft (see [DPoP docs](/sdks/authentication#dpop-sender-constrained-tokens))
 - [ ] **Set appropriate token lifetimes** — Short-lived access tokens with refresh tokens where applicable
 - [ ] **Use a production-grade IdP** — Configure Keycloak (or your chosen IdP) for high availability, backups, and monitoring
-- [ ] **Configure CORS** — Your application's origin must be registered as an allowed origin in both the IdP and the platform
+- [ ] **Configure CORS (browser-based apps)** — Your application's origin must be registered as an allowed origin in both the IdP and the platform
 
 ## Common Pitfalls
 
