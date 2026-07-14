@@ -6,12 +6,12 @@ sidebar_position: 5
 # Authentication Decision Guide
 
 :::info What you'll learn
-How to choose the right authentication method for your OpenTDF integration, based on your environment and use case.
+How to choose the right authentication method for your integration, based on your environment and use case.
 :::
 
-## How Authentication Works in OpenTDF
+## How Authentication Works
 
-The OpenTDF platform is a **resource server** — it does not manage user identities or issue tokens. Instead, you bring your own OIDC-compatible identity provider (IdP), such as [Keycloak](https://www.keycloak.org/) (the reference implementation), and configure the platform to trust it.
+The platform is a **resource server** — it does not manage user identities or issue tokens. Instead, you bring your own OIDC-compatible identity provider (IdP), such as [Keycloak](https://www.keycloak.org/) (the reference implementation), and configure the platform to trust it.
 
 The authentication flow looks like this:
 
@@ -19,7 +19,7 @@ The authentication flow looks like this:
 sequenceDiagram
     participant App as Your Application
     participant IdP as Identity Provider
-    participant Platform as OpenTDF Platform
+    participant Platform as Platform
 
     App->>IdP: Authenticate (credentials, token, cert)
     IdP-->>App: Access token (+ optional DPoP proof)
@@ -107,7 +107,7 @@ See [SDK code examples](/sdks/authentication#certificate-exchange-mtls) for Go a
 
 ### CLI Authentication
 
-For interactive CLI usage, `otdfctl` handles authentication for you:
+For interactive command-line use, a platform CLI can handle the OIDC login flow for you. The OpenTDF CLI (`otdfctl`):
 
 ```bash
 # Interactive login (opens browser)
@@ -144,7 +144,7 @@ These defaults are for development only. Do not use them in production.
 ### Production Checklist
 
 :::note
-OpenTDF does not prescribe a specific deployment strategy. This checklist covers authentication-related concerns — your infrastructure, scaling, and orchestration choices are up to you.
+The platform does not prescribe a specific deployment strategy. This checklist covers authentication-related concerns — your infrastructure, scaling, and orchestration choices are up to you.
 :::
 
 - [ ] **Enable TLS** — All connections to the platform and IdP must use HTTPS
@@ -154,7 +154,7 @@ OpenTDF does not prescribe a specific deployment strategy. This checklist covers
 - [ ] **Enable DPoP** — Sender-constrained tokens protect against token theft (see [DPoP docs](/sdks/authentication#dpop-sender-constrained-tokens))
 - [ ] **Set appropriate token lifetimes** — Short-lived access tokens with refresh tokens where applicable
 - [ ] **Use a production-grade IdP** — Configure Keycloak (or your chosen IdP) for high availability, backups, and monitoring
-- [ ] **Configure CORS** — Your application's origin must be registered as an allowed origin in both the IdP and the OpenTDF platform
+- [ ] **Configure CORS** — Your application's origin must be registered as an allowed origin in both the IdP and the platform
 
 ## Common Pitfalls
 
@@ -163,7 +163,7 @@ OpenTDF does not prescribe a specific deployment strategy. This checklist covers
 - **Check your IdP URL.** The platform discovers the IdP via its well-known OIDC endpoint. Verify the `oidcOrigin` (JS), token endpoint (Go), or platform endpoint (Java) is correct.
 - **Verify the client exists.** Ensure the client ID is registered in your IdP and the secret matches.
 - **Check token audience.** The platform rejects tokens whose `aud` claim doesn't match the expected audience. Decode your token (e.g., at [jwt.io](https://jwt.io)) and verify the `aud` field matches what's configured in your platform's YAML config under the auth section.
-- **Check CORS.** For browser-based apps, your application's origin must be allowed in both the IdP and OpenTDF platform configuration. CORS errors often appear as opaque network failures rather than clear 401 responses.
+- **Check CORS.** For browser-based apps, your application's origin must be allowed in both the IdP and platform configuration. CORS errors often appear as opaque network failures rather than clear 401 responses.
 
 ### "My token expired and I'm getting errors"
 
