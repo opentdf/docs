@@ -9,10 +9,10 @@ import TabItem from '@theme/TabItem';
 # Authorization REST API Guide
 
 :::info What you'll learn
-How to call the OpenTDF Authorization Service directly over HTTP — without an SDK — for server-side policy decisions in any language.
+How to call the Authorization Service directly over HTTP — without an SDK — for server-side policy decisions in any language.
 :::
 
-The OpenTDF SDKs wrap these APIs for Go, Java, and browser-based JavaScript. If you're building a **server-side integration** in Node.js, Python, Ruby, or another language without an SDK, you can call the Authorization Service directly over HTTP. The platform uses [ConnectRPC](https://connectrpc.com/), which natively supports HTTP/1.1 and HTTP/2, so every endpoint accepts standard JSON `POST` requests without requiring a separate gateway.
+The platform SDKs wrap these APIs for Go, Java, and browser-based JavaScript. If you're building a **server-side integration** in Node.js, Python, Ruby, or another language without an SDK, you can call the Authorization Service directly over HTTP. The platform uses [ConnectRPC](https://connectrpc.com/), which natively supports HTTP/1.1 and HTTP/2, so every endpoint accepts standard JSON `POST` requests without requiring a separate gateway.
 
 This guide covers the full integration pattern: authentication, health checks, authorization decisions, and production best practices. For detailed type definitions and SDK-based examples, see the [Authorization SDK reference](/sdks/authorization). For request/response schemas, see the [Authorization OpenAPI reference](/OpenAPI-clients/authorization/v2).
 
@@ -22,7 +22,7 @@ This guide covers the full integration pattern: authentication, health checks, a
 sequenceDiagram
     participant App as Your Application
     participant IdP as Identity Provider (Keycloak)
-    participant Platform as OpenTDF Platform
+    participant Platform as Platform
 
     App->>IdP: Client credentials grant
     IdP-->>App: Access token
@@ -112,7 +112,7 @@ def get_client_token(oidc_endpoint: str, client_id: str, client_secret: str):
 </Tabs>
 
 :::warning Audience configuration
-Your client credentials token must include an `audience` claim that matches your OpenTDF platform's URL. If the audience doesn't match, the platform will reject the token. Configure this in your IdP client settings — in Keycloak, set the client's audience mapper to include the platform URL.
+Your client credentials token must include an `aud` claim that matches your platform's URL. If the audience doesn't match, the platform will reject the token. Configure this in your IdP client settings — in Keycloak, set the client's audience mapper to include the platform URL.
 :::
 
 **Token caching:** The `expires_in` field tells you how long the token is valid (in seconds). Cache the token and refresh it before expiry — subtracting a 30-second buffer avoids race conditions on expiry boundaries.
