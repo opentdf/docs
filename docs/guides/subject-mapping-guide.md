@@ -6,7 +6,7 @@ sidebar_position: 1
 # Subject Mapping Guide
 
 :::info What You'll Learn
-This guide explains how OpenTDF connects user identities from your Identity Provider (IdP) to attribute-based access control. You'll understand:
+This guide explains how the platform connects user identities from your Identity Provider (IdP) to attribute-based access control. You'll understand:
 - **Why** Subject Mappings exist (vs. direct IdP attribute mapping)
 - **How** authentication flows through to authorization decisions
 - **How** to scale Subject Mappings from exact-match to pattern-based conditions
@@ -17,7 +17,7 @@ This guide explains how OpenTDF connects user identities from your Identity Prov
 
 ### How It Actually Works
 
-OpenTDF uses a three-layer architecture:
+The platform uses a three-layer architecture:
 
 ```
 1. IdP Attributes       →  User has role=admin, department=finance
@@ -26,7 +26,7 @@ OpenTDF uses a three-layer architecture:
 2. Subject Mappings     →  IF role=admin THEN grant clearance/top_secret
                           (Entitlement Rules)
 
-3. OpenTDF Attributes   →  Document requires clearance/top_secret
+3. Platform Attributes  →  Document requires clearance/top_secret
                           (Resource Protection)
 ```
 
@@ -41,7 +41,7 @@ OpenTDF uses a three-layer architecture:
 sequenceDiagram
     participant User
     participant IdP as Identity Provider
-    box OpenTDF Services
+    box Platform Services
         participant KAS as Key Access Server
         participant Auth as Authorization Service
         participant ERS as Entity Resolution Service
@@ -369,7 +369,7 @@ Creating a separate Subject Mapping for every individual user is a **performance
 Instead of thinking "grant Alice access", think "grant anyone in the finance team access."
 :::
 
-All attribute values in OpenTDF must be explicitly created before they can be used — there is no "freeform" or "dynamic" attribute value type. Each `attribute_value_id` in a Subject Mapping must reference an existing, named value. The flexibility comes from how Subject Condition Sets match entity claims.
+All attribute values in the platform must be explicitly created before they can be used — there is no "freeform" or "dynamic" attribute value type. Each `attribute_value_id` in a Subject Mapping must reference an existing, named value. The flexibility comes from how Subject Condition Sets match entity claims.
 
 ### Anti-Pattern: One Mapping Per User
 
@@ -771,7 +771,7 @@ Use `.groups[]` (not `.groups`) to match each element:
 
 **4. Enable debug logging:**
 
-Contact your OpenTDF administrator to enable debug logging for Subject Mapping evaluation.
+Contact your platform administrator to enable debug logging for Subject Mapping evaluation.
 
 ### Error: User Has Entitlement But Still Gets DENY
 
@@ -848,7 +848,7 @@ otdfctl policy subject-mappings update \
 
 When Subject Mappings aren't working:
 
-- [ ] Verify OpenTDF platform is running and accessible
+- [ ] Verify the platform is running and accessible
 - [ ] Confirm user is authenticated (valid JWT token)
 - [ ] Check token contains expected claims (decode JWT)
 - [ ] Verify Subject Condition Set exists (`list` command)
@@ -968,9 +968,9 @@ The exact claim key for the client ID varies by IdP and ERS configuration — us
 
 ## FAQ
 
-**Q: Do I need to add roles in my IdP that match OpenTDF attributes?**
+**Q: Do I need to add roles in my IdP that match platform attributes?**
 
-**A:** No. IdP roles/claims describe WHO the user is. Subject Mappings convert those claims into OpenTDF entitlements (WHAT they can access). They are separate concerns.
+**A:** No. IdP roles/claims describe WHO the user is. Subject Mappings convert those claims into platform entitlements (WHAT they can access). They are separate concerns.
 
 **Q: What's the difference between IN and IN_CONTAINS?**
 
