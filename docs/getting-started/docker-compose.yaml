@@ -97,7 +97,7 @@ services:
     - "-Djavax.net.ssl.trustStore=/keys/ca.jks"
     - "--spi-truststore-file-hostname-verification-policy=ANY"
     environment:
-      KC_PROXY: edge
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_RELATIVE_PATH: /auth
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
