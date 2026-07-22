@@ -84,7 +84,7 @@ services:
   keycloak:
     volumes:
     - keys:/keys:ro
-    image: keycloak/keycloak:25.0
+    image: ghcr.io/opentdf/keycloak-standard:26.4.0
     restart: always
     depends_on:
       fix-keys-permissions:
@@ -106,10 +106,9 @@ services:
       KC_HTTP_PORT: "8888"
       KC_HTTPS_PORT: "8443"
       KC_HTTP_MANAGEMENT_PORT: "9001"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: changeme
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: changeme
       #KC_HOSTNAME_URL: http://localhost:8888/auth
-      KC_FEATURES: "preview,token-exchange"
       KC_HEALTH_ENABLED: "true"
       KC_HTTPS_KEY_STORE_PASSWORD: "password"
       KC_HTTPS_KEY_STORE_FILE: "/keys/ca.jks"
@@ -569,4 +568,3 @@ volumes:
   caddy_data:
   platform_certs:
     name: opentdf_platform_certs
-
