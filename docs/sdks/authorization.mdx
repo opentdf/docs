@@ -1210,10 +1210,7 @@ func authorizationMiddleware(next http.Handler, client *sdk.SDK) http.Handler {
 <TabItem value="go" label="Go">
 
 ```go
-import (
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
-)
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
 
 decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
 
