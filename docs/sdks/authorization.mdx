@@ -602,8 +602,9 @@ await platform.v2.authorization.getDecision({ ... })
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
-| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed (e.g., `decrypt`, `read`). |
+| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed (e.g., `decrypt`, `read`). Use `ForAction(...)` (Go) to construct one without importing the `policy` package. |
 | `resource` | [`Resource`](#resource) | Yes | The resource being accessed. Use [helpers](#resource) like `ForAttributeValues(...)` (Go) or `Resources.forAttributeValues(...)` (Java/JS). |
+| `fulfillableObligationFqns` | `[]string` | No | Obligation value FQNs the caller (PEP) is able to enforce, e.g. `https://<namespace>/obl/<definition>/value/<value>`. The service only returns `DECISION_PERMIT` when every obligation it would require is present in this list; if it would require an obligation you have not declared, it denies. Empty means the caller declares no obligation support. See [obligations](/components/policy/obligations). |
 
 **Example**
 
@@ -613,14 +614,11 @@ await platform.v2.authorization.getDecision({ ... })
 ```go
 import (
     authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
 )
 
 decisionReq := &authorizationv2.GetDecisionRequest{
     EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
-    Action: &policy.Action{
-        Name: "decrypt",
-    },
+    Action: authorizationv2.ForAction("decrypt"),
     Resource: authorizationv2.ForAttributeValues(
         "https://company.com/attr/clearance/value/confidential",
         "https://company.com/attr/department/value/finance",
@@ -651,12 +649,11 @@ Using a JWT token instead of email:
 ```go
 import (
     authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
 )
 
 decisionReq := &authorizationv2.GetDecisionRequest{
     EntityIdentifier: authorizationv2.ForToken(jwtToken),
-    Action: &policy.Action{Name: "decrypt"},
+    Action: authorizationv2.ForAction("decrypt"),
     Resource: authorizationv2.ForAttributeValues(
         "https://company.com/attr/clearance/value/public",
     ),
@@ -836,8 +833,9 @@ Each `GetDecisionMultiResourceRequest` contains:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. |
-| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed. |
+| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed. Use `ForAction(...)` (Go) to construct one without importing the `policy` package. |
 | `resources` | [`[]Resource`](#resource) | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
+| `fulfillableObligationFqns` | `[]string` | No | Obligation value FQNs the caller (PEP) is able to enforce, applied to every resource in the request. Same semantics as on [GetDecision](#getdecision). |
 
 **Example**
 
@@ -847,14 +845,13 @@ Each `GetDecisionMultiResourceRequest` contains:
 ```go
 import (
     authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
 )
 
 bulkReq := &authorizationv2.GetDecisionBulkRequest{
     DecisionRequests: []*authorizationv2.GetDecisionMultiResourceRequest{
         {
             EntityIdentifier: authorizationv2.ForEmail("user@company.com"),
-            Action: &policy.Action{Name: "decrypt"},
+            Action: authorizationv2.ForAction("decrypt"),
             Resources: []*authorizationv2.Resource{
                 {
                     EphemeralId: "resource-1",
@@ -1067,6 +1064,10 @@ The result for a single resource in a decision response.
 | `decision` | [`Decision`](#decision) | Permit or deny. |
 | `requiredObligations` | `[]string` | Obligation value FQNs the PEP must fulfill (e.g., `https://example.com/obl/drm/value/watermarking`). Empty if none required. |
 
+:::note
+`requiredObligations` is the response side of the obligations handshake. Declare which obligations your PEP can enforce up front via the request's [`fulfillableObligationFqns`](#getdecision) field — the service returns `DECISION_PERMIT` only when it can cover its required obligations from what you declared, so `requiredObligations` will always be a subset of what you sent. See [obligations](/components/policy/obligations).
+:::
+
 ### Resource
 
 Identifies the data being accessed. A resource can be specified in two ways:
@@ -1190,7 +1191,7 @@ func authorizationMiddleware(next http.Handler, client *sdk.SDK) http.Handler {
             r.Context(),
             &authorizationv2.GetDecisionRequest{
                 EntityIdentifier: authorizationv2.WithRequestToken(),
-                Action:           &policy.Action{Name: "access"},
+                Action:           authorizationv2.ForAction("access"),
                 Resource:         resourceFromPath(r.URL.Path),
             },
         )
@@ -1209,10 +1210,7 @@ func authorizationMiddleware(next http.Handler, client *sdk.SDK) http.Handler {
 <TabItem value="go" label="Go">
 
 ```go
-import (
-    authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
-    "github.com/opentdf/platform/protocol/go/policy"
-)
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
 
 decision, err := client.AuthorizationV2.GetDecision(context.Background(), req)
 

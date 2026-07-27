@@ -16,7 +16,6 @@ import (
 	"log"
 
 	authorization "github.com/opentdf/platform/protocol/go/authorization/v2"
-	"github.com/opentdf/platform/protocol/go/policy"
 	"github.com/opentdf/platform/sdk"
 )
 
@@ -35,12 +34,11 @@ func main() {
 	// Get Decision using v2 API
 	// Convenience constructors live in the authorization/v2 package:
 	// Entity: ForClientID, ForEmail, ForUserName, ForToken, WithRequestToken
+	// Action: ForAction
 	// Resource: ForAttributeValues, ForRegisteredResourceValueFqn
 	decisionReq := &authorization.GetDecisionRequest{
 		EntityIdentifier: authorization.ForClientID("opentdf"),
-		Action: &policy.Action{
-			Name: "decrypt",
-		},
+		Action: authorization.ForAction("decrypt"),
 		Resource: authorization.ForAttributeValues(
 			"https://opentdf.io/attr/role/value/developer",
 		),
