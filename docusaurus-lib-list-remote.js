@@ -63,10 +63,15 @@ const listRemote = {
    */
   listDocuments: function (repo, includeFilters, excludeFilters = []) {
     const req = 'GET /repos/{owner}/{repo}/git/trees/{tree_sha}?recursive=1'
+    // Authenticate when a token is available (e.g. CI via GITHUB_TOKEN) to avoid
+    // GitHub's 60 req/hr unauthenticated rate limit. Falls back to unauthenticated
+    // requests locally when no token is set.
+    const token = process.env.GITHUB_TOKEN
     return request(req, {
       owner: repo.owner,
       repo: repo.name,
-      tree_sha: repo.branch
+      tree_sha: repo.branch,
+      ...(token ? { headers: { authorization: `token ${token}` } } : {}),
     }).then(repoTreeResponse => {
       console.log(this)
       const repoFilePaths = this.extractFilesFromTree(repoTreeResponse.data.tree);
