@@ -571,7 +571,8 @@ Plaintext is written to a temp file next to `outputPath` and only renamed into p
 
 | Error | Sentinel | Cause |
 |-------|----------|-------|
-| Pre-decrypt failure | `sdk.ErrTDFNotDecryptable` | The input itself isn't decryptable — corrupt/invalid TDF bytes, a rejected `TDFReaderOption`, a schema validation failure, or (for `DecryptBytes` only) a plaintext over the 1 GiB in-memory limit. Retrying the same input won't help. |
+| Pre-decrypt failure | `sdk.ErrTDFNotDecryptable` | The input itself isn't decryptable — corrupt/invalid TDF bytes, a rejected `TDFReaderOption`, or a schema validation failure. Retrying the same input won't help. |
+| Payload too large (`DecryptBytes` only) | `sdk.ErrTDFNotDecryptable` | Plaintext exceeds the 1 GiB in-memory limit. Use `DecryptTo`, `DecryptFile`, or `LoadTDF` directly instead. |
 | Decrypt-time failure | `sdk.ErrTDFDecryptFailed` | Failed during decryption itself — most commonly a KAS rewrap failure (not entitled), but also writer errors or payload integrity errors. |
 
 Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. Every failure from all three helpers wraps one of these two sentinels — there's no third, uncategorized case:
