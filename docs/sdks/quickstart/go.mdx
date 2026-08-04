@@ -65,6 +65,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"strings"
 
@@ -122,18 +123,13 @@ func main() {
 
 	// Decrypt data
 	log.Println("\n🔓 Decrypting TDF...")
-	tdfReader, err := client.LoadTDF(bytes.NewReader(encryptedBuffer.Bytes()))
+	decryptedBytes, err := client.DecryptBytes(context.Background(), encryptedBuffer.Bytes())
 	if err != nil {
 		log.Fatalf("❌ Decryption failed: %v", err)
 	}
 
-	var decryptedBuffer bytes.Buffer
-	if _, err = tdfReader.WriteTo(&decryptedBuffer); err != nil {
-		log.Fatalf("❌ Failed to read decrypted data: %v", err)
-	}
-
 	log.Println("✅ Data successfully decrypted")
-	log.Printf("📤 Decrypted content:\n\n%s\n", decryptedBuffer.String())
+	log.Printf("📤 Decrypted content:\n\n%s\n", string(decryptedBytes))
 
 	log.Println("\n🎉 Quickstart complete!")
 }
@@ -405,7 +401,10 @@ In production applications, you'll often need to persist encrypted TDFs to disk 
 - **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
 
 ```go
-import "os"
+import (
+	"context"
+	"os"
+)
 
 // After encryption
 err = os.WriteFile("encrypted.tdf", encryptedBuffer.Bytes(), 0644)
@@ -413,14 +412,15 @@ if err != nil {
 	log.Fatalf("Failed to save TDF: %v", err)
 }
 
-// Later, load from file
-tdfData, err := os.ReadFile("encrypted.tdf")
+// Later, decrypt directly from the file — DecryptFile streams from disk
+// rather than buffering the ciphertext or plaintext in memory.
+err = client.DecryptFile(context.Background(), "encrypted.tdf", "decrypted.txt")
 if err != nil {
-	log.Fatalf("Failed to read TDF: %v", err)
+	log.Fatalf("Failed to decrypt TDF: %v", err)
 }
-
-tdfReader, err := client.LoadTDF(bytes.NewReader(tdfData))
 ```
+
+`DecryptFile` is one of three decrypt convenience helpers — see [Decrypt Helpers](/sdks/tdf#decrypt-helpers) for `DecryptBytes` and `DecryptTo`, which work directly on in-memory ciphertext instead of a file path.
 
 ### Handle Large Files with Streaming
 
@@ -626,19 +626,13 @@ func main() {
 	log.Printf("✅ TDF loaded from encrypted.tdf")
 
 	// 7. Decrypt the data
-	tdfReader, err := client.LoadTDF(bytes.NewReader(tdfData))
-	if err != nil {
-		log.Fatalf("Failed to load TDF: %v", err)
-	}
-
-	var decryptedBuffer bytes.Buffer
-	_, err = tdfReader.WriteTo(&decryptedBuffer)
+	decryptedBytes, err := client.DecryptBytes(context.Background(), tdfData)
 	if err != nil {
 		log.Fatalf("Failed to decrypt: %v", err)
 	}
 
 	log.Printf("✅ Data successfully decrypted")
-	log.Printf("📤 Decrypted content: %s", decryptedBuffer.String())
+	log.Printf("📤 Decrypted content: %s", string(decryptedBytes))
 }
 ```
 

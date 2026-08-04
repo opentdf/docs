@@ -56,7 +56,7 @@ The system metadata assertion uses ID `"system-metadata"`, schema `"system-metad
 
 ### End-to-End Example
 
-Create a signed assertion at encrypt time, then verify it at decrypt time.
+Create a signed assertion at encrypt time, then verify it at decrypt time. Uses `LoadTDF` directly rather than the [Decrypt Helpers](/sdks/tdf#decrypt-helpers) (`DecryptBytes`/`DecryptTo`/`DecryptFile`), since this example reads `tdfReader.Manifest().Assertions` — the helpers return only the plaintext, with no access to manifest data.
 
 <Tabs>
 <TabItem value="go" label="Go">
