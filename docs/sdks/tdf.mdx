@@ -507,7 +507,7 @@ Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common ca
 
 ### DecryptBytes
 
-Decrypts a TDF payload held in memory and returns the plaintext. Rejects payloads over 1 GiB up front, before buffering anything, since the full plaintext is held in memory — use `DecryptTo` or `DecryptFile` for larger payloads, since both stream to their destination instead of buffering.
+Decrypts a TDF payload held in memory and returns the plaintext.
 
 **Signature**
 
@@ -524,6 +524,8 @@ if err != nil {
 }
 fmt.Println(string(plaintext))
 ```
+
+**`DecryptBytes` caps plaintext at 1 GiB** and rejects anything larger up front, before buffering anything — unlike `DecryptTo`/`DecryptFile`, it holds the full plaintext in memory, so there's no way to safely handle bigger payloads through this call. Use `DecryptTo` or `DecryptFile` instead, since both stream to their destination rather than buffering.
 
 ### DecryptTo
 
@@ -574,7 +576,7 @@ Plaintext is written to a temp file next to `outputPath` and only renamed into p
 | Pre-decrypt failure | `sdk.ErrTDFNotDecryptable` | The input itself isn't decryptable — corrupt/invalid TDF bytes, a rejected `TDFReaderOption`, a schema validation failure, or (for `DecryptBytes` only) a plaintext over the 1 GiB in-memory limit. Retrying the same input won't help. |
 | Decrypt-time failure | `sdk.ErrTDFDecryptFailed` | Failed during decryption itself — most commonly a KAS rewrap failure (not entitled), but also writer errors or payload integrity errors. |
 
-Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. Every failure from all three helpers wraps one of these two sentinels — there's no third, uncategorized case:
+Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. All three helpers only ever fail with one of these two sentinels:
 
 ```go
 plaintext, err := client.DecryptBytes(ciphertext)
