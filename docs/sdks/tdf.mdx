@@ -574,7 +574,7 @@ Plaintext is written to a temp file next to `outputPath` and only renamed into p
 | Pre-decrypt failure | `sdk.ErrTDFNotDecryptable` | The input itself isn't decryptable — corrupt/invalid TDF bytes, a rejected `TDFReaderOption`, or a schema validation failure. Retrying the same input won't help. |
 | Decrypt-time failure | `sdk.ErrTDFDecryptFailed` | Failed during decryption itself — most commonly a KAS rewrap failure (not entitled), but also writer errors or payload integrity errors. |
 
-Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`:
+Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. Every failure from all three helpers wraps one of these two sentinels — there's no third, uncategorized case:
 
 ```go
 plaintext, err := client.DecryptBytes(ciphertext)
@@ -582,9 +582,7 @@ switch {
 case errors.Is(err, sdk.ErrTDFNotDecryptable):
     // Pre-decrypt: the input itself isn't decryptable. Retrying won't help.
 case errors.Is(err, sdk.ErrTDFDecryptFailed):
-    // Decrypt-time: most commonly a KAS rewrap failure (not entitled).
-case err != nil:
-    // Some other failure (e.g. a writer error for DecryptTo/DecryptFile).
+    // Decrypt-time: most commonly a KAS rewrap failure (not entitled), but also writer errors for DecryptTo/DecryptFile.
 }
 ```
 
