@@ -65,6 +65,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"strings"
 
@@ -122,7 +123,7 @@ func main() {
 
 	// Decrypt data
 	log.Println("\n🔓 Decrypting TDF...")
-	decryptedBytes, err := client.DecryptBytes(encryptedBuffer.Bytes())
+	decryptedBytes, err := client.DecryptBytes(context.Background(), encryptedBuffer.Bytes())
 	if err != nil {
 		log.Fatalf("❌ Decryption failed: %v", err)
 	}
@@ -400,7 +401,10 @@ In production applications, you'll often need to persist encrypted TDFs to disk 
 - **Archive encrypted data**: Store TDFs in backup systems or long-term storage with their access policies intact
 
 ```go
-import "os"
+import (
+	"context"
+	"os"
+)
 
 // After encryption
 err = os.WriteFile("encrypted.tdf", encryptedBuffer.Bytes(), 0644)
@@ -410,7 +414,7 @@ if err != nil {
 
 // Later, decrypt directly from the file — DecryptFile streams from disk
 // rather than buffering the ciphertext or plaintext in memory.
-err = client.DecryptFile("encrypted.tdf", "decrypted.txt")
+err = client.DecryptFile(context.Background(), "encrypted.tdf", "decrypted.txt")
 if err != nil {
 	log.Fatalf("Failed to decrypt TDF: %v", err)
 }
@@ -622,7 +626,7 @@ func main() {
 	log.Printf("✅ TDF loaded from encrypted.tdf")
 
 	// 7. Decrypt the data
-	decryptedBytes, err := client.DecryptBytes(tdfData)
+	decryptedBytes, err := client.DecryptBytes(context.Background(), tdfData)
 	if err != nil {
 		log.Fatalf("Failed to decrypt: %v", err)
 	}

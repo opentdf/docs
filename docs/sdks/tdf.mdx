@@ -499,7 +499,7 @@ Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is de
 
 ## Decrypt Helpers
 
-Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common case of decrypting straight to plaintext. All three accept the same `opts ...TDFReaderOption` as `LoadTDF` — see [Decrypt Options](#decrypt-options) for the full list.
+Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common case of decrypting straight to plaintext. All three take a `ctx context.Context` that governs their KAS rewrap request, and accept the same `opts ...TDFReaderOption` as `LoadTDF` — see [Decrypt Options](#decrypt-options) for the full list.
 
 :::tip Why use these instead of LoadTDF directly?
 `LoadTDF` returns a reader — useful when you need to stream a very large payload or read manifest data (attributes, assertions) before writing out the payload. If you just want the plaintext, `DecryptBytes`, `DecryptTo`, and `DecryptFile` collapse `LoadTDF` + `WriteTo` into a single call.
@@ -511,14 +511,16 @@ Decrypts a TDF payload held in memory and returns the plaintext. Rejects payload
 
 **Signature**
 
+<SdkVersion language="go" version="0.29.0" source="opentdf" />
+
 ```go
-func (s SDK) DecryptBytes(ciphertext []byte, opts ...TDFReaderOption) ([]byte, error)
+func (s SDK) DecryptBytes(ctx context.Context, ciphertext []byte, opts ...TDFReaderOption) ([]byte, error)
 ```
 
 **Example**
 
 ```go
-plaintext, err := client.DecryptBytes(ciphertext)
+plaintext, err := client.DecryptBytes(ctx, ciphertext)
 if err != nil {
     log.Fatal(err)
 }
@@ -531,14 +533,16 @@ Decrypts a TDF payload held in memory and writes the plaintext to any `io.Writer
 
 **Signature**
 
+<SdkVersion language="go" version="0.29.0" source="opentdf" />
+
 ```go
-func (s SDK) DecryptTo(out io.Writer, ciphertext []byte, opts ...TDFReaderOption) error
+func (s SDK) DecryptTo(ctx context.Context, out io.Writer, ciphertext []byte, opts ...TDFReaderOption) error
 ```
 
 **Example**
 
 ```go
-err := client.DecryptTo(os.Stdout, ciphertext)
+err := client.DecryptTo(ctx, os.Stdout, ciphertext)
 if err != nil {
     log.Fatal(err)
 }
@@ -550,14 +554,16 @@ Decrypts the TDF at `inputPath` and writes the plaintext to `outputPath`. Stream
 
 **Signature**
 
+<SdkVersion language="go" version="0.29.0" source="opentdf" />
+
 ```go
-func (s SDK) DecryptFile(inputPath, outputPath string, opts ...TDFReaderOption) error
+func (s SDK) DecryptFile(ctx context.Context, inputPath, outputPath string, opts ...TDFReaderOption) error
 ```
 
 **Example**
 
 ```go
-err := client.DecryptFile("secret.tdf", "secret.txt")
+err := client.DecryptFile(ctx, "secret.tdf", "secret.txt")
 if err != nil {
     log.Fatal(err)
 }
@@ -575,10 +581,10 @@ Plaintext is written to a temp file next to `outputPath` and only renamed into p
 | Payload too large (`DecryptBytes` only) | `sdk.ErrTDFNotDecryptable` | Plaintext exceeds the 1 GiB in-memory limit. Use `DecryptTo`, `DecryptFile`, or `LoadTDF` directly instead. |
 | Decrypt-time failure | `sdk.ErrTDFDecryptFailed` | Failed during decryption itself — most commonly a KAS rewrap failure (not entitled), but also writer errors or payload integrity errors. |
 
-Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. Every failure from all three helpers wraps one of these two sentinels — there's no third, uncategorized case:
+Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`. Every failure from all three helpers wraps one of these two sentinels:
 
 ```go
-plaintext, err := client.DecryptBytes(ciphertext)
+plaintext, err := client.DecryptBytes(ctx, ciphertext)
 switch {
 case errors.Is(err, sdk.ErrTDFNotDecryptable):
     // Pre-decrypt: the input itself isn't decryptable. Retrying won't help.
