@@ -499,7 +499,7 @@ Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is de
 
 ## Decrypt Helpers
 
-Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common case of decrypting straight to plaintext.
+Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common case of decrypting straight to plaintext. All three accept the same `opts ...TDFReaderOption` as `LoadTDF` — see [Decrypt Options](#decrypt-options) for the full list.
 
 :::tip Why use these instead of LoadTDF directly?
 `LoadTDF` returns a reader — useful when you need to stream a very large payload or read manifest data (attributes, assertions) before writing out the payload. If you just want the plaintext, `DecryptBytes`, `DecryptTo`, and `DecryptFile` collapse `LoadTDF` + `WriteTo` into a single call.
