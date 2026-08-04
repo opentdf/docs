@@ -19,6 +19,7 @@ This page covers the core TDF operations:
 
 - **[CreateTDF](#createtdf)** — encrypt a payload and write a TDF
 - **[LoadTDF](#loadtdf)** — open a TDF and access the plaintext
+- **[Decrypt Helpers](#decrypt-helpers)** — `DecryptBytes`/`DecryptTo`/`DecryptFile`: one-call convenience wrappers over `LoadTDF` + `WriteTo`
 - **[IsValidTdf](#isvalidtdf)** — check whether a stream is a valid TDF without decrypting
 - **[BulkDecrypt](#bulkdecrypt)** — decrypt multiple TDFs in one call
 - **[TDF Reader](#tdf-reader)** — methods on the reader object returned by `LoadTDF`
@@ -493,6 +494,99 @@ Rejects with `Error` if the TDF is invalid, the KAS is unreachable, access is de
 
 </TabItem>
 </Tabs>
+
+---
+
+## Decrypt Helpers
+
+Go-only convenience wrappers over `LoadTDF` + `Reader.WriteTo` for the common case of decrypting straight to plaintext.
+
+:::tip Why use these instead of LoadTDF directly?
+`LoadTDF` returns a reader — useful when you need to stream a very large payload or read manifest data (attributes, assertions) before writing out the payload. If you just want the plaintext, `DecryptBytes`, `DecryptTo`, and `DecryptFile` collapse `LoadTDF` + `WriteTo` into a single call.
+:::
+
+### DecryptBytes
+
+Decrypts a TDF payload held in memory and returns the plaintext.
+
+**Signature**
+
+```go
+func (s SDK) DecryptBytes(ciphertext []byte, opts ...TDFReaderOption) ([]byte, error)
+```
+
+**Example**
+
+```go
+plaintext, err := client.DecryptBytes(ciphertext)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(string(plaintext))
+```
+
+### DecryptTo
+
+Decrypts a TDF payload held in memory and writes the plaintext to any `io.Writer` — a file, `os.Stdout`, an HTTP response, etc.
+
+**Signature**
+
+```go
+func (s SDK) DecryptTo(out io.Writer, ciphertext []byte, opts ...TDFReaderOption) error
+```
+
+**Example**
+
+```go
+err := client.DecryptTo(os.Stdout, ciphertext)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### DecryptFile
+
+Decrypts the TDF at `inputPath` and writes the plaintext to `outputPath`. Streams directly from disk rather than buffering the whole ciphertext or plaintext in memory.
+
+**Signature**
+
+```go
+func (s SDK) DecryptFile(inputPath, outputPath string, opts ...TDFReaderOption) error
+```
+
+**Example**
+
+```go
+err := client.DecryptFile("secret.tdf", "secret.txt")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+Plaintext is written to a temp file next to `outputPath` and only renamed into place once decryption fully succeeds — a pre-existing `outputPath` is never touched, truncated, or deleted if decryption fails partway. If `outputPath` already exists, it's moved aside and restored automatically if the final rename fails, so a failed decrypt never destroys a file that was already there. `inputPath` and `outputPath` must not refer to the same file (including via a hard link); `DecryptFile` rejects that case up front.
+
+**Errors**
+
+`DecryptBytes`, `DecryptTo`, and `DecryptFile` all wrap failures in one of two sentinels, so callers can branch on which stage failed regardless of which helper they called:
+
+| Error | Sentinel | Cause |
+|-------|----------|-------|
+| Pre-decrypt failure | `sdk.ErrTDFNotDecryptable` | The input itself isn't decryptable — corrupt/invalid TDF bytes, a rejected `TDFReaderOption`, or a schema validation failure. Retrying the same input won't help. |
+| Decrypt-time failure | `sdk.ErrTDFDecryptFailed` | Failed during decryption itself — most commonly a KAS rewrap failure (not entitled), but also writer errors or payload integrity errors. |
+
+Both are testable with `errors.Is`, and the underlying `LoadTDF`/`WriteTo` error stays reachable through the same chain via `errors.As`:
+
+```go
+plaintext, err := client.DecryptBytes(ciphertext)
+switch {
+case errors.Is(err, sdk.ErrTDFNotDecryptable):
+    // Pre-decrypt: the input itself isn't decryptable. Retrying won't help.
+case errors.Is(err, sdk.ErrTDFDecryptFailed):
+    // Decrypt-time: most commonly a KAS rewrap failure (not entitled).
+case err != nil:
+    // Some other failure (e.g. a writer error for DecryptTo/DecryptFile).
+}
+```
 
 ---
 
