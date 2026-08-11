@@ -240,6 +240,58 @@ const response = await platform.v2.authorization.getDecision({
 - **Claims** are used by the Entity Resolution Service (ERS) for custom claim-based entity resolution.
 - **Registered Resource** identifies an entity by a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy, where the resource acts as a single entity for authorization decisions.
 
+### Action
+
+Every authorization call requires an [`Action`](/sdks/policy#action) — what's being requested (e.g. `decrypt`, `read`).
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+<SdkVersion language="go" version="0.30.0" source="opentdf" />
+
+`authorizationv2.ForAction(name)` constructs an `Action` without importing the `policy` package:
+
+```go
+import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
+
+req := &authorizationv2.GetDecisionRequest{
+    Action: authorizationv2.ForAction("decrypt"),
+    // ...
+}
+```
+
+<details>
+<summary>Without helper (manual proto construction)</summary>
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy"
+
+&policy.Action{Name: "decrypt"}
+```
+
+</details>
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+No helper needed — construct the action directly:
+
+```java
+Action.newBuilder().setName("decrypt").build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+No helper needed — construct the action directly:
+
+```typescript
+{ name: 'decrypt' }
+```
+
+</TabItem>
+</Tabs>
+
 ### Resource
 
 A `Resource` identifies the data being accessed in [GetDecision](#getdecision) and [GetDecisionBulk](#getdecisionbulk) calls. It can be specified as a set of attribute value FQNs (most common — e.g. the attributes on a TDF) or as a [registered resource](/components/policy/registered_resources) value FQN stored in platform policy.
@@ -602,7 +654,7 @@ await platform.v2.authorization.getDecision({ ... })
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. Use [helpers](#entityidentifier) like `ForEmail(...)` (Go) or `EntityIdentifiers.forEmail(...)` (Java/JS). |
-| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed (e.g., `decrypt`, `read`). Use `ForAction(...)` (Go) to construct one without importing the `policy` package. |
+| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed (e.g., `decrypt`, `read`). Use [`ForAction(...)`](#action) (Go) to construct one without importing the `policy` package. |
 | `resource` | [`Resource`](#resource) | Yes | The resource being accessed. Use [helpers](#resource) like `ForAttributeValues(...)` (Go) or `Resources.forAttributeValues(...)` (Java/JS). |
 | `fulfillableObligationFqns` | `[]string` | No | Obligation value FQNs the caller (PEP) is able to enforce, e.g. `https://<namespace>/obl/<definition>/value/<value>`. The service only returns `DECISION_PERMIT` when every obligation it would require is present in this list; if it would require an obligation you have not declared, it denies. Empty means the caller declares no obligation support. See [obligations](/components/policy/obligations). |
 
@@ -833,7 +885,7 @@ Each `GetDecisionMultiResourceRequest` contains:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `entityIdentifier` | [`EntityIdentifier`](#entityidentifier) | Yes | The entity requesting access. |
-| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed. Use `ForAction(...)` (Go) to construct one without importing the `policy` package. |
+| `action` | [`Action`](/sdks/policy#action) | Yes | The action being performed. Use [`ForAction(...)`](#action) (Go) to construct one without importing the `policy` package. |
 | `resources` | [`[]Resource`](#resource) | Yes | Resources to evaluate, each with an `ephemeralId` for correlation. |
 | `fulfillableObligationFqns` | `[]string` | No | Obligation value FQNs the caller (PEP) is able to enforce, applied to every resource in the request. Same semantics as on [GetDecision](#getdecision). |
 
