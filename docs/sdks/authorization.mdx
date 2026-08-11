@@ -242,7 +242,7 @@ const response = await platform.v2.authorization.getDecision({
 
 ### Action
 
-Every authorization call requires an [`Action`](/sdks/policy#action) — what's being requested (e.g. `decrypt`, `read`).
+Every authorization call requires an [`Action`](/sdks/policy#action) — what's being requested (e.g. `read`, `update`). The action must already be defined in policy — a [standard action](/components/policy/actions) or a registered custom one — these helpers construct the reference only; they don't create or validate it.
 
 <Tabs>
 <TabItem value="go" label="Go">
@@ -255,7 +255,7 @@ Every authorization call requires an [`Action`](/sdks/policy#action) — what's 
 import authorizationv2 "github.com/opentdf/platform/protocol/go/authorization/v2"
 
 req := &authorizationv2.GetDecisionRequest{
-    Action: authorizationv2.ForAction("decrypt"),
+    Action: authorizationv2.ForAction("read"),
     // ...
 }
 ```
@@ -266,7 +266,7 @@ req := &authorizationv2.GetDecisionRequest{
 ```go
 import "github.com/opentdf/platform/protocol/go/policy"
 
-&policy.Action{Name: "decrypt"}
+&policy.Action{Name: "read"}
 ```
 
 </details>
@@ -277,7 +277,7 @@ import "github.com/opentdf/platform/protocol/go/policy"
 No helper needed — construct the action directly:
 
 ```java
-Action.newBuilder().setName("decrypt").build();
+Action.newBuilder().setName("read").build();
 ```
 
 </TabItem>
@@ -286,7 +286,7 @@ Action.newBuilder().setName("decrypt").build();
 No helper needed — construct the action directly:
 
 ```typescript
-{ name: 'decrypt' }
+{ name: 'read' }
 ```
 
 </TabItem>
