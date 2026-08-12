@@ -10,6 +10,7 @@ Policy is the all-encompassing name for configuration of cryptographically-bound
 graph LR;
   Data<-- Resource Mappings -->Attributes;
   Attributes<-- Subject Mappings -->Entities;
+  Attributes<-- Dynamic Value Mappings -->Entities;
 ```
 
 TDF creation and decryption are driven by the Policy within a Platform instance and the TDF manifest. In other words, on a TDF decryption request, the platform services (KAS, Authorization) compare attributes on the TDF against the requester's entitlements to make a decision to release the key or not.
@@ -23,6 +24,7 @@ Components of Policy include:
 - Actions (optionally scoped to Namespaces)
 - Subject Mappings (optionally scoped to Namespaces)
   - Subject Condition Sets (optionally scoped to Namespaces)
+- [Dynamic Value Mappings](/components/policy/dynamic-value-mappings) (optionally scoped to Namespaces)
 - Registered Resources (scoped to Namespaces)
 - Resource Mappings
 - Key Access Grants (KAS Grants)
