@@ -1,8 +1,8 @@
 # Dynamic Value Mappings
 
-Dynamic Value Mappings associate an [Attribute Definition](./attributes) with values from an [Entity Representation](../entity_resolution) and one or more [Actions](./actions). They are useful when Attribute Values come from an external system and change too frequently to manage individually in Policy.
+Dynamic Value Mappings associate an [Attribute Definition](./attributes) with values from an [Entity Representation](../entity_resolution) and one or more [Actions](./actions). It is a good idea to use Dynamic Value Mappings when Attribute Values are sourced from an external system and change frequently or are vast in quantity but keep consistent entitlement conditions.
 
-For example, a healthcare system may store patient assignments in its identity or directory service. A Dynamic Value Mapping can compare those assignments with the medical record number in a resource's Attribute Value. The platform can then determine the entity's entitlement without storing an Attribute Value and [Subject Mapping](./subject_mappings) for every medical record number.
+For example, a healthcare system may realistically store millions of patient assignments in its identity or directory service. A Dynamic Value Mapping can compare those assignments with the medical record number in a resource's Attribute Value. The platform can then determine the entity's entitlement without storing an Attribute Value and [Subject Mapping](./subject_mappings) for every medical record number.
 
 ## Decision Flow
 
