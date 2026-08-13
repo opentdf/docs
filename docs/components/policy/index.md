@@ -24,7 +24,7 @@ Components of Policy include:
 - Actions (optionally scoped to Namespaces)
 - Subject Mappings (optionally scoped to Namespaces)
   - Subject Condition Sets (optionally scoped to Namespaces)
-- [Dynamic Value Mappings](/components/policy/dynamic-value-mappings) (optionally scoped to Namespaces)
+- [Dynamic Value Mappings](./dynamic-value-mappings.mdx) (optionally scoped to Namespaces)
 - Registered Resources (scoped to Namespaces)
 - Resource Mappings
 - Key Access Grants (KAS Grants)
