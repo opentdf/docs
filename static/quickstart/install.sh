@@ -81,6 +81,27 @@ if [ -d "$OPENTDF_DIR" ]; then
     read -p "Do you want to reinstall? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        # Check if docker-compose.yaml needs updating
+        echo -e "${BLUE}→${NC} Checking for updates to docker-compose.yaml..."
+
+        if [ -f "$OPENTDF_DIR/docker-compose.yaml" ]; then
+            TEMP_COMPOSE=$(mktemp)
+            if curl -fsSL https://raw.githubusercontent.com/opentdf/docs/main/docs/getting-started/docker-compose.yaml -o "$TEMP_COMPOSE" 2>/dev/null; then
+                if ! cmp -s "$OPENTDF_DIR/docker-compose.yaml" "$TEMP_COMPOSE"; then
+                    echo -e "${YELLOW}→${NC} New version of docker-compose.yaml available"
+                    cp "$TEMP_COMPOSE" "$OPENTDF_DIR/docker-compose.yaml"
+                    echo -e "${GREEN}✓${NC} Updated docker-compose.yaml to latest version"
+                    echo -e "${BLUE}ℹ${NC}  You should restart your services to apply changes:"
+                    echo "     cd $OPENTDF_DIR && $COMPOSE_CMD down && $COMPOSE_CMD up -d"
+                else
+                    echo -e "${GREEN}✓${NC} docker-compose.yaml is up to date"
+                fi
+            else
+                echo -e "${YELLOW}⚠${NC} Could not check for updates (network issue)"
+            fi
+            rm -f "$TEMP_COMPOSE"
+        fi
+
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo -e "${GREEN}OpenTDF is already installed!${NC}"
