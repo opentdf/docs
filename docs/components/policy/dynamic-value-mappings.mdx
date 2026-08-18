@@ -82,7 +82,7 @@ Resources can contain multiple values from one Attribute Definition. The platfor
 - Concrete Attribute Values can exist under the same Attribute Definition, but they cannot have Subject Mappings.
 - Values under the Attribute Definition cannot be used as a Registered Resource's action Attribute Values.
 
-These checks apply regardless of which related mapping is created first.
+Policy enforces these constraints at creation time, in both directions and regardless of which related mapping is created first. The conflicting create request fails with an error naming the Attribute Definition (or Attribute Value), so the conflict is surfaced directly in the API response.
 
 ## Example
 
