@@ -10,8 +10,12 @@ At decision time, the platform extracts the value segment from the resource's At
 
 ```mermaid
 flowchart LR
-  Resource["Resource Attribute Value<br/>.../value/mrn-123"] --> Segment["Value segment<br/>mrn-123"]
-  Entity["Entity Representation<br/>patientAssignments"] --> Selector["Selector<br/>.patientAssignments[]"]
+  Resource["`Resource Attribute Value
+  .../value/mrn-123`"] --> Segment["`Value segment
+  mrn-123`"]
+  Entity["`Entity Representation
+  patientAssignments`"] --> Selector["`Selector
+  .patientAssignments[]`"]
   Segment --> Resolver{Resolver match}
   Selector --> Resolver
   Gate[Optional Subject Condition Set] --> Mapping{Mapping applies}
