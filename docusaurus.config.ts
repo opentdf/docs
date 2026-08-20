@@ -126,6 +126,7 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           // editUrl:
           //'https://github.com/opentdf/docs/tree/main/docs/',
+          showLastUpdateTime: true,
         },
         blog: false,
         theme: {
