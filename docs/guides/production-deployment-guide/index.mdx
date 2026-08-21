@@ -1,0 +1,56 @@
+---
+title: "Building with OpenTDF: From Local Development to Production"
+sidebar_label: "Production Deployment Guide"
+sidebar_position: 2
+---
+
+# Building with OpenTDF: From Local Development to Production
+
+This guide walks you through integrating a frontend and backend application with OpenTDF, then publishing it to the web. We use a medical practice as a running example: a clinic where patients encrypt health data and only authorized staff can decrypt it.
+
+:::note
+This is a lightweight example using [Railway](https://railway.app) for hosting, aimed at developers new to working with Keycloak configuration and OpenTDF platform setup. In production, you would authenticate with JWTs from your own identity provider. Follow security best practices appropriate to your deployment environment and use case.
+:::
+
+## What You're Building
+
+```text
+┌─────────────────────────────────────────────────┐
+│              Your Application                    │
+│      (uses OpenTDF SDK to encrypt/decrypt)       │
+└──────────┬──────────────────────┬───────────────┘
+           │ gRPC/HTTP            │ OIDC
+           ▼                     ▼
+┌─────────────────────┐  ┌──────────────────────┐
+│  OpenTDF Platform   │  │   Identity Provider  │
+│  (single binary)    │  │   (Keycloak)         │
+│                     │  │                      │
+│  ┌───────────────┐  │  │  - User accounts     │
+│  │ KAS           │  │  │  - Roles & groups    │
+│  │ Policy        │  │  │  - JWT issuance      │
+│  │ Authorization │  │  │                      │
+│  │ Entity Res.   │  │  └──────────────────────┘
+│  └───────────────┘  │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│    PostgreSQL       │
+│  (policy storage)   │
+└─────────────────────┘
+```
+
+OpenTDF Platform is a **single Go binary** that bundles KAS (Key Access Server), Policy, Authorization, and Entity Resolution services. It connects to PostgreSQL for storage and an OIDC provider (Keycloak) for authentication.
+
+## Guide Structure
+
+1. **[Local Development](./production-deployment-guide/local-development)** — Set up OpenTDF locally, configure Keycloak, create attributes and policies, and integrate the Go and browser SDKs into your application.
+
+2. **[Production Deployment](./production-deployment-guide/production-deployment)** — What changes when you deploy to a real environment: TLS, secrets management, split-horizon DNS, container configuration, and security hardening.
+
+## See Also
+
+- [Subject Mapping Guide](/guides/subject-mapping-guide) — how identity claims map to attribute-based access control
+- [GLP-1 Tracker demo](https://github.com/opentdf/demo-glp1-tracker) — a working example app built with this guide
+- [opentdf.io/llms.txt](https://opentdf.io/llms.txt) — comprehensive LLM-optimized reference documentation
+- [OpenTDF Discussion Forum](https://github.com/orgs/opentdf/discussions) — more examples and community Q&A
