@@ -24,6 +24,36 @@ const otdfctl = listRemote.createRepo("opentdf", "platform", process.env.OTDFCTL
 const javaSdkVersion = "0.11.1";
 const gtmId = "GTM-MKRLN6NL"; 
 
+const platformDocsRef = "main";
+const platformDocsSourceUrl = new URL(`https://github.com/opentdf/platform/blob/${platformDocsRef}/docs/`);
+const platformDocsRawUrl = `https://raw.githubusercontent.com/opentdf/platform/${platformDocsRef}/docs/`;
+const platformDocs = {
+  "Configuring.md": {
+    id: "configuration",
+    title: "Configuration",
+    sidebarPosition: 20,
+    filename: "configuration.md",
+  },
+  "OIDC.md": {
+    id: "oidc",
+    title: "OpenID Connect (OIDC)",
+    sidebarPosition: 21,
+    filename: "oidc.md",
+  },
+} as const;
+
+function rewritePlatformDocLinks(content: string): string {
+  return content.replace(/\]\((\.\.?\/[^)\s]+\.mdx?(?:[?#][^)\s]*)?)\)/g, (_link, target: string) => {
+    const sourceUrl = new URL(target, platformDocsSourceUrl);
+    const importedDoc = Object.entries(platformDocs).find(
+      ([filename]) => sourceUrl.pathname === new URL(filename, platformDocsSourceUrl).pathname,
+    )?.[1];
+
+    // Keep links between imported pages local; point other platform references at their source.
+    return `](${importedDoc ? `./${importedDoc.filename}${sourceUrl.search}${sourceUrl.hash}` : sourceUrl.href})`;
+  });
+}
+
 const config: Config = {
   title: "OpenTDF",
   tagline: "Enabling secure data sharing through open, data-centric security",
@@ -370,23 +400,21 @@ ${rawContent}
     [
       "docusaurus-plugin-remote-content",
       {
-        // options here
         name: "platform-configuration", // used by CLI, must be path safe
-        sourceBaseUrl:
-          "https://raw.githubusercontent.com/opentdf/platform/main/docs/", // the base url for the markdown (gets prepended to all of the documents when fetching)
+        sourceBaseUrl: platformDocsRawUrl,
         outDir: "docs/getting-started", // the base directory to output to.
-        documents: ["Configuring.md"], // the file names to download
+        documents: Object.keys(platformDocs),
         modifyContent: (filename, content) => {
-          let updatedContent = content;
+          const doc = platformDocs[filename as keyof typeof platformDocs];
           return {
             content: `---
-id: configuration
-sidebar_position: 20
-title: Configuration
+id: ${doc.id}
+sidebar_position: ${doc.sidebarPosition}
+title: ${doc.title}
 ---
 
-${updatedContent}`,
-            filename: "configuration.md",
+${rewritePlatformDocLinks(content)}`,
+            filename: doc.filename,
           };
         },
       },
