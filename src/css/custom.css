@@ -246,6 +246,12 @@ a[class*="embed_documentation_footer-"] {
   }
 }
 
+@media (max-width: 359px) {
+  .footer__links {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* R-10: Footer bottom bar stacks vertically on mobile */
 @media (max-width: 768px) {
   .footer__bottom {
@@ -554,6 +560,12 @@ html[data-theme='dark'] .navbar__items--right .navbar__item.navbar__link[href*="
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: rgba(255, 255, 255, 0.97);
+  }
+
+  /* The closed sidebar sits to the right of the viewport. When the navbar
+     hides on scroll, its transform makes that sidebar widen the page. */
+  .navbar:not(.navbar-sidebar--show) {
+    overflow-x: clip;
   }
 
   html[data-theme='dark'] .navbar {
