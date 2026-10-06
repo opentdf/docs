@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { updatePreviewComment } = require("./preview-status.cjs");
+const { isStalePreviewRun, updatePreviewComment } = require("./preview-status.cjs");
+const sourceTime = "2026-10-06T15:00:00Z";
 
 function fixture(comments = []) {
   const calls = [];
@@ -44,6 +45,7 @@ test("a successful build replaces a legacy failure comment", async () => {
     context: state.context,
     prNumber: 398,
     status: "deployed",
+    sourceTime,
   });
 
   assert.deepEqual(state.calls.map((call) => call.slice(0, 2)), [["update", 42]]);
@@ -63,6 +65,7 @@ test("duplicate preview comments are removed without touching other comments", a
     context: state.context,
     prNumber: 398,
     status: "deployed",
+    sourceTime,
   });
 
   assert.deepEqual(state.calls.map((call) => call.slice(0, 2)), [
@@ -73,7 +76,7 @@ test("duplicate preview comments are removed without touching other comments", a
 
 test("new status comments are reused for later runs", async () => {
   const state = fixture();
-  const args = { github: state.github, context: state.context, prNumber: 398 };
+  const args = { github: state.github, context: state.context, prNumber: 398, sourceTime };
 
   await updatePreviewComment({ ...args, status: "build-failed", runUrl: "https://github.com/opentdf/docs/actions/runs/7" });
   await updatePreviewComment({ ...args, status: "build-failed", runUrl: "https://github.com/opentdf/docs/actions/runs/7" });
@@ -82,4 +85,19 @@ test("new status comments are reused for later runs", async () => {
   assert.deepEqual(state.calls.map((call) => call[0]), ["create", "update"]);
   assert.match(state.calls[0][1], /actions\/runs\/7/);
   assert.equal(state.comments.length, 1);
+});
+
+test("an older run cannot replace a newer status", async () => {
+  const state = fixture();
+  const args = { github: state.github, context: state.context, prNumber: 398 };
+
+  await updatePreviewComment({ ...args, status: "deployed", sourceTime: "2026-10-06T16:00:00Z", sourceRunId: 200 });
+  const stale = await isStalePreviewRun({ ...args, sourceTime: "2026-10-06T15:00:00Z", sourceRunId: 100 });
+  const sameSecondOlderRun = await isStalePreviewRun({ ...args, sourceTime: "2026-10-06T16:00:00Z", sourceRunId: 199 });
+  await updatePreviewComment({ ...args, status: "build-failed", sourceTime: "2026-10-06T15:00:00Z", sourceRunId: 100 });
+
+  assert.equal(stale, true);
+  assert.equal(sameSecondOlderRun, true);
+  assert.deepEqual(state.calls.map((call) => call[0]), ["create"]);
+  assert.match(state.comments[0].body, /Preview deployed/);
 });
