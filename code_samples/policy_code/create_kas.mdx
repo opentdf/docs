@@ -1,0 +1,122 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details id="create-kas-server">
+<summary>CreateKeyAccessServer</summary>
+
+Registers a new Key Access Server (KAS) with the platform.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) CreateKeyAccessServer(
+    ctx context.Context,
+    req *kasregistry.CreateKeyAccessServerRequest,
+) (*kasregistry.CreateKeyAccessServerResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+CreateKeyAccessServerResponse createKeyAccessServerBlocking(
+    CreateKeyAccessServerRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.createKeyAccessServer(
+    request: CreateKeyAccessServerRequest
+): Promise<CreateKeyAccessServerResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uri` | `string` | Yes | URL of the KAS instance (e.g., `https://kas.example.com`). |
+| `name` | `string` | No | Unique name for the KAS (alphanumeric, hyphens, underscores; max 253 chars; normalized to lowercase). |
+| `source_type` | `SourceType` | No | `INTERNAL` (managed by your org) or `EXTERNAL` (managed by an external party). |
+| `metadata` | `MetadataMutable` | No | Labels to attach (key-value string pairs). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+)
+
+resp, err := client.KeyAccessServerRegistry.CreateKeyAccessServer(context.Background(),
+    &kasregistry.CreateKeyAccessServerRequest{
+        Uri:        "https://kas.example.com",
+        Name:       "my-kas",
+        SourceType: policy.SourceType_SOURCE_TYPE_INTERNAL,
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Created KAS: %s (ID: %s)\n", resp.GetKeyAccessServer().GetName(), resp.GetKeyAccessServer().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.SourceType;
+import io.opentdf.platform.policy.kasregistry.CreateKeyAccessServerRequest;
+
+var req = CreateKeyAccessServerRequest.newBuilder()
+    .setUri("https://kas.example.com")
+    .setName("my-kas")
+    .setSourceType(SourceType.SOURCE_TYPE_INTERNAL)
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .createKeyAccessServerBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Created KAS: " + resp.getKeyAccessServer().getName()
+    + " (ID: " + resp.getKeyAccessServer().getId() + ")");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { SourceType } from '@opentdf/sdk/platform/policy/objects_pb.js';
+
+const resp = await platform.v1.keyAccessServerRegistry.createKeyAccessServer({
+  uri: 'https://kas.example.com',
+  name: 'my-kas',
+  sourceType: SourceType.INTERNAL,
+});
+console.log(`Created KAS: ${resp.keyAccessServer?.name} (ID: ${resp.keyAccessServer?.id})`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The created `KeyAccessServer` object, including its generated `id`, `uri`, `name`, `source_type`, and `metadata` with server-set timestamps.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Already exists | A KAS with the same `uri` or `name` is already registered. |
+| Invalid argument | The `uri` is not a valid URL, or the `name` violates naming constraints. |
+| Permission denied | The caller lacks permission to create KAS entries. |
+
+</details>
