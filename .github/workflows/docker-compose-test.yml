@@ -15,6 +15,8 @@ on:
       - 'tests/**'
       - '.github/workflows/docker-compose-test.yml'
       - 'docs/getting-started/**'
+  schedule:
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -197,3 +199,17 @@ jobs:
         run: |
           docker compose ps
           docker compose logs
+
+      - name: Notify Slack on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Quickstart stack test failed on nightly run"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ":red_circle: *Quickstart stack test failed*\nThe nightly docker-compose stack test is failing — the quickstart is broken for new users.\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
