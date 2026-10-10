@@ -567,6 +567,8 @@ When a TDF is created, the SDK generates a random symmetric Data Encryption Key 
 
 The default is `rsa:2048` — RSA with a 2048-bit key. EC (elliptic curve) algorithms such as `ec:secp256r1` offer equivalent security with smaller key material stored in the TDF manifest and faster wrap/unwrap operations.
 
+Hybrid post-quantum algorithms combine a classical algorithm with a post-quantum KEM to protect against harvest-now-decrypt-later attacks. These are available in the Go and Java SDKs when the KAS has hybrid keys registered.
+
 <Tabs>
 <TabItem value="go" label="Go">
 
@@ -582,7 +584,7 @@ manifest, err := client.CreateTDF(buf, str,
 )
 ```
 
-Valid values: `ocrypto.RSA2048Key`, `ocrypto.EC256Key`, `ocrypto.EC384Key`, `ocrypto.EC521Key`.
+Valid values: `ocrypto.RSA2048Key`, `ocrypto.EC256Key`, `ocrypto.EC384Key`, `ocrypto.EC521Key`, `ocrypto.HybridXWingKey`, `ocrypto.HybridSecp256r1MLKEM768Key`, `ocrypto.HybridSecp384r1MLKEM1024Key`.
 
 </TabItem>
 <TabItem value="java" label="Java">
@@ -597,7 +599,11 @@ Config.TDFConfig config = Config.newTDFConfig(
 sdk.createTDF(inputStream, outputStream, config);
 ```
 
-Valid values: `KeyType.RSA2048Key`, `KeyType.EC256Key`, `KeyType.EC384Key`, `KeyType.EC521Key`.
+Valid values: `KeyType.RSA2048Key`, `KeyType.EC256Key`, `KeyType.EC384Key`, `KeyType.EC521Key`, `KeyType.HybridXWingKey`, `KeyType.HybridSecp256r1MLKEM768Key`, `KeyType.HybridSecp384r1MLKEM1024Key`.
+
+:::note Hybrid PQC dependency
+Hybrid key types require the optional `sdk-pqc-bc` module on the classpath. Add it as a runtime dependency — the default `non-fips` Maven profile includes it automatically via the `cmdline` module. See [opentdf/java-sdk#368](https://github.com/opentdf/java-sdk/pull/368) for details.
+:::
 
 </TabItem>
 <TabItem value="js" label="JavaScript">
@@ -610,7 +616,7 @@ const tdf = await client.createTDF({
 });
 ```
 
-Valid values: `'rsa:2048'`, `'rsa:4096'`, `'ec:secp256r1'`, `'ec:secp384r1'`, `'ec:secp521r1'`.
+Valid values: `'rsa:2048'`, `'rsa:4096'`, `'ec:secp256r1'`, `'ec:secp384r1'`, `'ec:secp521r1'`. Hybrid PQC algorithms are not yet supported in the JavaScript SDK.
 
 </TabItem>
 </Tabs>

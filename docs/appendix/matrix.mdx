@@ -61,6 +61,7 @@ Feature matrix for the different SDK versions.
 | - ABAC[^112]               | Stable   | Stable   | Stable     |
 | - Key Mapping[^140]        | Stable   | Stable   | Stable     |
 | - Obligations[^150]        | Stable   | Planned  | Stable     |
+| - Hybrid PQC[^160]        | Stable   | Unstable | Planned    |
 |                            |          |          |            |
 | **Service APIs**[^105]     | Stable   | Stable   | Stable     |
 | - Authorization[^120]      | Stable   | Stable   | Stable     |
@@ -78,6 +79,7 @@ Feature matrix for the different SDK versions.
 [^130]: APIs for managing policy attributes [proto](https://github.com/opentdf/platform/blob/main/service/policy/attributes/attributes.proto).
 [^140]: Key Mapping associates KAS keys with policy resources (namespaces, attribute definitions, values).
 [^150]: Obligations are PDP-to-PEP directives that accompany access decisions (e.g. watermarking, audit logging).
+[^160]: Hybrid post-quantum key wrapping (X-Wing, ECDH+ML-KEM) protects TDFs against harvest-now-decrypt-later attacks. Go support is built into the platform SDK; Java support requires the optional `sdk-pqc-bc` module.
 
 ## FAQ
 

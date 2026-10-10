@@ -6,7 +6,7 @@ The Key Access Server (KAS) manages the lifecycle of cryptographic keys and prov
 
 KAS offers the following RPC methods:
 
-- `PublicKey` - Retrieves a public key from KAS. It defaults to `rsa:2048` and uses the currently active default key. The key is returned in PEM format by default.
+- `PublicKey` - Retrieves a public key from KAS. It defaults to `rsa:2048` and uses the currently active default key. The key is returned in PEM format by default. Supported algorithm families include RSA (`rsa:2048`, `rsa:4096`), EC (`ec:secp256r1`, `ec:secp384r1`, `ec:secp521r1`), and hybrid post-quantum (`hpqt:xwing`, `hpqt:secp256r1-mlkem768`, `hpqt:secp384r1-mlkem1024`).
 
   ```protobuf reference
   https://github.com/opentdf/platform/blob/7dea6407322b5e625ee2810dfcf407c010d9996f/service/kas/kas.proto#L69-L75
