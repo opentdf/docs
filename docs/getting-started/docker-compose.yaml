@@ -531,7 +531,7 @@ services:
   # Generate hybrid post-quantum KAS keys (X-Wing, P256+ML-KEM-768, P384+ML-KEM-1024).
   # Uses a Go image to build and run the keygen from the platform source.
   generate-pqc-keys:
-    image: golang:1.25-alpine
+    image: golang:1.26.10-alpine@sha256:27f2d3b83cfc5803c8078f8e730af0f7c431bf067afaec8f60a36fb763187cba
     volumes:
       - keys:/keys
     depends_on:
