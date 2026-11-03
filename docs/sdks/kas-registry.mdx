@@ -1,0 +1,1253 @@
+---
+sidebar_position: 9
+title: KAS Registry
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CreateKas from '../../code_samples/policy_code/create_kas.mdx'
+import ListKas from '../../code_samples/policy_code/list_kas.mdx'
+
+# KAS Registry
+
+The **KAS Registry** tracks which Key Access Servers are available to your platform and the cryptographic keys each server uses. Every TDF is bound to at least one KAS, so the registry is the source of truth for where keys live and how they are accessed.
+
+The SDK exposes two groups of operations on `KeyAccessServerRegistry`:
+
+- **[KAS Servers](#kas-servers)** — register, look up, update, and remove KAS instances.
+- **[KAS Keys](#kas-keys)** — create, rotate, and manage the asymmetric key pairs a KAS uses for wrapping.
+
+## Setup
+
+All examples on this page assume you have created an SDK client. See [Authentication](/sdks/authentication) for full details.
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "context"
+    "log"
+
+    "github.com/opentdf/platform/sdk"
+)
+
+client, err := sdk.New("http://localhost:8080",
+    sdk.WithClientCredentials("opentdf", "secret", nil),
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.sdk.SDK;
+import io.opentdf.platform.sdk.SDKBuilder;
+import java.util.Collections;
+
+SDK sdk = SDKBuilder.newBuilder()
+    .platformEndpoint("http://localhost:8080")
+    .clientSecret("opentdf", "secret")
+    .useInsecurePlaintextConnection(true)
+    .build();
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { authTokenInterceptor, clientCredentialsTokenProvider } from '@opentdf/sdk';
+import { PlatformClient } from '@opentdf/sdk/platform';
+
+const platform = new PlatformClient({
+  interceptors: [authTokenInterceptor(clientCredentialsTokenProvider({
+    clientId: 'opentdf', clientSecret: 'secret',
+    oidcOrigin: 'http://localhost:8080/auth/realms/opentdf',
+  }))],
+  platformUrl: 'http://localhost:8080',
+});
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## KAS Servers
+
+<CreateKas />
+
+<ListKas />
+
+<details id="get-kas-server">
+<summary>GetKeyAccessServer</summary>
+
+Retrieves a single KAS by its ID, name, or URI.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) GetKeyAccessServer(
+    ctx context.Context,
+    req *kasregistry.GetKeyAccessServerRequest,
+) (*kasregistry.GetKeyAccessServerResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+GetKeyAccessServerResponse getKeyAccessServerBlocking(
+    GetKeyAccessServerRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.getKeyAccessServer(
+    request: GetKeyAccessServerRequest
+): Promise<GetKeyAccessServerResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide exactly one identifier:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `kas_id` | `string` | One of | UUID of the KAS. |
+| `name` | `string` | One of | Unique name of the KAS. |
+| `uri` | `string` | One of | URI of the KAS. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+// Look up by UUID
+resp, err := client.KeyAccessServerRegistry.GetKeyAccessServer(context.Background(),
+    &kasregistry.GetKeyAccessServerRequest{
+        Identifier: &kasregistry.GetKeyAccessServerRequest_KasId{
+            KasId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("KAS: %s — %s\n", resp.GetKeyAccessServer().GetName(), resp.GetKeyAccessServer().GetUri())
+
+// Alternatively, look up by name
+resp, err = client.KeyAccessServerRegistry.GetKeyAccessServer(context.Background(),
+    &kasregistry.GetKeyAccessServerRequest{
+        Identifier: &kasregistry.GetKeyAccessServerRequest_Name{
+            Name: "my-kas",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("KAS by name: %s\n", resp.GetKeyAccessServer().GetUri())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.GetKeyAccessServerRequest;
+
+// Look up by UUID
+var req = GetKeyAccessServerRequest.newBuilder()
+    .setKasId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .getKeyAccessServerBlocking(req, Collections.emptyMap()).execute();
+System.out.println("KAS: " + resp.getKeyAccessServer().getName()
+    + " — " + resp.getKeyAccessServer().getUri());
+
+// Alternatively, look up by name
+var reqByName = GetKeyAccessServerRequest.newBuilder()
+    .setName("my-kas")
+    .build();
+var respByName = sdk.getServices().kasRegistry()
+    .getKeyAccessServerBlocking(reqByName, Collections.emptyMap()).execute();
+System.out.println("KAS by name: " + respByName.getKeyAccessServer().getUri());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Look up by UUID
+let resp = await platform.v1.keyAccessServerRegistry.getKeyAccessServer({
+  kasId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+});
+console.log(`KAS: ${resp.keyAccessServer?.name} — ${resp.keyAccessServer?.uri}`);
+
+// Alternatively, look up by name
+resp = await platform.v1.keyAccessServerRegistry.getKeyAccessServer({
+  name: 'my-kas',
+});
+console.log(`KAS by name: ${resp.keyAccessServer?.uri}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The matching `KeyAccessServer` object, including `id`, `uri`, `name`, `source_type`, `kas_keys` (active keys), and `metadata`.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | No KAS matches the given identifier. |
+| Invalid argument | More than one identifier was provided, or the value is empty. |
+| Permission denied | The caller lacks permission to read KAS entries. |
+
+</details>
+
+<details id="update-kas-server">
+<summary>UpdateKeyAccessServer</summary>
+
+Updates a registered KAS. Only the fields you set are changed; omitted fields are left as-is.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) UpdateKeyAccessServer(
+    ctx context.Context,
+    req *kasregistry.UpdateKeyAccessServerRequest,
+) (*kasregistry.UpdateKeyAccessServerResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+UpdateKeyAccessServerResponse updateKeyAccessServerBlocking(
+    UpdateKeyAccessServerRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.updateKeyAccessServer(
+    request: UpdateKeyAccessServerRequest
+): Promise<UpdateKeyAccessServerResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | UUID of the KAS to update. |
+| `uri` | `string` | No | New URI for the KAS. |
+| `name` | `string` | No | New name for the KAS. |
+| `source_type` | `SourceType` | No | Updated source type (`INTERNAL` or `EXTERNAL`). |
+| `metadata` | `MetadataMutable` | No | Updated labels. |
+| `metadata_update_behavior` | `MetadataUpdateEnum` | No | `EXTEND` (merge labels) or `REPLACE` (overwrite all labels). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+resp, err := client.KeyAccessServerRegistry.UpdateKeyAccessServer(context.Background(),
+    &kasregistry.UpdateKeyAccessServerRequest{
+        Id:  "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        Uri: "https://kas-updated.example.com",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Updated KAS URI: %s\n", resp.GetKeyAccessServer().GetUri())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.UpdateKeyAccessServerRequest;
+
+var req = UpdateKeyAccessServerRequest.newBuilder()
+    .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .setUri("https://kas-updated.example.com")
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .updateKeyAccessServerBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Updated KAS URI: " + resp.getKeyAccessServer().getUri());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.keyAccessServerRegistry.updateKeyAccessServer({
+  id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+  uri: 'https://kas-updated.example.com',
+});
+console.log(`Updated KAS URI: ${resp.keyAccessServer?.uri}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The updated `KeyAccessServer` object.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | No KAS matches the given `id`. |
+| Already exists | The new `uri` or `name` conflicts with another registered KAS. |
+| Invalid argument | The `uri` is not valid, or the `name` violates naming constraints. |
+| Permission denied | The caller lacks permission to update KAS entries. |
+
+</details>
+
+<details id="delete-kas-server">
+<summary>DeleteKeyAccessServer</summary>
+
+Permanently removes a KAS registration. This does **not** affect TDFs already encrypted against this KAS — they will fail to decrypt unless the KAS is re-registered.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) DeleteKeyAccessServer(
+    ctx context.Context,
+    req *kasregistry.DeleteKeyAccessServerRequest,
+) (*kasregistry.DeleteKeyAccessServerResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+DeleteKeyAccessServerResponse deleteKeyAccessServerBlocking(
+    DeleteKeyAccessServerRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.deleteKeyAccessServer(
+    request: DeleteKeyAccessServerRequest
+): Promise<DeleteKeyAccessServerResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | UUID of the KAS to delete. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+resp, err := client.KeyAccessServerRegistry.DeleteKeyAccessServer(context.Background(),
+    &kasregistry.DeleteKeyAccessServerRequest{
+        Id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Deleted KAS: %s\n", resp.GetKeyAccessServer().GetId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.DeleteKeyAccessServerRequest;
+
+var req = DeleteKeyAccessServerRequest.newBuilder()
+    .setId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .deleteKeyAccessServerBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Deleted KAS: " + resp.getKeyAccessServer().getId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.keyAccessServerRegistry.deleteKeyAccessServer({
+  id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+});
+console.log(`Deleted KAS: ${resp.keyAccessServer?.id}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The deleted `KeyAccessServer` object (a snapshot of the record before removal).
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | No KAS matches the given `id`. |
+| Permission denied | The caller lacks permission to delete KAS entries. |
+
+</details>
+
+---
+
+## KAS Keys
+
+Each registered KAS holds one or more asymmetric key pairs used to wrap data encryption keys inside TDFs. These operations let you create, inspect, rotate, and set the default ("base") key for a KAS.
+
+<details id="create-kas-key">
+<summary>CreateKey</summary>
+
+Creates a new asymmetric key pair for a KAS.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) CreateKey(
+    ctx context.Context,
+    req *kasregistry.CreateKeyRequest,
+) (*kasregistry.CreateKeyResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+CreateKeyResponse createKeyBlocking(
+    CreateKeyRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.createKey(
+    request: CreateKeyRequest
+): Promise<CreateKeyResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `kas_id` | `string` | Yes | UUID of the KAS this key belongs to. |
+| `key_id` | `string` | Yes | A user-defined identifier for the key. |
+| `key_algorithm` | `Algorithm` | Yes | `RSA_2048`, `RSA_4096`, `EC_P256`, `EC_P384`, or `EC_P521`. |
+| `key_mode` | `KeyMode` | Yes | How the private key is managed. See [Key Modes](#key-modes). |
+| `public_key_ctx` | `PublicKeyCtx` | Yes | Contains `pem` — the PEM-encoded public key. |
+| `private_key_ctx` | `PrivateKeyCtx` | Conditional | Required when `key_mode` is `CONFIG_ROOT_KEY` or `PROVIDER_ROOT_KEY`. Contains `key_id` (KEK identifier) and `wrapped_key` (base64-encoded wrapped private key). |
+| `provider_config_id` | `string` | Conditional | Required when `key_mode` is `PROVIDER_ROOT_KEY` or `REMOTE`. |
+| `legacy` | `bool` | No | Mark as a legacy key (for TDFs without key identifiers). |
+| `metadata` | `MetadataMutable` | No | Labels to attach. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+)
+
+resp, err := client.KeyAccessServerRegistry.CreateKey(context.Background(),
+    &kasregistry.CreateKeyRequest{
+        KasId:        "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        KeyId:        "my-ec-key-1",
+        KeyAlgorithm: policy.Algorithm_ALGORITHM_EC_P256,
+        KeyMode:      policy.KeyMode_KEY_MODE_CONFIG_ROOT_KEY,
+        PublicKeyCtx: &policy.PublicKeyCtx{
+            Pem: "-----BEGIN PUBLIC KEY-----\nMFkwEwYH...base64...\n-----END PUBLIC KEY-----",
+        },
+        PrivateKeyCtx: &policy.PrivateKeyCtx{
+            KeyId:      "config-kek-id",
+            WrappedKey: "base64-encoded-wrapped-private-key",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Created key: %s (algorithm: %s)\n",
+    resp.GetKasKey().GetKey().GetKeyId(), resp.GetKasKey().GetKey().GetKeyAlgorithm())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.Algorithm;
+import io.opentdf.platform.policy.KeyMode;
+import io.opentdf.platform.policy.PublicKeyCtx;
+import io.opentdf.platform.policy.PrivateKeyCtx;
+import io.opentdf.platform.policy.kasregistry.CreateKeyRequest;
+
+var req = CreateKeyRequest.newBuilder()
+    .setKasId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .setKeyId("my-ec-key-1")
+    .setKeyAlgorithm(Algorithm.ALGORITHM_EC_P256)
+    .setKeyMode(KeyMode.KEY_MODE_CONFIG_ROOT_KEY)
+    .setPublicKeyCtx(PublicKeyCtx.newBuilder()
+        .setPem("-----BEGIN PUBLIC KEY-----\nMFkwEwYH...base64...\n-----END PUBLIC KEY-----")
+        .build())
+    .setPrivateKeyCtx(PrivateKeyCtx.newBuilder()
+        .setKeyId("config-kek-id")
+        .setWrappedKey("base64-encoded-wrapped-private-key")
+        .build())
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .createKeyBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Created key: " + resp.getKasKey().getKey().getKeyId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { Algorithm, KeyMode } from '@opentdf/sdk/platform/policy/objects_pb.js';
+
+const resp = await platform.v1.keyAccessServerRegistry.createKey({
+  kasId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+  keyId: 'my-ec-key-1',
+  keyAlgorithm: Algorithm.EC_P256,
+  keyMode: KeyMode.CONFIG_ROOT_KEY,
+  publicKeyCtx: {
+    pem: '-----BEGIN PUBLIC KEY-----\nMFkwEwYH...base64...\n-----END PUBLIC KEY-----',
+  },
+  privateKeyCtx: {
+    keyId: 'config-kek-id',
+    wrappedKey: 'base64-encoded-wrapped-private-key',
+  },
+});
+console.log(`Created key: ${resp.kasKey?.key?.keyId}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A `KasKey` object containing `kas_id`, `kas_uri`, and the full `AsymmetricKey` with its `id`, `key_id`, `key_algorithm`, `key_status` (`ACTIVE`), `key_mode`, and `public_key_ctx`.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | The `kas_id` does not match a registered KAS. |
+| Already exists | A key with the same `key_id` already exists for this KAS. |
+| Invalid argument | Missing required fields, or `private_key_ctx` / `provider_config_id` is inconsistent with the `key_mode`. |
+| Permission denied | The caller lacks permission to create keys. |
+
+</details>
+
+<details id="list-kas-keys">
+<summary>ListKeys</summary>
+
+Lists keys across all KAS instances, with optional filters.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) ListKeys(
+    ctx context.Context,
+    req *kasregistry.ListKeysRequest,
+) (*kasregistry.ListKeysResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+ListKeysResponse listKeysBlocking(
+    ListKeysRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.listKeys(
+    request: ListKeysRequest
+): Promise<ListKeysResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key_algorithm` | `Algorithm` | No | Filter by algorithm (e.g., `EC_P256`). |
+| `kas_id` | `string` | No | Filter by KAS UUID. One of `kas_id`, `kas_name`, or `kas_uri`. |
+| `kas_name` | `string` | No | Filter by KAS name. |
+| `kas_uri` | `string` | No | Filter by KAS URI. |
+| `legacy` | `bool` | No | Filter for legacy keys only. |
+| `pagination.limit` | `int32` | No | Maximum number of results. |
+| `pagination.offset` | `int32` | No | Number of results to skip. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+// List all keys for a specific KAS
+resp, err := client.KeyAccessServerRegistry.ListKeys(context.Background(),
+    &kasregistry.ListKeysRequest{
+        KasFilter: &kasregistry.ListKeysRequest_KasId{
+            KasId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+for _, kasKey := range resp.GetKasKeys() {
+    log.Printf("Key: %s (algorithm: %s, status: %s)\n",
+        kasKey.GetKey().GetKeyId(), kasKey.GetKey().GetKeyAlgorithm(), kasKey.GetKey().GetKeyStatus())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.ListKeysRequest;
+
+// List all keys for a specific KAS
+var req = ListKeysRequest.newBuilder()
+    .setKasId("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .listKeysBlocking(req, Collections.emptyMap()).execute();
+for (var kasKey : resp.getKasKeysList()) {
+    System.out.println("Key: " + kasKey.getKey().getKeyId()
+        + " (algorithm: " + kasKey.getKey().getKeyAlgorithm()
+        + ", status: " + kasKey.getKey().getKeyStatus() + ")");
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// List all keys for a specific KAS
+const resp = await platform.v1.keyAccessServerRegistry.listKeys({
+  kasId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+});
+for (const kasKey of resp.kasKeys) {
+  console.log(`Key: ${kasKey.key?.keyId} (algorithm: ${kasKey.key?.keyAlgorithm}, status: ${kasKey.key?.keyStatus})`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A list of `KasKey` objects (each containing `kas_id`, `kas_uri`, and the full `AsymmetricKey`) and a `pagination` response.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Invalid argument | An invalid filter was provided. |
+| Permission denied | The caller lacks permission to list keys. |
+
+</details>
+
+<details id="get-kas-key">
+<summary>GetKey</summary>
+
+Retrieves a single key by its database ID or by the combination of KAS identifier and key ID.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) GetKey(
+    ctx context.Context,
+    req *kasregistry.GetKeyRequest,
+) (*kasregistry.GetKeyResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+GetKeyResponse getKeyBlocking(
+    GetKeyRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.getKey(
+    request: GetKeyRequest
+): Promise<GetKeyResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide exactly one identifier:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | One of | Database UUID of the key record. |
+| `key` | `KasKeyIdentifier` | One of | A KAS identifier (`kas_id`, `name`, or `uri`) plus the `kid` (key ID string). |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+// Look up by KAS name + key ID
+resp, err := client.KeyAccessServerRegistry.GetKey(context.Background(),
+    &kasregistry.GetKeyRequest{
+        Identifier: &kasregistry.GetKeyRequest_Key{
+            Key: &kasregistry.KasKeyIdentifier{
+                Identifier: &kasregistry.KasKeyIdentifier_Name{
+                    Name: "my-kas",
+                },
+                Kid: "my-ec-key-1",
+            },
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Key: %s (status: %s)\n",
+    resp.GetKasKey().GetKey().GetKeyId(), resp.GetKasKey().GetKey().GetKeyStatus())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.GetKeyRequest;
+import io.opentdf.platform.policy.kasregistry.KasKeyIdentifier;
+
+// Look up by KAS name + key ID
+var req = GetKeyRequest.newBuilder()
+    .setKey(KasKeyIdentifier.newBuilder()
+        .setName("my-kas")
+        .setKid("my-ec-key-1")
+        .build())
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .getKeyBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Key: " + resp.getKasKey().getKey().getKeyId()
+    + " (status: " + resp.getKasKey().getKey().getKeyStatus() + ")");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+// Look up by KAS name + key ID
+const resp = await platform.v1.keyAccessServerRegistry.getKey({
+  key: {
+    name: 'my-kas',
+    kid: 'my-ec-key-1',
+  },
+});
+console.log(`Key: ${resp.kasKey?.key?.keyId} (status: ${resp.kasKey?.key?.keyStatus})`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A `KasKey` object with the full `AsymmetricKey` details.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | No key matches the identifier. |
+| Invalid argument | Neither identifier was provided, or the `kid` is empty. |
+| Permission denied | The caller lacks permission to read keys. |
+
+</details>
+
+<details id="rotate-kas-key">
+<summary>RotateKey</summary>
+
+Replaces the active key on a KAS with a new key pair. The previous key is marked `ROTATED` and any attribute or value grants pointing to it are re-mapped to the new key.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) RotateKey(
+    ctx context.Context,
+    req *kasregistry.RotateKeyRequest,
+) (*kasregistry.RotateKeyResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+RotateKeyResponse rotateKeyBlocking(
+    RotateKeyRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.rotateKey(
+    request: RotateKeyRequest
+): Promise<RotateKeyResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | One of | Database UUID of the current active key. |
+| `key` | `KasKeyIdentifier` | One of | KAS identifier + `kid` of the current active key. |
+| `new_key.key_id` | `string` | Yes | Identifier for the new key. |
+| `new_key.algorithm` | `Algorithm` | Yes | Algorithm for the new key. |
+| `new_key.key_mode` | `KeyMode` | Yes | Key management mode. |
+| `new_key.public_key_ctx` | `PublicKeyCtx` | Yes | PEM-encoded public key. |
+| `new_key.private_key_ctx` | `PrivateKeyCtx` | Conditional | Required when `key_mode` is `CONFIG_ROOT_KEY` or `PROVIDER_ROOT_KEY`. |
+| `new_key.provider_config_id` | `string` | Conditional | Required when `key_mode` is `PROVIDER_ROOT_KEY` or `REMOTE`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import (
+    "github.com/opentdf/platform/protocol/go/policy"
+    "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+)
+
+resp, err := client.KeyAccessServerRegistry.RotateKey(context.Background(),
+    &kasregistry.RotateKeyRequest{
+        ActiveKey: &kasregistry.RotateKeyRequest_Key{
+            Key: &kasregistry.KasKeyIdentifier{
+                Identifier: &kasregistry.KasKeyIdentifier_Name{
+                    Name: "my-kas",
+                },
+                Kid: "my-ec-key-1",
+            },
+        },
+        NewKey: &kasregistry.RotateKeyRequest_NewKey{
+            KeyId:        "my-ec-key-2",
+            Algorithm:    policy.Algorithm_ALGORITHM_EC_P256,
+            KeyMode:      policy.KeyMode_KEY_MODE_CONFIG_ROOT_KEY,
+            PublicKeyCtx: &policy.PublicKeyCtx{
+                Pem: "-----BEGIN PUBLIC KEY-----\n...new key...\n-----END PUBLIC KEY-----",
+            },
+            PrivateKeyCtx: &policy.PrivateKeyCtx{
+                KeyId:      "config-kek-id",
+                WrappedKey: "base64-encoded-new-wrapped-private-key",
+            },
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Rotated to key: %s\n", resp.GetKasKey().GetKey().GetKeyId())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.Algorithm;
+import io.opentdf.platform.policy.KeyMode;
+import io.opentdf.platform.policy.PublicKeyCtx;
+import io.opentdf.platform.policy.PrivateKeyCtx;
+import io.opentdf.platform.policy.kasregistry.RotateKeyRequest;
+import io.opentdf.platform.policy.kasregistry.KasKeyIdentifier;
+
+var req = RotateKeyRequest.newBuilder()
+    .setKey(KasKeyIdentifier.newBuilder()
+        .setName("my-kas")
+        .setKid("my-ec-key-1")
+        .build())
+    .setNewKey(RotateKeyRequest.NewKey.newBuilder()
+        .setKeyId("my-ec-key-2")
+        .setAlgorithm(Algorithm.ALGORITHM_EC_P256)
+        .setKeyMode(KeyMode.KEY_MODE_CONFIG_ROOT_KEY)
+        .setPublicKeyCtx(PublicKeyCtx.newBuilder()
+            .setPem("-----BEGIN PUBLIC KEY-----\n...new key...\n-----END PUBLIC KEY-----")
+            .build())
+        .setPrivateKeyCtx(PrivateKeyCtx.newBuilder()
+            .setKeyId("config-kek-id")
+            .setWrappedKey("base64-encoded-new-wrapped-private-key")
+            .build())
+        .build())
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .rotateKeyBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Rotated to key: " + resp.getKasKey().getKey().getKeyId());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+import { Algorithm, KeyMode } from '@opentdf/sdk/platform/policy/objects_pb.js';
+
+const resp = await platform.v1.keyAccessServerRegistry.rotateKey({
+  key: {
+    name: 'my-kas',
+    kid: 'my-ec-key-1',
+  },
+  newKey: {
+    keyId: 'my-ec-key-2',
+    algorithm: Algorithm.EC_P256,
+    keyMode: KeyMode.CONFIG_ROOT_KEY,
+    publicKeyCtx: {
+      pem: '-----BEGIN PUBLIC KEY-----\n...new key...\n-----END PUBLIC KEY-----',
+    },
+    privateKeyCtx: {
+      keyId: 'config-kek-id',
+      wrappedKey: 'base64-encoded-new-wrapped-private-key',
+    },
+  },
+});
+console.log(`Rotated to key: ${resp.kasKey?.key?.keyId}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The newly created `KasKey` and a `rotated_resources` summary listing all attribute and value grants that were re-mapped from the old key to the new one.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | The active key identifier doesn't match an existing key. |
+| Failed precondition | The specified key is not in `ACTIVE` status. |
+| Invalid argument | Missing or inconsistent `new_key` fields. |
+| Permission denied | The caller lacks permission to rotate keys. |
+
+</details>
+
+<details id="set-base-key">
+<summary>SetBaseKey</summary>
+
+Sets the default ("base") key for a KAS. The base key is used when no specific key is requested during encryption.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) SetBaseKey(
+    ctx context.Context,
+    req *kasregistry.SetBaseKeyRequest,
+) (*kasregistry.SetBaseKeyResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+SetBaseKeyResponse setBaseKeyBlocking(
+    SetBaseKeyRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.setBaseKey(
+    request: SetBaseKeyRequest
+): Promise<SetBaseKeyResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+Provide exactly one identifier for the key to set as base:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | One of | Database UUID of the key. |
+| `key` | `KasKeyIdentifier` | One of | KAS identifier + `kid`. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+resp, err := client.KeyAccessServerRegistry.SetBaseKey(context.Background(),
+    &kasregistry.SetBaseKeyRequest{
+        ActiveKey: &kasregistry.SetBaseKeyRequest_Key{
+            Key: &kasregistry.KasKeyIdentifier{
+                Identifier: &kasregistry.KasKeyIdentifier_Name{
+                    Name: "my-kas",
+                },
+                Kid: "my-ec-key-2",
+            },
+        },
+    },
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("New base key: %s\n", resp.GetNewBaseKey().GetPublicKey().GetKid())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.SetBaseKeyRequest;
+import io.opentdf.platform.policy.kasregistry.KasKeyIdentifier;
+
+var req = SetBaseKeyRequest.newBuilder()
+    .setKey(KasKeyIdentifier.newBuilder()
+        .setName("my-kas")
+        .setKid("my-ec-key-2")
+        .build())
+    .build();
+var resp = sdk.getServices().kasRegistry()
+    .setBaseKeyBlocking(req, Collections.emptyMap()).execute();
+System.out.println("New base key: " + resp.getNewBaseKey().getPublicKey().getKid());
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.keyAccessServerRegistry.setBaseKey({
+  key: {
+    name: 'my-kas',
+    kid: 'my-ec-key-2',
+  },
+});
+console.log(`New base key: ${resp.newBaseKey?.publicKey?.kid}`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+| Field | Description |
+|-------|-------------|
+| `new_base_key` | The `SimpleKasKey` that was just set as base. |
+| `previous_base_key` | The previous base key, if one was set. |
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | The key identifier doesn't match an existing key. |
+| Failed precondition | The specified key is not in `ACTIVE` status. |
+| Permission denied | The caller lacks permission to set base keys. |
+
+</details>
+
+<details id="get-base-key">
+<summary>GetBaseKey</summary>
+
+Returns the current base (default) key for the platform.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) GetBaseKey(
+    ctx context.Context,
+    req *kasregistry.GetBaseKeyRequest,
+) (*kasregistry.GetBaseKeyResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+GetBaseKeyResponse getBaseKeyBlocking(
+    GetBaseKeyRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.getBaseKey(
+    request: GetBaseKeyRequest
+): Promise<GetBaseKeyResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+None.
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+resp, err := client.KeyAccessServerRegistry.GetBaseKey(context.Background(),
+    &kasregistry.GetBaseKeyRequest{},
+)
+if err != nil {
+    log.Fatal(err)
+}
+log.Printf("Base key: %s (KAS: %s)\n",
+    resp.GetBaseKey().GetPublicKey().GetKid(), resp.GetBaseKey().GetKasUri())
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.GetBaseKeyRequest;
+
+var req = GetBaseKeyRequest.newBuilder().build();
+var resp = sdk.getServices().kasRegistry()
+    .getBaseKeyBlocking(req, Collections.emptyMap()).execute();
+System.out.println("Base key: " + resp.getBaseKey().getPublicKey().getKid()
+    + " (KAS: " + resp.getBaseKey().getKasUri() + ")");
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.keyAccessServerRegistry.getBaseKey({});
+console.log(`Base key: ${resp.baseKey?.publicKey?.kid} (KAS: ${resp.baseKey?.kasUri})`);
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+The current base `SimpleKasKey`, containing `kas_uri`, `kas_id`, and the `public_key` (`algorithm`, `kid`, `pem`).
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Not found | No base key has been set. |
+| Permission denied | The caller lacks permission to read keys. |
+
+</details>
+
+---
+
+### Key Modes
+
+The `key_mode` field on `CreateKey` and `RotateKey` controls how the private key is stored:
+
+| Mode | Description | `private_key_ctx` | `provider_config_id` |
+|------|-------------|-------------------|---------------------|
+| `CONFIG_ROOT_KEY` | Private key is wrapped by a KEK from local config. All crypto is local. | Required (`key_id` + `wrapped_key`) | Not used |
+| `PROVIDER_ROOT_KEY` | Private key is wrapped by a KEK managed by an external provider (e.g., an HSM). | Required (`key_id` + `wrapped_key`) | Required |
+| `REMOTE` | Private key lives entirely in a remote KMS; the platform never sees it. | Not used | Required |
+| `PUBLIC_KEY_ONLY` | Only the public key is registered; the private key is managed externally. | Not used | Not used |
