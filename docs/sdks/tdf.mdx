@@ -1446,7 +1446,7 @@ Java's `CreateTDF` returns a [`Manifest`](#manifest-object) directly. JavaScript
 | Field | Go | Java | Required | Description |
 |-------|-----|------|----------|-------------|
 | URL | `URL string` | `String URL` | Required | The KAS endpoint URL. |
-| Algorithm | `Algorithm string` | `String Algorithm` | Optional | Wrapping key algorithm (e.g. `"ec:secp256r1"`). Defaults to `"rsa:2048"` if empty. |
+| Algorithm | `Algorithm string` | `String Algorithm` | Optional | Wrapping key algorithm (e.g. `"ec:secp256r1"`, `"hpqt:xwing"`). Defaults to `"rsa:2048"` if empty. See [Wrapping Key Algorithm](#wrapping-key-algorithm) for all supported values. |
 | KID | `KID string` | `String KID` | Optional | Key identifier on the KAS, used when the KAS hosts multiple keys. |
 | PublicKey | `PublicKey string` | `String PublicKey` | Optional | PEM-encoded public key. If empty, the SDK fetches it from the KAS. |
 | Default | `Default bool` | — | Optional | If `true`, this KAS is used as the default for encrypt calls when no KAS is explicitly specified. |
@@ -1591,7 +1591,7 @@ The `Manifest` type is returned by [`CreateTDF`](#createtdf) and accessible via 
 | Field | Type | Description |
 |-------|------|-------------|
 | `KasURL` | `string` | URL of the KAS holding the key grant. |
-| `KeyType` | `string` | Key access type (`"wrapped"` or `"remote"`). |
+| `KeyType` | `string` | Key access type: `"wrapped"` (RSA), `"ec-wrapped"` (EC), `"hybrid-wrapped"` (hybrid PQC), or `"remote"`. |
 | `SplitID` | `string` | Key split identifier. Entries sharing the same ID share a key segment; different IDs represent independent splits. |
 | `KID` | `string` | Key identifier on the KAS, if set. |
 
