@@ -15,77 +15,15 @@ on:
         default: false
 
 jobs:
-  # Triggered automatically after the build workflow completes (success or failure).
-  # Validate the artifact before its PR number reaches a privileged job.
-  prepare:
-    if: >
+  # Runs with secrets even when a fork PR produced the build artifact.
+  deploy:
+    if: >-
       github.event_name == 'workflow_run' && (
         github.event.workflow_run.conclusion == 'success' ||
         github.event.workflow_run.conclusion == 'failure'
       )
-    name: Validate Preview Metadata
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      pull-requests: read
-    outputs:
-      pr_number: ${{ steps.meta.outputs.pr_number }}
-      action: ${{ steps.meta.outputs.action }}
-      build_success: ${{ steps.meta.outputs.build_success }}
-    steps:
-      - name: Download preview artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: surge-preview
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-
-      - name: Validate metadata
-        id: meta
-        env:
-          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-        run: |
-          pr_number=$(jq -er '.pr_number | select(type == "number" and . > 0 and . == floor and . <= 2147483647) | floor' pr-metadata.json)
-          [[ "$pr_number" =~ ^[1-9][0-9]*$ ]] || exit 1
-          action=$(jq -er '.action | select(. == "opened" or . == "synchronize" or . == "reopened" or . == "closed")' pr-metadata.json)
-          build_success=$(jq -er '.build_success | select(type == "boolean") | tostring' pr-metadata.json)
-          if [[ "$RUN_CONCLUSION" == success ]]; then expected=true; else expected=false; fi
-          [[ "$build_success" == "$expected" ]] || exit 1
-          printf 'pr_number=%s\naction=%s\nbuild_success=%s\n' "$pr_number" "$action" "$build_success" >> "$GITHUB_OUTPUT"
-
-      - name: Validate PR source
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
-          PR_ACTION: ${{ steps.meta.outputs.action }}
-        with:
-          script: |
-            const { data: pr } = await github.rest.pulls.get({
-              ...context.repo,
-              pull_number: Number(process.env.PR_NUMBER),
-            });
-            const run = context.payload.workflow_run;
-            const matchesHead = pr.head.sha === run.head_sha &&
-              pr.head.repo?.full_name === run.head_repository?.full_name;
-            const matchesMerge = process.env.PR_ACTION === 'closed' && pr.merged &&
-              pr.merge_commit_sha === run.head_sha;
-            const matchesState = process.env.PR_ACTION === 'closed'
-              ? pr.state === 'closed'
-              : pr.state === 'open';
-            if ((!matchesHead && !matchesMerge) || !matchesState) {
-              throw new Error('Preview artifact does not match the triggering PR');
-            }
-
-  # Runs in a trusted context so it has access to secrets and a write token,
-  # even when the build was triggered by a fork PR.
-  deploy:
-    needs: prepare
-    if: needs.prepare.result == 'success'
     name: Deploy Preview
     runs-on: ubuntu-latest
-    concurrency:
-      group: surge-preview-pr-${{ needs.prepare.outputs.pr_number }}
-      cancel-in-progress: false
     permissions:
       actions: read
       contents: read
@@ -94,6 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
+          path: .preview-workflow
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -106,247 +45,138 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      - name: Check preview run order
-        id: order
+      - name: Validate metadata and PR source
+        id: meta
         uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
         with:
           script: |
-            const { isStalePreviewRun } = require('./.github/scripts/preview-status.cjs');
-            const stale = await isStalePreviewRun({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              sourceTime: context.payload.workflow_run.created_at,
-              sourceRunId: context.payload.workflow_run.id,
+            const meta = JSON.parse(require('node:fs').readFileSync('pr-metadata.json', 'utf8'));
+            const run = context.payload.workflow_run;
+            if (!Number.isSafeInteger(meta.pr_number) || meta.pr_number < 1 ||
+                meta.pr_number > 2147483647 ||
+                !['opened', 'synchronize', 'reopened', 'closed'].includes(meta.action) ||
+                typeof meta.build_success !== 'boolean' ||
+                meta.build_success !== (run.conclusion === 'success')) {
+              throw new Error('Invalid preview metadata');
+            }
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo, pull_number: meta.pr_number,
             });
-            core.setOutput('stale', String(stale));
+            const headMatches = pr.head.sha === run.head_sha &&
+              pr.head.repo?.full_name === run.head_repository?.full_name;
+            const mergeMatches = meta.action === 'closed' && pr.merged &&
+              pr.merge_commit_sha === run.head_sha;
+            if ((!headMatches && !mergeMatches) ||
+                (meta.action === 'closed' ? pr.state !== 'closed' : pr.state !== 'open')) {
+              throw new Error('Preview artifact does not match the triggering PR');
+            }
+            core.setOutput('pr_number', meta.pr_number);
+            core.setOutput('action', meta.action);
+            core.setOutput('build_success', meta.build_success);
 
       - name: Deploy to Surge
         id: deploy
-        if: steps.order.outputs.stale != 'true' && needs.prepare.outputs.action != 'closed' && needs.prepare.outputs.build_success == 'true'
+        if: steps.meta.outputs.action != 'closed' && steps.meta.outputs.build_success == 'true'
         run: npx surge build/ "https://opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
-          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
 
       - name: Teardown Surge preview
-        id: teardown
-        if: steps.order.outputs.stale != 'true' && needs.prepare.outputs.action == 'closed'
+        if: steps.meta.outputs.action == 'closed'
         run: npx surge teardown "opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
-          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
 
       - name: Update preview status comment
-        if: always() && steps.order.outcome == 'success' && steps.order.outputs.stale != 'true'
+        if: always() && steps.meta.outcome == 'success' && steps.meta.outputs.action != 'closed'
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
-          PR_ACTION: ${{ needs.prepare.outputs.action }}
-          BUILD_SUCCESS: ${{ needs.prepare.outputs.build_success }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          BUILD_SUCCESS: ${{ steps.meta.outputs.build_success }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
-          TEARDOWN_OUTCOME: ${{ steps.teardown.outcome }}
         with:
           script: |
-            const action = process.env.PR_ACTION;
-            const buildSucceeded = process.env.BUILD_SUCCESS === 'true';
-            const status = action === 'closed'
-              ? (process.env.TEARDOWN_OUTCOME === 'success' ? 'removed' : 'teardown-failed')
-              : !buildSucceeded
-                ? 'build-failed'
-                : process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
-            const { updatePreviewComment } = require('./.github/scripts/preview-status.cjs');
+            const status = process.env.BUILD_SUCCESS === 'false' ? 'build-failed' :
+              process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
+            const runUrl = status === 'build-failed'
+              ? context.payload.workflow_run.html_url
+              : `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { updatePreviewComment } = require('./.preview-workflow/.github/scripts/preview-status.cjs');
             await updatePreviewComment({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              status,
-              runUrl: status === 'build-failed' ? context.payload.workflow_run.html_url : undefined,
-              sourceTime: context.payload.workflow_run.created_at,
-              sourceRunId: context.payload.workflow_run.id,
+              github, context, prNumber: Number(process.env.PR_NUMBER), status, runUrl,
             });
 
-  # Manual dispatch: builds and deploys in a fully trusted context.
-  # Use this to trigger a preview for PRs outside the auto-trigger path filters.
+  # Manual dispatch builds and deploys in a trusted context.
   deploy-manual:
     if: github.event_name == 'workflow_dispatch' && inputs.teardown == false
     name: Build and Deploy Preview (Manual)
     runs-on: ubuntu-latest
-    concurrency:
-      group: surge-preview-pr-${{ inputs.pr_number }}
-      cancel-in-progress: false
     permissions:
-      actions: read
       contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        id: checkout
         with:
           fetch-depth: 0
       - name: Validate PR number
-        id: validate_pr
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
         run: |
-          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || exit 1
-          printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
-      - name: Check preview run order
-        id: order
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
-        with:
-          script: |
-            const { data: run } = await github.rest.actions.getWorkflowRun({
-              ...context.repo,
-              run_id: context.runId,
-            });
-            const { isStalePreviewRun } = require('./.github/scripts/preview-status.cjs');
-            const stale = await isStalePreviewRun({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              sourceTime: run.created_at,
-              sourceRunId: context.runId,
-            });
-            core.setOutput('stale', String(stale));
-            core.setOutput('source_time', run.created_at);
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]{0,9}$ ]] && (( PR_NUMBER <= 2147483647 ))
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: steps.order.outputs.stale != 'true'
         run: npm ci
-
       - name: Update vendored OpenAPI specs
-        if: steps.order.outputs.stale != 'true'
         run: npm run update-vendored-yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build website
-        id: build
-        if: steps.order.outputs.stale != 'true'
         run: npm run gen-api-docs-all && npx docusaurus build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Add SPA fallback for Surge
-        if: steps.order.outputs.stale != 'true'
         run: cp build/index.html build/200.html
-
       - name: Deploy to Surge
-        id: deploy
-        if: steps.order.outputs.stale != 'true'
         run: npx surge build/ "https://opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
-
       - name: Update preview status comment
-        if: always() && steps.order.outcome == 'success' && steps.order.outputs.stale != 'true'
         uses: actions/github-script@v7
         env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
-          BUILD_OUTCOME: ${{ steps.build.outcome }}
-          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
-          SOURCE_TIME: ${{ steps.order.outputs.source_time }}
+          PR_NUMBER: ${{ inputs.pr_number }}
         with:
           script: |
-            const status = process.env.BUILD_OUTCOME !== 'success'
-              ? 'build-failed'
-              : process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
             const { updatePreviewComment } = require('./.github/scripts/preview-status.cjs');
             await updatePreviewComment({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              status,
-              sourceTime: process.env.SOURCE_TIME,
-              sourceRunId: context.runId,
+              github, context, prNumber: Number(process.env.PR_NUMBER), status: 'deployed',
             });
 
   teardown-manual:
     if: github.event_name == 'workflow_dispatch' && inputs.teardown == true
     name: Teardown Preview (Manual)
     runs-on: ubuntu-latest
-    concurrency:
-      group: surge-preview-pr-${{ inputs.pr_number }}
-      cancel-in-progress: false
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-        id: checkout
-        with:
-          persist-credentials: false
       - name: Validate PR number
-        id: validate_pr
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
         run: |
-          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || exit 1
-          printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
-      - name: Check preview run order
-        id: order
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
-        with:
-          script: |
-            const { data: run } = await github.rest.actions.getWorkflowRun({
-              ...context.repo,
-              run_id: context.runId,
-            });
-            const { isStalePreviewRun } = require('./.github/scripts/preview-status.cjs');
-            const stale = await isStalePreviewRun({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              sourceTime: run.created_at,
-              sourceRunId: context.runId,
-            });
-            core.setOutput('stale', String(stale));
-            core.setOutput('source_time', run.created_at);
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]{0,9}$ ]] && (( PR_NUMBER <= 2147483647 ))
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Teardown Surge preview
-        id: teardown
-        if: steps.order.outputs.stale != 'true'
         run: npx surge teardown "opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
-
-      - name: Update preview status comment
-        if: always() && steps.order.outcome == 'success' && steps.order.outputs.stale != 'true'
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.validate_pr.outputs.pr_number }}
-          TEARDOWN_OUTCOME: ${{ steps.teardown.outcome }}
-          SOURCE_TIME: ${{ steps.order.outputs.source_time }}
-        with:
-          script: |
-            const status = process.env.TEARDOWN_OUTCOME === 'success' ? 'removed' : 'teardown-failed';
-            const { updatePreviewComment } = require('./.github/scripts/preview-status.cjs');
-            await updatePreviewComment({
-              github,
-              context,
-              prNumber: Number(process.env.PR_NUMBER),
-              status,
-              sourceTime: process.env.SOURCE_TIME,
-              sourceRunId: context.runId,
-            });
