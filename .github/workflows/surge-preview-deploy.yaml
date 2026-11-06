@@ -87,6 +87,7 @@ jobs:
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
 
       - name: Teardown Surge preview
+        id: teardown
         if: steps.meta.outputs.action == 'closed'
         run: npx surge teardown "opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
@@ -95,12 +96,14 @@ jobs:
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
 
       - name: Update preview status comment
-        if: always() && steps.meta.outcome == 'success' && steps.meta.outputs.action != 'closed'
+        if: always() && steps.meta.outcome == 'success'
         uses: actions/github-script@v7
         env:
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          PR_ACTION: ${{ steps.meta.outputs.action }}
           BUILD_SUCCESS: ${{ steps.meta.outputs.build_success }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          TEARDOWN_OUTCOME: ${{ steps.teardown.outcome }}
         with:
           script: |
             const prNumber = Number(process.env.PR_NUMBER);
@@ -108,10 +111,14 @@ jobs:
               ...context.repo, pull_number: prNumber,
             });
             const run = context.payload.workflow_run;
-            if (pr.state !== 'open' || pr.head.sha !== run.head_sha ||
-                pr.head.repo?.full_name !== run.head_repository?.full_name) return;
-            const status = process.env.BUILD_SUCCESS === 'false' ? 'build-failed' :
-              process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
+            if (process.env.PR_ACTION === 'closed') {
+              if (pr.state !== 'closed') return;
+            } else if (pr.state !== 'open' || pr.head.sha !== run.head_sha ||
+                       pr.head.repo?.full_name !== run.head_repository?.full_name) return;
+            const status = process.env.PR_ACTION === 'closed'
+              ? (process.env.TEARDOWN_OUTCOME === 'success' ? 'removed' : 'teardown-failed')
+              : process.env.BUILD_SUCCESS === 'false' ? 'build-failed'
+                : process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
             const runUrl = status === 'build-failed'
               ? context.payload.workflow_run.html_url
               : `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
@@ -181,9 +188,15 @@ jobs:
     concurrency:
       group: surge-preview-manual-pr-${{ inputs.pr_number }}
       cancel-in-progress: false
-    permissions: {}
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Validate PR number
+        id: validate_pr
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
         run: |
@@ -192,8 +205,23 @@ jobs:
         with:
           node-version: 22
       - name: Teardown Surge preview
+        id: teardown
         run: npx surge teardown "opentdf-docs-pr-${PR_NUMBER}.surge.sh"
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+      - name: Update preview status comment
+        if: always() && steps.validate_pr.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          TEARDOWN_OUTCOME: ${{ steps.teardown.outcome }}
+        with:
+          script: |
+            const { updatePreviewComment } = require('./.github/scripts/preview-status.cjs');
+            await updatePreviewComment({
+              github, context, prNumber: Number(process.env.PR_NUMBER),
+              status: process.env.TEARDOWN_OUTCOME === 'success' ? 'removed' : 'teardown-failed',
+              runUrl: `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });

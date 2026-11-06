@@ -58,3 +58,11 @@ test("repeat failures reuse the same comment, then success clears the failure", 
   assert.equal(state.comments.length, 1);
   assert.match(state.comments[0].body, /Preview deployed/);
 });
+
+test("teardown replaces the deployed status", async () => {
+  const state = fixture();
+  await updatePreviewComment({ ...state, prNumber: 398, status: "deployed" });
+  await updatePreviewComment({ ...state, prNumber: 398, status: "removed" });
+  assert.deepEqual(state.calls, ["create", "update"]);
+  assert.match(state.comments[0].body, /preview removed/);
+});

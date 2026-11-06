@@ -10,6 +10,8 @@ async function updatePreviewComment({ github, context, prNumber, status, runUrl 
     deployed: `📄 Preview deployed to ${previewUrl}`,
     "build-failed": `❌ Surge preview build failed. [Build logs](${runUrl})`,
     "deploy-failed": `❌ Surge preview deployment failed. [Workflow logs](${runUrl})`,
+    removed: "🧹 Surge preview removed.",
+    "teardown-failed": `❌ Surge preview teardown failed. [Workflow logs](${runUrl})`,
   }[status];
   if (!message) throw new Error(`Unknown preview status: ${status}`);
 
