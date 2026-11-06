@@ -24,6 +24,9 @@ jobs:
       )
     name: Deploy Preview
     runs-on: ubuntu-latest
+    concurrency:
+      group: surge-preview-${{ github.event.workflow_run.head_repository.id }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
     permissions:
       actions: read
       contents: read
@@ -100,6 +103,13 @@ jobs:
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
         with:
           script: |
+            const prNumber = Number(process.env.PR_NUMBER);
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo, pull_number: prNumber,
+            });
+            const run = context.payload.workflow_run;
+            if (pr.state !== 'open' || pr.head.sha !== run.head_sha ||
+                pr.head.repo?.full_name !== run.head_repository?.full_name) return;
             const status = process.env.BUILD_SUCCESS === 'false' ? 'build-failed' :
               process.env.DEPLOY_OUTCOME === 'success' ? 'deployed' : 'deploy-failed';
             const runUrl = status === 'build-failed'
@@ -107,7 +117,7 @@ jobs:
               : `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const { updatePreviewComment } = require('./.preview-workflow/.github/scripts/preview-status.cjs');
             await updatePreviewComment({
-              github, context, prNumber: Number(process.env.PR_NUMBER), status, runUrl,
+              github, context, prNumber, status, runUrl,
             });
 
   # Manual dispatch builds and deploys in a trusted context.
@@ -115,6 +125,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.teardown == false
     name: Build and Deploy Preview (Manual)
     runs-on: ubuntu-latest
+    concurrency:
+      group: surge-preview-manual-pr-${{ inputs.pr_number }}
+      cancel-in-progress: false
     permissions:
       contents: read
       pull-requests: write
@@ -165,6 +178,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.teardown == true
     name: Teardown Preview (Manual)
     runs-on: ubuntu-latest
+    concurrency:
+      group: surge-preview-manual-pr-${{ inputs.pr_number }}
+      cancel-in-progress: false
+    permissions: {}
     steps:
       - name: Validate PR number
         env:
