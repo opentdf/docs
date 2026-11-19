@@ -248,16 +248,20 @@ services:
       - keys:/keys:ro
     restart: "no"
 
-  # Prepare CA certificates bundle with Caddy cert
+  # Prepare CA certificates bundle with Caddy's local root CA.
+  # Trust the root (10-year lifetime), not the Keycloak site cert: that file holds
+  # the leaf plus Caddy's 7-day intermediate, so trusting it breaks the platform
+  # once Caddy renews its intermediate. Same root that install.sh trusts on the host.
+  # See https://caddyserver.com/docs/automatic-https#local-https
   prepare-ca-certs:
     image: alpine:3.23
     volumes:
       - type: volume
         source: caddy_data
-        target: /caddy-certs
+        target: /caddy-pki
         read_only: true
         volume:
-          subpath: caddy/certificates/local/keycloak.opentdf.local
+          subpath: caddy/pki/authorities/local
       - platform_certs:/etc/ssl/certs
     depends_on:
       caddy:
@@ -268,11 +272,10 @@ services:
       - |
         # Install ca-certificates package
         apk add --no-cache ca-certificates
-        # Copy Caddy certificate to CA bundle
-        cp /caddy-certs/keycloak.opentdf.local.crt /usr/local/share/ca-certificates/
+        # Add Caddy's local root CA to the bundle; update-ca-certificates writes
+        # straight to /etc/ssl/certs, which is the shared platform_certs volume
+        cp /caddy-pki/root.crt /usr/local/share/ca-certificates/caddy-local-root.crt
         update-ca-certificates
-        # Copy the updated CA bundle to shared volume
-        cp -r /etc/ssl/certs/* /etc/ssl/certs/
         echo "CA certificates prepared successfully"
     restart: "no"
 
