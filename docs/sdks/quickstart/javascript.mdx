@@ -12,6 +12,15 @@ This guide covers the **JavaScript/TypeScript SDK** implementation. For other la
 ## Prerequisites
 
 - [Node.js LTS](https://nodejs.org/en/about/previous-releases)
+  - To install Node.js, use [nvm](https://github.com/nvm-sh/nvm#installing-and-updating). Install the current LTS release before selecting it, because `nvm use` only switches to a version that is already installed:
+
+    ```bash
+    nvm install --lts
+    nvm use --lts
+    node --version
+    ```
+
+  - Run the `npm` commands in this guide after `nvm use`, so they use the same Node.js version.
 - Your OpenTDF platform running locally (from the [Getting Started guide](/quickstart))
 
 :::warning Platform Must Be Running
