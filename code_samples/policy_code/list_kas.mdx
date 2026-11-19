@@ -1,0 +1,106 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details id="list-kas-servers">
+<summary>ListKeyAccessServers</summary>
+
+Returns all registered Key Access Servers, with optional pagination.
+
+**Signature**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+func (c KeyAccessServerRegistryServiceClient) ListKeyAccessServers(
+    ctx context.Context,
+    req *kasregistry.ListKeyAccessServersRequest,
+) (*kasregistry.ListKeyAccessServersResponse, error)
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+ListKeyAccessServersResponse listKeyAccessServersBlocking(
+    ListKeyAccessServersRequest request, Map<String, String> metadata
+)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+keyAccessServerRegistry.listKeyAccessServers(
+    request: ListKeyAccessServersRequest
+): Promise<ListKeyAccessServersResponse>
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pagination.limit` | `int32` | No | Maximum number of results to return. |
+| `pagination.offset` | `int32` | No | Number of results to skip. |
+
+**Example**
+
+<Tabs>
+<TabItem value="go" label="Go">
+
+```go
+import "github.com/opentdf/platform/protocol/go/policy/kasregistry"
+
+resp, err := client.KeyAccessServerRegistry.ListKeyAccessServers(context.Background(),
+    &kasregistry.ListKeyAccessServersRequest{},
+)
+if err != nil {
+    log.Fatal(err)
+}
+for _, kas := range resp.GetKeyAccessServers() {
+    log.Printf("KAS: %s — %s (source: %s)\n", kas.GetName(), kas.GetUri(), kas.GetSourceType())
+}
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+import io.opentdf.platform.policy.kasregistry.ListKeyAccessServersRequest;
+
+var req = ListKeyAccessServersRequest.newBuilder().build();
+var resp = sdk.getServices().kasRegistry()
+    .listKeyAccessServersBlocking(req, Collections.emptyMap()).execute();
+for (var kas : resp.getKeyAccessServersList()) {
+    System.out.println("KAS: " + kas.getName() + " — " + kas.getUri()
+        + " (source: " + kas.getSourceType() + ")");
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```typescript
+const resp = await platform.v1.keyAccessServerRegistry.listKeyAccessServers({});
+for (const kas of resp.keyAccessServers) {
+  console.log(`KAS: ${kas.name} — ${kas.uri} (source: ${kas.sourceType})`);
+}
+```
+
+</TabItem>
+</Tabs>
+
+**Returns**
+
+A list of `KeyAccessServer` objects and a `pagination` response containing `current_offset`, `next_offset`, and `total` count.
+
+**Errors**
+
+| Error | Cause |
+|-------|-------|
+| Permission denied | The caller lacks permission to list KAS entries. |
+
+</details>
